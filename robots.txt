@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://martindavinci.github.io/mdv-tools67/sitemap.xml

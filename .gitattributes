@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.html text
+*.css text
+*.json text
+*.jpg binary
+*.png binary
+*.ico binary
+*.woff2 binary
