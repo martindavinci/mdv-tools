@@ -484,11 +484,14 @@
   --stripe-a: var(--mdv-vstripe-1);
   --stripe-b: var(--mdv-vstripe-2);
 }
-/* OS-following. The ink side is applied to :root so the values register as
-   theme tokens; a tool that opts out with [data-mode="light"] gets the paper
-   aliases put back below, at higher specificity. */
+/* OS-following, but OPT-IN. Tavolozza is a daylight palette: carta ground,
+   pigment on paper. The reference the skin came from has no dark variant, and
+   flipping the whole catalogue to bistro because the OS is dark makes every
+   page read dark brown instead of parchment. So the OS preference is honoured
+   only for a page that asks, with <html data-mode="auto">. [data-mode="dark"]
+   above still forces it outright. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root[data-mode="auto"] {
     color-scheme: dark;
     --surface-page: var(--mdv-rail-bg);
     --surface-panel: var(--mdv-vstripe-1);
@@ -1428,7 +1431,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </div>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">6</span></span>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html">Base64 Encoder &amp;amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html">Base64 Encoder &amp; Decoder</a>
     <a class="mdv-drawer-link" href="./file-checksum.html">Checksum</a>
     <a class="mdv-drawer-link" href="./hash-generator.html">Hash generator</a>
     <a class="mdv-drawer-link is-here" href="./jwt-decoder.html" aria-current="page">JWT decoder</a>
