@@ -1493,7 +1493,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   gap: var(--space-2);
   margin: 0 0 var(--space-1);
 }
-.mdv-digest-mark { width: 9px; height: 9px; flex: none; align-self: center; background: var(--c); }
+/* the row's pigment as a 9px square, from --c on the row or legend entry */
+.mdv-mark { display: inline-block; width: 9px; height: 9px; flex: none; align-self: center; background: var(--c, var(--accent)); }
 .mdv-digest-name { font-weight: var(--weight-display); color: var(--text-strong); }
 .mdv-digest-kind { font-size: var(--size-small); color: var(--text-muted); }
 .mdv-digest .mdv-mini { margin-left: auto; flex: none; }
@@ -1523,8 +1524,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   font-size: var(--size-small);
   color: var(--text-muted);
 }
-.mdv-legend > * { --c: var(--accent); display: inline-flex; align-items: center; gap: var(--space-2); }
-.mdv-legend i { width: 9px; height: 9px; flex: none; background: var(--c); }
+.mdv-legend > * { display: inline-flex; align-items: center; gap: var(--space-2); }
 /* a textarea holding human prose rather than a value: body serif, not mono */
 .mdv-textarea.is-prose {
   font-family: inherit;
