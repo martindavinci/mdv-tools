@@ -1644,8 +1644,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose an image">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
     <span class="mdv-tag">Drop a PNG, JPEG, WebP or GIF</span>
-    <span class="mdv-hint" style="margin:0">Decoded in this tab. Nothing is uploaded.</span>
-    <input type="file" id="file" accept="image/*" class="mdv-sr">
+    <span class="mdv-hint" style="margin:0">Decoded in this tab. Nothing is uploaded. Up to 100 MiB and 100 megapixels.</span>
+    <input type="file" id="file" accept="image/*" class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <section id="panel" hidden class="mdv-stack">
@@ -1659,7 +1659,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-stack is-tight">
         <div>
           <label class="mdv-label" for="width">Target width (px)</label>
-          <input class="mdv-input mdv-mono" id="width" type="number" min="1" max="12000" step="1" value="1200">
+          <input class="mdv-input mdv-mono" id="width" type="number" min="1" max="12000" step="1" value="1200" aria-describedby="width-hint">
+          <p class="mdv-hint" id="width-hint">Output up to 12,000 px on either side and 124,992,400 pixels in all. iPhones and iPads stop at 16,777,216.</p>
         </div>
         <div>
           <span class="mdv-label">Format</span>
@@ -1696,7 +1697,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <span class="mdv-notice-title">Note</span><span id="warnmsg"></span>
   </div>
   <div class="mdv-notice is-bad" id="err" hidden>
-    <span class="mdv-notice-title">Could not use that file</span><span id="errmsg"></span>
+    <span class="mdv-notice-title" id="errtitle">Could not use that file</span><span id="errmsg"></span>
   </div>
 
   <details class="mdv-method" data-method open>
@@ -1704,12 +1705,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <div class="mdv-method-body">
       <p>The image is decoded by the browser, drawn once into a <code>&lt;canvas&gt;</code> at the
         target size with <code>imageSmoothingQuality = "high"</code>, then read back with
-        <code>canvas.toBlob(type, quality)</code>. Height is <code>round(width × h / w)</code>.</p>
+        <code>canvas.toBlob(type, quality)</code>. Height is <code>round(width × h / w)</code>.
+        JPEG has no transparency, so for JPEG the canvas is filled with white first: transparent
+        pixels come out white, not black.</p>
       <p>Re-encoding is lossy for JPEG and WebP: the pixels are not the original pixels, and
-        running the tool twice compounds that. PNG ignores the quality slider. Every non-pixel
-        chunk — EXIF, ICC profile, orientation, animation frames after the first — is dropped by
-        the canvas, which is often the point but is never a secret. Enlarging past the source adds
-        no detail, so it is off by default.</p>
+        running the tool twice compounds that. PNG ignores the quality slider. A browser that cannot
+        encode the format you picked hands back PNG instead (Safari has long had no WebP encoder);
+        the tool reads the type of what came back, says so, and sizes and names the download by
+        it. The browser applies the EXIF orientation as it decodes, so the pixels come out upright;
+        the orientation tag itself is dropped with every other non-pixel chunk — the rest of EXIF,
+        the ICC profile, animation frames after the first — which is often the point but is never a
+        secret. Enlarging past the source adds no detail, so it is off by default; a wider target is
+        then held at the source width, and the output panel says so.</p>
+      <p>Limits: the file up to 100 MiB and 100,000,000 decoded pixels; the output up to 12,000 px on
+        either side and 124,992,400 pixels in all (11,180 × 11,180), the largest canvas Firefox will
+        draw — Chrome and desktop Safari go further. Above them the tool encodes nothing and prints
+        the numbers, with the widest width the image allows. iPhones and iPads stop much lower, at
+        16,777,216 pixels (4096 × 4096); there, and on any device short of memory, the browser returns
+        no image and the tool says so: a smaller width helps, another format does not.</p>
       <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
@@ -1751,36 +1764,96 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var err = document.getElementById("err"), errmsg = document.getElementById("errmsg");
   var warn = document.getElementById("warn"), warnmsg = document.getElementById("warnmsg");
   var save = document.getElementById("save");
-  var img = null, srcBytes = 0, srcName = "image", fmt = "image/webp", blob = null, url = null;
+  var outDim = document.getElementById("out-dim"), outSize = document.getElementById("out-size"), delta = document.getElementById("delta");
+  var img = null, srcBytes = 0, srcName = "image", fmt = "image/webp", blob = null, url = null, outName = "";
+
+  // Limits. MAX_AREA is Firefox's canvas ceiling, the lowest of the desktop browsers; iOS Safari
+  // stops at 4096 × 4096, and there toBlob returns nothing and broke() says why. Capping every
+  // browser at the phone's ceiling would refuse ordinary desktop resizes like 6000 × 4000.
+  var MAX_FILE = 104857600;   // 100 MiB read from disk
+  var MAX_SRC  = 100000000;   // decoded source pixels
+  var MAX_SIDE = 12000;       // output px on either side
+  var MAX_AREA = 124992400;   // output pixels, 11,180 × 11,180
+  var LABEL = { "image/webp": "WebP", "image/jpeg": "JPEG", "image/png": "PNG" };
+
+  var picks = 0;              // bumps on every file picked; an older file finishing late is dropped
+  var gen = 0;                // bumps on every encode and every reset; an older toBlob is dropped
+  var srcNote = "", encNote = "", encFailed = false;
 
   function fmtBytes(n) {
     if (n < 1024) return n + " B";
     if (n < 1048576) return (n / 1024).toFixed(1) + " KiB";
     return (n / 1048576).toFixed(2) + " MiB";
   }
-  function fail(msg) { errmsg.textContent = msg; err.hidden = false; }
+  function num(n) { return n.toLocaleString(); }
+  function label(type) { return LABEL[type] || type; }
+
+  function outHeight(w, sw, sh) { return Math.max(1, Math.round(w * sh / sw)); }
+  function fits(w, sw, sh) { var h = outHeight(w, sw, sh); return w <= MAX_SIDE && h <= MAX_SIDE && w * h <= MAX_AREA; }
+  // The widest output a sw × sh source can have inside the limits; 0 if not even 1 px wide fits.
+  // Starts a little above the exact bound (height is rounded) and steps down.
+  function widest(sw, sh) {
+    var w = Math.min(MAX_SIDE, Math.floor(MAX_SIDE * sw / sh) + 4, Math.floor(Math.sqrt(MAX_AREA * sw / sh)) + 4);
+    while (w > 0 && !fits(w, sw, sh)) w--;
+    return w;
+  }
+
+  function fail(title, msg) { document.getElementById("errtitle").textContent = title; errmsg.textContent = msg; err.hidden = false; }
+  function notes() { warnmsg.textContent = [srcNote, encNote].filter(Boolean).join(" "); warn.hidden = !warnmsg.textContent; }
+
+  // No output: drop the blob, cancel any encode still running, say why in the output panel.
+  function stop(why) {
+    gen++;
+    blob = null; outName = "";
+    if (url) { URL.revokeObjectURL(url); url = null; }
+    save.disabled = true;
+    outSize.textContent = "—";
+    delta.textContent = why;
+  }
 
   function load(f) {
-    err.hidden = true; warn.hidden = true;
+    var my = ++picks;
+    err.hidden = true; encFailed = false;
     if (!f.type || f.type.indexOf("image/") !== 0) {
-      fail("That is " + (f.type || "an unknown type") + ". This tool only decodes images.");
+      fail("Could not use that file", "That is " + (f.type || "an unknown type") + ". This tool only decodes images.");
+      return;
+    }
+    if (f.size > MAX_FILE) {
+      fail("Could not use that file", "This file is " + fmtBytes(f.size) + " (" + num(f.size) + " bytes). The limit is 100 MiB (" +
+           num(MAX_FILE) + " bytes). Nothing was read.");
       return;
     }
     var fr = new FileReader();
-    fr.onerror = function () { fail("The browser could not read the file."); };
+    fr.onerror = function () { if (my === picks) fail("Could not use that file", "The browser could not read the file."); };
     fr.onload = function () {
+      if (my !== picks) return;
       var i = new Image();
-      i.onerror = function () { fail("The bytes are not a decodable image. A renamed file, or a format this browser does not support."); };
+      i.onerror = function () { if (my === picks) fail("Could not use that file", "The bytes are not a decodable image. A renamed file, or a format this browser does not support."); };
       i.onload = function () {
+        if (my !== picks) return;
+        var sw = i.naturalWidth, sh = i.naturalHeight;
+        if (!(sw > 0 && sh > 0)) {
+          fail("Could not use that file", "This image has no pixel size of its own, as with an SVG that sets no width and height, so there is nothing to scale.");
+          return;
+        }
+        if (sw * sh > MAX_SRC) {
+          fail("Could not use that file", "This image is " + num(sw) + " × " + num(sh) + ", " + num(sw * sh) + " pixels. The limit is " +
+               num(MAX_SRC) + " pixels (100 megapixels); decoding more can run a tab out of memory. Nothing was drawn.");
+          return;
+        }
+        if (!widest(sw, sh)) {
+          fail("Could not use that file", "At 1 px wide this image would be " + num(outHeight(1, sw, sh)) + " px tall, past the " +
+               num(MAX_SIDE) + " px limit on either side, so no width works.");
+          return;
+        }
         img = i; srcBytes = f.size; srcName = f.name.replace(/\.[^.]+$/, "");
         preview.src = i.src;
-        document.getElementById("src-dim").textContent = i.naturalWidth + " × " + i.naturalHeight + " · " + fmtBytes(f.size);
+        document.getElementById("src-dim").textContent = sw + " × " + sh + " · " + fmtBytes(f.size);
         panel.hidden = false;
-        if (f.type === "image/gif") {
-          warnmsg.textContent = "This is a GIF: only the first frame survives re-encoding.";
-          warn.hidden = false;
-        }
-        widthEl.value = Math.min(1200, i.naturalWidth);
+        srcNote = f.type === "image/gif" ? "This is a GIF: only the first frame survives re-encoding." : "";
+        encNote = ""; notes();
+        stop("Encoding.");
+        widthEl.value = Math.min(1200, sw, widest(sw, sh));
         encode();
       };
       i.src = fr.result;
@@ -1795,34 +1868,70 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     timer = setTimeout(doEncode, 120);
   }
   function doEncode() {
-    var target = parseInt(widthEl.value, 10);
-    if (!(target > 0)) { document.getElementById("out-size").textContent = "—"; save.disabled = true;
-      document.getElementById("delta").textContent = "Width must be a positive whole number."; return; }
-    if (document.getElementById("noup").checked && target > img.naturalWidth) {
-      target = img.naturalWidth; widthEl.value = target;
+    var sw = img.naturalWidth, sh = img.naturalHeight, asked = parseInt(widthEl.value, 10), target = asked, held = "";
+    if (encFailed) { err.hidden = true; encFailed = false; }   // file errors stay up; a stale encode error does not
+    encNote = ""; notes();
+    outDim.textContent = "—";
+    if (!(asked > 0)) { stop("Width must be a positive whole number."); return; }
+    if (document.getElementById("noup").checked && asked > sw) {
+      target = sw;
+      held = "Held at the source width, " + num(sw) + " px: enlarging is off. ";
     }
-    if (target > 12000) { target = 12000; widthEl.value = target; }
+    var h = outHeight(target, sw, sh), most = num(widest(sw, sh));
+    if (target > MAX_SIDE) {
+      stop(held + num(target) + " px is past the " + num(MAX_SIDE) + " px limit on either side. Nothing was encoded. " +
+           "Use a width of " + most + " px or less.");
+      return;
+    }
+    if (h > MAX_SIDE) {
+      stop(held + "At " + num(target) + " px wide this image is " + num(h) + " px tall, past the " + num(MAX_SIDE) +
+           " px limit on either side. Nothing was encoded. Use a width of " + most + " px or less.");
+      return;
+    }
+    if (target * h > MAX_AREA) {
+      stop(held + num(target) + " × " + num(h) + " is " + num(target * h) + " pixels, past the " + num(MAX_AREA) +
+           "-pixel limit (11,180 × 11,180). Nothing was encoded. Use a width of " + most + " px or less.");
+      return;
+    }
 
-    var h = Math.max(1, Math.round(target * img.naturalHeight / img.naturalWidth));
+    stop(held + "Encoding.");
+    var my = gen, want = fmt;
     var c = document.createElement("canvas");
     c.width = target; c.height = h;
     var ctx = c.getContext("2d");
+    if (!ctx) { broke(target, h, want); return; }
+    if (want === "image/jpeg") { ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, target, h); }   // JPEG has no alpha: white, not black
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
     ctx.drawImage(img, 0, 0, target, h);
-    document.getElementById("out-dim").textContent = target + " × " + h;
+    outDim.textContent = target + " × " + h;
 
     c.toBlob(function (b) {
-      if (!b) { fail("This browser refused to encode " + fmt + ". Try PNG."); return; }
+      if (my !== gen) return;                        // a newer encode was asked for
+      if (!b) { broke(target, h, want); return; }
+      var got = b.type || want;
       blob = b;
-      if (url) URL.revokeObjectURL(url);
       url = URL.createObjectURL(b);
-      document.getElementById("out-size").textContent = fmtBytes(b.size);
+      outName = srcName + "-" + target + "." + got.split("/")[1];
+      outDim.textContent = target + " × " + h + " · " + label(got);
+      if (got !== want) {
+        encNote = "This browser cannot encode " + label(want) + ", so it returned " + label(got) + ". The size shown and the download (." +
+          got.split("/")[1] + ") are " + label(got) + (got === "image/png" ? ", and the quality slider does nothing." : ".");
+        notes();
+      }
+      outSize.textContent = fmtBytes(b.size);
       var pct = Math.round((1 - b.size / srcBytes) * 100);
-      document.getElementById("delta").textContent = pct > 0
+      delta.textContent = held + (pct > 0
         ? pct + "% smaller than the original " + fmtBytes(srcBytes)
-        : Math.abs(pct) + "% larger than the original — this format is not helping here";
+        : Math.abs(pct) + "% larger than the original — this format is not helping here");
       save.disabled = false;
-    }, fmt, parseFloat(q.value));
+    }, want, parseFloat(q.value));
+  }
+
+  function broke(w, h, type) {
+    stop("No output.");
+    encFailed = true;
+    fail("Could not encode", "The browser returned no " + label(type) + " for a " + num(w) + " × " + num(h) + " canvas. " +
+         "That is almost always the tab running short of memory for a canvas that size — iPhones and iPads stop at 16,777,216 pixels (4096 × 4096) — so try a smaller width. Another format will not help.");
   }
 
   drop.addEventListener("click", function () { file.click(); });
@@ -1850,7 +1959,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!blob) return;
     var a = document.createElement("a");
     a.href = url;
-    a.download = srcName + "-" + document.getElementById("out-dim").textContent.split(" × ")[0] + "." + fmt.split("/")[1];
+    a.download = outName;                    // named by the type the browser really returned
     a.click();
   });
   document.getElementById("another").addEventListener("click", function () { file.click(); });

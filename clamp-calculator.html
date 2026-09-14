@@ -1647,9 +1647,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div>
         <label class="mdv-label" for="min">Size, min to max</label>
         <div class="mdv-row" style="gap:var(--space-2)">
-          <input class="mdv-input mdv-mono" id="min" type="number" min="0" step="any" value="16" style="flex:1" aria-label="Min size in px">
+          <input class="mdv-input mdv-mono" id="min" type="number" min="0" max="100000" step="any" value="16" style="flex:1" aria-label="Min size in px">
           <span class="mdv-mono mdv-faint">to</span>
-          <input class="mdv-input mdv-mono" id="max" type="number" min="0" step="any" value="24" style="flex:1" aria-label="Max size in px">
+          <input class="mdv-input mdv-mono" id="max" type="number" min="0" max="100000" step="any" value="24" style="flex:1" aria-label="Max size in px">
         </div>
         <div class="mdv-btn-row" style="margin-top:var(--space-3)">
           <button class="mdv-btn is-sm is-quiet" type="button" data-size="16,18">16 to 18</button>
@@ -1661,9 +1661,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div>
         <label class="mdv-label" for="vmin">Viewport, min to max</label>
         <div class="mdv-row" style="gap:var(--space-2)">
-          <input class="mdv-input mdv-mono" id="vmin" type="number" min="0" step="any" value="360" style="flex:1" aria-label="Min viewport in px">
+          <input class="mdv-input mdv-mono" id="vmin" type="number" min="1" max="100000" step="any" value="360" style="flex:1" aria-label="Min viewport in px">
           <span class="mdv-mono mdv-faint">to</span>
-          <input class="mdv-input mdv-mono" id="vmax" type="number" min="0" step="any" value="1280" style="flex:1" aria-label="Max viewport in px">
+          <input class="mdv-input mdv-mono" id="vmax" type="number" min="1" max="100000" step="any" value="1280" style="flex:1" aria-label="Max viewport in px">
         </div>
         <div class="mdv-btn-row" style="margin-top:var(--space-3)">
           <button class="mdv-btn is-sm is-quiet" type="button" data-vw="360,1280">360 to 1280</button>
@@ -1675,10 +1675,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <div class="mdv-cols" style="margin-top:var(--space-4)">
       <div>
         <label class="mdv-label" for="root">Root font size</label>
-        <input class="mdv-input mdv-mono" id="root" type="number" min="0" step="any" value="16" aria-label="Root font size in px">
+        <input class="mdv-input mdv-mono" id="root" type="number" min="1" max="100000" step="any" value="16" aria-label="Root font size in px">
       </div>
-      <p class="mdv-hint">All five fields are in px. The root font size is only used to turn px into rem;
-        browsers default to 16.</p>
+      <p class="mdv-hint">All five fields are in px, at most 100,000; viewports and the root size start at 1.
+        The root font size is only used to turn px into rem; browsers default to 16.</p>
     </div>
   </section>
 
@@ -1743,11 +1743,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         cannot hide: the vw term does not scale with the user's font-size setting or browser zoom the way
         rem does. The rem intercept is the part that still grows when the user zooms, so an expression
         whose intercept is zero or negative leans on vw alone and can fail WCAG 1.4.4 at 200% zoom — the
-        tool prints such an intercept unchanged and says so under the expression.</p>
-      <p>Min size may be 0 (a margin that vanishes on phones). Viewports and the root size must be above 0,
-        and each max must be larger than its min; otherwise the tool refuses and names the pair rather
-        than printing a line with a negative or infinite slope. Nothing is uploaded: there is no server
-        in this file.</p>
+        tool prints such an intercept unchanged and says so under the expression. The intercept is
+        positive exactly when max viewport ÷ min viewport is larger than max size ÷ min size, so the note
+        tells you to widen the viewport range or narrow the size range, and prints the min size that would
+        do it on its own, and the max viewport too when that is under 100,000 px.</p>
+      <p>Min size may be 0 (a margin that vanishes on phones). Its intercept is then always negative, and
+        the note says the value is all vw without asking you to change it. Viewports and the root size
+        must be at least 1 px, every field at most 100,000 px, max size larger than min size, and max
+        viewport at least 1 px larger than min viewport; otherwise the tool refuses and names the field
+        or the pair rather than printing a line with a negative or infinite slope or a number too large
+        to write out. Nothing is uploaded: there is no server in this file.</p>
       <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
@@ -1795,22 +1800,32 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var preview = document.getElementById("preview"), rows = document.getElementById("rows");
   var unit = "rem", full = "";
 
+  // Every field is px. Past 100,000 nothing describes a real screen or size. With viewports at least
+  // 1 px apart the slope is at most 100,000 and the intercept under 1e10, far from 1e21, where
+  // toFixed would switch to exponent form.
+  var LIMIT = 100000;
+  var FIELDS = [["min", "Min size", 0], ["max", "Max size", 0], ["vmin", "Min viewport", 1],
+                ["vmax", "Max viewport", 1], ["root", "Root font size", 1]];   // key, name, lowest allowed
+
   // ---- pure ---------------------------------------------------------------
   function fmt(n) {
+    if (!isFinite(n) || Math.abs(n) >= 1e21) return String(n);   // toFixed gives "1e+21" here; the trim below would cut it
     var s = n.toFixed(4).replace(/\.?0+$/, "");
     return s === "-0" ? "0" : s;
   }
-  function num(el) { var v = parseFloat(el.value); return isFinite(v) ? v : NaN; }
+  function num(el) { return parseFloat(el.value); }   // NaN when empty; Infinity is kept so the bounds can name it
 
   // Returns a string naming the problem, "" when the five numbers make a line,
   // or null when a field is still empty.
   function validate(v) {
     if (isNaN(v.min) || isNaN(v.max) || isNaN(v.vmin) || isNaN(v.vmax) || isNaN(v.root)) return null;
-    if (v.min < 0) return "Min size is " + v.min + " px. A size cannot be negative.";
+    for (var i = 0; i < FIELDS.length; i++) {
+      var x = v[FIELDS[i][0]], name = FIELDS[i][1], low = FIELDS[i][2];
+      if (x > LIMIT) return name + " is " + x + " px. Keep every field at or below " + LIMIT.toLocaleString("en-US") + " px.";
+      if (x < low) return name + " is " + x + " px. " + (low ? "It must be at least " + low + " px." : "A size cannot be negative.");
+    }
     if (v.max <= v.min) return "Max size (" + v.max + " px) must be larger than min size (" + v.min + " px).";
-    if (v.vmin <= 0) return "Min viewport is " + v.vmin + " px. It must be above 0.";
-    if (v.vmax <= v.vmin) return "Max viewport (" + v.vmax + " px) must be larger than min viewport (" + v.vmin + " px).";
-    if (v.root <= 0) return "Root font size is " + v.root + " px. It must be above 0.";
+    if (!(v.vmax - v.vmin >= 1)) return "Max viewport (" + v.vmax + " px) must be at least 1 px larger than min viewport (" + v.vmin + " px).";
     return "";
   }
 
@@ -1824,6 +1839,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var b = fmt(c.intercept / div), m = fmt(c.vw) + "vw";
     var pref = b === "0" ? m : b + u + " + " + m;
     return "clamp(" + fmt(v.min / div) + u + ", " + pref + ", " + fmt(v.max / div) + u + ")";
+  }
+
+  // What lifts a zero or negative intercept above 0 while the other three numbers stay put.
+  // The intercept is positive exactly when max viewport ÷ min viewport > max size ÷ min size (min > 0).
+  function fixes(v) {
+    var vmax = v.vmin * (v.max / v.min), min = v.max * (v.vmin / v.vmax);
+    return "widen the viewport range" + (vmax < LIMIT ? " (max viewport above " + fmt(vmax) + " px)" : "") +
+      " or narrow the size range (min size above " + fmt(min) + " px)";
   }
 
   function at(v, c, vw) {
@@ -1861,8 +1884,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var text = "Fluid between " + v.vmin + " and " + v.vmax + " px, growing " + fmt(c.slope) +
       " px for every px of viewport. Below " + v.vmin + " px it holds " + v.min + " px, above " +
       v.vmax + " px it holds " + v.max + " px.";
-    if (c.intercept <= 0) text += " The intercept is " + (c.intercept < 0 ? "negative" : "zero") +
-      ", so the value is all vw and will not grow when the user zooms. Narrow the viewport range or the size range to fix that.";
+    if (c.intercept <= 0) text += v.min === 0
+      ? " Min size is 0, so the intercept is negative and the value is all vw: right for a gap or margin that" +
+        " vanishes on small screens, wrong for text, which would not grow when the user zooms."
+      : " The intercept is " + (c.intercept < 0 ? "negative" : "zero") + ", so the value is all vw and will not" +
+        " grow when the user zooms. To make it positive, " + fixes(v) + ".";
     note.textContent = text;
 
     rows.textContent = "";

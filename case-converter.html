@@ -1633,9 +1633,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <h1 class="mdv-head-name">Case converter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Paste text. Pick a case. Words are found by spaces, punctuation and
-      the capital letters already in the text, so <code>aerialScrew</code> and <code>aerial_screw</code>
-      come out the same.</p>
+    <p class="mdv-head-line">Paste text. Pick a case. UPPER, lower, Title and Sentence change letters
+      and keep every other character. The identifier cases, camelCase through CONSTANT_CASE, find words
+      at spaces, punctuation and capitals, so <code>aerialScrew</code> and <code>aerial_screw</code>
+      come out the same, and keep only letters and digits.</p>
     <div class="mdv-row">
       <span class="mdv-badge is-ok">Runs on this device</span>
       <span class="mdv-badge no-dot">Works offline</span>
@@ -1682,24 +1683,44 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <span id="errmsg" class="mdv-mono"></span>
     </div>
 
+    <div class="mdv-notice is-warn" id="none" hidden>
+      <span class="mdv-notice-title">Nothing to convert</span>
+      <span id="nonemsg"></span>
+    </div>
+
     <pre class="mdv-out" id="out" hidden></pre>
   </section>
 
   <details class="mdv-method" data-method open>
     <summary>How this works</summary>
     <div class="mdv-method-body">
-      <p>Upper and lower call the engine's <code>toUpperCase</code> and <code>toLowerCase</code> on the
-        whole text and touch nothing else — line breaks, punctuation and spacing survive. The other
-        seven cases first split the text into words: at any run of characters that is not a letter or
-        digit (Unicode-aware, <code>\p{L}</code> and <code>\p{N}</code>), and at the boundary between a
-        lowercase letter and an uppercase one, so <code>aerialScrew</code> becomes two words and
-        <code>HTTPServer</code> becomes <code>HTTP</code> and <code>Server</code>. The words are then
-        rejoined with the separator that case uses and each word is capitalised or not.</p>
-      <p>Title case capitalises every word — there is no list of small words to leave lowercase, because
-        that list differs by style guide. Sentence case lowercases everything, then capitalises the first
-        letter of the text and the first letter after each <code>.</code>, <code>!</code> or <code>?</code>;
-        proper nouns are not recognised and will come out lowercase. With "one result per line" on, each
-        line is converted on its own, so a list stays a list; off, the whole text is one word sequence.</p>
+      <p>UPPER and lower call the engine's <code>toUpperCase</code> and <code>toLowerCase</code> on the
+        whole text. Title and Sentence also change letters where they stand. None of the four touches
+        anything but letters: line breaks, punctuation and spacing come out as they went in.</p>
+      <p>Title finds words, which are runs of letters, digits and combining marks with <code>'</code> or
+        <code>’</code> allowed between two of them, so <code>dog's</code> is one word. It uppercases the
+        first character of each word and lowercases the rest, so <code>NASA</code> becomes
+        <code>Nasa</code>, <code>iPhone</code> becomes <code>Iphone</code> and <code>1st</code> stays
+        <code>1st</code>. There is no list of small words to leave lowercase, because that list differs by
+        style guide.</p>
+      <p>Sentence lowercases everything, then capitalises a letter that opens the text or follows
+        <code>.</code>, <code>!</code> or <code>?</code> and a space. Closing quotes or brackets may sit
+        between the mark and the space, and opening quotes, brackets, <code>¿</code> and <code>¡</code>
+        in front of the letter are skipped. A sentence that opens with a digit gets no capital. An
+        abbreviation such as <code>e.g.</code> ends a sentence too, and proper nouns are not recognised,
+        so they come out lowercase.</p>
+      <p>camelCase, PascalCase, snake_case, kebab-case and CONSTANT_CASE rebuild the text from its words
+        and drop every other character, punctuation included. Words split at any character that is not a
+        letter, digit or combining mark (Unicode-aware, <code>\p{L}</code>, <code>\p{N}</code>,
+        <code>\p{M}</code>) and where a lowercase letter or digit meets a capital, so
+        <code>aerialScrew</code> becomes two words and <code>HTTPServer</code> becomes <code>HTTP</code>
+        and <code>Server</code>. A lone <code>s</code> after capitals stays with them, so
+        <code>userIDs</code> becomes <code>user_ids</code>. An apostrophe between letters is dropped
+        without splitting the word, so <code>don't stop</code> becomes <code>dontStop</code>. Text with no
+        letters or digits leaves nothing to rebuild, and the page says so.</p>
+      <p>With "one result per line" on, Sentence and the identifier cases convert each line on its own, so
+        a list stays a list and every line starts a sentence. Off, the whole text is one word sequence and
+        a line break does not start a sentence. UPPER, lower and Title give the same result either way.</p>
       <p>Casing uses the default locale rules, so Turkish dotless <code>ı</code> and German <code>ß</code>
         follow Unicode's language-neutral mapping (<code>ß</code> uppercases to <code>SS</code>). Input above
         2,000,000 characters is refused rather than attempted, so the tab never hangs. Nothing is uploaded:
@@ -1744,28 +1765,42 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var empty = document.getElementById("empty"), err = document.getElementById("err");
   var errmsg = document.getElementById("errmsg"), size = document.getElementById("size");
   var perLine = document.getElementById("lines");
-  var mode = "upper", full = "";
+  var none = document.getElementById("none"), nonemsg = document.getElementById("nonemsg");
+  var mode = "upper", label = "UPPER", full = "";
 
-  var SPLIT = /[^\p{L}\p{N}]+/u;
-  var CAMEL = /(\p{Ll}|\p{N})(\p{Lu})/gu;
-  var ACRONYM = /(\p{Lu}+)(\p{Lu}\p{Ll})/gu;
+  // Prose cases change letters where they stand. A word is letters, digits and combining marks,
+  // with ' or ’ allowed between two of them, so "dog's" is one word.
+  var PROSE = { upper: true, lower: true, title: true, sentence: true };
+  var WORD = /[\p{L}\p{N}\p{M}]+(?:['’][\p{L}\p{N}\p{M}]+)*/gu;
+  // a sentence starts the text, or follows . ! ? (plus closing quotes or brackets) and a space;
+  // opening quotes and brackets before its first letter are skipped
+  var SENTENCE = /(^\s*|[.!?]['"’”»)\]]*\s+)(['"‘“«(\[¿¡]*)(\p{L})/gu;
+
+  // Identifier cases rebuild the text from words and drop everything else.
+  var SPLIT = /[^\p{L}\p{N}\p{M}]+/u;
+  var CAMEL = /([\p{Ll}\p{N}]\p{M}*)(\p{Lu})/gu;
+  // HTTPServer → HTTP Server, but a lone "s" after the capitals stays with them: IDs, URLs.
+  // One capital plus a lookahead, never \p{Lu}+, so a long run of capitals is not quadratic.
+  var ACRONYM = /(\p{Lu})(?=\p{Lu}(?!s(?!\p{Ll}))\p{Ll})/gu;
+  var APOSTROPHE = /([\p{L}\p{N}\p{M}])['’](?=[\p{L}\p{N}\p{M}])/gu;
 
   function words(s) {
-    return s.replace(CAMEL, "$1 $2").replace(ACRONYM, "$1 $2").split(SPLIT).filter(Boolean);
+    return s.replace(CAMEL, "$1 $2").replace(ACRONYM, "$1 ").replace(APOSTROPHE, "$1").split(SPLIT).filter(Boolean);
   }
-  function cap(w) { return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }
+  function cap(w) {
+    var head = String.fromCodePoint(w.codePointAt(0));
+    return head.toUpperCase() + w.slice(head.length).toLowerCase();
+  }
   function sentence(s) {
-    var low = s.toLowerCase(), first = true;
-    return low.replace(/(^|[.!?]\s+)(\p{L})/gu, function (m, pre, ch) { return pre + ch.toUpperCase(); })
-      .replace(/^\s*\p{L}/u, function (m) { return m.toUpperCase(); });
+    return s.toLowerCase().replace(SENTENCE, function (m, end, open, ch) { return end + open + ch.toUpperCase(); });
   }
 
   function convert(s, how) {
     if (how === "upper") return s.toUpperCase();
     if (how === "lower") return s.toLowerCase();
+    if (how === "title") return s.replace(WORD, cap);
     if (how === "sentence") return sentence(s);
     var w = words(s);
-    if (how === "title") return w.map(cap).join(" ");
     if (how === "camel") return w.map(function (x, i) { return i ? cap(x) : x.toLowerCase(); }).join("");
     if (how === "pascal") return w.map(cap).join("");
     if (how === "snake") return w.join("_").toLowerCase();
@@ -1774,14 +1809,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     return s;
   }
 
+  // UPPER, lower and Title give the same result either way, so only Sentence and the identifier
+  // cases split into lines
   function transform(text) {
-    if (!perLine.checked || mode === "upper" || mode === "lower" || mode === "sentence") return convert(text, mode);
+    if (!perLine.checked || mode === "upper" || mode === "lower" || mode === "title") return convert(text, mode);
     return text.split("\n").map(function (line) { return convert(line, mode); }).join("\n");
   }
 
   function state(which) {
     empty.hidden = which !== "empty";
     err.hidden = which !== "error";
+    none.hidden = which !== "none";
     out.hidden = which !== "result";
   }
 
@@ -1793,6 +1831,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       errmsg.textContent = text.length.toLocaleString() + " characters is past the " +
         LIMIT.toLocaleString() + "-character ceiling this tool will attempt.";
       state("error"); full = ""; return;
+    }
+    if (!PROSE[mode] && !/[\p{L}\p{N}]/u.test(text)) {
+      nonemsg.textContent = "The text has no letters or digits, and " + label + " keeps only those. Nothing is left to convert.";
+      state("none"); full = ""; return;
     }
     full = transform(text);
     out.textContent = full;
@@ -1806,6 +1848,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       Array.prototype.forEach.call(document.querySelectorAll(".mdv-seg button"), function (x) { x.classList.remove("is-on"); });
       b.classList.add("is-on");
       mode = b.dataset.case;
+      label = b.textContent;
       run();
     });
   });
