@@ -304,6 +304,8 @@
 :root {
   color-scheme: light;
   --surface-page: var(--mdv-base);
+  /* the desk under the sheet: html/body take it, .mdv-tool is the sheet in --surface-page */
+  --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
   --surface-panel: var(--mdv-panel);
   --surface-panel-alt: var(--mdv-panel-2);
   --surface-foot: var(--mdv-footer);
@@ -475,6 +477,7 @@
 :root[data-mode="dark"] {
   color-scheme: dark;
   --surface-page: var(--mdv-rail-bg);
+  --surface-desk: var(--mdv-sink, var(--mdv-input-bg));
   --surface-panel: var(--mdv-vstripe-1);
   --surface-panel-alt: var(--mdv-vstripe-2);
   --surface-foot: var(--mdv-rail-active);
@@ -482,7 +485,9 @@
      notte, the page ground, so an inset would vanish. The sink always sinks. */
   --surface-ink: var(--mdv-sink, var(--mdv-input-bg));
   --surface-inset: var(--mdv-sink, var(--mdv-input-bg));
-  --surface-field: var(--mdv-vstripe-2);
+  /* fields take the panel tone, as they do in light: one step above the page, so
+     an input reads as a place to type. vstripe-2 was a hair above notte and vanished. */
+  --surface-field: var(--mdv-vstripe-1);
   --surface-selected: var(--mdv-rail-text);
   --text-on-selected: var(--mdv-rail-bg);
   --surface-accent-wash: color-mix(in srgb, var(--mdv-primary-lift) 14%, var(--mdv-vstripe-1));
@@ -522,13 +527,14 @@
   :root[data-mode="auto"] {
     color-scheme: dark;
     --surface-page: var(--mdv-rail-bg);
+    --surface-desk: var(--mdv-sink, var(--mdv-input-bg));
     --surface-panel: var(--mdv-vstripe-1);
     --surface-panel-alt: var(--mdv-vstripe-2);
     --surface-foot: var(--mdv-rail-active);
     /* deeper than the page, never equal to it — see the note above. */
     --surface-ink: var(--mdv-sink, var(--mdv-input-bg));
     --surface-inset: var(--mdv-sink, var(--mdv-input-bg));
-    --surface-field: var(--mdv-vstripe-2);
+    --surface-field: var(--mdv-vstripe-1);
     --surface-selected: var(--mdv-rail-text);
     --text-on-selected: var(--mdv-rail-bg);
     --surface-accent-wash: color-mix(in srgb, var(--mdv-primary-lift) 14%, var(--mdv-vstripe-1));
@@ -558,6 +564,7 @@
   :root[data-mode="light"] {
     color-scheme: light;
     --surface-page: var(--mdv-base);
+    --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
     --surface-panel: var(--mdv-panel);
     --surface-panel-alt: var(--mdv-panel-2);
     --surface-foot: var(--mdv-footer);
@@ -599,7 +606,7 @@
 [hidden] { display: none !important; }
 html, body {
   margin: 0;
-  background: var(--surface-page);
+  background: var(--surface-desk);
   color: var(--text-body);
   font: var(--type-body);
   -webkit-text-size-adjust: 100%;
@@ -622,9 +629,14 @@ textarea { resize: vertical; }
    overlays. No animation except 0.14s state changes.
    ============================================================ */
 /* ---- shell ---------------------------------------------------- */
+/* the tool is a sheet on the desk: paper colour, hairline sides, full height */
 .mdv-tool {
   max-width: var(--tool-measure);
+  min-height: 100vh;
   margin: 0 auto;
+  background: var(--surface-page);
+  border-left: var(--hair);
+  border-right: var(--hair);
   padding: var(--space-7) var(--tool-gutter) var(--space-8);
   display: flex;
   flex-direction: column;
@@ -662,14 +674,14 @@ textarea { resize: vertical; }
   text-decoration: none;
 }
 .mdv-wordmark:hover { color: var(--text-strong); }
+/* footer — injected by the build: neighbours, the live network count, the studio line */
 .mdv-foot {
   margin-top: var(--space-6);
   border-top: var(--hair);
   padding-top: var(--space-4);
   display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-3);
   font-family: var(--font-mono);
   font-size: var(--size-micro);
   letter-spacing: var(--tracking-mono);
@@ -677,7 +689,21 @@ textarea { resize: vertical; }
 }
 .mdv-foot a { color: var(--text-faint); }
 .mdv-foot a:hover { color: var(--text-accent); }
+.mdv-foot-row { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
 .mdv-foot-spacer { margin-left: auto; }
+/* neighbours read as prose links, not as more mono chrome */
+.mdv-foot-related {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-3);
+  border-bottom: var(--hair);
+}
+.mdv-foot-related a { font-family: var(--font-ui); font-size: var(--size-small); letter-spacing: 0; color: var(--text-body); }
+.mdv-foot-related a:hover { color: var(--text-accent); }
+.mdv-foot-proof { margin: 0; font-family: var(--font-ui); font-size: var(--size-small); letter-spacing: 0; color: var(--text-muted); }
+.mdv-foot-proof b { font-family: var(--font-mono); font-weight: var(--weight-medium); color: var(--state-ok); }
 /* ---- labels ---------------------------------------------------- */
 .mdv-tag {
   font: var(--type-tag);
@@ -1078,7 +1104,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 }
 @media print {
   .mdv-btn, .mdv-drop, .mdv-seg { display: none; }
-  .mdv-tool { max-width: none; }
+  .mdv-tool { max-width: none; min-height: 0; border: 0; }
 }
 /* ================================================================
    SITE NAVIGATION — the lateral drawer
@@ -1466,7 +1492,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-console { border-color: var(--border-strong); }
 }
@@ -1484,6 +1510,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-diff .del { background: color-mix(in srgb, var(--state-bad) 14%, transparent); }
 .mdv-diff .del .m { color: var(--state-bad); }
 </style>
+<link rel="icon" href="data:,">
 <script>
 /* mdv-allow-storage: localStorage "mdv-mode" holds the Dark button's setting ("dark", or
    nothing for light). It never holds anything typed or dropped into the page. */
@@ -1706,10 +1733,30 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </details>
 
   <footer class="mdv-foot">
-    <span>MDV · one job</span>
-    <span>v1 · 2026-09</span>
-    <a class="mdv-foot-spacer" href="./index.html">All tools</a>
-  </footer>
+  <nav class="mdv-foot-related" aria-label="More tools">
+    <span class="mdv-tag">More tools</span>
+    <a href="./unicode-inspector.html">Unicode inspector</a>
+    <a href="./uuid-generator.html">UUID generator</a>
+    <a href="./word-counter.html">Word counter</a>
+  </nav>
+  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <div class="mdv-foot-row">
+    <span>MDV · Martin DaVinci</span>
+    <span>Knowledge has no limits</span>
+    <span>updated 2026-09-14</span>
+    <a class="mdv-foot-spacer" href="./index.html">All 20 tools</a>
+  </div>
+</footer>
+<script>
+(function () {
+  "use strict";
+  var el = document.querySelector("[data-mdv-req]");
+  if (!el || !window.performance || !performance.getEntriesByType) return;
+  function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
+  count();
+  window.addEventListener("load", count);
+})();
+</script>
 
 </main>
 
