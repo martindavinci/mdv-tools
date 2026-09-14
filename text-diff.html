@@ -1662,7 +1662,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     </div>
   </div>
 
-  <div class="mdv-empty" id="empty"><span>paste both sides to compare</span></div>
+  <div class="mdv-empty" id="empty"><span id="empty-msg">paste both sides to compare</span></div>
+  <div class="mdv-notice is-bad" id="err" hidden>
+    <span class="mdv-notice-title">Refused</span>
+    <span id="errmsg" class="mdv-mono"></span>
+  </div>
   <div class="mdv-notice is-ok" id="same" hidden>
     <span class="mdv-notice-title">Identical</span>
     <span>Both sides are the same, line for line.</span>
@@ -1675,12 +1679,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <details class="mdv-method" data-method open>
     <summary>How this works</summary>
     <div class="mdv-method-body">
-      <p>Both sides are split on newlines and compared with a standard longest-common-subsequence
-        table — the same core as <code>diff(1)</code>, walked backwards to emit
-        keep, add and remove rows. Nothing is fuzzy: a line either matches its counterpart
-        exactly (after the options you tick) or it is shown as a removal plus an addition.</p>
-      <p>It is line-level only, so a one-character edit prints the whole line twice. The table
-        is O(n×m), so the tool stops at 4,000 lines per side rather than locking the tab.</p>
+      <p>Both sides are split into lines at each newline. One newline at the very end of a side
+        closes its last line and does not count as an extra empty line; a second one is a blank
+        line. Lines both sides share at the top and bottom are matched first, as GNU
+        <code>diff</code> does, and the lines between go through a standard
+        longest-common-subsequence table — the same core as <code>diff(1)</code>, filled from the
+        end and walked from the start to emit keep, add and remove rows. Nothing is fuzzy: a line
+        either matches its counterpart exactly (after the options you tick) or it is shown as a
+        removal plus an addition.</p>
+      <p>It is line-level only, so a one-character edit prints the whole line twice. The table grows
+        with the product of the two line counts, so the tool refuses more than 4,000 lines per side.
+        At that ceiling, with every line different, the table holds 16 million cells in about 32 MB
+        and fills in roughly a tenth of a second on a laptop; drawing up to 8,000 rows comes on top
+        of that.</p>
       <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
@@ -1716,56 +1727,80 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 <script>
 (function () {
   "use strict";
-  var MAX = 4000;
+  var MAX = 4000;   // lines per side; at the ceiling the table is 4,001² cells of 2 bytes, about 32 MB
   var a = document.getElementById("a"), b = document.getElementById("b");
   var out = document.getElementById("out"), wrap = document.getElementById("wrap");
   var empty = document.getElementById("empty"), same = document.getElementById("same");
+  var emptyMsg = document.getElementById("empty-msg"), err = document.getElementById("err");
+  var errmsg = document.getElementById("errmsg");
+  var ws = document.getElementById("ws"), fold = document.getElementById("case");
 
-  function norm(line) {
-    var s = line;
-    if (document.getElementById("ws").checked) s = s.trim();
-    if (document.getElementById("case").checked) s = s.toLowerCase();
-    return s;
+  // one newline at the very end closes the last line; it does not open an empty one
+  function lines(text) {
+    return (text.charAt(text.length - 1) === "\n" ? text.slice(0, -1) : text).split("\n");
   }
-  function rows(x, y) {
-    var n = x.length, m = y.length;
-    var lcs = [];
-    for (var i = 0; i <= n; i++) lcs.push(new Uint32Array(m + 1));
-    for (i = n - 1; i >= 0; i--) {
-      for (var j = m - 1; j >= 0; j--) {
-        lcs[i][j] = norm(x[i]) === norm(y[j]) ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+  function rows(x, y, trim, lower) {
+    // normalise each line once and number the distinct ones, so the table compares integers
+    var seen = new Map(), n = x.length, m = y.length;
+    function ids(list) {
+      var id = new Int32Array(list.length);
+      for (var k = 0; k < list.length; k++) {
+        var s = list[k];
+        if (trim) s = s.trim();
+        if (lower) s = s.toLowerCase();
+        var v = seen.get(s);
+        if (v === undefined) { v = seen.size; seen.set(s, v); }
+        id[k] = v;
+      }
+      return id;
+    }
+    var xs = ids(x), ys = ids(y);
+    // lines both sides share at the top and bottom are kept as they are; the table covers the middle
+    var lo = 0, hx = n, hy = m;
+    while (lo < n && lo < m && xs[lo] === ys[lo]) lo++;
+    while (hx > lo && hy > lo && xs[hx - 1] === ys[hy - 1]) { hx--; hy--; }
+    // lcs[(i - lo) * w + (j - lo)] is the longest common subsequence of x[i..hx) and y[j..hy);
+    // it never exceeds MAX, so 16 bits hold it
+    var w = hy - lo + 1, lcs = new Uint16Array((hx - lo + 1) * w);
+    for (var i = hx - 1; i >= lo; i--) {
+      for (var j = hy - 1, c = (i - lo) * w + (j - lo); j >= lo; j--, c--) {
+        lcs[c] = xs[i] === ys[j] ? lcs[c + w + 1] + 1 : Math.max(lcs[c + w], lcs[c + 1]);
       }
     }
-    var res = [], p = 0, qq = 0;
-    while (p < n && qq < m) {
-      if (norm(x[p]) === norm(y[qq])) { res.push(["=", x[p], p + 1, qq + 1]); p++; qq++; }
-      else if (lcs[p + 1][qq] >= lcs[p][qq + 1]) { res.push(["-", x[p], p + 1, null]); p++; }
-      else { res.push(["+", y[qq], null, qq + 1]); qq++; }
+    var res = [], p = 0, q = 0;
+    for (; p < lo; p++, q++) res.push(["=", x[p], p + 1, q + 1]);
+    while (p < hx && q < hy) {
+      var cell = (p - lo) * w + (q - lo);
+      if (xs[p] === ys[q]) { res.push(["=", x[p], p + 1, q + 1]); p++; q++; }
+      else if (lcs[cell + w] >= lcs[cell + 1]) { res.push(["-", x[p], p + 1, null]); p++; }
+      else { res.push(["+", y[q], null, q + 1]); q++; }
     }
-    while (p < n) { res.push(["-", x[p], p + 1, null]); p++; }
-    while (qq < m) { res.push(["+", y[qq], null, qq + 1]); qq++; }
+    while (p < hx) { res.push(["-", x[p], p + 1, null]); p++; }
+    while (q < hy) { res.push(["+", y[q], null, q + 1]); q++; }
+    for (; p < n; p++, q++) res.push(["=", x[p], p + 1, q + 1]);
     return res;
   }
   function state(which) {
     empty.hidden = which !== "empty";
+    err.hidden = which !== "error";
     same.hidden = which !== "same";
     wrap.hidden = which !== "diff";
   }
   function run() {
     var ta = a.value, tb = b.value;
-    if (!ta.trim() && !tb.trim()) { state("empty"); mark(0, 0); return; }
-    var x = ta.split("\n"), y = tb.split("\n");
-    if (x.length > MAX || y.length > MAX) {
-      out.innerHTML = "";
-      var d = document.createElement("div");
-      d.innerHTML = '<span class="n"></span><span class="m">!</span><span>' +
-        Math.max(x.length, y.length).toLocaleString() + " lines is past the " + MAX.toLocaleString() +
-        "-line ceiling this tool will attempt. Split the files and compare in parts.</span>";
-      out.appendChild(d);
-      document.getElementById("count").textContent = "refused";
-      state("diff"); mark(0, 0); return;
+    if (!ta.trim() || !tb.trim()) {
+      emptyMsg.textContent = ta.trim() ? "paste the changed text" : tb.trim() ? "paste the original text" : "paste both sides to compare";
+      state("empty"); mark(0, 0); return;
     }
-    var r = rows(x, y), add = 0, del = 0, html = "";
+    var x = lines(ta), y = lines(tb);
+    if (x.length > MAX || y.length > MAX) {
+      var big = x.length > MAX ? x : y;
+      errmsg.textContent = (big === x ? "Original" : "Changed") + " has " + big.length.toLocaleString() +
+        " lines, past the " + MAX.toLocaleString() + "-line ceiling this tool will attempt. Split the text and compare it in parts.";
+      out.innerHTML = "";
+      state("error"); mark(0, 0); return;
+    }
+    var r = rows(x, y, ws.checked, fold.checked), add = 0, del = 0, html = "";
     for (var i = 0; i < r.length; i++) {
       var kind = r[i][0];
       var cls = kind === "+" ? "add" : kind === "-" ? "del" : "";
@@ -1787,11 +1822,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function esc(s) {
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
-  [a, b, document.getElementById("ws"), document.getElementById("case")].forEach(function (el) {
-    el.addEventListener("input", run);
-    el.addEventListener("change", run);
-  });
+  a.addEventListener("input", run);
+  b.addEventListener("input", run);
+  ws.addEventListener("change", run);
+  fold.addEventListener("change", run);
   a.focus();
+  run();   // the browser may have restored both textareas (reload, back/forward)
 })();
 </script>
 </body>

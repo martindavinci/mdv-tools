@@ -1653,6 +1653,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
           <label class="mdv-check"><input type="checkbox" data-flag="m"> <span class="mdv-mono">m</span> multiline</label>
           <label class="mdv-check"><input type="checkbox" data-flag="s"> <span class="mdv-mono">s</span> dot all</label>
           <label class="mdv-check"><input type="checkbox" data-flag="u"> <span class="mdv-mono">u</span> unicode</label>
+          <label class="mdv-check" hidden><input type="checkbox" data-flag="v"> <span class="mdv-mono">v</span> unicode sets</label>
           <label class="mdv-check"><input type="checkbox" data-flag="y"> <span class="mdv-mono">y</span> sticky</label>
           <label class="mdv-check"><input type="checkbox" data-flag="d"> <span class="mdv-mono">d</span> indices</label>
         </div>
@@ -1687,6 +1688,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-notice is-bad" id="err" hidden>
         <span class="mdv-notice-title">Refused</span>
         <span id="errmsg" class="mdv-mono"></span>
+        <p class="mdv-mono" id="errwhere" hidden></p>
+        <pre class="mdv-out is-paper" id="errcaret" hidden></pre>
       </div>
       <pre class="mdv-out is-paper" id="hl" hidden></pre>
     </section>
@@ -1733,20 +1736,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <summary>How this works</summary>
     <div class="mdv-method-body">
       <p>The pattern and the ticked flags go straight into <code>new RegExp(pattern, flags)</code>, so the
-        engine is this browser's own ECMAScript regular expression engine and a pattern behaves here exactly
-        as it does in your code. When the constructor throws, its message is shown as it is. With
-        <code>g</code> on, matches come from <code>String.prototype.matchAll</code>; with it off, from a single
-        <code>exec</code>, which is why only the first match is shown then. The highlight is built from text
-        nodes and <code>mark</code> elements, never from markup, so text that looks like HTML stays text. The
-        replacement is <code>String.prototype.replace</code> with your string, so <code>$1</code>,
-        <code>$&lt;name&gt;</code>, <code>$&amp;</code>, <code>$`</code>, <code>$'</code> and <code>$$</code>
+        engine is this browser's own ECMAScript regular expression engine, and a pattern behaves here as it
+        does in JavaScript in this browser — on the text as this page holds it. A textarea stores every line
+        break as a line feed, so text pasted with Windows CRLF line endings arrives without its carriage
+        returns, and <code>\r</code> or <code>\r\n</code> finds nothing here that it would find in the
+        original file. The <code>v</code> box is shown only when this browser's engine accepts
+        <code>v</code>; the engine refuses <code>u</code> and <code>v</code> together, so ticking one clears
+        the other. When the constructor throws, its message is shown as it is; that message carries no
+        position, so the tokeniser described next is asked for one, and when it sees the problem the
+        character is named and marked with a caret. With <code>g</code> on, matches come from
+        <code>String.prototype.matchAll</code>; with it off, from a single <code>exec</code>, which is why
+        only the first match is shown then. <code>lastIndex</code> is set to 0 before that
+        <code>exec</code> and before the replace, so with <code>y</code> on the first match must start at
+        index 0. The highlight is built from text nodes and <code>mark</code> elements, never from markup,
+        so text that looks like HTML stays text. A zero-width match, such as <code>\b</code>, has no text to
+        mark, so it is drawn as <code>¦</code> — a marker that is not in your text — and the count says how
+        many there are. The replacement is <code>String.prototype.replace</code> with your string, so
+        <code>$1</code>, <code>$&lt;name&gt;</code>, <code>$&amp;</code>, <code>$`</code>, <code>$'</code> and <code>$$</code>
         mean what they mean there, and without <code>g</code> only the first match is replaced. With
         <code>d</code> on, the table adds each group's start and end from <code>match.indices</code>.</p>
       <p>The explanation is a small tokeniser written in this file. It walks the pattern once and names
         anchors, classes, escapes, groups, lookarounds, backreferences, quantifiers and alternation. It
-        reads token by token, so it does not verify that a backreference points at an existing group or
-        that a quantifier is legal in that position — the engine does that, and its error wins. Group
-        numbers in the table come from the same walk.</p>
+        reads token by token, so it does not verify that a backreference points at an existing group, and
+        it does not read <code>v</code>-flag set operations or nested classes. It does name the problems it
+        can see — a class or group never closed, a <code>)</code> with no group open, a lone backslash at
+        the end, a quantifier with nothing before it that can repeat — and when the engine refuses a
+        pattern, the first of those is the position shown. The engine's message still wins: it can be
+        about a problem the tokeniser does not see, and when the tokeniser sees none, no position is given.
+        Group numbers in the table come from the same walk.</p>
       <p>Catastrophic backtracking cannot be detected from outside: a pattern such as <code>(a+)+$</code>
         against a long run of <code>a</code> will freeze this tab as it would freeze any program, and that is
         the engine, not the tool. To keep the usual cases quick, the text is capped at 200,000 characters and
@@ -1797,6 +1814,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var tblcount = document.getElementById("tblcount"), truncwrap = document.getElementById("truncwrap"), trunc = document.getElementById("trunc");
   var repwrap = document.getElementById("repwrap"), repout = document.getElementById("repout"), repnote = document.getElementById("repnote");
   var explainEl = document.getElementById("explain");
+  var errwhere = document.getElementById("errwhere"), errcaret = document.getElementById("errcaret");
+  var uBox = document.querySelector('[data-flag="u"]'), vBox = document.querySelector('[data-flag="v"]');
   var full = "";
 
   var FLAG_TEXT = {
@@ -1805,7 +1824,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     m: "multiline: ^ and $ also match at line breaks",
     s: "dot all: . also matches line breaks",
     u: "unicode: \\p{…} works and characters outside the BMP count as one",
-    y: "sticky: each match must start exactly where the previous one ended",
+    v: "unicode sets: what u does, plus set operations such as [\\p{L}--[a-z]] and strings in a class",
+    y: "sticky: each match must start exactly where the previous one ended, the first at index 0",
     d: "indices: the start and end of every group is recorded"
   };
 
@@ -1822,6 +1842,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       var it = s.matchAll(re), r;
       while (!(r = it.next()).done) { total++; if (list.length < cap) list.push(r.value); }
     } else {
+      re.lastIndex = 0;
       var m = re.exec(s);
       if (m) { total = 1; list.push(m); }
     }
@@ -1834,7 +1855,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       if (m.index < pos) return;
       if (m.index > pos) frag.appendChild(document.createTextNode(s.slice(pos, m.index)));
       var mk = document.createElement("mark");
-      mk.textContent = m[0];
+      if (m[0]) mk.textContent = m[0];
+      else {
+        // a zero-width match has no text to mark: draw a marker that is not part of the text
+        mk.textContent = "¦";
+        mk.className = "mdv-faint";
+        mk.title = "zero-width match at index " + m.index;
+        mk.setAttribute("aria-label", mk.title);
+      }
       frag.appendChild(mk);
       pos = m.index + m[0].length;
     });
@@ -1928,16 +1956,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!closed) what = "a character class that is never closed — a ] is missing";
     else if (!items.length) what = neg ? "any character at all (an empty negated set)" : "nothing at all (an empty set never matches)";
     else what = "one character that is " + (neg ? "not " : "") + listOf(items);
-    return { len: j - i, tok: src.slice(i, j), what: what };
+    return { len: j - i, tok: src.slice(i, j), what: what, closed: closed };
   }
 
   function groupAt(src, i, st) {
     var rest = src.slice(i), m;
     if (rest.indexOf("(?:") === 0) return { len: 3, tok: "(?:", what: "a group that does not capture", close: "end of the group" };
-    if (rest.indexOf("(?=") === 0) return { len: 3, tok: "(?=", what: "lookahead: the text that follows must match this, without consuming it", close: "end of the lookahead" };
-    if (rest.indexOf("(?!") === 0) return { len: 3, tok: "(?!", what: "negative lookahead: the text that follows must not match this", close: "end of the negative lookahead" };
-    if (rest.indexOf("(?<=") === 0) return { len: 4, tok: "(?<=", what: "lookbehind: the text before this point must match this", close: "end of the lookbehind" };
-    if (rest.indexOf("(?<!") === 0) return { len: 4, tok: "(?<!", what: "negative lookbehind: the text before this point must not match this", close: "end of the negative lookbehind" };
+    if (rest.indexOf("(?=") === 0) return { len: 3, tok: "(?=", what: "lookahead: the text that follows must match this, without consuming it", close: "end of the lookahead", look: "ahead" };
+    if (rest.indexOf("(?!") === 0) return { len: 3, tok: "(?!", what: "negative lookahead: the text that follows must not match this", close: "end of the negative lookahead", look: "ahead" };
+    if (rest.indexOf("(?<=") === 0) return { len: 4, tok: "(?<=", what: "lookbehind: the text before this point must match this", close: "end of the lookbehind", look: "behind" };
+    if (rest.indexOf("(?<!") === 0) return { len: 4, tok: "(?<!", what: "negative lookbehind: the text before this point must not match this", close: "end of the negative lookbehind", look: "behind" };
     if ((m = /^\(\?<([^>]*)>/.exec(rest))) {
       st.n++; st.names.push(m[1]);
       return { len: m[0].length, tok: m[0], what: "group " + st.n + ", named " + quote(m[1]) + " (captures)", close: "end of group " + st.n + " " + quote(m[1]) };
@@ -1964,55 +1992,68 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     return { len: m[0].length, tok: m[0], what: what };
   }
 
-  // Returns { rows: [{tok, depth, what}], names: [group names in order, null when unnamed] }
+  // Returns { rows: [{tok, depth, what, at}], names: [group names in order, null when unnamed] }
+  // at is the row's index in the pattern; bad marks a problem the engine will refuse;
+  // fixed marks a row a quantifier cannot follow (an anchor, a group opening, | or a quantifier).
   function explain(src, fl) {
-    var rows = [], stack = [], st = { n: 0, names: [] }, i = 0, depth = 0, lit = "";
-    var ci = fl.indexOf("i") >= 0, cm = fl.indexOf("m") >= 0, cs = fl.indexOf("s") >= 0;
-    function litRow(s) {
+    var rows = [], stack = [], st = { n: 0, names: [] }, i = 0, depth = 0, lit = "", litAt = 0;
+    var ci = fl.indexOf("i") >= 0, cm = fl.indexOf("m") >= 0, cs = fl.indexOf("s") >= 0, uv = /[uv]/.test(fl);
+    function litRow(s, at) {
       var what = /^ +$/.test(s) ? (s.length === 1 ? "a space" : s.length + " spaces") : "the text " + quote(visible(s));
       if (ci && /[a-zA-Z]/.test(s)) what += ", in either case";
-      return { tok: visible(s), depth: depth, what: what };
+      return { tok: visible(s), depth: depth, what: what, at: at };
     }
-    function flush() { if (lit) { rows.push(litRow(lit)); lit = ""; } }
-    function push(tok, what) { flush(); rows.push({ tok: tok, depth: depth, what: what }); }
+    function flush() { if (lit) { rows.push(litRow(lit, litAt)); lit = ""; } }
+    function push(tok, what, at) { flush(); var r = { tok: tok, depth: depth, what: what, at: at }; rows.push(r); return r; }
 
     while (i < src.length) {
       var c = src.charAt(i);
-      if (c === "\\") { var e = escapeAt(src, i, false); push(e.tok, e.what); i += e.len; continue; }
-      if (c === "[") { var k = classAt(src, i); push(k.tok, k.what); i += k.len; continue; }
+      if (c === "\\") {
+        var e = escapeAt(src, i, false), er = push(e.tok, e.what, i);
+        er.bad = e.len === 1; er.fixed = e.tok === "\\b" || e.tok === "\\B";
+        i += e.len; continue;
+      }
+      if (c === "[") { var k = classAt(src, i); push(k.tok, k.what, i).bad = !k.closed; i += k.len; continue; }
       if (c === "(") {
         var g = groupAt(src, i, st);
-        push(g.tok, g.what); stack.push(g.close); depth++; i += g.len; continue;
+        push(g.tok, g.what, i).fixed = true;
+        // a lookbehind never takes a quantifier; a lookahead only without u or v
+        stack.push({ close: g.close, at: i, fixed: g.look === "behind" || (g.look === "ahead" && uv) });
+        depth++; i += g.len; continue;
       }
       if (c === ")") {
         flush();
-        if (stack.length) { depth--; rows.push({ tok: ")", depth: depth, what: stack.pop(), closes: true }); }
-        else rows.push({ tok: ")", depth: depth, what: "a ) with no group open before it" });
+        if (stack.length) { var open = stack.pop(); depth--; rows.push({ tok: ")", depth: depth, what: open.close, closes: true, at: i, fixed: open.fixed }); }
+        else rows.push({ tok: ")", depth: depth, what: "a ) with no group open before it", at: i, bad: true });
         i++; continue;
       }
-      if (c === "|") { push("|", "or: either what comes before this or what comes after it"); i++; continue; }
-      if (c === "^") { push("^", cm ? "the start of a line" : "the start of the text"); i++; continue; }
-      if (c === "$") { push("$", cm ? "the end of a line" : "the end of the text"); i++; continue; }
-      if (c === ".") { push(".", cs ? "any character, including line breaks" : "any character except a line break"); i++; continue; }
+      if (c === "|") { push("|", "or: either what comes before this or what comes after it", i).fixed = true; i++; continue; }
+      if (c === "^") { push("^", cm ? "the start of a line" : "the start of the text", i).fixed = true; i++; continue; }
+      if (c === "$") { push("$", cm ? "the end of a line" : "the end of the text", i).fixed = true; i++; continue; }
+      if (c === ".") { push(".", cs ? "any character, including line breaks" : "any character except a line break", i); i++; continue; }
       if (c === "*" || c === "+" || c === "?" || c === "{") {
-        var q = quantAt(src, i);
+        var q = quantAt(src, i), prev = rows[rows.length - 1];
         if (q) {
           if (lit) {
-            if (lit.length > 1) rows.push(litRow(lit.slice(0, -1)));
+            if (lit.length > 1) rows.push(litRow(lit.slice(0, -1), litAt));
             var last = lit.slice(-1); lit = "";
-            rows.push({ tok: visible(last) + q.tok, depth: depth, what: describeChar(last) + ", " + q.what });
-          } else if (rows.length) {
-            var prev = rows[rows.length - 1];
+            rows.push({ tok: visible(last) + q.tok, depth: depth, what: describeChar(last) + ", " + q.what, at: i - 1, fixed: true, quantified: true });
+          } else if (prev && !prev.fixed) {
             prev.tok += q.tok;
             prev.what += prev.closes ? "; the whole group repeats " + q.what : ", " + q.what;
-          } else rows.push({ tok: q.tok, depth: depth, what: "a quantifier with nothing before it to repeat" });
+            prev.fixed = prev.quantified = true;
+          } else rows.push({ tok: q.tok, depth: depth, at: i, bad: true,
+            what: !prev ? "a quantifier with nothing before it to repeat"
+              : prev.quantified ? "a quantifier straight after another one — to repeat " + quote(prev.tok) + ", wrap it in (?:…) first"
+              : "a quantifier after " + quote(prev.tok) + (prev.closes ? ", " + prev.what : "") + ", which cannot be repeated" });
           i += q.len; continue;
         }
       }
+      if (!lit) litAt = i;
       lit += c; i++;
     }
     flush();
-    while (stack.length) { rows.push({ tok: "", depth: depth, what: "a group is never closed — a ) is missing (" + stack.pop() + ")" }); depth--; }
+    while (stack.length) { var unclosed = stack.pop(); rows.push({ tok: "", depth: depth, what: "a group is never closed — a ) is missing (" + unclosed.close + ")", at: unclosed.at, bad: true }); depth--; }
     return { rows: rows, names: st.names };
   }
 
@@ -2027,6 +2068,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     empty.hidden = which !== "empty";
     notext.hidden = which !== "notext";
     err.hidden = which !== "error";
+    errwhere.hidden = errcaret.hidden = true;
     hl.hidden = which !== "result";
     results.hidden = which === "empty" || which === "error";
     tblwrap.hidden = which !== "result";
@@ -2084,6 +2126,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     trunc.textContent = "showing first " + list.length.toLocaleString() + " of " + found.total.toLocaleString() + " matches";
   }
 
+  // The engine's message names no position; the tokeniser's first problem supplies one, with a caret under it.
+  function showWhere(src, ex) {
+    var bad = ex.rows.filter(function (r) { return r.bad; })[0];
+    errwhere.hidden = false;
+    if (!bad) { errwhere.textContent = "No position: the engine names none, and the tokeniser in this page does not see the problem."; return; }
+    var cps = Array.from(src), at = Array.from(src.slice(0, bad.at)).length;
+    var from = Math.max(0, at - 16), to = Math.min(cps.length, at + 17), head = (from ? "…" : "") + cps.slice(from, at).join("");
+    errwhere.textContent = "The tokeniser in this page points at character " + (at + 1) + ": " + bad.what + ".";
+    errcaret.textContent = head + cps.slice(at, to).join("") + (to < cps.length ? "…" : "") + "\n" + " ".repeat(Array.from(head).length) + "^";
+    errcaret.hidden = false;
+  }
+
   function run() {
     var src = pat.value, fl = flags(), s = input.value;
     size.textContent = s.length.toLocaleString() + " characters";
@@ -2096,7 +2150,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     }
     var re;
     try { re = new RegExp(src, fl); }
-    catch (e) { errmsg.textContent = String(e.message); state("error"); return; }
+    catch (e) { errmsg.textContent = String(e.message); state("error"); showWhere(src, explain(src, fl)); return; }
     if (s.length > LIMIT) {
       errmsg.textContent = s.length.toLocaleString() + " characters is past the " +
         LIMIT.toLocaleString() + "-character ceiling this tool will attempt.";
@@ -2108,14 +2162,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!s.length) { state("notext"); count.textContent = "—"; return; }
 
     var found = findAll(re, s, MAX_LIST);
+    var zero = found.list.filter(function (m) { return m[0] === ""; }).length;
     hl.textContent = "";
     hl.appendChild(highlight(s, found.list));
     if (!found.total) count.textContent = "no match";
     else if (found.total > found.list.length) count.textContent = "showing first " + found.list.length.toLocaleString() + " of " + found.total.toLocaleString() + " matches";
     else if (!re.global) count.textContent = "1 match — first only, g is off";
     else count.textContent = found.total.toLocaleString() + (found.total === 1 ? " match" : " matches");
+    if (zero) count.textContent += " · " + zero.toLocaleString() + " zero-width, marked ¦";
 
     renderTable(found, ex.names, fl.indexOf("d") >= 0);
+    re.lastIndex = 0;
     full = s.replace(re, rep.value);
     repout.textContent = full;
     repnote.textContent = !found.total ? "no match, text unchanged" : re.global ? found.total.toLocaleString() + " replaced" : "first match replaced";
@@ -2123,7 +2180,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   [pat, input, rep].forEach(function (x) { x.addEventListener("input", run); });
-  Array.prototype.forEach.call(boxes, function (b) { b.addEventListener("change", run); });
+  // The v box shows only where the engine accepts v; the engine refuses u and v together.
+  try { new RegExp("", "v"); vBox.parentNode.hidden = false; } catch (e) { vBox.checked = false; }
+  Array.prototype.forEach.call(boxes, function (b) {
+    b.addEventListener("change", function () {
+      if (b === uBox && uBox.checked) vBox.checked = false;
+      if (b === vBox && vBox.checked) uBox.checked = false;
+      run();
+    });
+  });
   document.getElementById("copy").addEventListener("click", function () {
     if (!full) return;
     navigator.clipboard.writeText(full).then(function () {

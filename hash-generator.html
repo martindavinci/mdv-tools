@@ -1692,7 +1692,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         every line break into LF, so text pasted with CRLF endings hashes as LF text, and a lone
         surrogate becomes U+FFFD before hashing. "Trim whitespace" drops leading and trailing
         whitespace before encoding, which changes the digest; "Uppercase hex" only changes the
-        display. SHA-1, SHA-256, SHA-384 and SHA-512 come from <code>crypto.subtle.digest</code>,
+        display, capitalising the hex digits and leaving the CRC-32 <code>0x</code> prefix as it is. SHA-1, SHA-256, SHA-384 and SHA-512 come from <code>crypto.subtle.digest</code>,
         the browser's own code. WebCrypto has no MD5 and no CRC-32, so both are written out in
         plain JavaScript in this page — MD5 is RFC 1321, CRC-32 is the reflected IEEE 802.3
         polynomial used by zip and PNG.</p>
@@ -1709,10 +1709,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         hash files — only the text in the box — and it does no HMAC, no salt, no key derivation and
         no iteration count. Input above 5,000,000 characters is refused rather than attempted, and
         the limit is printed when you hit it. Above 200,000 characters MD5 and CRC-32 run one frame
-        late, after the page has repainted, so the tab keeps answering while they work. If
-        <code>crypto.subtle</code> is not exposed — some browsers withhold it on
-        <code>file://</code> pages — the SHA rows say so and MD5 and CRC-32 still run. Nothing is
-        uploaded: there is no server in this file.</p>
+        late, after the page has repainted, so the tab keeps answering while they work.
+        <code>crypto.subtle</code> needs a secure context: opened over <code>https</code>, from
+        <code>localhost</code> or straight from disk (<code>file://</code>) it works; over plain
+        <code>http</code> from any other host the browser withholds it. When it is missing the SHA and
+        MySQL rows say why; when a digest call fails they print the browser's own error. MD5 and CRC-32
+        run either way. Nothing is uploaded: there is no server in this file.</p>
       <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
@@ -1826,6 +1828,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function sha(alg, b) {
     return crypto.subtle.digest(alg, b).then(function (buf) { return new Uint8Array(buf); });
   }
+  // Why the SHA rows are empty. Browsers expose crypto.subtle only in a secure context:
+  // https, localhost and file:// qualify; plain http from any other host does not.
+  function subtleMissing() {
+    if (window.isSecureContext === false)
+      return "Unavailable — this page is not a secure context (plain http from a host other than localhost), " +
+        "so the browser withholds crypto.subtle. Open it over https or straight from disk (file://).";
+    return "Unavailable — this browser does not expose crypto.subtle" +
+      (window.isSecureContext ? ", although the page is a secure context." : ".");
+  }
 
   /* ---------- the rows ---------- */
   var ROWS = [
@@ -1930,16 +1941,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var sync = function () {
       if (token !== run) return;
       var c = crc32(bytes);
-      put("crc32", cap("0x" + c.toString(16).padStart(8, "0")) + "   " + c);
+      put("crc32", "0x" + cap(c.toString(16).padStart(8, "0")) + "   " + c);
       put("md5", cap(hex(md5(bytes))));
     };
     if (heavy) requestAnimationFrame(function () { setTimeout(sync, 0); });
     else sync();
 
     if (!subtleOk) {
-      SUBTLE_ROWS.forEach(function (id) {
-        note(id, "Unavailable — this browser blocks Web Crypto on file:// pages. Serve the file over http and it works.");
-      });
+      SUBTLE_ROWS.forEach(function (id) { note(id, subtleMissing()); });
       return;
     }
 
@@ -1955,10 +1964,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         put("sha384", cap(hex(d[2])));
         put("sha512", cap(hex(d[3])));
       })
-      .catch(function () {
+      .catch(function (e) {
         if (token !== run) return;
+        var why = e && e.name ? e.name + (e.message ? ": " + e.message : "") : String(e);
         SUBTLE_ROWS.forEach(function (id) {
-          note(id, "Unavailable — this browser blocks Web Crypto on file:// pages. Serve the file over http and it works.");
+          note(id, "Not computed — crypto.subtle.digest failed with " + why.replace(/\.?$/, "."));
         });
       });
   }
