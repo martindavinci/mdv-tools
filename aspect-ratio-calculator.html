@@ -21,9 +21,21 @@
      siena      #9C6B4A  terra di Siena — the second warm voice, links, hover
      verdaccio  #7E8A6A  the green underpainting — the "all clear" state
      ocra       #B99248  yellow ochre — thin rules, the quiet accent
-     oltremare  #3A4F73  ground lapis, the costly one — rarest accent, one per page
+     oltremare  #3A4F73  ground lapis, the costly one — rarest accent, one meaning per page
    Those eight are mapped onto the raw token names below. No token was renamed,
    so every shipped tool inherits the new skin without being edited.
+   NOTTE DI BOTTEGA is the same eight from the ink side, for dark mode: the ground
+   goes to notte, panels to lavagna, and each pigment is lifted so it holds on
+   the dark. It is not a second palette — it lives in the ink-side tokens:
+     notte      #1E1A16  rail-bg     the dark page ground
+     lavagna    #2A2521  vstripe-1   the dark panel
+     gesso      #E4DACB  panel-2     body text on the dark (unchanged)
+     sanguigna  #E08A5F  primary-lift
+     ocra viva  #D3AA5C  gold-bright
+     verdaccio  #93A07C  verdigris-lift (shared, below)
+     azzurro    #7E9BC4  pop-lift    oltremare's ink side
+     siena      #C0987E  siena-lift  (shared, below)
+   plus sink #17140F: insets and the drawer sit below notte, never level with it.
    Every pigment ships a paper side (base/panel/edge/text) AND an ink side
    (dark, rail-N, vstripe, input-bg). Tools use the paper side for the shell and
    the ink side for data panels and dark mode.
@@ -45,18 +57,20 @@
   --mdv-statlabel: #8a7d70;
   --mdv-muted: #6a5d52;
   --mdv-primary: #cb6d4f;
-  --mdv-primary-lift: #d8825f;
+  --mdv-primary-lift: #e08a5f;
   --mdv-primary-ink: #93452b;   /* sanguigna pressed hard — the only tone dark enough to be read as text (5.9:1 on carta, 4.9:1 on gesso) */
   --mdv-gold: #b99248;
-  --mdv-gold-bright: #c9a45b;
+  --mdv-gold-bright: #d3aa5c;
   --mdv-pop: #3a4f73;
+  --mdv-pop-lift: #7e9bc4;
   --mdv-cream: #f4efe6;
   --mdv-stripe-1: #e8e1d4;
   --mdv-stripe-2: #ded5c6;
-  --mdv-vstripe-1: #2c2621;
-  --mdv-vstripe-2: #241f1b;
+  --mdv-vstripe-1: #2a2521;
+  --mdv-vstripe-2: #231f1b;
   --mdv-input-bg: #1e1a16;
-  --mdv-rail-bg: #241f1b;
+  --mdv-sink: #17140f;
+  --mdv-rail-bg: #1e1a16;
   --mdv-rail-text: #f4efe6;
   --mdv-rail-muted: #a99c8e;
   --mdv-rail-edge: #3a332c;
@@ -77,18 +91,20 @@
   --mdv-statlabel: #8a7d70;
   --mdv-muted: #6a5d52;
   --mdv-primary: #cb6d4f;
-  --mdv-primary-lift: #d8825f;
+  --mdv-primary-lift: #e08a5f;
   --mdv-primary-ink: #93452b;   /* sanguigna pressed hard — the only tone dark enough to be read as text (5.9:1 on carta, 4.9:1 on gesso) */
   --mdv-gold: #b99248;
-  --mdv-gold-bright: #c9a45b;
+  --mdv-gold-bright: #d3aa5c;
   --mdv-pop: #3a4f73;
+  --mdv-pop-lift: #7e9bc4;
   --mdv-cream: #f4efe6;
   --mdv-stripe-1: #e8e1d4;
   --mdv-stripe-2: #ded5c6;
-  --mdv-vstripe-1: #2c2621;
-  --mdv-vstripe-2: #241f1b;
+  --mdv-vstripe-1: #2a2521;
+  --mdv-vstripe-2: #231f1b;
   --mdv-input-bg: #1e1a16;
-  --mdv-rail-bg: #241f1b;
+  --mdv-sink: #17140f;
+  --mdv-rail-bg: #1e1a16;
   --mdv-rail-text: #f4efe6;
   --mdv-rail-muted: #a99c8e;
   --mdv-rail-edge: #3a332c;
@@ -275,10 +291,14 @@
   --mdv-rail-active: #2b2b22;
 }
 /* The green that reads as "all clear" in every pigment. Under tavolozza it is
-   verdaccio, the green underpainting — a colour off the palette, not an invention. */
+   verdaccio, the green underpainting — a colour off the palette, not an invention.
+   Terra di Siena, the second warm voice, is shared the same way: every pigment
+   links and hovers in it. The -lift values are the ink side, for dark mode. */
 :root {
   --mdv-verdigris: #7e8a6a;
   --mdv-verdigris-lift: #93a07c;
+  --mdv-siena: #9c6b4a;
+  --mdv-siena-lift: #c0987e;
 }
 /* ---- Semantic aliases: what tools actually reference ---- */
 :root {
@@ -308,11 +328,13 @@
   --text-on-accent: var(--mdv-cream);
   --accent: var(--mdv-primary);
   --accent-quiet: var(--mdv-gold);
-  /* the rarest accent — oltremare, ground lapis. One per page, never two. */
+  /* the rarest accent — oltremare, ground lapis. One MEANING per page, never two:
+     a legend and the data it labels are one meaning (the 123 chip and every digit
+     it colours), a link and an unrelated badge are two. It is the only cool hue on
+     the bench, which is why it can mark one kind of thing and nothing else. */
   --accent-cool: var(--mdv-pop);
-  /* terra di Siena, the second warm voice: links at rest, hover, quiet emphasis.
-     The one literal in this file — siena has no raw pigment token of its own. */
-  --accent-warm: #9c6b4a;
+  /* terra di Siena, the second warm voice: links at rest, hover, quiet emphasis. */
+  --accent-warm: var(--mdv-siena);
   --border-hair: var(--mdv-edge);
   --border-strong: var(--mdv-dark);
   --border-ink: var(--mdv-rail-edge);
@@ -440,14 +462,15 @@
 }
 /* MDV TOOLS — dark mode.
    Not a second palette: it swaps which side of the pigment is showing.
-   Paper aliases point at the pigment's ink side, and the accent steps up to
+   Paper aliases point at the pigment's ink side, and each accent steps up to
    its -lift value so it survives on a dark ground.
-   Under tavolozza the ink side is bistro: ground #241F1B, panel #2C2621,
-   inset and ink panels #1E1A16, body text gesso #E4DACB, accent #D8825F.
-   Two aliases had to move because tavolozza's ink side is tighter than the
-   older pigments' — both are commented where they happen. Nothing else changed.
+   Under tavolozza the ink side is NOTTE DI BOTTEGA: ground notte #1E1A16, panel
+   lavagna #2A2521, insets and the drawer sink #17140F, body text gesso #E4DACB,
+   accent sanguigna #E08A5F, azzurro #7E9BC4, siena #C0987E (see pigments.css).
    [data-mode="dark"] forces it; [data-mode="light"] opts out of the OS preference.
-   A tool with no JS still gets correct dark mode. */
+   A tool with no JS still gets correct dark mode.
+   Pigments without a -lift or sink token fall back to their plain value, which
+   is what they showed before those tokens existed. */
 /* Explicit: [data-mode="dark"] anywhere, whatever the OS says. */
 :root[data-mode="dark"] {
   color-scheme: dark;
@@ -455,10 +478,10 @@
   --surface-panel: var(--mdv-vstripe-1);
   --surface-panel-alt: var(--mdv-vstripe-2);
   --surface-foot: var(--mdv-rail-active);
-  /* deeper than the page, never equal to it: under tavolozza vstripe-2 IS the
-     rail ground, so an ink panel would vanish. The inset ground always sinks. */
-  --surface-ink: var(--mdv-input-bg);
-  --surface-inset: var(--mdv-input-bg);
+  /* deeper than the page, never equal to it: under tavolozza the input-bg IS
+     notte, the page ground, so an inset would vanish. The sink always sinks. */
+  --surface-ink: var(--mdv-sink, var(--mdv-input-bg));
+  --surface-inset: var(--mdv-sink, var(--mdv-input-bg));
   --surface-field: var(--mdv-vstripe-2);
   --surface-selected: var(--mdv-rail-text);
   --text-on-selected: var(--mdv-rail-bg);
@@ -472,10 +495,16 @@
   --text-faint: var(--mdv-rail-muted);
   --text-tag: var(--mdv-rail-muted);
   --text-accent: var(--mdv-primary-lift);
+  /* the lifted accent is a light tone: cream on it is 2.3:1, the ground is 6.5:1 */
+  --text-on-accent: var(--mdv-rail-bg);
   --accent: var(--mdv-primary-lift);
   --accent-quiet: var(--mdv-gold-bright);
+  --accent-cool: var(--mdv-pop-lift, var(--mdv-pop));
+  --accent-warm: var(--mdv-siena-lift);
   --border-hair: var(--mdv-rail-edge);
-  --border-strong: var(--mdv-rail-edge);
+  /* strong must stay stronger than the hairline. rail-edge here made them equal,
+     and every unchecked box, outline button and swatch edge disappeared. */
+  --border-strong: var(--mdv-rail-muted);
   --border-ink: var(--mdv-divider);
   --focus-ring: var(--mdv-primary-lift);
   --state-ok: var(--mdv-verdigris-lift);
@@ -484,12 +513,11 @@
   --stripe-a: var(--mdv-vstripe-1);
   --stripe-b: var(--mdv-vstripe-2);
 }
-/* OS-following, but OPT-IN. Tavolozza is a daylight palette: carta ground,
-   pigment on paper. The reference the skin came from has no dark variant, and
-   flipping the whole catalogue to bistro because the OS is dark makes every
-   page read dark brown instead of parchment. So the OS preference is honoured
-   only for a page that asks, with <html data-mode="auto">. [data-mode="dark"]
-   above still forces it outright. */
+/* OS-following, but OPT-IN. Tavolozza is a daylight palette first: carta ground,
+   pigment on paper. Notte di bottega is its designed night side, but flipping the
+   whole catalogue because the OS is dark is a product decision, not a token one.
+   So the OS preference is honoured only for a page that asks, with
+   <html data-mode="auto">. [data-mode="dark"] above still forces it outright. */
 @media (prefers-color-scheme: dark) {
   :root[data-mode="auto"] {
     color-scheme: dark;
@@ -498,8 +526,8 @@
     --surface-panel-alt: var(--mdv-vstripe-2);
     --surface-foot: var(--mdv-rail-active);
     /* deeper than the page, never equal to it — see the note above. */
-    --surface-ink: var(--mdv-input-bg);
-    --surface-inset: var(--mdv-input-bg);
+    --surface-ink: var(--mdv-sink, var(--mdv-input-bg));
+    --surface-inset: var(--mdv-sink, var(--mdv-input-bg));
     --surface-field: var(--mdv-vstripe-2);
     --surface-selected: var(--mdv-rail-text);
     --text-on-selected: var(--mdv-rail-bg);
@@ -511,10 +539,14 @@
     --text-faint: var(--mdv-rail-muted);
     --text-tag: var(--mdv-rail-muted);
     --text-accent: var(--mdv-primary-lift);
+    --text-on-accent: var(--mdv-rail-bg);
     --accent: var(--mdv-primary-lift);
     --accent-quiet: var(--mdv-gold-bright);
+    --accent-cool: var(--mdv-pop-lift, var(--mdv-pop));
+    --accent-warm: var(--mdv-siena-lift);
     --border-hair: var(--mdv-rail-edge);
-    --border-strong: var(--mdv-rail-edge);
+    /* stronger than the hairline — see the note above. */
+    --border-strong: var(--mdv-rail-muted);
     --border-ink: var(--mdv-divider);
     --focus-ring: var(--mdv-primary-lift);
     --state-ok: var(--mdv-verdigris-lift);
@@ -541,12 +573,14 @@
     --text-muted: var(--mdv-muted);
     --text-faint: var(--mdv-statlabel);
     --text-tag: var(--mdv-labtag);
-    --text-accent: var(--mdv-primary);
+    --text-accent: var(--mdv-primary-ink, var(--mdv-primary));
     --text-on-ink: var(--mdv-cream);
     --text-on-ink-muted: var(--mdv-rail-muted);
     --text-on-accent: var(--mdv-cream);
     --accent: var(--mdv-primary);
     --accent-quiet: var(--mdv-gold);
+    --accent-cool: var(--mdv-pop);
+    --accent-warm: var(--mdv-siena);
     --border-hair: var(--mdv-edge);
     --border-strong: var(--mdv-dark);
     --border-ink: var(--mdv-rail-edge);
@@ -577,6 +611,8 @@ a:hover { color: var(--text-strong); text-decoration-thickness: 2px; }
 h1, h2, h3, h4 { margin: 0; color: var(--text-strong); }
 p { margin: 0; text-wrap: pretty; }
 input, textarea, select, button { font: inherit; color: inherit; }
+/* native controls take the pigment, not the browser's blue */
+input[type="range"], progress { accent-color: var(--accent); }
 textarea { resize: vertical; }
 /* ============================================================
    MDV TOOLS — component layer
@@ -1110,6 +1146,33 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger:hover > span { background: var(--text-on-selected); }
 /* bars are 2px with 5px gaps, so each outer bar travels exactly 7px to the middle.
    It also lifts above the drawer while open, or the X would be buried under the rail. */
+/* Dark — beside the burger, same height. Under the drawer and scrim (60 < 65).
+   Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
+   notte is a carta slab that glares. It sinks instead, drawn in the body text
+   colour. Hover inverts only while unpressed, on the light page. */
+.mdv-mode {
+  position: fixed;
+  top: var(--space-4);
+  left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
+  z-index: 60;
+  height: var(--tap-min);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-mode:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-mode[aria-pressed="true"] { background: var(--surface-ink); border-color: var(--text-body); color: var(--text-body); }
+.mdv-mode[aria-pressed="true"]:hover { background: var(--surface-panel); border-color: var(--text-strong); color: var(--text-strong); }
+.mdv-mode:active { transform: translateY(1px); }
 .mdv-burger[aria-expanded="true"] { background: var(--surface-ink); border-color: var(--border-ink); z-index: 80; }
 .mdv-burger[aria-expanded="true"] > span { background: var(--text-on-ink); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
@@ -1198,12 +1261,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   background: var(--mdv-dark-a);
 }
 .mdv-scrim[hidden] { display: none; }
-/* the burger floats over the top-left corner: keep the first line of the page
-   clear of it whenever the column is not wide enough to sit beside it */
-@media (max-width: 900px) {
+/* the burger and the Dark button float over the top-left corner, together about
+   150px wide: keep the first line of the page clear of them whenever the column
+   (760px, or 1120px wide) is not far enough from the edge to sit beside them */
+@media (max-width: 1080px) {
   .mdv-head { padding-top: calc(var(--tap-min) + var(--space-2)); }
 }
-@media (max-width: 1260px) {
+@media (max-width: 1440px) {
   .mdv-tool.is-wide .mdv-head { padding-top: calc(var(--tap-min) + var(--space-2)); }
 }
 /* ================================================================
@@ -1288,6 +1352,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 }
 .mdv-chip:has(input:checked) .mdv-swatch { background: var(--c); border-color: var(--c); }
 .mdv-chip:has(input:focus-visible) { outline: var(--focus-outline); outline-offset: var(--focus-offset); }
+/* one character, coloured by its class — the same --c its chip carries, so the
+   chips are the legend and the characters are the data. Azzurro on the 123 chip
+   and on every digit is one meaning, which is what the accent-cool rule allows. */
+.mdv-ch.is-lower  { color: var(--text-strong); }
+.mdv-ch.is-upper  { color: var(--accent-warm); }
+.mdv-ch.is-digit  { color: var(--accent-cool); }
+.mdv-ch.is-symbol { color: var(--accent); }
 /* ---- flow: which way the conversion is running ------------------ */
 .mdv-flow {
   display: flex;
@@ -1395,7 +1466,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-drawer, .mdv-scrim, .mdv-mini { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-console { border-color: var(--border-strong); }
 }
@@ -1413,10 +1484,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-diff .del { background: color-mix(in srgb, var(--state-bad) 14%, transparent); }
 .mdv-diff .del .m { color: var(--state-bad); }
 </style>
+<script>
+/* mdv-allow-storage: localStorage "mdv-mode" holds the Dark button's setting ("dark", or
+   nothing for light). It never holds anything typed or dropped into the page. */
+(function () {
+  try { if (localStorage.getItem("mdv-mode") === "dark") document.documentElement.setAttribute("data-mode", "dark"); }
+  catch (e) { /* storage blocked: the page stays light */ }
+})();
+</script>
 </head>
 <body>
 <a class="mdv-skip" href="#main">Skip to the tool</a>
 <button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
+<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
 <nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
   <p class="mdv-drawer-title">All tools</p>
   <div class="mdv-drawer-group">
@@ -1467,6 +1547,21 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
+(function () {
+  "use strict";
+  var btn = document.querySelector(".mdv-mode");
+  if (!btn) return;
+  var root = document.documentElement;
+  function sync() { btn.setAttribute("aria-pressed", root.getAttribute("data-mode") === "dark" ? "true" : "false"); }
+  btn.addEventListener("click", function () {
+    var dark = root.getAttribute("data-mode") !== "dark";
+    if (dark) root.setAttribute("data-mode", "dark"); else root.removeAttribute("data-mode");
+    try { if (dark) localStorage.setItem("mdv-mode", "dark"); else localStorage.removeItem("mdv-mode"); }
+    catch (e) { /* storage blocked: the choice lasts until the page is left */ }
+    sync();
+  });
+  sync();
+})();
 (function () {
   "use strict";
   var burger = document.querySelector(".mdv-burger");
@@ -1576,6 +1671,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         rounding actually changed the number — an aspect ratio of 1.618:1 rarely lands on an
         integer. A zero or negative side has no defined ratio, so the tool refuses instead of
         printing <code>Infinity</code>.</p>
+      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
