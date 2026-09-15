@@ -302,7 +302,9 @@
 }
 /* ---- Semantic aliases: what tools actually reference ---- */
 :root {
-  color-scheme: light;
+  /* "only": a phone browser with auto-dark for web content must not invert the light page;
+     the page has its own dark (tokens/dark.css) */
+  color-scheme: only light;
   --surface-page: var(--mdv-base);
   /* the desk under the sheet: html/body take it, .mdv-tool is the sheet in --surface-page */
   --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
@@ -525,12 +527,13 @@
   --stripe-a: var(--mdv-vstripe-1);
   --stripe-b: var(--mdv-vstripe-2);
 }
-/* OS-following, but OPT-IN. Tavolozza is a daylight palette first: carta ground,
-   pigment on paper. Notte di bottega is its designed night side, but flipping the
-   whole catalogue because the OS is dark is a product decision, not a token one.
-   So the OS preference is honoured only for a page that asks, with
-   <html data-mode="auto">. [data-mode="dark"] above still forces it outright. */
+/* OS-following. The build's head script always sets data-mode — the Dark button's saved
+   choice, or else the system's light or dark — so on a built page the explicit blocks decide.
+   This block covers a page without that script (scripts off, or a page outside the build):
+   no data-mode, or data-mode="auto", follows the system here in CSS alone.
+   [data-mode="dark"] above forces dark and [data-mode="light"] below forces light. */
 @media (prefers-color-scheme: dark) {
+  :root:not([data-mode]),
   :root[data-mode="auto"] {
     color-scheme: dark;
     --surface-page: var(--mdv-rail-bg);
@@ -569,7 +572,7 @@
     --stripe-b: var(--mdv-vstripe-2);
   }
   :root[data-mode="light"] {
-    color-scheme: light;
+    color-scheme: only light;   /* chosen light stays light, even where the browser would auto-darken */
     --surface-page: var(--mdv-base);
     --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
     --surface-panel: var(--mdv-panel);
@@ -1611,12 +1614,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-diff .del .m { color: var(--state-bad); }
 </style>
 <link rel="icon" href="data:,">
+<meta name="color-scheme" content="light dark">
 <script>
-/* mdv-allow-storage: localStorage "mdv-mode" holds the Dark button's setting ("dark", or
-   nothing for light). It never holds anything typed or dropped into the page. */
+/* mdv-allow-storage: localStorage "mdv-mode" holds the Dark button's choice, "dark" or "light",
+   once it has been pressed; until then the page follows the system. It never holds anything
+   typed or dropped into the page. */
 (function () {
-  try { if (localStorage.getItem("mdv-mode") === "dark") document.documentElement.setAttribute("data-mode", "dark"); }
-  catch (e) { /* storage blocked: the page stays light */ }
+  var mode = null;
+  try { mode = localStorage.getItem("mdv-mode"); } catch (e) { /* storage blocked: follow the system */ }
+  if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  document.documentElement.setAttribute("data-mode", mode);
 })();
 </script>
 </head>
@@ -1690,15 +1697,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   "use strict";
   var btn = document.querySelector(".mdv-mode");
   if (!btn) return;
-  var root = document.documentElement;
+  var root = document.documentElement, chosen = false;
+  try { chosen = /^(dark|light)$/.test(localStorage.getItem("mdv-mode") || ""); } catch (e) { /* storage blocked */ }
   function sync() { btn.setAttribute("aria-pressed", root.getAttribute("data-mode") === "dark" ? "true" : "false"); }
+  // pressing it flips what is showing and remembers that as a choice, light included
   btn.addEventListener("click", function () {
-    var dark = root.getAttribute("data-mode") !== "dark";
-    if (dark) root.setAttribute("data-mode", "dark"); else root.removeAttribute("data-mode");
-    try { if (dark) localStorage.setItem("mdv-mode", "dark"); else localStorage.removeItem("mdv-mode"); }
+    var next = root.getAttribute("data-mode") === "dark" ? "light" : "dark";
+    root.setAttribute("data-mode", next);
+    chosen = true;
+    try { localStorage.setItem("mdv-mode", next); }
     catch (e) { /* storage blocked: the choice lasts until the page is left */ }
     sync();
   });
+  // until a choice is made, follow the system when it switches, as phones do at sunset
+  if (window.matchMedia) {
+    var os = matchMedia("(prefers-color-scheme: dark)");
+    var follow = function () { if (!chosen) { root.setAttribute("data-mode", os.matches ? "dark" : "light"); sync(); } };
+    if (os.addEventListener) os.addEventListener("change", follow); else if (os.addListener) os.addListener(follow);
+  }
   sync();
 })();
 (function () {

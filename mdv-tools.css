@@ -294,7 +294,9 @@
 }
 /* ---- Semantic aliases: what tools actually reference ---- */
 :root {
-  color-scheme: light;
+  /* "only": a phone browser with auto-dark for web content must not invert the light page;
+     the page has its own dark (tokens/dark.css) */
+  color-scheme: only light;
   --surface-page: var(--mdv-base);
   /* the desk under the sheet: html/body take it, .mdv-tool is the sheet in --surface-page */
   --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
@@ -517,12 +519,13 @@
   --stripe-a: var(--mdv-vstripe-1);
   --stripe-b: var(--mdv-vstripe-2);
 }
-/* OS-following, but OPT-IN. Tavolozza is a daylight palette first: carta ground,
-   pigment on paper. Notte di bottega is its designed night side, but flipping the
-   whole catalogue because the OS is dark is a product decision, not a token one.
-   So the OS preference is honoured only for a page that asks, with
-   <html data-mode="auto">. [data-mode="dark"] above still forces it outright. */
+/* OS-following. The build's head script always sets data-mode — the Dark button's saved
+   choice, or else the system's light or dark — so on a built page the explicit blocks decide.
+   This block covers a page without that script (scripts off, or a page outside the build):
+   no data-mode, or data-mode="auto", follows the system here in CSS alone.
+   [data-mode="dark"] above forces dark and [data-mode="light"] below forces light. */
 @media (prefers-color-scheme: dark) {
+  :root:not([data-mode]),
   :root[data-mode="auto"] {
     color-scheme: dark;
     --surface-page: var(--mdv-rail-bg);
@@ -561,7 +564,7 @@
     --stripe-b: var(--mdv-vstripe-2);
   }
   :root[data-mode="light"] {
-    color-scheme: light;
+    color-scheme: only light;   /* chosen light stays light, even where the browser would auto-darken */
     --surface-page: var(--mdv-base);
     --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
     --surface-panel: var(--mdv-panel);
