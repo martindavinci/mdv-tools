@@ -19,7 +19,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->22<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->30<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -40,11 +40,16 @@ There are <!-- mdv-count -->22<!-- /mdv-count --> so far, and more on the way.
 - [Hash generator](https://martindavinci.github.io/mdv-tools/hash-generator.html) — CRC-32, MD5, SHA-1, MySQL PASSWORD(), SHA-256, SHA-384 and SHA-512 of one string at once, with the broken ones marked as broken.
 - [JWT decoder](https://martindavinci.github.io/mdv-tools/jwt-decoder.html) — Header, payload and claims with expiry as a date. Decodes only, never verifies.
 - [Password generator](https://martindavinci.github.io/mdv-tools/password-generator.html) — Random passwords from the browser crypto API, with length, character sets, and the entropy in bits.
+- [QR code generator](https://martindavinci.github.io/mdv-tools/qr-code-generator.html) — Turn a link or any text into a QR code with no redirect inside, then download PNG or SVG or copy the image.
+- [URL Encoder & Decoder](https://martindavinci.github.io/mdv-tools/url-encode-decode.html) — Percent-encode or decode text as you type, for a query value, a whole URL or form data, with broken escapes named by position.
 - [UUID generator](https://martindavinci.github.io/mdv-tools/uuid-generator.html) — Version 4 random or version 7 time-ordered, up to 1,000 at a time, from WebCrypto.
+- [Wi-Fi QR code](https://martindavinci.github.io/mdv-tools/wifi-qr-code.html) — Make a QR code that joins your Wi-Fi when scanned, for WPA, WEP or open networks, ready to print.
 
 **Converters**
 
 - [Base converter](https://martindavinci.github.io/mdv-tools/base-converter.html) — Binary, octal, decimal, hex, any base to 36, exact at any size.
+- [JSON and CSV converter](https://martindavinci.github.io/mdv-tools/json-to-csv.html) — Turn a JSON array into CSV or TSV with nested objects as dotted columns, or CSV and TSV back into JSON.
+- [JSON and YAML converter](https://martindavinci.github.io/mdv-tools/json-to-yaml.html) — Convert JSON to YAML or YAML to JSON as you type, with anchors, merge keys and several documents read.
 
 **Developer**
 
@@ -57,14 +62,17 @@ There are <!-- mdv-count -->22<!-- /mdv-count --> so far, and more on the way.
 
 **Images and media**
 
+- [Image compressor](https://martindavinci.github.io/mdv-tools/image-compressor.html) — Compress up to 50 images to WebP or JPEG with a quality slider and a size cap, and compare before and after.
 - [Image resize](https://martindavinci.github.io/mdv-tools/image-resizer.html) — Scale to a width or height and re-encode as PNG, JPEG or WebP.
 
 **Numbers and units**
 
 - [Aspect ratio](https://martindavinci.github.io/mdv-tools/aspect-ratio-calculator.html) — Lock a ratio and solve the missing dimension.
+- [Percentage calculator](https://martindavinci.github.io/mdv-tools/percentage-calculator.html) — Five percentage questions answered as you type: percent of, what percent, change, increase or decrease, and the value before, in exact decimals.
 
 **Time and date**
 
+- [Date difference](https://martindavinci.github.io/mdv-tools/date-difference.html) — The time between two dates in years, months and days, in weeks, total days and weekdays, with the end date and clock times optional.
 - [Discord timestamp](https://martindavinci.github.io/mdv-tools/discord-timestamp.html) — Pick a date, time and zone and copy every Discord timestamp code, or paste a code to read the moment inside it.
 - [Time zone converter](https://martindavinci.github.io/mdv-tools/timezone-converter.html) — Type a time the way people write it, like 10am PT or 15:00 CET, and read it in every common zone with summer time counted.
 - [Timestamp converter](https://martindavinci.github.io/mdv-tools/timestamp-converter.html) — Unix seconds or milliseconds to ISO 8601, local time, ISO week and relative time.
