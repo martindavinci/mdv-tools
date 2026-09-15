@@ -852,6 +852,9 @@ textarea { resize: vertical; }
 .mdv-select {
   height: var(--control-h);
   appearance: none;
+  /* a select centres its one line itself; the field's vertical padding would clip it at 38px */
+  padding-top: 0;
+  padding-bottom: 0;
   padding-right: 34px;
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
   background-position: right 16px center, right 11px center;
@@ -1297,6 +1300,31 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   padding-bottom: var(--space-3);
   border-bottom: var(--hair-ink);
 }
+/* the filter: typed into as soon as the menu opens with a mouse; words narrow the list below */
+.mdv-drawer-filter {
+  display: block;
+  width: 100%;
+  height: var(--control-h);
+  margin: 0 0 var(--space-5);
+  padding: 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--size-small);
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-on-ink);
+  background: transparent;
+  border: var(--hair-ink);
+  border-radius: 0;
+  appearance: none;
+}
+.mdv-drawer-filter::placeholder { color: var(--text-on-ink-muted); opacity: 1; }
+.mdv-drawer-filter:hover { border-color: var(--text-on-ink-muted); }
+.mdv-drawer-filter::-webkit-search-cancel-button { display: none; }
+.mdv-drawer-none {
+  margin: 0 0 var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--size-small);
+  color: var(--text-on-ink-muted);
+}
 .mdv-drawer-group { margin: 0 0 var(--space-6); }
 .mdv-drawer-group:last-child { margin-bottom: 0; }
 .mdv-drawer-label,
@@ -1330,7 +1358,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   transition: color var(--motion-fast), padding var(--motion-fast);
 }
 .mdv-drawer-link:hover,
-.mdv-drawer-link:focus-visible { color: var(--mdv-primary-lift); text-decoration: none; }
+.mdv-drawer-link:focus-visible,
+.mdv-drawer-link.is-next { color: var(--mdv-primary-lift); text-decoration: none; }
+.mdv-drawer-link.is-next::after { content: "  ↵"; font-family: var(--font-mono); color: var(--text-on-ink-muted); }
 /* current page: the bar has to be the lift, not --accent — the plain accent
    is a 2:1 smudge on the ink ground in light mode */
 .mdv-drawer-link.is-here {
@@ -1585,52 +1615,55 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 <button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
 <nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
   <p class="mdv-drawer-title">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">Text<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html">Sort lines</a>
-    <a class="mdv-drawer-link" href="./slugify.html">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./word-counter.html">Word counter</a>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">6</span></span>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html">Hash generator</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html">Password generator</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html">UUID generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
   </div>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">Converters<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./base-converter.html">Base converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">Developer<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./json-formatter.html">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html">Regex tester</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
   </div>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
   </div>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">Images and media<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./image-resizer.html">Image resize</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
   </div>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link is-here" href="./timezone-converter.html" aria-current="page">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html">Timestamp converter</a>
+    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
+    <a class="mdv-drawer-link is-here" href="./timezone-converter.html" aria-current="page" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
   </div>
-  <a class="mdv-drawer-link" href="./index.html">All 21 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 22 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -1655,18 +1688,53 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var drawer = document.getElementById("mdv-drawer");
   var scrim = document.querySelector(".mdv-scrim");
   if (!burger || !drawer || !scrim) return;
+  var q = document.getElementById("mdv-drawer-q"), none = drawer.querySelector(".mdv-drawer-none");
+  var groups = drawer.querySelectorAll(".mdv-drawer-group"), all = drawer.querySelector(".mdv-drawer-all");
+  // with a mouse or trackpad the filter takes the focus, so typing starts at once; on a touch
+  // screen it waits for a tap, so opening the menu does not throw up the keyboard
+  var typeFirst = !!(q && window.matchMedia && window.matchMedia("(pointer: fine)").matches);
   var open = false, timer = 0;
+
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+  // every typed word must appear in the link's name, slug, catalogue line or group;
+  // spaces are ignored inside the match too, so "sha256" finds "SHA-256"
+  function filter() {
+    if (!q) return;
+    var words = fold(q.value).split(" ").filter(Boolean), shown = 0, next = null;
+    Array.prototype.forEach.call(groups, function (g) {
+      var n = 0, count = g.querySelector(".mdv-drawer-count");
+      Array.prototype.forEach.call(g.querySelectorAll(".mdv-drawer-link"), function (a) {
+        var text = a.getAttribute("data-q") || "", tight = text.replace(/ /g, "");
+        var hit = words.every(function (w) { return text.indexOf(w) >= 0 || tight.indexOf(w) >= 0; });
+        a.hidden = !hit;
+        a.classList.remove("is-next");
+        if (hit) { n++; if (!next) next = a; }
+      });
+      g.hidden = !n;
+      if (count) count.textContent = String(n);
+      shown += n;
+    });
+    // the link Enter opens is marked while a filter is typed
+    if (next && words.length) next.classList.add("is-next");
+    if (all) all.hidden = words.length > 0;
+    none.hidden = !words.length || shown > 0;
+  }
+  function visible() {
+    return Array.prototype.filter.call(drawer.querySelectorAll(".mdv-drawer-link"), function (a) { return a.offsetParent !== null; });
+  }
+
   function set(next) {
     if (next === open) return;
     open = next;
     burger.setAttribute("aria-expanded", open ? "true" : "false");
     window.clearTimeout(timer);
     if (open) {
+      if (q) { q.value = ""; filter(); }
       drawer.hidden = false;
       scrim.hidden = false;
       window.requestAnimationFrame(function () {
         drawer.classList.add("is-open");
-        var first = drawer.querySelector(".mdv-drawer-link.is-here") || drawer.querySelector(".mdv-drawer-link");
+        var first = typeFirst ? q : drawer.querySelector(".mdv-drawer-link.is-here") || drawer.querySelector(".mdv-drawer-link");
         if (first) first.focus();
       });
     } else {
@@ -1681,8 +1749,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   drawer.addEventListener("click", function (e) {
     if (e.target && e.target.closest && e.target.closest(".mdv-drawer-link")) set(false);
   });
+  if (q) {
+    q.addEventListener("input", filter);
+    q.addEventListener("keydown", function (e) {
+      var links = visible();
+      if (e.key === "Enter" && links.length) { e.preventDefault(); links[0].click(); }
+      else if (e.key === "ArrowDown" && links.length) { e.preventDefault(); links[0].focus(); }
+    });
+  }
   document.addEventListener("keydown", function (e) {
-    if (open && (e.key === "Escape" || e.key === "Esc")) set(false);
+    if (!open) return;
+    if (e.key === "Escape" || e.key === "Esc") {
+      if (q && q.value && document.activeElement === q) { q.value = ""; filter(); } else set(false);
+      return;
+    }
+    var links = visible(), at = links.indexOf(document.activeElement);
+    if (at >= 0 && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      e.preventDefault();
+      var to = at + (e.key === "ArrowDown" ? 1 : -1);
+      if (to < 0 && q) q.focus(); else if (links[to]) links[to].focus();
+      return;
+    }
+    // a letter typed anywhere in the open menu goes to the filter
+    if (q && document.activeElement !== q && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && e.key !== " ") q.focus();
   });
 })();
 </script>
@@ -1795,13 +1884,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <nav class="mdv-foot-related" aria-label="Also in Time &amp; Date">
     <span class="mdv-tag">Also in Time &amp; Date</span>
     <a href="./timestamp-converter.html">Timestamp converter</a>
+    <a href="./discord-timestamp.html">Discord timestamp</a>
   </nav>
   <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
     <span>Knowledge has no limits</span>
     <span>updated 2026-09-14</span>
-    <a class="mdv-foot-spacer" href="./index.html">All 21 tools</a>
+    <a class="mdv-foot-spacer" href="./index.html">All 22 tools</a>
   </div>
 </footer>
 <script>

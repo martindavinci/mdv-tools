@@ -844,6 +844,9 @@ textarea { resize: vertical; }
 .mdv-select {
   height: var(--control-h);
   appearance: none;
+  /* a select centres its one line itself; the field's vertical padding would clip it at 38px */
+  padding-top: 0;
+  padding-bottom: 0;
   padding-right: 34px;
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
   background-position: right 16px center, right 11px center;
@@ -1289,6 +1292,31 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   padding-bottom: var(--space-3);
   border-bottom: var(--hair-ink);
 }
+/* the filter: typed into as soon as the menu opens with a mouse; words narrow the list below */
+.mdv-drawer-filter {
+  display: block;
+  width: 100%;
+  height: var(--control-h);
+  margin: 0 0 var(--space-5);
+  padding: 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--size-small);
+  letter-spacing: var(--tracking-mono);
+  color: var(--text-on-ink);
+  background: transparent;
+  border: var(--hair-ink);
+  border-radius: 0;
+  appearance: none;
+}
+.mdv-drawer-filter::placeholder { color: var(--text-on-ink-muted); opacity: 1; }
+.mdv-drawer-filter:hover { border-color: var(--text-on-ink-muted); }
+.mdv-drawer-filter::-webkit-search-cancel-button { display: none; }
+.mdv-drawer-none {
+  margin: 0 0 var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--size-small);
+  color: var(--text-on-ink-muted);
+}
 .mdv-drawer-group { margin: 0 0 var(--space-6); }
 .mdv-drawer-group:last-child { margin-bottom: 0; }
 .mdv-drawer-label,
@@ -1322,7 +1350,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   transition: color var(--motion-fast), padding var(--motion-fast);
 }
 .mdv-drawer-link:hover,
-.mdv-drawer-link:focus-visible { color: var(--mdv-primary-lift); text-decoration: none; }
+.mdv-drawer-link:focus-visible,
+.mdv-drawer-link.is-next { color: var(--mdv-primary-lift); text-decoration: none; }
+.mdv-drawer-link.is-next::after { content: "  ↵"; font-family: var(--font-mono); color: var(--text-on-ink-muted); }
 /* current page: the bar has to be the lift, not --accent — the plain accent
    is a 2:1 smudge on the ink ground in light mode */
 .mdv-drawer-link.is-here {
