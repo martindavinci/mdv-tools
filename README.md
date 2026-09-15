@@ -10,8 +10,9 @@ how they work.
 - **Nothing leaves your device.** Once a page has loaded it makes no network requests: no uploads,
   no analytics, no fonts or scripts from anywhere else. The footer of every page counts the requests
   it has made, live, so you can check for yourself.
-- **Nothing is kept.** What you type or drop into a tool is gone when you close the tab. The one
-  thing a page remembers is whether you switched it to dark mode.
+- **Nothing is kept.** What you type or drop into a tool is gone when you close the tab. Pages
+  follow your device's light or dark setting; the one thing a page remembers is the mode you pick
+  with the Dark button.
 - **No account and no ads.**
 - **It works offline.** Every tool is a single HTML file with its styles and code inside it.
 - **Every tool explains itself.** "How this works", at the bottom of each page, says what the tool
