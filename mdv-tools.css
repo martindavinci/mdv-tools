@@ -294,9 +294,11 @@
 }
 /* ---- Semantic aliases: what tools actually reference ---- */
 :root {
-  /* "only": a phone browser with auto-dark for web content must not invert the light page;
-     the page has its own dark (tokens/dark.css) */
-  color-scheme: only light;
+  /* "light dark", not "light": the page has its own dark (tokens/dark.css), and a browser that
+     darkens web content by itself leaves alone a page that says so. "only light" is the newer
+     opt-out, but Brave's night mode and older Chromium browsers such as Mi Browser ignore it and
+     invert the light page anyway. Native control parts stay light in light mode: see base.css. */
+  color-scheme: light dark;
   --surface-page: var(--mdv-base);
   /* the desk under the sheet: html/body take it, .mdv-tool is the sheet in --surface-page */
   --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
@@ -564,7 +566,7 @@
     --stripe-b: var(--mdv-vstripe-2);
   }
   :root[data-mode="light"] {
-    color-scheme: only light;   /* chosen light stays light, even where the browser would auto-darken */
+    color-scheme: light dark;   /* declares the page's own dark, so browser auto-dark leaves chosen light alone — see semantic.css */
     --surface-page: var(--mdv-base);
     --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
     --surface-panel: var(--mdv-panel);
@@ -636,9 +638,57 @@ a:hover { color: var(--text-strong); text-decoration-thickness: 2px; }
 h1, h2, h3, h4 { margin: 0; color: var(--text-strong); }
 p { margin: 0; text-wrap: pretty; }
 input, textarea, select, button { font: inherit; color: inherit; }
+/* Light mode on a dark system. The root keeps "light dark" so browsers do not darken the page
+   themselves (tokens/semantic.css); giving controls their own "light" would invite that darkening
+   one element at a time. So controls inherit the dark scheme for their native parts: the parts that
+   would show dark on a light sheet are turned, and scrollbars take the sheet's tones. Sliders and
+   colour wells below are drawn from tokens, so no scheme reaches them. */
+@media (prefers-color-scheme: dark) {
+  :root[data-mode="light"] { scrollbar-color: var(--border-strong) var(--surface-desk); }
+  :root[data-mode="light"] ::-webkit-calendar-picker-indicator,
+  :root[data-mode="light"] ::-webkit-inner-spin-button { filter: invert(1); }
+}
 /* native controls take the pigment, not the browser's blue */
-input[type="range"], progress { accent-color: var(--accent); }
+progress { accent-color: var(--accent); }
 textarea { resize: vertical; }
+/* Slider: a hairline track and a square accent thumb, the same in every mode and browser. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 24px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: var(--border-strong); }
+input[type="range"]::-moz-range-track { height: 2px; background: var(--border-strong); }
+input[type="range"]::-moz-range-progress { height: 2px; background: var(--accent); }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -7px;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent);
+}
+input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 0; background: var(--accent); }
+/* Colour well: the chosen colour inside a strong hairline, on the field tone. */
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 48px;
+  height: 28px;
+  padding: 3px;
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  background: var(--surface-field);
+  cursor: pointer;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
+input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
 /* ============================================================
    MDV TOOLS — component layer
    Class-based on purpose: a tool is one static file, and the author
