@@ -1038,6 +1038,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   padding: var(--space-6);
   text-align: center;
 }
+/* one line of ground, for a tool whose fields are already the result (the status row takes its place) */
+.mdv-empty.is-slim { min-height: 0; padding: var(--space-2); }
 .mdv-empty > span {
   font-family: var(--font-mono);
   font-size: var(--size-micro);
@@ -1150,6 +1152,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @media (max-width: 640px) {
   .mdv-cols { grid-template-columns: 1fr; }
   .mdv-tool { padding-top: var(--space-5); }
+  /* a phone screen has room for the tool or for its furniture, not both: fields and empty
+     grounds give back height so the result starts on the first screen (fields still resize) */
+  .mdv-textarea { min-height: 120px; }
+  .mdv-empty { min-height: 96px; padding: var(--space-4); }
   :root { --size-h1: 27px; --size-readout: 32px; --control-h: 44px; --control-h-sm: 38px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1871,7 +1877,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
     <span>Knowledge has no limits</span>
-    <span>updated 2026-09-14</span>
+    <span>updated 2026-09-15</span>
   </div>
 </footer>
 <script>

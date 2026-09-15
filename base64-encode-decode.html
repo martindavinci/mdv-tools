@@ -1038,6 +1038,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   padding: var(--space-6);
   text-align: center;
 }
+/* one line of ground, for a tool whose fields are already the result (the status row takes its place) */
+.mdv-empty.is-slim { min-height: 0; padding: var(--space-2); }
 .mdv-empty > span {
   font-family: var(--font-mono);
   font-size: var(--size-micro);
@@ -1150,6 +1152,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @media (max-width: 640px) {
   .mdv-cols { grid-template-columns: 1fr; }
   .mdv-tool { padding-top: var(--space-5); }
+  /* a phone screen has room for the tool or for its furniture, not both: fields and empty
+     grounds give back height so the result starts on the first screen (fields still resize) */
+  .mdv-textarea { min-height: 120px; }
+  .mdv-empty { min-height: 96px; padding: var(--space-4); }
   :root { --size-h1: 27px; --size-readout: 32px; --control-h: 44px; --control-h-sm: 38px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1687,8 +1693,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <h1 class="mdv-head-name">Base64 Encoder &amp; Decoder</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Both fields are live. Type on either side and the other one follows.
-      Text is read as UTF-8 bytes; bad Base64 is stopped, with the wrong character named and where it sits.</p>
+    <p class="mdv-head-line">Type text or Base64 on either side; the other side follows.</p>
     <div class="mdv-row">
       <span class="mdv-badge is-ok">Runs on this device</span>
       <span class="mdv-badge no-dot">Works offline</span>
@@ -1739,7 +1744,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     </div>
 
     <div class="mdv-block">
-      <div class="mdv-empty" id="empty"><span>paste text above</span></div>
+      <div class="mdv-empty is-slim" id="empty"><span>paste text above</span></div>
       <div class="mdv-row is-between" id="status" hidden>
         <p class="mdv-dot-note" id="note" role="status"></p>
         <button class="mdv-mini" id="clear" type="button">Clear both</button>

@@ -1038,6 +1038,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   padding: var(--space-6);
   text-align: center;
 }
+/* one line of ground, for a tool whose fields are already the result (the status row takes its place) */
+.mdv-empty.is-slim { min-height: 0; padding: var(--space-2); }
 .mdv-empty > span {
   font-family: var(--font-mono);
   font-size: var(--size-micro);
@@ -1150,6 +1152,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @media (max-width: 640px) {
   .mdv-cols { grid-template-columns: 1fr; }
   .mdv-tool { padding-top: var(--space-5); }
+  /* a phone screen has room for the tool or for its furniture, not both: fields and empty
+     grounds give back height so the result starts on the first screen (fields still resize) */
+  .mdv-textarea { min-height: 120px; }
+  .mdv-empty { min-height: 96px; padding: var(--space-4); }
   :root { --size-h1: 27px; --size-readout: 32px; --control-h: 44px; --control-h-sm: 38px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1687,8 +1693,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <h1 class="mdv-head-name">Regex tester</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Type a pattern and some text. Matches are highlighted as you type, every group
-      goes in a table, a replacement is previewed, and the pattern is read back to you token by token.</p>
+    <p class="mdv-head-line">Test a JavaScript regex against your text as you type.</p>
     <div class="mdv-row">
       <span class="mdv-badge is-ok">Runs on this device</span>
       <span class="mdv-badge no-dot">Works offline</span>
@@ -1716,9 +1721,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <label class="mdv-label" for="rep">Replace with</label>
         <input class="mdv-input" id="rep" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
           placeholder="$<user> at $<host>">
-        <p class="mdv-hint"><span class="mdv-mono">$1</span>, <span class="mdv-mono">$&lt;name&gt;</span>,
-          <span class="mdv-mono">$&amp;</span> and <span class="mdv-mono">$$</span> work as in
-          <span class="mdv-mono">String.prototype.replace</span>. An empty replacement deletes each match.</p>
       </div>
     </div>
   </section>
@@ -1732,7 +1734,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <textarea class="mdv-textarea" id="in" spellcheck="false" autocomplete="off"
         placeholder="leonardo@vinci.it wrote to ludovico@sforza.mi about the aerial screw"></textarea>
     </section>
-    <section class="mdv-stack is-tight">
+    <section class="mdv-stack is-tight" data-mdv-result>
       <div class="mdv-row is-between">
         <span class="mdv-label" style="margin:0">Matches</span>
         <span class="mdv-hint mdv-mono" style="margin:0" id="count"></span>
@@ -1807,7 +1809,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         mark, so it is drawn as <code>¦</code> — a marker that is not in your text — and the count says how
         many there are. The replacement is <code>String.prototype.replace</code> with your string, so
         <code>$1</code>, <code>$&lt;name&gt;</code>, <code>$&amp;</code>, <code>$`</code>, <code>$'</code> and <code>$$</code>
-        mean what they mean there, and without <code>g</code> only the first match is replaced. With
+        mean what they mean there, an empty replacement deletes each match, and without <code>g</code>
+        only the first match is replaced. With
         <code>d</code> on, the table adds each group's start and end from <code>match.indices</code>.</p>
       <p>The explanation is a small tokeniser written in this file. It walks the pattern once and names
         anchors, classes, escapes, groups, lookarounds, backreferences, quantifiers and alternation. It

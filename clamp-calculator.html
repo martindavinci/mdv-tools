@@ -1038,6 +1038,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   padding: var(--space-6);
   text-align: center;
 }
+/* one line of ground, for a tool whose fields are already the result (the status row takes its place) */
+.mdv-empty.is-slim { min-height: 0; padding: var(--space-2); }
 .mdv-empty > span {
   font-family: var(--font-mono);
   font-size: var(--size-micro);
@@ -1150,6 +1152,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @media (max-width: 640px) {
   .mdv-cols { grid-template-columns: 1fr; }
   .mdv-tool { padding-top: var(--space-5); }
+  /* a phone screen has room for the tool or for its furniture, not both: fields and empty
+     grounds give back height so the result starts on the first screen (fields still resize) */
+  .mdv-textarea { min-height: 120px; }
+  .mdv-empty { min-height: 96px; padding: var(--space-4); }
   :root { --size-h1: 27px; --size-readout: 32px; --control-h: 44px; --control-h-sm: 38px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1687,9 +1693,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <h1 class="mdv-head-name">Clamp calculator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Type the smallest and largest size a value should take, and the viewport
-      widths where each applies. The <code>clamp()</code> expression between them follows, with the
-      numbers that made it.</p>
+    <p class="mdv-head-line">Type two sizes and two viewport widths; get the <code>clamp()</code> between them.</p>
     <div class="mdv-row">
       <span class="mdv-badge is-ok">Runs on this device</span>
       <span class="mdv-badge no-dot">Works offline</span>
@@ -1731,8 +1735,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <label class="mdv-label" for="root">Root font size</label>
         <input class="mdv-input mdv-mono" id="root" type="number" min="1" max="100000" step="any" value="16" aria-label="Root font size in px">
       </div>
-      <p class="mdv-hint">All five fields are in px, at most 100,000; viewports and the root size start at 1.
-        The root font size is only used to turn px into rem; browsers default to 16.</p>
     </div>
   </section>
 
@@ -1755,7 +1757,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <span id="errmsg" class="mdv-mono"></span>
     </div>
 
-    <section class="mdv-panel-ink" id="result">
+    <section class="mdv-panel-ink" id="result" data-mdv-result>
       <span class="mdv-tag">Expression</span>
       <div class="mdv-readout" id="readout" style="margin-top:var(--space-3)"></div>
       <dl class="mdv-kv" style="margin-top:var(--space-4)">
@@ -1784,7 +1786,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <details class="mdv-method" data-method open>
     <summary>How this works</summary>
     <div class="mdv-method-body">
-      <p>The preferred value is the straight line through two points: (min viewport, min size) and
+      <p>All five fields are in px. The root font size is used only to turn px into rem; browsers
+        default it to 16. The preferred value is the straight line through two points: (min viewport, min size) and
         (max viewport, max size). <code>slope = (max − min) ÷ (max viewport − min viewport)</code>,
         <code>intercept = min − slope × min viewport</code>. A viewport width is <code>100vw</code>, so
         the line reads <code>intercept + slope × 100vw</code>, and <code>clamp()</code> pins it to the two
