@@ -294,10 +294,14 @@
 }
 /* ---- Semantic aliases: what tools actually reference ---- */
 :root {
-  /* "light dark", not "light": the page has its own dark (tokens/dark.css), and a browser that
-     darkens web content by itself leaves alone a page that says so. "only light" is the newer
-     opt-out, but Brave's night mode and older Chromium browsers such as Mi Browser ignore it and
-     invert the light page anyway. Native control parts stay light in light mode: see base.css. */
+  /* "light dark", not "light": the page has its own dark (tokens/dark.css). A browser that darkens
+     web content by itself leaves a page alone when the system is dark and the page supports dark;
+     Chrome only darkens on a dark system, so there it never happens. "only light" did not hold in
+     Brave's night mode or Mi Browser on a dark system; "light dark" does.
+     What no declaration can fix: Blink darkens every page when darkening is on and the system is
+     light — "dark" and "only dark" included. Brave's night mode on a light phone does that; the
+     page cannot tell, and the only way out is the browser's own setting.
+     No element sets a plain "light": the browser would darken that element alone. See base.css. */
   color-scheme: light dark;
   --surface-page: var(--mdv-base);
   /* the desk under the sheet: html/body take it, .mdv-tool is the sheet in --surface-page */
@@ -566,7 +570,7 @@
     --stripe-b: var(--mdv-vstripe-2);
   }
   :root[data-mode="light"] {
-    color-scheme: light dark;   /* declares the page's own dark, so browser auto-dark leaves chosen light alone — see semantic.css */
+    color-scheme: light dark;   /* declares the page's own dark, so on this dark system browser auto-dark leaves chosen light alone — see semantic.css */
     --surface-page: var(--mdv-base);
     --surface-desk: color-mix(in srgb, var(--mdv-panel-2) 55%, var(--mdv-edge));
     --surface-panel: var(--mdv-panel);
@@ -639,7 +643,7 @@ h1, h2, h3, h4 { margin: 0; color: var(--text-strong); }
 p { margin: 0; text-wrap: pretty; }
 input, textarea, select, button { font: inherit; color: inherit; }
 /* Light mode on a dark system. The root keeps "light dark" so browsers do not darken the page
-   themselves (tokens/semantic.css); giving controls their own "light" would invite that darkening
+   themselves on a dark system (tokens/semantic.css); giving controls their own "light" would invite that darkening
    one element at a time. So controls inherit the dark scheme for their native parts: the parts that
    would show dark on a light sheet are turned, and scrollbars take the sheet's tones. Sliders and
    colour wells below are drawn from tokens, so no scheme reaches them. */
@@ -1245,7 +1249,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 }
 .mdv-skip:focus { transform: none; }
 .mdv-skip:hover { color: var(--text-strong); }
-/* burger — 44px tap target, three 2px bars, morphs to an X by transform only */
+/* burger — 44px tap target, three 2px bars, morphs to an X by transform only.
+   The bars are borders, not backgrounds: a browser that darkens pages itself turns a light
+   background dark and keeps a light border light, so background bars vanished on the dark page. */
 .mdv-burger {
   position: fixed;
   top: var(--space-4);
@@ -1271,12 +1277,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   width: 20px;
   height: 2px;
   flex: none;
-  background: var(--text-strong);
+  border-top: 2px solid var(--text-strong);
   transform-origin: center;
-  transition: transform var(--motion), background var(--motion-fast);
+  transition: transform var(--motion), border-color var(--motion-fast);
 }
 .mdv-burger:hover { background: var(--surface-selected); border-color: var(--surface-selected); }
-.mdv-burger:hover > span { background: var(--text-on-selected); }
+.mdv-burger:hover > span { border-color: var(--text-on-selected); }
 /* bars are 2px with 5px gaps, so each outer bar travels exactly 7px to the middle.
    It also lifts above the drawer while open, or the X would be buried under the rail. */
 /* Dark — beside the burger, same height. Under the drawer and scrim (60 < 65).
@@ -1307,7 +1313,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-mode[aria-pressed="true"]:hover { background: var(--surface-panel); border-color: var(--text-strong); color: var(--text-strong); }
 .mdv-mode:active { transform: translateY(1px); }
 .mdv-burger[aria-expanded="true"] { background: var(--surface-ink); border-color: var(--border-ink); z-index: 80; }
-.mdv-burger[aria-expanded="true"] > span { background: var(--text-on-ink); }
+.mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
+/* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
+   The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
+:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
