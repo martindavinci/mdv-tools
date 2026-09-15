@@ -1693,7 +1693,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <h1 class="mdv-head-name">Aspect ratio</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Type a ratio and one dimension. The other dimension follows.</p>
+    <p class="mdv-head-line">Type a ratio and one side; get the other.</p>
     <div class="mdv-row">
       <span class="mdv-badge is-ok">Runs on this device</span>
       <span class="mdv-badge no-dot">Works offline</span>
@@ -1726,12 +1726,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
           <label class="mdv-label" for="h">Height</label>
           <input class="mdv-input mdv-mono" id="h" type="number" min="0" step="any" value="1080" aria-label="Height">
         </div>
-        <p class="mdv-hint">Edit either field. The other is recomputed from the ratio.</p>
       </div>
     </div>
   </section>
 
-  <section class="mdv-panel-ink">
+  <section class="mdv-panel-ink" data-mdv-result>
     <span class="mdv-tag">Result</span>
     <div class="mdv-readout" id="readout" style="margin-top:var(--space-3)">1920 × 1080<span class="mdv-unit">px</span></div>
     <dl class="mdv-kv" style="margin-top:var(--space-4)">
@@ -1751,7 +1750,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <details class="mdv-method" data-method open>
     <summary>How this works</summary>
     <div class="mdv-method-body">
-      <p>Height is <code>width × rh / rw</code>; width is <code>height × rw / rh</code>.
+      <p>Edit either width or height; the other is recomputed from the ratio, and a new ratio
+        recomputes whichever side you did not type last.
+        Height is <code>width × rh / rw</code>; width is <code>height × rw / rh</code>.
         The reduced ratio divides both sides by their greatest common divisor, found with
         the Euclidean algorithm on the values scaled to integers.</p>
       <p>Results are rounded to the nearest whole pixel for display and the tool says so when
