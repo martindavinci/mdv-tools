@@ -1714,7 +1714,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <div class="mdv-block">
       <div class="mdv-row">
         <label class="mdv-chip" style="--c:var(--accent-warm)" title="Show hex digests in capitals">
-          <input type="checkbox" id="upper">
+          <input type="checkbox" id="upper" checked>
           <span class="mdv-swatch"></span><span>Uppercase hex</span>
         </label>
         <label class="mdv-chip" style="--c:var(--accent-cool)" title="Drop leading and trailing whitespace before hashing">
@@ -1750,7 +1750,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         the byte count next to the input is that encoding, not the character count. A textarea turns
         every line break into LF, so text pasted with CRLF endings hashes as LF text, and a lone
         surrogate becomes U+FFFD before hashing. "Trim whitespace" drops leading and trailing
-        whitespace before encoding, which changes the digest; "Uppercase hex" only changes the
+        whitespace before encoding, which changes the digest; "Uppercase hex", on by default, only changes the
         display, capitalising the hex digits and leaving the CRC-32 <code>0x</code> prefix as it is. SHA-1, SHA-256, SHA-384 and SHA-512 come from <code>crypto.subtle.digest</code>,
         the browser's own code. WebCrypto has no MD5 and no CRC-32, so both are written out in
         plain JavaScript in this page — MD5 is RFC 1321, CRC-32 is the reflected IEEE 802.3
@@ -1789,7 +1789,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
     <span>Knowledge has no limits</span>
-    <span>updated 2026-09-14</span>
+    <span>updated 2026-09-15</span>
     <a class="mdv-foot-spacer" href="./index.html">All 21 tools</a>
   </div>
 </footer>
