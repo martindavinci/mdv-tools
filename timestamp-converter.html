@@ -1873,15 +1873,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <p>A string shaped like ISO 8601 / RFC 3339 is checked field by field first, because
         <code>Date.parse</code> rolls 2026-02-30 over into March: the year is 4 digits or a sign and 6,
         the month 01–12, the day one that exists in that month, the hour 00–23, minute and second
-        00–59, an offset hour 00–23. 24:00 and a leap second 60 are refused. Then
-        <code>Date.parse</code> reads it under the ECMAScript rules: a date alone is UTC midnight, a
-        date and time with no offset is local time, <code>Z</code> or <code>+02:00</code> is honoured,
+        00–59, an offset hour 00–23. 24:00 and a leap second 60 are refused. A space may stand for
+        the <code>T</code>, as RFC 3339 allows, and the offset may be written <code>+02:00</code>,
+        <code>+0200</code> or <code>+02</code>; the page respells it as <code>+02:00</code> and says so.
+        Then <code>Date.parse</code> reads it under the ECMAScript rules: a date alone is UTC midnight, a
+        date and time with no offset is local time, <code>Z</code> or an offset is honoured,
         and fraction digits beyond milliseconds are dropped. A local time is read back through the local
         getters; when it falls in a gap the clocks skip, or in a stretch they repeat when they go back, a
         notice says so and shows which instant this engine chose. The repeat check tries the offsets in
         force a day before and a day after, so two changes within one day can go unnoticed. Anything
         else also goes to <code>Date.parse</code>, but what it accepts beyond ISO is engine-dependent —
-        "Aug 24 2026" reads in Chrome and Firefox; do not build on it.</p>
+        "Aug 24 2026" reads in Chrome and Firefox; do not build on it. A date written year first with
+        slashes, dots or one-digit fields (<code>2026/08/24</code>), or month first with slashes
+        (<code>08/24/2026</code>), has its month and day checked the same way first, so it cannot roll
+        over either.</p>
       <p>A <code>Date</code> holds milliseconds since 1970-01-01T00:00:00Z as a number, and its range
         is ±8,640,000,000,000,000 ms, about ±273,000 years; beyond that the tool refuses. Unix time has
         no leap seconds: every day is exactly 86,400 s, so the 27 leap seconds inserted since 1972 are
@@ -1963,7 +1968,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var warn = document.getElementById("warn"), warntitle = document.getElementById("warntitle"), warnmsg = document.getElementById("warnmsg");
   var result = document.getElementById("result");
   var NUM = /^([-+]?)(\d+)(?:\.(\d+))?$/;
-  var ISO = /^([+-]?\d{4,6})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/i;
+  // RFC 3339 allows a space for the T; ISO 8601 also writes offsets as +0200 or +02
+  var ISO = /^([+-]?\d{4,6})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(Z|[+-]\d{2}(?::?\d{2})?)?)?$/i;
+  // dates Date.parse reads beyond ISO, checked before it rolls a day over: year first, or US month first
+  var YMD = /^([+-]?\d{4,6})[-\/.](\d{1,2})[-\/.](\d{1,2})(?!\d)/;
+  var MDY = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?!\d)/;
   // Digits before the point pick the unit: [most digits, unit, rule, power of ten to milliseconds].
   var BANDS = [[11, "seconds", "up to 11 digits", 3], [14, "milliseconds", "12 to 14 digits", 0],
     [17, "microseconds", "15 to 17 digits", -3], [20, "nanoseconds", "18 to 20 digits", -6]];
@@ -2018,8 +2027,28 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     within("Minute", m[5], 0, 59);
     if (m[6] === "60") throw { msg: "Second 60 is a leap second, and Unix time has none: write 59." };
     if (m[6] !== undefined) within("Second", m[6], 0, 59);
-    if (m[7] && m[7].length > 1) { within("Offset hour", m[7].slice(1, 3), 0, 23); within("Offset minute", m[7].slice(4), 0, 59); }
+    if (m[7] && m[7].length > 1) {
+      within("Offset hour", m[7].slice(1, 3), 0, 23);
+      if (m[7].length > 3) within("Offset minute", m[7].slice(-2), 0, 59);
+    }
     return f;
+  }
+  // The same instant spelled the way Date.parse reads it everywhere: T, capital Z, offset as ±HH:MM.
+  function isoForParse(s, m) {
+    if (m[4] === undefined) return s;
+    var head = m[1] + "-" + m[2] + "-" + m[3], t = head + "T" + s.slice(head.length + 1);
+    if (m[7] && m[7].length > 1) t = t.slice(0, t.length - m[7].length) + m[7].slice(0, 3) + ":" + (m[7].length > 3 ? m[7].slice(-2) : "00");
+    return t.replace(/z$/, "Z");
+  }
+  // Month and day of a slash, dot or one-digit date, before Date.parse sees it.
+  function looseFields(s) {
+    var m = YMD.exec(s), y, mo, d;
+    if (m) { y = m[1]; mo = m[2]; d = m[3]; }
+    else if ((m = MDY.exec(s)) && Number(m[1]) <= 12) { y = m[3]; mo = m[1]; d = m[2]; }
+    else return;
+    var leap = Number(y) % 4 === 0 && (Number(y) % 100 !== 0 || Number(y) % 400 === 0);
+    within("Month", pad(mo), 1, 12);
+    within("Day", pad(d), 1, Number(mo) === 2 && leap ? 29 : MONTH_DAYS[Number(mo) - 1], " in " + y + "-" + pad(mo));
   }
 
   // Returns { ms, kind, local } or throws with a diagnostic message. local holds the fields of a time given without an offset.
@@ -2027,14 +2056,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var s = raw.trim(), m, ms, kind, local = null;
     if ((m = NUM.exec(s))) return unix(m);
     if ((m = ISO.exec(s))) {
-      var f = isoFields(m);
-      ms = Date.parse(s);
+      var f = isoFields(m), spelled = isoForParse(s, m), how = [];
+      ms = Date.parse(spelled);
       if (isNaN(ms) && Math.abs(f.y) >= 271821)
         throw { range: true, msg: s + " is past what a Date can hold: -271821-04-20T00:00:00Z to +275760-09-13T00:00:00Z." };
+      if (m[4] !== undefined && s.charAt(m[1].length + 6) === " ") how.push("a space for T");
+      if (m[7] && m[7].length > 1 && m[7].length !== 6) how.push("offset " + m[7] + " read as " + spelled.slice(-6));
       if (m[4] === undefined) kind = "ISO 8601 — date only, read as UTC midnight";
       else if (m[7]) kind = "ISO 8601";
       else { kind = "ISO 8601 — no offset given, read as local time in " + deviceZone; local = f; }
+      if (how.length) kind += " (" + how.join(", ") + ")";
     } else {
+      looseFields(s);
       ms = Date.parse(s);
       kind = "Date.parse — engine-dependent format";
     }
