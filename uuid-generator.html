@@ -1038,6 +1038,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   padding: var(--space-6);
   text-align: center;
 }
+/* one line of ground, for a tool whose fields are already the result (the status row takes its place) */
+.mdv-empty.is-slim { min-height: 0; padding: var(--space-2); }
 .mdv-empty > span {
   font-family: var(--font-mono);
   font-size: var(--size-micro);
@@ -1150,6 +1152,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @media (max-width: 640px) {
   .mdv-cols { grid-template-columns: 1fr; }
   .mdv-tool { padding-top: var(--space-5); }
+  /* a phone screen has room for the tool or for its furniture, not both: fields and empty
+     grounds give back height so the result starts on the first screen (fields still resize) */
+  .mdv-textarea { min-height: 120px; }
+  .mdv-empty { min-height: 96px; padding: var(--space-4); }
   :root { --size-h1: 27px; --size-readout: 32px; --control-h: 44px; --control-h-sm: 38px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1687,9 +1693,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <h1 class="mdv-head-name">UUID generator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Generate UUIDs, up to 1,000 at a time. Version 4 is 122 random bits. Version 7
-      begins with the time it was made, so it sorts in creation order — and tells anyone who reads it
-      when it was made.</p>
+    <p class="mdv-head-line">Generate up to 1,000 random v4 or time-ordered v7 UUIDs at a time.</p>
     <div class="mdv-row">
       <span class="mdv-badge is-ok">Runs on this device</span>
       <span class="mdv-badge no-dot">Works offline</span>
@@ -1711,7 +1715,6 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
           <input class="mdv-input mdv-mono" id="count" type="number" min="1" max="1000" step="1" value="10" style="flex:1" aria-label="How many to generate">
           <button class="mdv-btn is-primary" id="gen" type="button">Generate</button>
         </div>
-        <p class="mdv-hint">1 to 1,000 per run. Enter in the count field also generates.</p>
       </div>
     </div>
   </section>
@@ -1723,13 +1726,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <label class="mdv-check"><input type="checkbox" id="commas"> Comma separated</label>
   </div>
 
-  <section class="mdv-panel-ink">
-    <span class="mdv-tag">First of the run</span>
-    <div class="mdv-readout" id="first" style="margin-top:var(--space-3)">—</div>
-    <p class="mdv-hint" id="firstnote" style="color:var(--text-on-ink-muted)">nothing generated yet</p>
-  </section>
-
-  <section class="mdv-stack is-tight">
+  <section class="mdv-stack is-tight" data-mdv-result>
     <div class="mdv-row is-between">
       <span class="mdv-label" style="margin:0">Result</span>
       <div class="mdv-btn-row">
@@ -1747,6 +1744,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     </div>
 
     <pre class="mdv-out" id="out" hidden></pre>
+    <p class="mdv-hint" id="runnote" hidden></p>
   </section>
 
   <details class="mdv-method" data-method open>
@@ -1758,8 +1756,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         version) and the top two bits of byte 8 to <code>10</code> (the RFC 4122 variant), and prints
         the rest as hex in the 8-4-4-4-12 layout. That leaves 122 random bits, the same as the
         built-in. Both paths take their randomness from the operating system's CSPRNG through
-        WebCrypto; <code>Math.random</code> is not used anywhere on this page. The panel above names
-        which path produced the run.</p>
+        WebCrypto; <code>Math.random</code> is not used anywhere on this page. The line under the
+        list names which path produced the run.</p>
       <p>Version 7 follows RFC 9562: the first 48 bits are the Unix time in milliseconds from
         <code>Date.now()</code>, big-endian; then the version nibble <code>0111</code>; then 12 random
         bits; then the variant bits <code>10</code>; then 62 more random bits — 74 random bits in all,
@@ -1767,9 +1765,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         text in the order they were made, down to the millisecond; two made in the same millisecond
         have no defined order between them, and a batch of 1,000 usually lands in one or two
         milliseconds. The same property is a disclosure: anyone holding a v7 UUID can read when it
-        was made, to the millisecond, and the panel above shows exactly that. Use v4 when creation
-        time must stay private.</p>
-      <p>At most 1,000 per run; a larger count is refused with the number, not truncated. Uppercase,
+        was made, to the millisecond, and the line under the list shows exactly that for the first one.
+        Use v4 when creation time must stay private.</p>
+      <p>At most 1,000 per run; a larger count is refused with the number, not truncated. Enter in the
+        count field generates, the same as the button. Uppercase,
         hyphen removal, quotes and commas change only the printed text, not the bits, and can be
         toggled without generating again. There is no version 1 here: it embeds a network card
         address the page has no business reading. Nothing is stored and there is no seed, so a list
@@ -1814,7 +1813,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var countEl = document.getElementById("count"), out = document.getElementById("out");
   var empty = document.getElementById("empty"), err = document.getElementById("err");
   var errmsg = document.getElementById("errmsg"), summary = document.getElementById("summary");
-  var first = document.getElementById("first"), firstnote = document.getElementById("firstnote");
+  var runnote = document.getElementById("runnote");
   var upper = document.getElementById("upper"), nohyphen = document.getElementById("nohyphen");
   var quotes = document.getElementById("quotes"), commas = document.getElementById("commas");
   var version = "4", list = [], api = "", full = "";
@@ -1878,12 +1877,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     err.hidden = which !== "error";
     out.hidden = which !== "result";
     summary.hidden = which !== "result";
+    runnote.hidden = which !== "result";
   }
   function refuse(msg) {
     errmsg.textContent = msg;
     list = []; full = "";
-    first.textContent = "—";
-    firstnote.textContent = "no run to show";
     state("error");
   }
   function render() {
@@ -1891,9 +1889,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var o = opts();
     full = format(list, o);
     out.textContent = full;
-    first.textContent = formatOne(list[0], o);
-    firstnote.textContent = version === "7"
-      ? "v7 · made " + utcMs(timestampOf(list[0])) + " · 74 random bits · crypto.getRandomValues"
+    runnote.textContent = version === "7"
+      ? "v7 · the first was made " + utcMs(timestampOf(list[0])) + ", readable by anyone who holds it · 74 random bits · crypto.getRandomValues"
       : "v4 · 122 random bits · " + api;
     summary.textContent = list.length.toLocaleString() + " × v" + version + (o.commas ? " · comma separated" : " · one per line");
     state("result");
