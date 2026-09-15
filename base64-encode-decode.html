@@ -1978,8 +1978,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     m = /[^A-Za-z0-9+/\-_=\s]/u.exec(body);
     if (m) return { error: named(m[0]) + " at " + where(raw, start + m.index) + " can't appear in Base64, " +
       "which uses A–Z, a–z, 0–9, + and / (or - and _), with = only at the end. Delete it." };
-    m = /=(?=[\s=]*[^\s=])/.exec(body);
-    if (m) return { error: "The “=” at " + where(raw, start + m.index) + " is padding, and padding only goes " +
+    // The first "=" with data after it. One pass from the end finds the last data character, one from
+    // the start the first "="; a lookahead regex rescanned the tail from every "=" and froze the tab
+    // on a long run of "= = =".
+    for (i = body.length - 1; i >= 0 && /[\s=]/.test(body[i]); i--);
+    seen = body.indexOf("=");
+    if (seen >= 0 && seen < i) return { error: "The “=” at " + where(raw, start + seen) + " is padding, and padding only goes " +
       "at the very end. Remove it; if two Base64 strings run together, decode them one at a time." };
 
     var s = body.replace(/\s+/g, ""), data = s.replace(/=+$/, ""), pad = s.length - data.length;
