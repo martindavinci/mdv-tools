@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->36<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->37<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -60,6 +60,7 @@ There are <!-- mdv-count -->36<!-- /mdv-count --> so far, and more on the way.
 - [JSON formatter](https://martindavinci.github.io/mdv-tools/json-formatter.html) — Indent, sort keys, or minify. Reports the exact parse error position.
 - [Regex tester](https://martindavinci.github.io/mdv-tools/regex-tester.html) — Matches highlighted, groups in a table, replace preview and a plain-English reading of the pattern.
 - [Subnet calculator](https://martindavinci.github.io/mdv-tools/subnet-calculator.html) — Give an IPv4 address with a prefix or a netmask and read the network, broadcast, host range, wildcard and what kind of address it is.
+- [XML formatter](https://martindavinci.github.io/mdv-tools/xml-formatter.html) — Paste XML and get it indented or minified, with the first error named by line and column.
 
 **CSS and design**
 
