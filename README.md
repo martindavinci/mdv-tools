@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->39<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->40<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -70,6 +70,7 @@ There are <!-- mdv-count -->39<!-- /mdv-count --> so far, and more on the way.
 
 **Images and media**
 
+- [EXIF viewer and remover](https://martindavinci.github.io/mdv-tools/exif-remover.html) — See what a photo carries — camera, serial number, time, place — and download it without, pixels untouched.
 - [Image compressor](https://martindavinci.github.io/mdv-tools/image-compressor.html) — Compress up to 50 images to WebP or JPEG with a quality slider and a size cap, and compare before and after.
 - [Image resize](https://martindavinci.github.io/mdv-tools/image-resizer.html) — Scale to a width or height and re-encode as PNG, JPEG or WebP.
 
