@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->45<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->46<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -72,6 +72,7 @@ There are <!-- mdv-count -->45<!-- /mdv-count --> so far, and more on the way.
 
 - [Circle crop](https://martindavinci.github.io/mdv-tools/circle-crop.html) — Round off a picture for an avatar — circle, rounded square or plain square — with transparent corners or a colour behind.
 - [EXIF viewer and remover](https://martindavinci.github.io/mdv-tools/exif-remover.html) — See what a photo carries — camera, serial number, time, place — and download it without, pixels untouched.
+- [Favicon maker](https://martindavinci.github.io/mdv-tools/favicon-from-image.html) — Turn a picture into a real multi-size favicon.ico and the PNGs phones ask for, with the HTML to paste.
 - [Image compressor](https://martindavinci.github.io/mdv-tools/image-compressor.html) — Compress up to 50 images to WebP or JPEG with a quality slider and a size cap, and compare before and after.
 - [Image cropper](https://martindavinci.github.io/mdv-tools/image-cropper.html) — Drag a selection or type the pixels, hold a ratio, and download the crop.
 - [Image resize](https://martindavinci.github.io/mdv-tools/image-resizer.html) — Scale to a width or height and re-encode as PNG, JPEG or WebP.
