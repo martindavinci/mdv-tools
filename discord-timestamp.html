@@ -2279,7 +2279,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   var start = Date.now();
   setField(start - start % 60000);
-  when.focus();
+  when.focus({ preventScroll: true });
   run();
 })();
 </script>

@@ -2244,7 +2244,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   src.addEventListener("input", compute);
   upper.addEventListener("change", compute);
   trim.addEventListener("change", compute);
-  src.focus();
+  src.focus({ preventScroll: true });
   compute();
 })();
 </script>

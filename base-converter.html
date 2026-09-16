@@ -2170,7 +2170,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       mode = b.dataset.base;
       customIn.hidden = mode !== "custom";
       run();
-      if (mode === "custom") customIn.focus();
+      if (mode === "custom") customIn.focus({ preventScroll: true });
     });
   });
   document.addEventListener("click", function (e) {
@@ -2182,7 +2182,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       setTimeout(function () { c.hidden = true; }, 1400);
     });
   });
-  input.focus();
+  input.focus({ preventScroll: true });
   run();
 })();
 </script>

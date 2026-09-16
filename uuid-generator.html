@@ -2108,7 +2108,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       setTimeout(function () { c.hidden = true; }, 1400);
     });
   });
-  countEl.focus();
+  countEl.focus({ preventScroll: true });
   run();
 })();
 </script>

@@ -2389,7 +2389,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   });
   buildZones();
   paintZone();
-  input.focus();
+  input.focus({ preventScroll: true });
   run();
 })();
 </script>

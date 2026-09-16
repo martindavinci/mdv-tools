@@ -2142,10 +2142,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   wireCopy(copyJson, json);
   wireCopy(copyYaml, yml);
-  $("clear").addEventListener("click", function () { write(json, ""); write(yml, ""); flags(null); direction("toYaml"); counts(); rest(); json.focus(); });
+  $("clear").addEventListener("click", function () { write(json, ""); write(yml, ""); flags(null); direction("toYaml"); counts(); rest(); json.focus({ preventScroll: true }); });
 
   if (yml.value && !json.value) { direction("toJson"); toJsonNow(); } else toYamlNow();
-  json.focus();
+  json.focus({ preventScroll: true });
 })();
 </script>
 </body>

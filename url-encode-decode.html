@@ -2169,12 +2169,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   wireCopy(copyEnc, enc);
   clearBtn.addEventListener("click", function () {
     write(txt, ""); write(enc, "");
-    flags(null); last = "encode"; direction("encode"); counts(); rest(); txt.focus();
+    flags(null); last = "encode"; direction("encode"); counts(); rest(); txt.focus({ preventScroll: true });
   });
 
   // the browser may have restored either field (reload, back/forward)
   if (enc.value && !txt.value) { last = "decode"; direction("decode"); decodeNow(); } else encodeNow();
-  txt.focus();
+  txt.focus({ preventScroll: true });
 })();
 </script>
 </body>

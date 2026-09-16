@@ -2121,7 +2121,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   });
 
   if (!from.value) from.value = today();
-  to.focus();
+  to.focus({ preventScroll: true });
   run();
 })();
 </script>

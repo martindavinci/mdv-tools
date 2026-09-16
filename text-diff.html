@@ -2070,7 +2070,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   b.addEventListener("input", run);
   ws.addEventListener("change", run);
   fold.addEventListener("change", run);
-  a.focus();
+  a.focus({ preventScroll: true });
   run();   // the browser may have restored both textareas (reload, back/forward)
 })();
 </script>
