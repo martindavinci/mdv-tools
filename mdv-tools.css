@@ -968,6 +968,10 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
   background: var(--surface-selected);
   color: var(--text-on-selected);
 }
+/* Nine positions read better as a three-by-three block than as a row of nine:
+   the control has the shape of the thing it sets. Same buttons, same states. */
+.mdv-seg.is-grid { display: inline-grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mdv-seg.is-grid > button:last-child { border-right: var(--hair); }
 /* ---- buttons ---------------------------------------------------- */
 .mdv-btn {
   appearance: none;

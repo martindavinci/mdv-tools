@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->44<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->45<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -77,6 +77,7 @@ There are <!-- mdv-count -->44<!-- /mdv-count --> so far, and more on the way.
 - [Image resize](https://martindavinci.github.io/mdv-tools/image-resizer.html) — Scale to a width or height and re-encode as PNG, JPEG or WebP.
 - [Redact an image](https://martindavinci.github.io/mdv-tools/pixelate-image.html) — Draw boxes over what should not be shared and export with them blacked out, pixelated or blurred.
 - [Social media cropper](https://martindavinci.github.io/mdv-tools/social-cropper.html) — Crop to the exact pixel size a post, story, header or link preview wants, and see whether your picture is big enough.
+- [Watermark](https://martindavinci.github.io/mdv-tools/watermark.html) — Sign a picture with text or a logo, in a corner or tiled across it, at the opacity and angle you choose.
 
 **Numbers and units**
 
