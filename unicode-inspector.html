@@ -1578,6 +1578,60 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-dot-note.is-warn::before { background: var(--state-warn); }
 .mdv-dot-note.is-bad { color: var(--state-bad); }
 .mdv-dot-note.is-bad::before { background: var(--state-bad); }
+/* ---- the stage: an image with a dragged selection over it -------- */
+/* Used by the croppers and the redaction page. The stage holds the image at
+   whatever size fits; every marquee and handle is positioned in per-cent of
+   the stage, so the page never has to know the display scale. The area outside
+   the selection is tinted by a spread shadow with no blur — a flat wash, the
+   only one in the system, because four overlay boxes per marquee is worse. */
+.mdv-stage {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border: var(--hair);
+  background: var(--surface-inset);
+  /* clips the marquee's wash to the image; handles at the very edge are clipped with it */
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  line-height: 0;
+}
+.mdv-stage > img {
+  display: block;
+  max-width: 100%;
+  max-height: 60vh;
+  pointer-events: none;
+}
+.mdv-marquee {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--surface-page);
+  outline: 1px solid var(--text-strong);
+  box-shadow: 0 0 0 9999px color-mix(in srgb, var(--mdv-dark) 55%, transparent);
+  cursor: move;
+}
+.mdv-marquee.is-flat { box-shadow: none; }
+.mdv-marquee.is-bad { outline-color: var(--state-bad); }
+.mdv-handle {
+  --grip: 14px;
+  --grip-out: calc(var(--grip) / -2);
+  --grip-mid: calc(50% - var(--grip) / 2);
+  position: absolute;
+  width: var(--grip);
+  height: var(--grip);
+  background: var(--surface-page);
+  border: 1px solid var(--text-strong);
+}
+.mdv-handle[data-grip="nw"] { top: var(--grip-out); left: var(--grip-out); cursor: nwse-resize; }
+.mdv-handle[data-grip="n"] { top: var(--grip-out); left: var(--grip-mid); cursor: ns-resize; }
+.mdv-handle[data-grip="ne"] { top: var(--grip-out); right: var(--grip-out); cursor: nesw-resize; }
+.mdv-handle[data-grip="e"] { top: var(--grip-mid); right: var(--grip-out); cursor: ew-resize; }
+.mdv-handle[data-grip="se"] { bottom: var(--grip-out); right: var(--grip-out); cursor: nwse-resize; }
+.mdv-handle[data-grip="s"] { bottom: var(--grip-out); left: var(--grip-mid); cursor: ns-resize; }
+.mdv-handle[data-grip="sw"] { bottom: var(--grip-out); left: var(--grip-out); cursor: nesw-resize; }
+.mdv-handle[data-grip="w"] { top: var(--grip-mid); left: var(--grip-out); cursor: ew-resize; }
+/* a finger needs more than a mouse; the offsets follow the variable */
+@media (pointer: coarse) { .mdv-handle { --grip: 22px; } }
 /* ---- the ocra tick above a footer ------------------------------- */
 /* .mdv-rule further up is the hairline <hr>. The serif skin's footer mark
    carries the same name in the shared contract, so it is scoped off <hr>:
@@ -1739,9 +1793,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">3</span></span>
+    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">4</span></span>
     <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
     <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
     <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
   </div>
   <div class="mdv-drawer-group">
@@ -1758,7 +1813,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
     <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 40 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 41 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2020,7 +2075,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <span>MDV · Martin DaVinci</span>
     <span>Knowledge has no limits</span>
     <span>updated 2026-09-16</span>
-    <a class="mdv-foot-spacer" href="./index.html">All 40 tools</a>
+    <a class="mdv-foot-spacer" href="./index.html">All 41 tools</a>
   </div>
 </footer>
 <script>
