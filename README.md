@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->30<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->31<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -73,6 +73,7 @@ There are <!-- mdv-count -->30<!-- /mdv-count --> so far, and more on the way.
 
 **Time and date**
 
+- [Age calculator](https://martindavinci.github.io/mdv-tools/age-calculator.html) — Give a date of birth and read the exact age in years, months and days, with the weekday of the birth and the next birthday.
 - [Date difference](https://martindavinci.github.io/mdv-tools/date-difference.html) — The time between two dates in years, months and days, in weeks, total days and weekdays, with the end date and clock times optional.
 - [Discord timestamp](https://martindavinci.github.io/mdv-tools/discord-timestamp.html) — Pick a date, time and zone and copy every Discord timestamp code, or paste a code to read the moment inside it.
 - [Time zone converter](https://martindavinci.github.io/mdv-tools/timezone-converter.html) — Type a time the way people write it, like 10am PT or 15:00 CET, and read it in every common zone with summer time counted.
