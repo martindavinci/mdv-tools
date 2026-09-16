@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->33<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->34<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -54,6 +54,7 @@ There are <!-- mdv-count -->33<!-- /mdv-count --> so far, and more on the way.
 
 **Developer**
 
+- [Chmod calculator](https://martindavinci.github.io/mdv-tools/chmod-calculator.html) — Tick the permission bits or type the octal mode, and read the rwx string, the ls listing and what each class may do.
 - [Cron expression](https://martindavinci.github.io/mdv-tools/cron-generator.html) — Read a crontab line in plain English, field by field, with the next runs on this device's clock.
 - [JSON formatter](https://martindavinci.github.io/mdv-tools/json-formatter.html) — Indent, sort keys, or minify. Reports the exact parse error position.
 - [Regex tester](https://martindavinci.github.io/mdv-tools/regex-tester.html) — Matches highlighted, groups in a table, replace preview and a plain-English reading of the pattern.
