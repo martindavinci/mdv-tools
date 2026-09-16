@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->50<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->51<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -81,6 +81,7 @@ There are <!-- mdv-count -->50<!-- /mdv-count --> so far, and more on the way.
 - [EXIF viewer and remover](https://martindavinci.github.io/mdv-tools/exif-remover.html) — See what a photo carries — camera, serial number, time, place — and download it without, pixels untouched.
 - [Favicon maker](https://martindavinci.github.io/mdv-tools/favicon-from-image.html) — Turn a picture into a real multi-size favicon.ico and the PNGs phones ask for, with the HTML to paste.
 - [Image compressor](https://martindavinci.github.io/mdv-tools/image-compressor.html) — Compress up to 50 images to WebP or JPEG with a quality slider and a size cap, and compare before and after.
+- [Image converter](https://martindavinci.github.io/mdv-tools/image-converter.html) — Convert a picture to PNG, JPEG or WebP, with the size change and what the conversion costs.
 - [Image cropper](https://martindavinci.github.io/mdv-tools/image-cropper.html) — Drag a selection or type the pixels, hold a ratio, and download the crop.
 - [Image resize](https://martindavinci.github.io/mdv-tools/image-resizer.html) — Scale to a width or height and re-encode as PNG, JPEG or WebP.
 - [Redact an image](https://martindavinci.github.io/mdv-tools/pixelate-image.html) — Draw boxes over what should not be shared and export with them blacked out, pixelated or blurred.
