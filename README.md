@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->32<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->33<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -61,6 +61,7 @@ There are <!-- mdv-count -->32<!-- /mdv-count --> so far, and more on the way.
 **CSS and design**
 
 - [Clamp calculator](https://martindavinci.github.io/mdv-tools/clamp-calculator.html) — clamp() for fluid type and spacing, in rem or px, with slope, intercept and a preview at six widths.
+- [PX to REM](https://martindavinci.github.io/mdv-tools/px-to-rem.html) — Convert a length between px, rem, em and pt against your own root size, with a ready scale of the common sizes.
 
 **Images and media**
 
