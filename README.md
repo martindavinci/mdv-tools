@@ -20,13 +20,14 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->49<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->50<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
 **Text**
 
 - [Case converter](https://martindavinci.github.io/mdv-tools/case-converter.html) — Upper, lower, title, sentence, camel, snake, kebab, constant. Unicode-aware.
+- [Find and replace](https://martindavinci.github.io/mdv-tools/find-and-replace.html) — Replace every match at once, plain text or regular expression, with capture groups and a count.
 - [Lorem ipsum](https://martindavinci.github.io/mdv-tools/lorem-ipsum.html) — Placeholder text in paragraphs, sentences, words or list items, as plain text, HTML or Markdown.
 - [Remove duplicate lines](https://martindavinci.github.io/mdv-tools/remove-duplicate-lines.html) — Each line once, first or last occurrence, in original order or sorted.
 - [Slugify](https://martindavinci.github.io/mdv-tools/slugify.html) — Fold accents to ASCII, pick a separator, cap the length at a word boundary.
