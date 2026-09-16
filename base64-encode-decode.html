@@ -2313,12 +2313,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     direction("encode");
     counts();
     rest();
-    txt.focus();
+    txt.focus({ preventScroll: true });
   });
 
   counts();
   rest();
-  txt.focus();
+  txt.focus({ preventScroll: true });
 })();
 </script>
 </body>

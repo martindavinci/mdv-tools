@@ -2231,7 +2231,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var list = items.filter(function (it) { return it.out; }), k = 0;
     (function next() { if (k >= list.length) return; save(list[k++]); setTimeout(next, 350); })();
   });
-  drop.focus();
+  drop.focus({ preventScroll: true });
 })();
 </script>
 </body>

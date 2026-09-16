@@ -2276,7 +2276,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   input.addEventListener("input", run);
   wireCopy("copy-h", "copied-h", function () { return headerText; });
   wireCopy("copy-p", "copied-p", function () { return payloadText; });
-  input.focus();
+  input.focus({ preventScroll: true });
   run();
 })();
 </script>

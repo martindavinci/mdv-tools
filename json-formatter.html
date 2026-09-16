@@ -2218,7 +2218,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       setTimeout(function () { c.hidden = true; }, 1400);
     });
   });
-  input.focus();
+  input.focus({ preventScroll: true });
   run();   // the browser may have restored the textarea (reload, back/forward)
 })();
 </script>

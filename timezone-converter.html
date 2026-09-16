@@ -2342,7 +2342,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   });
 
   if (!dateEl.value) dateEl.value = todayIn({ id: deviceZone });
-  input.focus();
+  input.focus({ preventScroll: true });
   run();
 })();
 </script>

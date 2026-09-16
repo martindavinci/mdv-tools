@@ -4420,7 +4420,7 @@ var qrcode = function() {
   $("svg").addEventListener("click", function () { if (current) save(new Blob([svgOf(current)], { type: "image/svg+xml" }), fileName("svg")); });
   $("print").addEventListener("click", function () { if (current) window.print(); });
 
-  ssid.focus();
+  ssid.focus({ preventScroll: true });
   run();
 })();
 </script>

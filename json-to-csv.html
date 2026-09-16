@@ -2287,12 +2287,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   });
   $("clear").addEventListener("click", function () {
-    write(json, ""); write(csv, ""); flags(null); direction("toCsv"); counts(); rest(); json.focus();
+    write(json, ""); write(csv, ""); flags(null); direction("toCsv"); counts(); rest(); json.focus({ preventScroll: true });
   });
 
   paintSep();
   if (csv.value && !json.value) { direction("toJson"); toJsonNow(true); } else toCsvNow();
-  json.focus();
+  json.focus({ preventScroll: true });
 })();
 </script>
 </body>

@@ -2141,7 +2141,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
     run();
   });
-  document.querySelector("[data-v]").focus();
+  document.querySelector("[data-v]").focus({ preventScroll: true });
 })();
 </script>
 </body>

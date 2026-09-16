@@ -2174,7 +2174,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       setTimeout(function () { c.hidden = true; }, 1400);
     });
   });
-  f.min.focus();
+  f.min.focus({ preventScroll: true });
   run();
 })();
 </script>
