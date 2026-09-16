@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->37<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->38<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -39,6 +39,7 @@ There are <!-- mdv-count -->37<!-- /mdv-count --> so far, and more on the way.
 - [Base64 Encoder & Decoder](https://martindavinci.github.io/mdv-tools/base64-encode-decode.html) — Text to Base64 and back, both fields live, with the URL-safe alphabet and 76-column wrapping.
 - [Checksum](https://martindavinci.github.io/mdv-tools/file-checksum.html) — SHA-256, SHA-1 and size for any file, computed locally.
 - [Hash generator](https://martindavinci.github.io/mdv-tools/hash-generator.html) — CRC-32, MD5, SHA-1, MySQL PASSWORD(), SHA-256, SHA-384 and SHA-512 of one string at once, with the broken ones marked as broken.
+- [HTML entities](https://martindavinci.github.io/mdv-tools/html-entities.html) — Escape text for HTML or turn entities back into characters, with a choice of how much to escape.
 - [Image to data URI](https://martindavinci.github.io/mdv-tools/base64-image.html) — Turn an image into a data URI for CSS or HTML, with the size it adds and whether it is worth inlining.
 - [JWT decoder](https://martindavinci.github.io/mdv-tools/jwt-decoder.html) — Header, payload and claims with expiry as a date. Decodes only, never verifies.
 - [Password generator](https://martindavinci.github.io/mdv-tools/password-generator.html) — Random passwords from the browser crypto API, with length, character sets, and the entropy in bits.
