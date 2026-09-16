@@ -976,6 +976,10 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
   background: var(--surface-selected);
   color: var(--text-on-selected);
 }
+/* Nine positions read better as a three-by-three block than as a row of nine:
+   the control has the shape of the thing it sets. Same buttons, same states. */
+.mdv-seg.is-grid { display: inline-grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mdv-seg.is-grid > button:last-child { border-right: var(--hair); }
 /* ---- buttons ---------------------------------------------------- */
 .mdv-btn {
   appearance: none;
@@ -1793,7 +1797,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">7</span></span>
+    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">8</span></span>
     <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
     <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
     <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
@@ -1801,6 +1805,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
     <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
     <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
     <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">3</span></span>
@@ -1816,7 +1821,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
     <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 44 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 45 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -1943,7 +1948,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <header class="mdv-head">
     <div class="mdv-head-top">
       <h1 class="mdv-head-name">MDV Tools</h1>
-      <span class="mdv-tag"><!-- mdv-count -->44<!-- /mdv-count --> tools · 0 accounts</span>
+      <span class="mdv-tag"><!-- mdv-count -->45<!-- /mdv-count --> tools · 0 accounts</span>
     </div>
     <p class="mdv-head-line">Each tool is one HTML file that does one job on your device. The list
       below is only the finished ones, grouped by catalogue group; a group appears here the day its
@@ -2148,6 +2153,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <a href="./social-cropper.html">
         <span class="mdv-index-name">Social media cropper</span>
         <span class="mdv-index-line">Crop to the exact pixel size a post, story, header or link preview wants, and see whether your picture is big enough.</span>
+      </a>
+      <a href="./watermark.html">
+        <span class="mdv-index-name">Watermark</span>
+        <span class="mdv-index-line">Sign a picture with text or a logo, in a corner or tiled across it, at the opacity and angle you choose.</span>
       </a>
     </div>
   </section>
