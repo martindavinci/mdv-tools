@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->61<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->62<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -47,6 +47,7 @@ There are <!-- mdv-count -->61<!-- /mdv-count --> so far, and more on the way.
 - [JWT decoder](https://martindavinci.github.io/mdv-tools/jwt-decoder.html) — Header, payload and claims with expiry as a date. Decodes only, never verifies.
 - [Password generator](https://martindavinci.github.io/mdv-tools/password-generator.html) — Random passwords from the browser crypto API, with length, character sets, and the entropy in bits.
 - [QR code generator](https://martindavinci.github.io/mdv-tools/qr-code-generator.html) — Turn a link or any text into a QR code with no redirect inside, then download PNG or SVG or copy the image.
+- [SSH key generator](https://martindavinci.github.io/mdv-tools/ssh-key-generator.html) — Make an Ed25519, ECDSA or RSA key pair and take the authorized_keys line and the private key as .ppk, OpenSSH or PEM.
 - [TOTP code generator](https://martindavinci.github.io/mdv-tools/totp-generator.html) — Paste a two-factor secret or otpauth link and read the current code and the next — or make a new secret to test a login.
 - [URL Encoder & Decoder](https://martindavinci.github.io/mdv-tools/url-encode-decode.html) — Percent-encode or decode text as you type, for a query value, a whole URL or form data, with broken escapes named by position.
 - [UUID generator](https://martindavinci.github.io/mdv-tools/uuid-generator.html) — Version 4 random or version 7 time-ordered, up to 1,000 at a time, from WebCrypto.
