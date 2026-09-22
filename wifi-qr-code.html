@@ -1229,6 +1229,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-btn, .mdv-drop, .mdv-seg { display: none; }
   .mdv-tool { max-width: none; min-height: 0; border: 0; }
 }
+/* ---- a print card: what a page prints instead of itself ---------- */
+/* Some results are meant to be printed on their own — a Wi-Fi code for the
+   fridge door. The page fills .mdv-print-card and adds .has-print-card to the
+   tool once there is something to print; printing then shows the card alone,
+   centred, black on white in either mode, and nothing else from the page. */
+.mdv-print-card { display: none; }
+@media print {
+  .mdv-tool.has-print-card > :not(.mdv-print-card) { display: none !important; }
+  .mdv-tool.has-print-card { padding: 0; background: #ffffff; }
+  /* white paper even in dark mode with "background graphics" ticked */
+  :root:has(.mdv-tool.has-print-card), :root:has(.mdv-tool.has-print-card) body { background: #ffffff !important; }
+  .mdv-tool.has-print-card > .mdv-print-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8mm;
+    padding-top: 18mm;
+    color: #000000;
+    break-inside: avoid;
+  }
+  .mdv-print-card svg { width: 110mm; height: 110mm; display: block; }
+  .mdv-print-card dl { margin: 0; }
+  .mdv-print-card dt { font-family: var(--font-mono); font-size: 10pt; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 5mm; }
+  .mdv-print-card dd { margin: 1.5mm 0 0; font-family: var(--font-display); font-size: 24pt; overflow-wrap: anywhere; }
+  /* a password is read letter by letter: mono keeps 0 and O, 1 and l apart */
+  .mdv-print-card dd.is-mono { font-family: var(--font-mono); font-size: 20pt; }
+}
 /* ================================================================
    SITE NAVIGATION — the lateral drawer
    Injected into every page by scripts/build.mjs at the mdv-nav
@@ -2089,6 +2117,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       </div>
     </div>
   </section>
+
+  <!-- what Print puts on paper: the code, the network, the password, and nothing else -->
+  <div class="mdv-print-card" id="printCard" aria-hidden="true">
+    <div id="printQr"></div>
+    <dl>
+      <dt>Network</dt><dd id="printSsid"></dd>
+      <dt id="printPassLabel">Password</dt><dd class="is-mono" id="printPass"></dd>
+    </dl>
+  </div>
 
   <details class="mdv-method" data-method open>
     <summary>How this works</summary>
@@ -4516,6 +4553,8 @@ var qrcode = function() {
     err.hidden = which !== "error";
     result.hidden = which !== "result";
     if (which !== "result") { warn.hidden = true; current = null; }
+    // printing shows the card alone only while there is a code; otherwise the page prints as itself
+    $("main").classList.toggle("has-print-card", which === "result");
   }
 
   function run() {
@@ -4532,6 +4571,9 @@ var qrcode = function() {
     $("k-ssid").textContent = ssid.value + (hidden.checked ? " (hidden)" : "");
     $("k-pass").textContent = sec === "nopass" ? "none, open network" : pass.value + " · " + (sec === "WEP" ? "WEP" : "WPA, WPA2 or WPA3");
     $("k-raw").textContent = got.text;
+    $("printQr").innerHTML = svgOf(current);
+    $("printSsid").textContent = ssid.value + (hidden.checked ? " (hidden network)" : "");
+    $("printPass").textContent = sec === "nopass" ? "none — open network" : pass.value;
     var total = current.size + QUIET * 2, side = total * Math.max(1, Math.floor(PX / total));
     $("k-size").textContent = "version " + ((current.size - 17) / 4) + " · PNG " + side + " × " + side + " px";
     warnmsg.textContent = got.notes.join(" ");
