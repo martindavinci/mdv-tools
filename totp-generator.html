@@ -1229,6 +1229,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-btn, .mdv-drop, .mdv-seg { display: none; }
   .mdv-tool { max-width: none; min-height: 0; border: 0; }
 }
+/* ---- a print card: what a page prints instead of itself ---------- */
+/* Some results are meant to be printed on their own — a Wi-Fi code for the
+   fridge door. The page fills .mdv-print-card and adds .has-print-card to the
+   tool once there is something to print; printing then shows the card alone,
+   centred, black on white in either mode, and nothing else from the page. */
+.mdv-print-card { display: none; }
+@media print {
+  .mdv-tool.has-print-card > :not(.mdv-print-card) { display: none !important; }
+  .mdv-tool.has-print-card { padding: 0; background: #ffffff; }
+  /* white paper even in dark mode with "background graphics" ticked */
+  :root:has(.mdv-tool.has-print-card), :root:has(.mdv-tool.has-print-card) body { background: #ffffff !important; }
+  .mdv-tool.has-print-card > .mdv-print-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8mm;
+    padding-top: 18mm;
+    color: #000000;
+    break-inside: avoid;
+  }
+  .mdv-print-card svg { width: 110mm; height: 110mm; display: block; }
+  .mdv-print-card dl { margin: 0; }
+  .mdv-print-card dt { font-family: var(--font-mono); font-size: 10pt; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 5mm; }
+  .mdv-print-card dd { margin: 1.5mm 0 0; font-family: var(--font-display); font-size: 24pt; overflow-wrap: anywhere; }
+  /* a password is read letter by letter: mono keeps 0 and O, 1 and l apart */
+  .mdv-print-card dd.is-mono { font-family: var(--font-mono); font-size: 20pt; }
+}
 /* ================================================================
    SITE NAVIGATION — the lateral drawer
    Injected into every page by scripts/build.mjs at the mdv-nav
