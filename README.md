@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->51<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->52<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -38,6 +38,7 @@ There are <!-- mdv-count -->51<!-- /mdv-count --> so far, and more on the way.
 
 **Encoding and crypto**
 
+- [Barcode generator](https://martindavinci.github.io/mdv-tools/barcode-generator.html) — Make an EAN-13, UPC-A, EAN-8, Code 128 or Code 39 barcode with the check digit worked out or verified, as SVG or PNG.
 - [Base64 Encoder & Decoder](https://martindavinci.github.io/mdv-tools/base64-encode-decode.html) — Text to Base64 and back, both fields live, with the URL-safe alphabet and 76-column wrapping.
 - [Checksum](https://martindavinci.github.io/mdv-tools/file-checksum.html) — SHA-256, SHA-1 and size for any file, computed locally.
 - [Hash generator](https://martindavinci.github.io/mdv-tools/hash-generator.html) — CRC-32, MD5, SHA-1, MySQL PASSWORD(), SHA-256, SHA-384 and SHA-512 of one string at once, with the broken ones marked as broken.
