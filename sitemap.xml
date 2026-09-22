@@ -23,6 +23,7 @@
   <url><loc>https://martindavinci.github.io/mdv-tools/find-and-replace.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/hash-generator.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/html-entities.html</loc></url>
+  <url><loc>https://martindavinci.github.io/mdv-tools/iban-validator.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/image-compressor.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/image-converter.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/image-cropper.html</loc></url>
@@ -51,6 +52,7 @@
   <url><loc>https://martindavinci.github.io/mdv-tools/text-diff.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/timestamp-converter.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/timezone-converter.html</loc></url>
+  <url><loc>https://martindavinci.github.io/mdv-tools/totp-generator.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/unicode-inspector.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/unit-converter.html</loc></url>
   <url><loc>https://martindavinci.github.io/mdv-tools/url-encode-decode.html</loc></url>

@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->58<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->60<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -47,6 +47,7 @@ There are <!-- mdv-count -->58<!-- /mdv-count --> so far, and more on the way.
 - [JWT decoder](https://martindavinci.github.io/mdv-tools/jwt-decoder.html) — Header, payload and claims with expiry as a date. Decodes only, never verifies.
 - [Password generator](https://martindavinci.github.io/mdv-tools/password-generator.html) — Random passwords from the browser crypto API, with length, character sets, and the entropy in bits.
 - [QR code generator](https://martindavinci.github.io/mdv-tools/qr-code-generator.html) — Turn a link or any text into a QR code with no redirect inside, then download PNG or SVG or copy the image.
+- [TOTP code generator](https://martindavinci.github.io/mdv-tools/totp-generator.html) — Paste a two-factor secret or otpauth link and read the current code and the next, as an authenticator app would.
 - [URL Encoder & Decoder](https://martindavinci.github.io/mdv-tools/url-encode-decode.html) — Percent-encode or decode text as you type, for a query value, a whole URL or form data, with broken escapes named by position.
 - [UUID generator](https://martindavinci.github.io/mdv-tools/uuid-generator.html) — Version 4 random or version 7 time-ordered, up to 1,000 at a time, from WebCrypto.
 - [Wi-Fi QR code](https://martindavinci.github.io/mdv-tools/wifi-qr-code.html) — Make a QR code that joins your Wi-Fi when scanned, for WPA, WEP or open networks, ready to print.
@@ -88,6 +89,10 @@ There are <!-- mdv-count -->58<!-- /mdv-count --> so far, and more on the way.
 - [Redact an image](https://martindavinci.github.io/mdv-tools/pixelate-image.html) — Draw boxes over what should not be shared and export with them blacked out, pixelated or blurred.
 - [Social media cropper](https://martindavinci.github.io/mdv-tools/social-cropper.html) — Crop to the exact pixel size a post, story, header or link preview wants, and see whether your picture is big enough.
 - [Watermark](https://martindavinci.github.io/mdv-tools/watermark.html) — Sign a picture with text or a logo, in a corner or tiled across it, at the opacity and angle you choose.
+
+**Finance**
+
+- [IBAN validator](https://martindavinci.github.io/mdv-tools/iban-validator.html) — Check an IBAN or a list of them — checksum, country length and parts — without asking any bank.
 
 **Numbers and units**
 
