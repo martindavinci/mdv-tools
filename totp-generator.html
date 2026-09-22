@@ -2027,7 +2027,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
       <label class="mdv-label" style="margin:0" for="secret">Secret or otpauth:// link</label>
-      <label class="mdv-check"><input type="checkbox" id="hide"> Hide it</label>
+      <span class="mdv-row" style="gap:var(--space-3)">
+        <label class="mdv-check"><input type="checkbox" id="hide"> Hide it</label>
+        <button class="mdv-btn is-sm is-quiet" type="button" id="newSecret">New secret</button>
+      </span>
     </div>
     <input class="mdv-input mdv-mono" id="secret" type="text" spellcheck="false" autocomplete="off" autocapitalize="characters"
       placeholder="JBSWY3DPEHPK3PXP">
@@ -2064,7 +2067,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <div class="mdv-readout"><span id="code"></span></div>
         <span class="mdv-btn-row">
           <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyLink">Copy setup link</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy code</button>
         </span>
       </div>
       <div class="mdv-meter"><span id="bar" style="width:100%"></span></div>
@@ -2074,6 +2078,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
           <dt>Next code</dt><dd id="k-next"></dd>
           <dt>For</dt><dd id="k-for"></dd>
           <dt>Secret</dt><dd id="k-secret"></dd>
+          <dt>Setup link</dt><dd id="k-link" style="word-break:break-all"></dd>
           <dt>This device's clock</dt><dd id="k-clock"></dd>
         </dl>
       </div>
@@ -2102,6 +2107,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         code from one step either side, which is why a code that has just changed often still works. A
         secret shorter than 128 bits is accepted, since many services issue 80-bit ones, and the page names
         its length.</p>
+      <p><strong>New secret</strong> is for building or testing a login of your own: it draws 160 bits from
+        <code>crypto.getRandomValues</code> — the length RFC 4226 recommends — writes them as base32, and
+        builds the setup link to go with it under the placeholder name Test. Turn that link into a QR code
+        with the QR code page and scan it into an authenticator app, and the app and this page will show the
+        same codes. A secret made here exists only in this tab until you copy it somewhere.</p>
     </div>
   </details>
 
@@ -2199,6 +2209,21 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         return code;
       });
   }
+  function toBase32(bytes) {
+    var bits = 0, value = 0, out = "";
+    for (var i = 0; i < bytes.length; i++) {
+      value = (value << 8) | bytes[i];
+      bits += 8;
+      while (bits >= 5) { out += ALPHABET[(value >>> (bits - 5)) & 31]; bits -= 5; }
+    }
+    if (bits > 0) out += ALPHABET[(value << (5 - bits)) & 31];
+    return out;
+  }
+  function setupLink(secret, s, issuer, account) {
+    var label = encodeURIComponent(issuer) + ":" + encodeURIComponent(account);
+    return "otpauth://totp/" + label + "?secret=" + secret + "&issuer=" + encodeURIComponent(issuer) +
+      "&algorithm=" + s.algo.replace("-", "") + "&digits=" + s.digits + "&period=" + s.period;
+  }
   function grouped(code) { return code.length === 6 ? code.slice(0, 3) + " " + code.slice(3) : code.slice(0, 4) + " " + code.slice(4); }
   function two(n) { return (n < 10 ? "0" : "") + n; }
 
@@ -2276,6 +2301,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       $("k-next").textContent = grouped(codes[1]);
       $("k-for").textContent = c.got.fromLink ? [c.got.issuer, c.got.account].filter(Boolean).join(" · ") || "the link names no account" : "a pasted secret";
       $("k-secret").textContent = c.bits + " bits · " + settings.algo + " · " + settings.digits + " digits every " + settings.period + " s";
+      $("k-link").textContent = c.got.fromLink ? secretInput.value.trim()
+        : setupLink(c.got.secret.replace(/[\s=-]/g, "").toUpperCase(), settings, "Test", "test@example.com");
       var notes = [];
       if (c.got.fromLink) notes.push("Hash, digits and period were read from the link.");
       else if (reverted) notes.push("The settings the last link set are back to SHA-1, 6 digits, 30 seconds — what nearly every service uses. Change them if yours says otherwise.");
@@ -2301,10 +2328,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       });
     });
   });
-  $("copyBtn").addEventListener("click", function () {
-    var text = $("code").textContent.replace(/\s/g, "");
+  function copy(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(flash, flash);
     else flash();
+  }
+  $("copyBtn").addEventListener("click", function () { copy($("code").textContent.replace(/\s/g, "")); });
+  $("copyLink").addEventListener("click", function () { copy($("k-link").textContent); });
+  $("newSecret").addEventListener("click", function () {
+    var bytes = new Uint8Array(20);                              // 160 bits, what RFC 4226 recommends
+    crypto.getRandomValues(bytes);
+    secretInput.value = toBase32(bytes);
+    read();
+    secretInput.focus({ preventScroll: true });
   });
   function flash() {
     copied.hidden = false;
