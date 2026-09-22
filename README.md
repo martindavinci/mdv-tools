@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->60<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->61<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -89,6 +89,10 @@ There are <!-- mdv-count -->60<!-- /mdv-count --> so far, and more on the way.
 - [Redact an image](https://martindavinci.github.io/mdv-tools/pixelate-image.html) — Draw boxes over what should not be shared and export with them blacked out, pixelated or blurred.
 - [Social media cropper](https://martindavinci.github.io/mdv-tools/social-cropper.html) — Crop to the exact pixel size a post, story, header or link preview wants, and see whether your picture is big enough.
 - [Watermark](https://martindavinci.github.io/mdv-tools/watermark.html) — Sign a picture with text or a logo, in a corner or tiled across it, at the opacity and angle you choose.
+
+**PDF and documents**
+
+- [Document scanner](https://martindavinci.github.io/mdv-tools/document-scanner.html) — Set the four corners of a photographed page and take away a flat, white scan as PNG, JPEG or PDF.
 
 **Finance**
 

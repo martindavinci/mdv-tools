@@ -1628,6 +1628,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-handle[data-grip="w"] { top: var(--grip-mid); left: var(--grip-out); cursor: ew-resize; }
 /* a finger needs more than a mouse; the offsets follow the variable */
 @media (pointer: coarse) { .mdv-handle { --grip: 22px; } }
+/* Four free corners instead of a box: the scanner's quad. The handles are
+   buttons placed by left/top in per-cent and centred on their point, so arrow
+   keys can move them; the SVG overlay draws the edge and washes everything
+   outside the quad with one even-odd path (outer rectangle, inner quad). */
+.mdv-handle.is-free { transform: translate(-50%, -50%); cursor: move; padding: 0; z-index: 1; }
+.mdv-quad { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.mdv-quad .wash { fill: color-mix(in srgb, var(--mdv-dark) 55%, transparent); fill-rule: evenodd; }
+.mdv-quad .edge { fill: none; stroke: var(--mdv-cream); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
 /* ---- dice: each die drawn as its own shape, in ink ---------------- */
 /* The shapes are line drawings, not icons: a d20 is a hexagon with its front
    face, a d4 a triangle. Stroke and number take currentColor, so a state is
