@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->52<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->53<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -102,6 +102,10 @@ There are <!-- mdv-count -->52<!-- /mdv-count --> so far, and more on the way.
 - [Discord timestamp](https://martindavinci.github.io/mdv-tools/discord-timestamp.html) — Pick a date, time and zone and copy every Discord timestamp code, or paste a code to read the moment inside it.
 - [Time zone converter](https://martindavinci.github.io/mdv-tools/timezone-converter.html) — Type a time the way people write it, like 10am PT or 15:00 CET, and read it in every common zone with summer time counted.
 - [Timestamp converter](https://martindavinci.github.io/mdv-tools/timestamp-converter.html) — Unix seconds or milliseconds to ISO 8601, local time, ISO week and relative time.
+
+**Productivity**
+
+- [Dice roller](https://martindavinci.github.io/mdv-tools/dice-roller.html) — Roll d4 to d100, several at once, with advantage, keep and drop, and the exact odds of what you rolled.
 
 <!-- /mdv-tools -->
 
