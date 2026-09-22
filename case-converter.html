@@ -1636,6 +1636,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-handle[data-grip="w"] { top: var(--grip-mid); left: var(--grip-out); cursor: ew-resize; }
 /* a finger needs more than a mouse; the offsets follow the variable */
 @media (pointer: coarse) { .mdv-handle { --grip: 22px; } }
+/* Four free corners instead of a box: the scanner's quad. The handles are
+   buttons placed by left/top in per-cent and centred on their point, so arrow
+   keys can move them; the SVG overlay draws the edge and washes everything
+   outside the quad with one even-odd path (outer rectangle, inner quad). */
+.mdv-handle.is-free { transform: translate(-50%, -50%); cursor: move; padding: 0; z-index: 1; }
+.mdv-quad { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.mdv-quad .wash { fill: color-mix(in srgb, var(--mdv-dark) 55%, transparent); fill-rule: evenodd; }
+.mdv-quad .edge { fill: none; stroke: var(--mdv-cream); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
 /* ---- dice: each die drawn as its own shape, in ink ---------------- */
 /* The shapes are line drawings, not icons: a d20 is a hexagon with its front
    face, a d4 a triangle. Stroke and number take currentColor, so a state is
@@ -1862,6 +1870,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
+    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+  </div>
+  <div class="mdv-drawer-group">
     <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
     <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
   </div>
@@ -1888,7 +1900,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
     <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 60 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 61 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2122,7 +2134,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <span>MDV · Martin DaVinci</span>
     <span>Knowledge has no limits</span>
     <span>updated 2026-09-16</span>
-    <a class="mdv-foot-spacer" href="./index.html">All 60 tools</a>
+    <a class="mdv-foot-spacer" href="./index.html">All 61 tools</a>
   </div>
 </footer>
 <script>
