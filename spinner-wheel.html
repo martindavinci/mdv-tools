@@ -2070,7 +2070,9 @@ Perugino</textarea>
         that number is the winner. The spin that follows is animated to come to rest on that slice, at a
         random point inside it rather than dead centre, so it looks like a wheel and not a pointer being
         placed. Nothing about the animation, its speed or how long you watch it changes the result; it is
-        there because people like to watch, and it makes the draw visible to a room.</p>
+        there because people like to watch, and it makes the draw visible to a room. While it turns, the
+        Spin button becomes <strong>Skip</strong> — press it, the wheel or Escape to jump straight to where
+        it was always going to stop.</p>
       <p>Every slice is the same size, so every line has the same chance: with six names, one in six. A name
         written on two lines gets two slices and twice the chance, which the page points out. For draws where
         some entries should carry more weight than others, the random picker takes tickets. <strong>Take off
@@ -2197,25 +2199,36 @@ Perugino</textarea>
     return true;
   }
 
+  var skip = null;                                               // set while the wheel turns: jumps to where it will stop
+
+  // Pressed while idle it spins; pressed again while turning, the same button skips to the result.
   function spin() {
-    if (spinning || !draw()) return;
+    if (spinning) { if (skip) skip(); return; }
+    if (!draw()) return;
     var n = entries.length, slice = 360 / n;
     var winner = below(n);                                    // the draw: decided here, before anything moves
     var inside = (0.12 + 0.76 * below(1000) / 1000) * slice;   // where in the slice it comes to rest
     var target = (360 - (winner * slice + inside) % 360) % 360;
     var from = rotation, turns = 5 + below(3);
     var to = from + ((target - (from % 360)) + 720) % 360 + 360 * turns;
+    var done = false, frameId = null;
     spinning = true;
     list.readOnly = true;
-    $("spin").disabled = true;
+    $("spin").textContent = "Skip";
+    $("spin").setAttribute("aria-label", "Skip the spin and show the winner");
     Array.prototype.forEach.call(turn.querySelectorAll(".is-won"), function (g) { g.classList.remove("is-won"); });
 
     function finish() {
+      if (done) return;
+      done = true;
+      if (frameId !== null) cancelAnimationFrame(frameId);
+      skip = null;
       rotation = to % 360;
       turn.setAttribute("transform", "rotate(" + rotation.toFixed(3) + ")");
       spinning = false;
       list.readOnly = false;
-      $("spin").disabled = false;
+      $("spin").textContent = "Spin";
+      $("spin").removeAttribute("aria-label");
       var g = turn.querySelector('[data-i="' + winner + '"]');
       if (g) { g.classList.add("is-won"); turn.appendChild(g); }   // drawn last, so its outline is not under its neighbours
       lastWinner = entries[winner];
@@ -2225,20 +2238,23 @@ Perugino</textarea>
       $("result").hidden = false;
     }
     if (reduce && reduce.matches) { finish(); return; }
+    skip = finish;
     var start = null;
     function frame(now) {
+      if (done) return;
       if (start === null) start = now;
       var t = Math.min(1, (now - start) / SPIN_MS);
       turn.setAttribute("transform", "rotate(" + (from + (to - from) * easeOut(t)).toFixed(3) + ")");
-      if (t < 1) requestAnimationFrame(frame);
+      if (t < 1) frameId = requestAnimationFrame(frame);
       else finish();
     }
-    requestAnimationFrame(frame);
+    frameId = requestAnimationFrame(frame);
   }
 
   $("spin").addEventListener("click", spin);
   $("stage").addEventListener("click", spin);
   $("stage").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); spin(); } });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && spinning && skip) skip(); });
   list.addEventListener("input", function () { if (!spinning) { $("result").hidden = true; draw(); } });
   $("shuffle").addEventListener("click", function () {
     if (spinning || !draw()) return;
