@@ -47,7 +47,7 @@ There are <!-- mdv-count -->60<!-- /mdv-count --> so far, and more on the way.
 - [JWT decoder](https://martindavinci.github.io/mdv-tools/jwt-decoder.html) — Header, payload and claims with expiry as a date. Decodes only, never verifies.
 - [Password generator](https://martindavinci.github.io/mdv-tools/password-generator.html) — Random passwords from the browser crypto API, with length, character sets, and the entropy in bits.
 - [QR code generator](https://martindavinci.github.io/mdv-tools/qr-code-generator.html) — Turn a link or any text into a QR code with no redirect inside, then download PNG or SVG or copy the image.
-- [TOTP code generator](https://martindavinci.github.io/mdv-tools/totp-generator.html) — Paste a two-factor secret or otpauth link and read the current code and the next, as an authenticator app would.
+- [TOTP code generator](https://martindavinci.github.io/mdv-tools/totp-generator.html) — Paste a two-factor secret or otpauth link and read the current code and the next — or make a new secret to test a login.
 - [URL Encoder & Decoder](https://martindavinci.github.io/mdv-tools/url-encode-decode.html) — Percent-encode or decode text as you type, for a query value, a whole URL or form data, with broken escapes named by position.
 - [UUID generator](https://martindavinci.github.io/mdv-tools/uuid-generator.html) — Version 4 random or version 7 time-ordered, up to 1,000 at a time, from WebCrypto.
 - [Wi-Fi QR code](https://martindavinci.github.io/mdv-tools/wifi-qr-code.html) — Make a QR code that joins your Wi-Fi when scanned, for WPA, WEP or open networks, ready to print.
