@@ -1650,6 +1650,27 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-die.is-low { color: var(--state-bad); }
 /* the same shapes, small, inside a button */
 .mdv-btn > svg.mdv-die-mark { width: 18px; height: 18px; flex: none; margin-right: var(--space-2); }
+/* ---- the wheel: slices in the six pigments ------------------------ */
+/* An SVG wheel whose slices cycle sanguigna, ocra, verdaccio, oltremare,
+   siena and gesso, each with the label colour that reads on it (bistro on the
+   light four, carta on oltremare and siena). Slices are cut by bistro
+   hairlines; the pointer and hub are ink and paper. The same pigments in both
+   modes: a wheel is an object on the desk, not part of the page chrome. */
+.mdv-wheel { display: block; width: 100%; max-width: 440px; height: auto; margin: 0 auto; }
+.mdv-wheel .slice path { stroke: var(--mdv-dark); stroke-width: 0.6; }
+.mdv-wheel .slice text { font-family: var(--font-mono); font-size: 4.2px; font-weight: 700; fill: var(--mdv-dark); }
+.mdv-wheel .s0 path { fill: var(--mdv-primary); }
+.mdv-wheel .s1 path { fill: var(--mdv-gold); }
+.mdv-wheel .s2 path { fill: var(--mdv-verdigris); }
+.mdv-wheel .s3 path { fill: var(--mdv-pop); }
+.mdv-wheel .s3 text { fill: var(--mdv-cream); }
+.mdv-wheel .s4 path { fill: var(--mdv-siena); }
+.mdv-wheel .s4 text { fill: var(--mdv-cream); }
+.mdv-wheel .s5 path { fill: var(--mdv-panel-2); }
+.mdv-wheel .slice.is-won path { stroke-width: 2; }
+.mdv-wheel .hub { fill: var(--mdv-base); stroke: var(--mdv-dark); stroke-width: 0.8; }
+.mdv-wheel .rim { fill: none; stroke: var(--mdv-dark); stroke-width: 1.2; }
+.mdv-wheel .pointer { fill: var(--text-strong); stroke: var(--surface-page); stroke-width: 0.8; }
 /* ---- the ocra tick above a footer ------------------------------- */
 /* .mdv-rule further up is the hairline <hr>. The serif skin's footer mark
    carries the same name in the shared contract, so it is scoped off <hr>:

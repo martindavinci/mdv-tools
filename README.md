@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->53<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->58<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -93,6 +93,7 @@ There are <!-- mdv-count -->53<!-- /mdv-count --> so far, and more on the way.
 
 - [Aspect ratio](https://martindavinci.github.io/mdv-tools/aspect-ratio-calculator.html) — Lock a ratio and solve the missing dimension.
 - [Percentage calculator](https://martindavinci.github.io/mdv-tools/percentage-calculator.html) — Five percentage questions answered as you type: percent of, what percent, change, increase or decrease, and the value before, in exact decimals.
+- [Random number generator](https://martindavinci.github.io/mdv-tools/random-number-generator.html) — Draw whole numbers from any range, with or without repeats, and repeat a draw exactly from a seed when it has to be checked.
 - [Unit converter](https://martindavinci.github.io/mdv-tools/unit-converter.html) — Convert length, mass, volume, area, speed, temperature, time, data, pressure or energy, exactly, and read every unit of the family at once.
 
 **Time and date**
@@ -106,6 +107,10 @@ There are <!-- mdv-count -->53<!-- /mdv-count --> so far, and more on the way.
 **Productivity**
 
 - [Dice roller](https://martindavinci.github.io/mdv-tools/dice-roller.html) — Roll d4 to d100, several at once, with advantage, keep and drop, and the exact odds of what you rolled.
+- [Flip a coin](https://martindavinci.github.io/mdv-tools/coin-flip.html) — Flip a fair coin once or a thousand times, with a running tally and the exact odds of the longest streak.
+- [Random picker](https://martindavinci.github.io/mdv-tools/random-picker.html) — Paste a list and pick one or several at random, with tickets per entry and winners kept out between draws.
+- [Spin the wheel](https://martindavinci.github.io/mdv-tools/spinner-wheel.html) — Put names or choices on a wheel and spin for a winner — equal slices, a fair draw, and winners can come off.
+- [Team generator](https://martindavinci.github.io/mdv-tools/team-generator.html) — Split a list of names into random teams, by number of teams or people per team, with sizes never more than one apart.
 
 <!-- /mdv-tools -->
 
