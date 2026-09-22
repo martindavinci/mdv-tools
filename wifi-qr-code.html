@@ -1620,6 +1620,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   position: relative;
   display: inline-block;
   max-width: 100%;
+  /* the frame wraps the image exactly, whatever the parent: a flex column or a grid cell would
+     stretch it past a narrow photo, and the handles, placed in the frame, would drift off the
+     pixels they stand for */
+  align-self: flex-start;
+  justify-self: start;
   border: var(--hair);
   background: var(--surface-inset);
   /* clips the marquee's wash to the image; handles at the very edge are clipped with it */
@@ -2164,7 +2169,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
     <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
+    <span>updated 2026-09-22</span>
     <a class="mdv-foot-spacer" href="./index.html">All 61 tools</a>
   </div>
 </footer>
