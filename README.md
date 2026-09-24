@@ -20,7 +20,7 @@ how they work.
 
 ## The tools
 
-There are <!-- mdv-count -->62<!-- /mdv-count --> so far, and more on the way.
+There are <!-- mdv-count -->63<!-- /mdv-count --> so far, and more on the way.
 
 <!-- mdv-tools -->
 
@@ -30,6 +30,7 @@ There are <!-- mdv-count -->62<!-- /mdv-count --> so far, and more on the way.
 - [Find and replace](https://martindavinci.github.io/mdv-tools/find-and-replace.html) — Replace every match at once, plain text or regular expression, with capture groups and a count.
 - [Lorem ipsum](https://martindavinci.github.io/mdv-tools/lorem-ipsum.html) — Placeholder text in paragraphs, sentences, words or list items, as plain text, HTML or Markdown.
 - [Remove duplicate lines](https://martindavinci.github.io/mdv-tools/remove-duplicate-lines.html) — Each line once, first or last occurrence, in original order or sorted.
+- [Remove whitespace](https://martindavinci.github.io/mdv-tools/remove-whitespace.html) — Tidy doubled spaces, tabs and blank lines, or strip every space so 1 2 3 4 5 reads 12345; no-break spaces are named.
 - [Slugify](https://martindavinci.github.io/mdv-tools/slugify.html) — Fold accents to ASCII, pick a separator, cap the length at a word boundary.
 - [Sort lines](https://martindavinci.github.io/mdv-tools/sort-lines.html) — A–Z, Z–A, natural, by length, shuffle or reverse, with trim, case-fold, blank and duplicate removal.
 - [Text diff](https://martindavinci.github.io/mdv-tools/text-diff.html) — Line-by-line comparison of two blocks of text.

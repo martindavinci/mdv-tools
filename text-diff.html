@@ -952,6 +952,8 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
 .mdv-check input:checked { background: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 3px var(--surface-panel); }
 .mdv-check input[type="radio"] { border-radius: var(--radius-round); }
 .mdv-check input:focus-visible { outline: var(--focus-outline); outline-offset: var(--focus-offset); }
+.mdv-check:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+.mdv-check input:disabled { cursor: not-allowed; }
 /* segmented control — the honest alternative to a dropdown of twelve jobs */
 .mdv-seg { display: inline-flex; flex-wrap: wrap; border: var(--hair); }
 .mdv-seg > button {
@@ -1837,7 +1839,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
   <p class="mdv-drawer-none" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">9</span></span>
+    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
     <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
     <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
     <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
@@ -1846,6 +1848,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
     <a class="mdv-drawer-link is-here" href="./text-diff.html" aria-current="page" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
     <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
     <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
@@ -1934,7 +1937,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
     <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 62 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2138,7 +2141,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <span>MDV · Martin DaVinci</span>
     <span>Knowledge has no limits</span>
     <span>updated 2026-09-16</span>
-    <a class="mdv-foot-spacer" href="./index.html">All 62 tools</a>
+    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
   </div>
 </footer>
 <script>
