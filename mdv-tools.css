@@ -1027,7 +1027,9 @@ input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
 .mdv-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent); }
 .mdv-btn.is-primary:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
 .mdv-btn.is-quiet { border-color: var(--border-hair); color: var(--text-tag); }
-.mdv-btn.is-quiet:hover { border-color: var(--border-strong); }
+/* .is-quiet comes after .mdv-btn:hover, so its tag colour outlived the hover and sat on the
+   inverted ground at 2.3:1 — the quiet button inverts like every other one */
+.mdv-btn.is-quiet:hover { border-color: var(--surface-selected); color: var(--text-on-selected); }
 .mdv-btn.is-ghost { border-color: transparent; color: var(--text-accent); padding: 0 var(--space-1); }
 .mdv-btn.is-ghost:hover { background: transparent; color: var(--text-strong); text-decoration: underline; text-underline-offset: 3px; }
 .mdv-btn.is-sm { min-height: var(--control-h-sm); font-size: var(--size-tag); padding: 0 var(--space-3); }
