@@ -1271,6 +1271,32 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-band-line { margin-top: var(--space-3); font-size: var(--size-body-lg); line-height: var(--leading-snug); color: var(--text-body); max-width: 30ch; }
 .mdv-band-find { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-5); }
 .mdv-band-find .mdv-input { width: 100%; }
+/* The cat at the bench, a cut-out on a transparent ground so it sits on gesso and on notte alike.
+   Inlined as data: by the build (data-mdv-img); the -8px pulls the drawing's own margin into the gutter. */
+.mdv-band-logo { display: block; width: 240px; height: auto; margin: calc(-1 * var(--space-5)) 0 var(--space-2) -8px; }
+/* The edition line: the latest release, its date, a link to all of them, one sentence. */
+.mdv-band-news {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-2);
+  margin-top: var(--space-4); padding: var(--space-2) 0;
+  border-top: var(--hair); border-bottom: var(--hair);
+  font-size: 15px; line-height: 1.35; color: var(--text-body);
+}
+.mdv-band-news .mdv-band-ver, .mdv-release-ver { font: 600 11px/1 var(--font-mono); letter-spacing: 0.06em; color: var(--text-accent); font-variant-numeric: tabular-nums; }
+.mdv-band-news time { font: 500 11px/1 var(--font-mono); letter-spacing: 0.06em; color: var(--text-muted); }
+.mdv-band-news a {
+  margin-left: auto; font: var(--type-tag); letter-spacing: var(--tracking-tag); text-transform: uppercase; color: var(--text-accent);
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; white-space: nowrap;
+}
+.mdv-band-news a:hover { color: var(--text-strong); }
+.mdv-band-news p { flex-basis: 100%; }
+/* changelog.html: one release per row, version and date in mono, the sentence in the reading face. */
+.mdv-release { padding: var(--space-3) 0 var(--space-4); border-top: var(--hair); }
+.mdv-release:first-of-type { padding-top: 0; border-top: 0; }
+.mdv-release h2 { display: flex; align-items: baseline; gap: var(--space-3); font: inherit; }
+.mdv-release h2 .mdv-release-ver { font-size: 13px; }
+.mdv-release h2 time, .mdv-release h2 small { font: 500 11px/1 var(--font-mono); letter-spacing: 0.06em; color: var(--text-muted); }
+.mdv-release h2 small { margin-left: auto; }
+.mdv-release p { margin-top: var(--space-2); max-width: 64ch; color: var(--text-body); }
 .mdv-rack { display: flex; flex-direction: column; gap: 3px; align-self: start; }
 .mdv-rack-head, .mdv-rack-key {
   display: flex;
@@ -1325,6 +1351,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-band-name { font-size: 34px; }
   .mdv-band-line { margin-top: var(--space-2); font-size: var(--size-body); max-width: none; }
   .mdv-band-find { margin-top: var(--space-3); }
+  /* one column: the cat moves to the right of the title and rises into the empty end of the burger row */
+  .mdv-band-mast { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-3); }
+  .mdv-band-mast > * { grid-column: 1 / -1; }
+  .mdv-band-mast > .mdv-band-name, .mdv-band-mast > .mdv-band-line { grid-column: 1; }
+  .mdv-band-logo { grid-column: 2; grid-row: 1 / span 2; align-self: end; width: 132px; margin: calc(-1 * (var(--tap-min) + var(--space-3))) -6px 0 0; }
   .mdv-rack-head, .mdv-rack-key { display: none; }
   .mdv-rack-row { grid-template-columns: 118px 40px 1fr; gap: 6px; padding: 2px 4px; }
   .mdv-rack-name, .mdv-rack-count { font-size: 10px; }
@@ -1339,6 +1370,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 @media print {
   .mdv-band { margin: 0; padding: 0 0 var(--space-4); background: none; }
   .mdv-band::before, .mdv-band::after, .mdv-rack, .mdv-band-find { display: none; }
+  .mdv-band-logo { width: 120px; margin: 0 0 var(--space-2); }
 }
 /* ---- utilities -------------------------------------------------- */
 .mdv-stack { display: flex; flex-direction: column; gap: var(--space-4); }
@@ -2305,6 +2337,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <span>MDV · Martin DaVinci</span>
     <span>Knowledge has no limits</span>
     <span>updated 2026-09-16</span>
+    <a href="./changelog.html">v0.8.0</a>
     <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
   </div>
 </footer>
