@@ -1588,6 +1588,13 @@ html[data-t-wait] body { visibility: hidden; }
   cursor: pointer;
 }
 .mdv-langs button:last-child { border-bottom: 0; }
+/* thirteen rows do not fit a laptop: two columns, read top to bottom, where there is the width */
+@media (min-width: 800px) {
+  .mdv-langs { width: min(840px, calc(100vw - var(--space-5))); }
+  .mdv-langs[open] { display: grid; grid-template-rows: repeat(7, auto); grid-auto-flow: column; grid-template-columns: 1fr 1fr; }
+  .mdv-langs button:nth-child(-n+7) { border-right: 1px solid var(--border-hair); }
+  .mdv-langs button:nth-child(7) { border-bottom: 0; }
+}
 .mdv-langs .mdv-flag { width: 42px; height: 28px; }
 .mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
 .mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
