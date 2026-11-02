@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link is-here" href="./image-compressor.html" aria-current="page" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link is-here" href="./image-compressor.html" aria-current="page" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,59 +2353,59 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Image compressor</h1>
+      <h1 class="mdv-head-name" data-t="51">Image compressor</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Drop images, choose how small, and download files that weigh less.</p>
+    <p class="mdv-head-line" data-t="79">Drop images, choose how small, and download files that weigh less.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
-  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose images to compress">
+  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose images to compress" data-t-attrs="aria-label">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
-    <span class="mdv-tag">Drop up to 50 JPEG, PNG, WebP or GIF images</span>
+    <span class="mdv-tag" data-t="82">Drop up to 50 JPEG, PNG, WebP or GIF images</span>
     <input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp" multiple class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <section class="mdv-panel">
     <div class="mdv-cols">
       <div>
-        <span class="mdv-label">Save as</span>
-        <div class="mdv-seg" role="group" aria-label="Save as">
+        <span class="mdv-label" data-t="83">Save as</span>
+        <div class="mdv-seg" role="group" aria-label="Save as" data-t-attrs="aria-label">
           <button type="button" data-fmt="image/webp" class="is-on" aria-pressed="true">WebP</button>
           <button type="button" data-fmt="image/jpeg" aria-pressed="false">JPEG</button>
-          <button type="button" data-fmt="keep" aria-pressed="false">Same format</button>
+          <button type="button" data-fmt="keep" aria-pressed="false" data-t="84">Same format</button>
         </div>
-        <label class="mdv-label" for="q" style="margin-top:var(--space-4)">Quality <span class="mdv-mono" id="qval">0.80</span></label>
+        <label class="mdv-label" for="q" style="margin-top:var(--space-4)"><span data-t="85">Quality</span> <span class="mdv-mono" id="qval">0.80</span></label>
         <input id="q" type="range" min="0.3" max="0.95" step="0.05" value="0.8" style="width:100%">
       </div>
       <div>
-        <span class="mdv-label">Longest side</span>
-        <div class="mdv-seg" role="group" aria-label="Longest side">
-          <button type="button" data-max="0" class="is-on" aria-pressed="true">As is</button>
+        <span class="mdv-label" data-t="86">Longest side</span>
+        <div class="mdv-seg" role="group" aria-label="Longest side" data-t-attrs="aria-label">
+          <button type="button" data-max="0" class="is-on" aria-pressed="true" data-t="87">As is</button>
           <button type="button" data-max="2560" aria-pressed="false">2560</button>
           <button type="button" data-max="1920" aria-pressed="false">1920</button>
           <button type="button" data-max="1280" aria-pressed="false">1280</button>
         </div>
-        <label class="mdv-check" style="margin-top:var(--space-3)"><input type="checkbox" id="keepSmaller" checked> Keep the original when it is already smaller</label>
+        <label class="mdv-check" style="margin-top:var(--space-3)"><input type="checkbox" id="keepSmaller" checked> <span data-t="88">Keep the original when it is already smaller</span></label>
       </div>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>drop images above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="89">drop images above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Could not use those files</span>
+      <span class="mdv-notice-title" data-t="90">Could not use those files</span>
       <span id="errmsg"></span>
     </div>
 
     <div id="result" hidden class="mdv-stack is-tight">
       <div class="mdv-panel-ink">
         <div class="mdv-row is-between">
-          <span class="mdv-tag">Saved</span>
+          <span class="mdv-tag" data-t="91">Saved</span>
           <span class="mdv-tag mdv-mono" id="progress"></span>
         </div>
         <div class="mdv-readout" id="total" style="margin-top:var(--space-3)">—</div>
@@ -2303,25 +2415,25 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
       <div class="mdv-panel is-flush" style="overflow:auto">
         <table class="mdv-table">
-          <thead><tr><th>File</th><th>Before</th><th>After</th><th>Saved</th><th></th></tr></thead>
+          <thead><tr><th data-t="92">File</th><th data-t="93">Before</th><th data-t="94">After</th><th data-t="91">Saved</th><th></th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
 
       <div class="mdv-row is-between">
-        <button class="mdv-btn is-sm is-quiet" id="another" type="button">Add or replace images</button>
-        <button class="mdv-btn is-primary" id="all" type="button" disabled>Download all</button>
+        <button class="mdv-btn is-sm is-quiet" id="another" type="button" data-t="95">Add or replace images</button>
+        <button class="mdv-btn is-primary" id="all" type="button" disabled data-t="96">Download all</button>
       </div>
 
       <div class="mdv-panel is-flush" id="compare" hidden>
-        <div class="mdv-panel-head"><span class="mdv-tag">Before and after</span><span class="mdv-tag mdv-mono" id="cmpname"></span></div>
+        <div class="mdv-panel-head"><span class="mdv-tag" data-t="97">Before and after</span><span class="mdv-tag mdv-mono" id="cmpname"></span></div>
         <div class="mdv-cols mdv-panel-body">
           <figure style="margin:0">
-            <img id="before" alt="Original" style="display:block;max-width:100%;border:var(--hair)">
+            <img id="before" alt="Original" data-t-attrs="alt" style="display:block;max-width:100%;border:var(--hair)">
             <figcaption class="mdv-hint" id="beforecap"></figcaption>
           </figure>
           <figure style="margin:0">
-            <img id="after" alt="Compressed" style="display:block;max-width:100%;border:var(--hair)">
+            <img id="after" alt="Compressed" data-t-attrs="alt" style="display:block;max-width:100%;border:var(--hair)">
             <figcaption class="mdv-hint" id="aftercap"></figcaption>
           </figure>
         </div>
@@ -2330,16 +2442,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="98">How this works</summary>
     <div class="mdv-method-body">
-      <p>Each image is decoded by the browser with <code>createImageBitmap</code>, which applies the EXIF
+      <p data-t="99">Each image is decoded by the browser with <code>createImageBitmap</code>, which applies the EXIF
         orientation so a phone photo stays upright, drawn onto a <code>&lt;canvas&gt;</code>, and encoded
         again with <code>canvas.toBlob(type, quality)</code>. That is lossy for WebP and JPEG: the new file
         holds fewer details than the original, more so at lower quality, and compressing a file twice loses
         a little more each time. Use Compare to look before you download. PNG is lossless and ignores the
         quality slider, so Same format rarely makes a PNG smaller; WebP usually does. JPEG has no transparency,
         so transparent pixels become white.</p>
-      <p><strong>Longest side</strong> scales an image down so its longer side is at most that many pixels,
+      <p data-t="100"><strong>Longest side</strong> scales an image down so its longer side is at most that many pixels,
         keeping its proportions; it never enlarges. <strong>Keep the original when it is already
         smaller</strong> gives you the original file back, untouched, whenever the new one would weigh the
         same or more, and the row says so. Re-encoding drops everything that is not pixels — EXIF, including
@@ -2347,30 +2459,31 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         the first — which is often wanted, but a kept original keeps all of it, and the row says that too.
         Colours are drawn in the sRGB space the canvas uses, so a wide-gamut photo can look slightly less
         saturated. A browser without a WebP encoder returns PNG instead, and the page reports the type it got.</p>
-      <p>Limits: 50 images at a time, each up to 100 MiB and 100 megapixels once decoded, and an output
+      <p data-t="101">Limits: 50 images at a time, each up to 100 MiB and 100 megapixels once decoded, and an output
         canvas of at most 124,992,400 pixels (the Firefox ceiling; iPhones and iPads stop at 16,777,216 — pick a
         Longest side there). A file that breaks a limit or does not decode is listed with the reason, and the
         rest are compressed. Changing a setting compresses the whole batch again from the originals. Download
         all saves the files one by one; the browser may ask to allow several downloads. Nothing is uploaded:
         there is no server in this file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="102">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Image &amp; Media">
-    <span class="mdv-tag">Also in Image &amp; Media</span>
-    <a href="./image-converter.html">Image converter</a>
-    <a href="./image-cropper.html">Image cropper</a>
-    <a href="./image-resizer.html">Image resize</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Image &amp; Media"}'>Also in Image &amp; Media</span>
+    <a href="./image-converter.html" data-t="53">Image converter</a>
+    <a href="./image-cropper.html" data-t="52">Image cropper</a>
+    <a href="./image-resizer.html" data-t="54">Image resize</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="103">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="104">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="105" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="106">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2381,6 +2494,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Image Compressor — shrink JPEG, PNG and WebP in bulk, never uploaded — MDV","Compress up to 50 images at once to WebP or JPEG with a quality slider and an optional size cap. See what each file saves and compare before and after. Photos never leave your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Choose images to compress","Save as","Longest side","Original","Compressed","{total} files were dropped; the first {max} are compressed and the other {skipped} left out.","{type} is not an image","an unknown type is not an image","SVG is text, not pixels; this tool does not compress it","{size} is past the 100 MiB limit","the image has no pixel size","{w} × {h} is past the 100-megapixel limit","{w} × {h} is past the {area}-pixel canvas limit; pick a Longest side","the browser returned no image for a {w} × {h} canvas, usually for lack of memory; pick a smaller Longest side","no {want} encoder here, saved as {got}","first frame only","original kept, it was already smaller; any metadata in it stays","the bytes are not an image this browser can decode (HEIC is not decoded by most browsers; export it as JPEG first)","the bytes are not an image this browser can decode","Compare","Download","{done} of {total}","{images}, {failed} failed","none","{before} → {after}: these settings make the files larger","compressing…","Original · {size} · {type}","Kept original · {size} · {type}","Compressed · {size} · {type}","{n} image","{n} images","Image & Media","2026-11-02"],"h":107,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Suelta imágenes, elige cuánto reducirlas y descarga archivos que pesan menos.","En este dispositivo","Funciona sin conexión","Suelta hasta 50 imágenes JPEG, PNG, WebP o GIF","Guardar como","Mismo formato","Calidad","Lado mayor","Tal cual","Conservar el original si ya es más pequeño","suelta imágenes arriba","No se pudieron usar esos archivos","Ahorro","Archivo","Antes","Después","Añadir o reemplazar imágenes","Descargar todo","Antes y después","Cómo funciona","El navegador decodifica cada imagen con \u003ccode>createImageBitmap\u003c/code>, que aplica la orientación EXIF para que una foto del móvil quede derecha, la dibuja en un \u003ccode>&lt;canvas&gt;\u003c/code> y la codifica de nuevo con \u003ccode>canvas.toBlob(type, quality)\u003c/code>. Eso tiene pérdida en WebP y JPEG: el archivo nuevo contiene menos detalle que el original, más cuanto menor es la calidad, y comprimir un archivo dos veces pierde un poco más cada vez. Usa Comparar para mirar antes de descargar. PNG no tiene pérdida e ignora el control de calidad, así que Mismo formato rara vez reduce un PNG; WebP casi siempre lo hace. JPEG no admite transparencia, así que los píxeles transparentes pasan a blanco.","\u003cstrong>Lado mayor\u003c/strong> reduce una imagen para que su lado más largo mida como máximo esos píxeles, manteniendo las proporciones; nunca la agranda. \u003cstrong>Conservar el original si ya es más pequeño\u003c/strong> te devuelve el archivo original, intacto, siempre que el nuevo pese lo mismo o más, y la fila lo indica. Al recodificar se pierde todo lo que no son píxeles (EXIF, incluidos la ubicación GPS, el modelo de la cámara y la fecha, los perfiles de color y todos los fotogramas de un GIF animado salvo el primero), lo que a menudo se desea, pero un original conservado mantiene todo eso, y la fila también lo dice. Los colores se dibujan en el espacio sRGB que usa el canvas, así que una foto de gama amplia puede verse algo menos saturada. Un navegador sin codificador WebP devuelve PNG, y la página indica el tipo que obtuvo.","Límites: 50 imágenes a la vez, cada una de hasta 100 MiB y 100 megapíxeles una vez decodificada, y un canvas de salida de como máximo 124.992.400 píxeles (el techo de Firefox; los iPhone y iPad se detienen en 16.777.216: elige un Lado mayor allí). Un archivo que supera un límite o no se decodifica aparece con el motivo, y el resto se comprimen. Al cambiar un ajuste se vuelve a comprimir todo el lote a partir de los originales. Descargar todo guarda los archivos uno por uno; puede que el navegador pida permiso para varias descargas. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Compresor de imágenes — reduce JPEG, PNG y WebP en lote, sin subir nada — MDV","Comprime hasta 50 imágenes a la vez en WebP o JPEG, con un control de calidad y un límite de tamaño opcional. Mira cuánto ahorra cada archivo y compara antes y después. Las fotos no salen de tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elegir imágenes para comprimir","Guardar como","Lado mayor","Original","Comprimida","Se soltaron {total} archivos; se comprimen los primeros {max} y se dejan fuera los otros {skipped}.","{type} no es una imagen","un tipo desconocido no es una imagen","SVG es texto, no píxeles; esta herramienta no lo comprime","{size} supera el límite de 100 MiB","la imagen no tiene tamaño en píxeles","{w} × {h} supera el límite de 100 megapíxeles","{w} × {h} supera el límite de canvas de {area} píxeles; elige un Lado mayor","el navegador no devolvió ninguna imagen para un canvas de {w} × {h}, normalmente por falta de memoria; elige un Lado mayor menor","no hay codificador {want} aquí, se guardó como {got}","solo el primer fotograma","se conservó el original, ya era más pequeño; sus metadatos se mantienen","los bytes no son una imagen que este navegador pueda decodificar (la mayoría de los navegadores no decodifican HEIC; expórtalo antes como JPEG)","los bytes no son una imagen que este navegador pueda decodificar","Comparar","Descargar","{done} de {total}","{images}, {failed} con error","ninguno","{before} → {after}: estos ajustes hacen los archivos más grandes","comprimiendo…","Original · {size} · {type}","Original conservado · {size} · {type}","Comprimida · {size} · {type}","{n} imagen","{n} imágenes","Imagen y multimedia",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Déposez des images, choisissez la taille voulue et téléchargez des fichiers plus légers.","Sur cet appareil","Fonctionne hors ligne","Déposez jusqu’à 50 images JPEG, PNG, WebP ou GIF","Enregistrer en","Même format","Qualité","Plus grand côté","Inchangé","Garder l’original s’il est déjà plus petit","déposez des images ci-dessus","Impossible d’utiliser ces fichiers","Gain","Fichier","Avant","Après","Ajouter ou remplacer des images","Tout télécharger","Avant et après","Comment ça marche","Chaque image est décodée par le navigateur avec \u003ccode>createImageBitmap\u003c/code>, qui applique l’orientation EXIF pour qu’une photo de téléphone reste droite, dessinée sur un \u003ccode>&lt;canvas&gt;\u003c/code>, puis encodée à nouveau avec \u003ccode>canvas.toBlob(type, quality)\u003c/code>. C’est avec perte pour WebP et JPEG : le nouveau fichier contient moins de détails que l’original, davantage à faible qualité, et compresser un fichier deux fois en perd un peu plus à chaque passage. Utilisez Comparer pour regarder avant de télécharger. PNG est sans perte et ignore le curseur de qualité, donc Même format réduit rarement un PNG ; WebP y parvient d’ordinaire. JPEG n’a pas de transparence : les pixels transparents deviennent blancs.","\u003cstrong>Plus grand côté\u003c/strong> réduit une image pour que son plus grand côté fasse au plus ce nombre de pixels, en gardant ses proportions ; elle n’est jamais agrandie. \u003cstrong>Garder l’original s’il est déjà plus petit\u003c/strong> vous rend le fichier original, intact, chaque fois que le nouveau pèserait autant ou plus, et la ligne le dit. Le réencodage supprime tout ce qui n’est pas pixels (EXIF, dont la position GPS, le modèle d’appareil et la date, profils colorimétriques, et toutes les images d’un GIF animé sauf la première), ce qui est souvent souhaité, mais un original conservé garde tout cela, et la ligne le dit aussi. Les couleurs sont dessinées dans l’espace sRGB du canvas, si bien qu’une photo à large gamut peut paraître un peu moins saturée. Un navigateur sans encodeur WebP renvoie du PNG, et la page indique le type obtenu.","Limites : 50 images à la fois, chacune jusqu’à 100 MiB et 100 mégapixels une fois décodée, et un canvas de sortie d’au plus 124 992 400 pixels (le plafond de Firefox ; les iPhone et iPad s’arrêtent à 16 777 216 : choisissez-y un Plus grand côté). Un fichier qui dépasse une limite ou ne se décode pas est listé avec la raison, et les autres sont compressés. Changer un réglage recompresse tout le lot à partir des originaux. Tout télécharger enregistre les fichiers un par un ; le navigateur peut demander d’autoriser plusieurs téléchargements. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Compresseur d’images — réduit JPEG, PNG et WebP en lot, sans rien envoyer — MDV","Compressez jusqu’à 50 images à la fois en WebP ou JPEG, avec un curseur de qualité et une limite de taille facultative. Voyez ce que chaque fichier économise et comparez avant et après. Les photos ne quittent pas votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisir les images à compresser","Enregistrer en","Plus grand côté","Original","Compressée","{total} fichiers ont été déposés ; les {max} premiers sont compressés et les {skipped} autres laissés de côté.","{type} n’est pas une image","un type inconnu n’est pas une image","SVG est du texte, pas des pixels ; cet outil ne le compresse pas","{size} dépasse la limite de 100 MiB","l’image n’a pas de taille en pixels","{w} × {h} dépasse la limite de 100 mégapixels","{w} × {h} dépasse la limite de canvas de {area} pixels ; choisissez un Plus grand côté","le navigateur n’a renvoyé aucune image pour un canvas de {w} × {h}, généralement faute de mémoire ; choisissez un Plus grand côté plus petit","pas d’encodeur {want} ici, enregistré en {got}","première image seulement","original conservé, il était déjà plus petit ; ses métadonnées restent","les octets ne forment pas une image que ce navigateur sait décoder (HEIC n’est pas décodé par la plupart des navigateurs ; exportez-le d’abord en JPEG)","les octets ne forment pas une image que ce navigateur sait décoder","Comparer","Télécharger","{done} sur {total}","{images}, {failed} en échec","aucun","{before} → {after} : ces réglages alourdissent les fichiers","compression…","Original · {size} · {type}","Original conservé · {size} · {type}","Compressée · {size} · {type}","{n} image","{n} images","Image et médias",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Zieh Bilder hinein, wähle, wie klein sie werden sollen, und lade leichtere Dateien herunter.","Läuft auf diesem Gerät","Funktioniert offline","Bis zu 50 Bilder (JPEG, PNG, WebP oder GIF) hineinziehen","Speichern als","Gleiches Format","Qualität","Längste Seite","Unverändert","Original behalten, wenn es schon kleiner ist","bilder oben hineinziehen","Diese Dateien ließen sich nicht verwenden","Ahorrado","Datei","Vorher","Nachher","Bilder hinzufügen oder ersetzen","Alle herunterladen","Vorher und nachher","So funktioniert es","Jedes Bild wird vom Browser mit \u003ccode>createImageBitmap\u003c/code> dekodiert, das die EXIF-Ausrichtung anwendet, damit ein Handyfoto aufrecht bleibt, auf ein \u003ccode>&lt;canvas&gt;\u003c/code> gezeichnet und mit \u003ccode>canvas.toBlob(type, quality)\u003c/code> neu kodiert. Das ist bei WebP und JPEG verlustbehaftet: Die neue Datei enthält weniger Details als das Original, bei niedrigerer Qualität mehr, und wer eine Datei zweimal komprimiert, verliert jedes Mal etwas mehr. Nutze Vergleichen, um vor dem Herunterladen nachzusehen. PNG ist verlustfrei und ignoriert den Qualitätsregler, daher macht Gleiches Format ein PNG selten kleiner; WebP meist schon. JPEG kennt keine Transparenz, deshalb werden transparente Pixel weiß.","\u003cstrong>Längste Seite\u003c/strong> verkleinert ein Bild so, dass seine längere Seite höchstens so viele Pixel misst, bei gleichen Proportionen; es wird nie vergrößert. \u003cstrong>Original behalten, wenn es schon kleiner ist\u003c/strong> gibt dir die Originaldatei unverändert zurück, wenn die neue gleich viel oder mehr wiegen würde, und die Zeile sagt das. Beim Neukodieren fällt alles weg, was kein Pixel ist (EXIF, darunter GPS-Standort, Kameramodell und Datum, Farbprofile und jedes Einzelbild eines animierten GIFs nach dem ersten), was oft gewollt ist; ein behaltenes Original behält aber alles davon, und auch das sagt die Zeile. Farben werden im sRGB-Raum des Canvas gezeichnet, ein Foto mit weitem Farbraum kann daher etwas weniger gesättigt wirken. Ein Browser ohne WebP-Encoder liefert stattdessen PNG, und die Seite nennt den erhaltenen Typ.","Grenzen: 50 Bilder auf einmal, jedes bis 100 MiB und 100 Megapixel nach dem Dekodieren, und ein Ausgabe-Canvas von höchstens 124.992.400 Pixeln (die Obergrenze von Firefox; iPhones und iPads hören bei 16.777.216 auf: Wähle dort eine Längste Seite). Eine Datei, die eine Grenze überschreitet oder sich nicht dekodieren lässt, wird mit dem Grund aufgelistet, die übrigen werden komprimiert. Eine geänderte Einstellung komprimiert den ganzen Stapel erneut aus den Originalen. Alle herunterladen speichert die Dateien einzeln; der Browser fragt eventuell, ob mehrere Downloads erlaubt sind. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Bildkompressor — JPEG, PNG und WebP im Stapel verkleinern, nichts wird hochgeladen — MDV","Komprimiere bis zu 50 Bilder auf einmal zu WebP oder JPEG, mit Qualitätsregler und optionaler Größenbegrenzung. Sieh, was jede Datei spart, und vergleiche vorher und nachher. Fotos verlassen dein Gerät nicht.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Zu komprimierende Bilder auswählen","Speichern als","Längste Seite","Original","Komprimiert","{total} Dateien wurden abgelegt; die ersten {max} werden komprimiert, die übrigen {skipped} bleiben außen vor.","{type} ist kein Bild","ein unbekannter Typ ist kein Bild","SVG ist Text, keine Pixel; dieses Werkzeug komprimiert es nicht","{size} überschreitet die Grenze von 100 MiB","das Bild hat keine Pixelgröße","{w} × {h} überschreitet die Grenze von 100 Megapixeln","{w} × {h} überschreitet die Canvas-Grenze von {area} Pixeln; wähle eine Längste Seite","der Browser lieferte für ein Canvas von {w} × {h} kein Bild, meist wegen fehlenden Speichers; wähle eine kleinere Längste Seite","hier gibt es keinen {want}-Encoder, als {got} gespeichert","nur das erste Einzelbild","Original behalten, es war schon kleiner; seine Metadaten bleiben erhalten","die Bytes sind kein Bild, das dieser Browser dekodieren kann (HEIC wird von den meisten Browsern nicht dekodiert; exportiere es zuerst als JPEG)","die Bytes sind kein Bild, das dieser Browser dekodieren kann","Vergleichen","Herunterladen","{done} von {total}","{images}, {failed} fehlgeschlagen","keiner","{before} → {after}: Diese Einstellungen machen die Dateien größer","komprimiere …","Original · {size} · {type}","Original behalten · {size} · {type}","Komprimiert · {size} · {type}","{n} Bild","{n} Bilder","Bild und Medien",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Trascina delle immagini, scegli quanto ridurle e scarica file più leggeri.","Su questo dispositivo","Funziona offline","Trascina fino a 50 immagini JPEG, PNG, WebP o GIF","Salva come","Stesso formato","Qualità","Lato maggiore","Invariato","Mantieni l’originale se è già più piccolo","trascina immagini qui sopra","Impossibile usare quei file","Risparmio","File","Prima","Dopo","Aggiungi o sostituisci immagini","Scarica tutto","Prima e dopo","Come funziona","Ogni immagine viene decodificata dal browser con \u003ccode>createImageBitmap\u003c/code>, che applica l’orientamento EXIF in modo che una foto dello smartphone resti dritta, disegnata su un \u003ccode>&lt;canvas&gt;\u003c/code> e codificata di nuovo con \u003ccode>canvas.toBlob(type, quality)\u003c/code>. È con perdita per WebP e JPEG: il nuovo file contiene meno dettagli dell’originale, di più a qualità più bassa, e comprimere un file due volte ne perde ogni volta un po’ di più. Usa Confronta per guardare prima di scaricare. PNG è senza perdita e ignora il cursore della qualità, quindi Stesso formato di rado rende più piccolo un PNG; WebP di solito sì. JPEG non ha trasparenza, quindi i pixel trasparenti diventano bianchi.","\u003cstrong>Lato maggiore\u003c/strong> riduce un’immagine in modo che il suo lato più lungo misuri al massimo quel numero di pixel, mantenendo le proporzioni; non ingrandisce mai. \u003cstrong>Mantieni l’originale se è già più piccolo\u003c/strong> ti restituisce il file originale, intatto, ogni volta che il nuovo peserebbe uguale o di più, e la riga lo dice. La ricodifica elimina tutto ciò che non è pixel (EXIF, compresi la posizione GPS, il modello della fotocamera e la data, i profili colore e ogni fotogramma di una GIF animata dopo il primo), cosa spesso voluta, ma un originale mantenuto conserva tutto questo, e anche questo lo dice la riga. I colori sono disegnati nello spazio sRGB che usa il canvas, quindi una foto a gamma ampia può sembrare un po’ meno satura. Un browser senza encoder WebP restituisce invece PNG, e la pagina indica il tipo ottenuto.","Limiti: 50 immagini alla volta, ciascuna fino a 100 MiB e 100 megapixel una volta decodificata, e un canvas di output di al massimo 124.992.400 pixel (il tetto di Firefox; iPhone e iPad si fermano a 16.777.216: lì scegli un Lato maggiore). Un file che supera un limite o non si decodifica compare con il motivo, e gli altri vengono compressi. Cambiando un’impostazione si ricomprime l’intero gruppo dagli originali. Scarica tutto salva i file uno per uno; il browser potrebbe chiedere di consentire più download. Non viene caricato nulla: questo file non ha un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Compressore di immagini — riduci JPEG, PNG e WebP in blocco, senza caricare nulla — MDV","Comprimi fino a 50 immagini alla volta in WebP o JPEG, con un cursore di qualità e un limite di dimensione facoltativo. Vedi quanto risparmia ogni file e confronta prima e dopo. Le foto non lasciano il tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli le immagini da comprimere","Salva come","Lato maggiore","Originale","Compressa","Sono stati trascinati {total} file; i primi {max} vengono compressi e gli altri {skipped} esclusi.","{type} non è un’immagine","un tipo sconosciuto non è un’immagine","SVG è testo, non pixel; questo strumento non lo comprime","{size} supera il limite di 100 MiB","l’immagine non ha dimensioni in pixel","{w} × {h} supera il limite di 100 megapixel","{w} × {h} supera il limite del canvas di {area} pixel; scegli un Lato maggiore","il browser non ha restituito alcuna immagine per un canvas di {w} × {h}, di solito per mancanza di memoria; scegli un Lato maggiore più piccolo","nessun encoder {want} qui, salvato come {got}","solo il primo fotogramma","originale mantenuto, era già più piccolo; i suoi metadati restano","i byte non sono un’immagine che questo browser sappia decodificare (HEIC non è decodificato dalla maggior parte dei browser; esportalo prima come JPEG)","i byte non sono un’immagine che questo browser sappia decodificare","Confronta","Scarica","{done} di {total}","{images}, {failed} non riuscite","nessuno","{before} → {after}: queste impostazioni rendono i file più grandi","compressione…","Originale · {size} · {type}","Originale mantenuto · {size} · {type}","Compressa · {size} · {type}","{n} immagine","{n} immagini","Immagini e media",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Solte imagens, escolha o quanto reduzir e baixe arquivos mais leves.","Neste dispositivo","Funciona offline","Solte até 50 imagens JPEG, PNG, WebP ou GIF","Salvar como","Mesmo formato","Qualidade","Maior lado","Original","Manter o original se já for menor","solte imagens acima","Não foi possível usar esses arquivos","Economia","Arquivo","Antes","Depois","Adicionar ou substituir imagens","Baixar tudo","Antes e depois","Como funciona","Cada imagem é decodificada pelo navegador com \u003ccode>createImageBitmap\u003c/code>, que aplica a orientação EXIF para que uma foto de celular fique em pé, desenhada em um \u003ccode>&lt;canvas&gt;\u003c/code> e codificada de novo com \u003ccode>canvas.toBlob(type, quality)\u003c/code>. Isso tem perda em WebP e JPEG: o novo arquivo tem menos detalhes que o original, mais ainda com qualidade menor, e comprimir um arquivo duas vezes perde um pouco mais a cada vez. Use Comparar para olhar antes de baixar. PNG não tem perda e ignora o controle de qualidade, então Mesmo formato raramente deixa um PNG menor; WebP geralmente deixa. JPEG não tem transparência, então os pixels transparentes ficam brancos.","\u003cstrong>Maior lado\u003c/strong> reduz uma imagem para que o lado mais longo tenha no máximo essa quantidade de pixels, mantendo as proporções; nunca amplia. \u003cstrong>Manter o original se já for menor\u003c/strong> devolve o arquivo original, intacto, sempre que o novo pesar o mesmo ou mais, e a linha avisa. Recodificar descarta tudo o que não é pixel (EXIF, incluindo localização GPS, modelo da câmera e data, perfis de cor e todos os quadros de um GIF animado depois do primeiro), o que muitas vezes é desejado, mas um original mantido preserva tudo isso, e a linha também avisa. As cores são desenhadas no espaço sRGB usado pelo canvas, então uma foto de gama ampla pode parecer um pouco menos saturada. Um navegador sem codificador WebP retorna PNG, e a página informa o tipo que obteve.","Limites: 50 imagens por vez, cada uma com até 100 MiB e 100 megapixels depois de decodificada, e um canvas de saída de no máximo 124.992.400 pixels (o teto do Firefox; iPhones e iPads páram em 16.777.216: escolha um Maior lado nesses aparelhos). Um arquivo que ultrapassa um limite ou não decodifica aparece com o motivo, e os demais são comprimidos. Mudar uma configuração comprime o lote inteiro de novo a partir dos originais. Baixar tudo salva os arquivos um a um; o navegador pode pedir permissão para vários downloads. Nada é enviado: este arquivo não tem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Compressor de imagens — reduza JPEG, PNG e WebP em lote, sem enviar nada — MDV","Comprima até 50 imagens de uma vez em WebP ou JPEG, com controle de qualidade e limite de tamanho opcional. Veja quanto cada arquivo economiza e compare antes e depois. As fotos não saem do seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolher imagens para comprimir","Salvar como","Maior lado","Original","Comprimida","{total} arquivos foram soltos; os primeiros {max} são comprimidos e os outros {skipped} ficam de fora.","{type} não é uma imagem","um tipo desconhecido não é uma imagem","SVG é texto, não pixels; esta ferramenta não o comprime","{size} passa do limite de 100 MiB","a imagem não tem tamanho em pixels","{w} × {h} passa do limite de 100 megapixels","{w} × {h} passa do limite do canvas de {area} pixels; escolha um Maior lado","o navegador não retornou nenhuma imagem para um canvas de {w} × {h}, geralmente por falta de memória; escolha um Maior lado menor","sem codificador {want} aqui, salvo como {got}","somente o primeiro quadro","original mantido, já era menor; os metadados dele permanecem","os bytes não são uma imagem que este navegador consiga decodificar (a maioria dos navegadores não decodifica HEIC; exporte-o antes como JPEG)","os bytes não são uma imagem que este navegador consiga decodificar","Comparar","Baixar","{done} de {total}","{images}, {failed} com falha","nenhum","{before} → {after}: essas configurações deixam os arquivos maiores","comprimindo…","Original · {size} · {type}","Original mantido · {size} · {type}","Comprimida · {size} · {type}","{n} imagem","{n} imagens","Imagem e mídia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","画像をドロップし、どこまで小さくするか選んで、軽くなったファイルをダウンロードしてください。","この端末で動作","オフラインで動作","JPEG・PNG・WebP・GIF 画像を最大 50 枚までドロップ","保存形式","同じ形式","品質","長辺","そのまま","元のファイルがすでに小さい場合は元のまま残す","上に画像をドロップ","これらのファイルは使えませんでした","削減","ファイル","前","後","画像を追加・置換","すべてダウンロード","圧縮前後","仕組み","各画像はブラウザーが \u003ccode>createImageBitmap\u003c/code> でデコードします。これは EXIF の向きを反映するので、スマートフォンの写真は正しい向きのままです。その後 \u003ccode>&lt;canvas&gt;\u003c/code> に描画し、\u003ccode>canvas.toBlob(type, quality)\u003c/code> で再エンコードします。WebP と JPEG では非可逆で、新しいファイルは元より細部が少なくなり、品質が低いほどその差は大きくなります。同じファイルを 2 回圧縮すると、そのたびに少しずつ劣化します。ダウンロードする前に「比較」で確認してください。PNG は可逆で品質スライダーの影響を受けないため、「同じ形式」で PNG が小さくなることはまれですが、WebP ならたいてい小さくなります。JPEG は透明を持てないため、透明な画素は白になります。","\u003cstrong>長辺\u003c/strong>は、画像の長い方の辺がその画素数以下になるように、縦横比を保ったまま縮小します。拡大はしません。\u003cstrong>元のファイルがすでに小さい場合は元のまま残す\u003c/strong>を有効にすると、新しいファイルが同じかそれ以上の重さになるときは、元のファイルがそのまま返され、その行にも表示されます。再エンコードすると、画素以外のものはすべて失われます。GPS の位置情報、カメラの機種、日付を含む EXIF、カラープロファイル、アニメーション GIF の最初以外のフレームなどです。多くの場合それは望ましいことですが、残された元のファイルにはそれらがすべて残り、その行にもそう表示されます。色はキャンバスが使う sRGB 空間で描画されるため、広色域の写真はやや彩度が落ちて見えることがあります。WebP エンコーダーのないブラウザーは代わりに PNG を返し、ページは実際に得られた形式を表示します。","制限:一度に 50 枚まで。各画像はデコード後で 100 MiB・100 メガピクセルまで、出力キャンバスは最大 124,992,400 画素です(Firefox の上限。iPhone と iPad は 16,777,216 画素で止まるため、その場合は長辺を指定してください)。制限を超えたファイルやデコードできないファイルは理由とともに一覧に表示され、残りは圧縮されます。設定を変えると、元の画像からバッチ全体をもう一度圧縮します。「すべてダウンロード」はファイルを 1 つずつ保存します。ブラウザーが複数のダウンロードの許可を求めることがあります。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","画像圧縮 — JPEG・PNG・WebP をまとめて軽量化、アップロードなし — MDV","最大 50 枚の画像を一度に WebP または JPEG に圧縮します。品質スライダーとサイズ上限(任意)を使え、各ファイルの削減量を確認して圧縮前後を比較できます。写真は端末の外に出ません。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","圧縮する画像を選択","保存形式","長辺","元画像","圧縮後","{total} 個のファイルがドロップされました。先頭の {max} 個を圧縮し、残りの {skipped} 個は対象外です。","{type} は画像ではありません","不明な形式は画像ではありません","SVG はピクセルではなくテキストのため、このツールでは圧縮しません","{size} は 100 MiB の上限を超えています","画像にピクセルサイズがありません","{w} × {h} は 100 メガピクセルの上限を超えています","{w} × {h} はキャンバスの上限 {area} 画素を超えています。長辺を指定してください","ブラウザーは {w} × {h} のキャンバスから画像を返しませんでした。多くはメモリ不足が原因です。長辺をもっと小さく指定してください","ここには {want} エンコーダーがないため、{got} として保存しました","最初のフレームのみ","元のファイルがすでに小さいため、そのまま残しました。メタデータも残ります","このブラウザーでデコードできる画像ではありません(HEIC は多くのブラウザーでデコードされません。先に JPEG として書き出してください)","このブラウザーでデコードできる画像ではありません","比較","ダウンロード","{done} / {total}","{images}、{failed} 件失敗","なし","{before} → {after}:この設定ではファイルが大きくなります","圧縮中…","元画像 · {size} · {type}","元画像を維持 · {size} · {type}","圧縮後 · {size} · {type}","{n} 枚","{n} 枚","画像とメディア",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","이미지를 놓고 얼마나 줄일지 고른 뒤, 더 가벼워진 파일을 다운로드하세요.","이 기기에서 실행","오프라인 작동","JPEG, PNG, WebP, GIF 이미지를 최대 50개까지 놓으세요","저장 형식","같은 형식","품질","긴 변","원본 크기","원본이 이미 더 작으면 원본 유지","위에 이미지를 놓으세요","이 파일들을 사용할 수 없습니다","절감","파일","전","후","이미지 추가 또는 교체","모두 다운로드","전후 비교","작동 방식","각 이미지는 브라우저가 \u003ccode>createImageBitmap\u003c/code>으로 디코딩합니다. 이 함수는 EXIF 방향을 적용하므로 휴대폰 사진이 바로 서 있고, 이를 \u003ccode>&lt;canvas&gt;\u003c/code>에 그린 뒤 \u003ccode>canvas.toBlob(type, quality)\u003c/code>로 다시 인코딩합니다. WebP와 JPEG는 손실 압축이라 새 파일은 원본보다 세부 정보가 적고, 품질이 낮을수록 더 많이 줄며, 같은 파일을 두 번 압축하면 그때마다 조금씩 더 잃습니다. 다운로드 전에 비교로 확인하세요. PNG는 무손실이라 품질 슬라이더가 적용되지 않으므로, 같은 형식으로 PNG가 작아지는 일은 드물지만 WebP는 대개 작아집니다. JPEG는 투명도를 지원하지 않아 투명한 픽셀은 흰색이 됩니다.","\u003cstrong>긴 변\u003c/strong>은 이미지의 긴 쪽 변이 해당 픽셀 수 이하가 되도록 비율을 유지하며 줄입니다. 확대하지는 않습니다. \u003cstrong>원본이 이미 더 작으면 원본 유지\u003c/strong>를 켜면, 새 파일이 같거나 더 무거울 때 원본 파일을 그대로 돌려주며 해당 행에도 그렇게 표시됩니다. 다시 인코딩하면 픽셀이 아닌 것은 모두 사라집니다. GPS 위치, 카메라 모델, 날짜를 포함한 EXIF, 색상 프로필, 애니메이션 GIF의 첫 프레임을 제외한 모든 프레임이 해당됩니다. 대개는 원하는 결과지만, 유지된 원본에는 이 모든 것이 그대로 남으며 그 행에도 그렇게 표시됩니다. 색은 캔버스가 쓰는 sRGB 공간에서 그려지므로 넓은 색역의 사진은 채도가 약간 낮아 보일 수 있습니다. WebP 인코더가 없는 브라우저는 대신 PNG를 반환하며, 페이지는 실제로 얻은 형식을 알려 줍니다.","제한: 한 번에 50개, 각 파일은 디코딩 후 100 MiB와 100메가픽셀까지, 출력 캔버스는 최대 124,992,400픽셀입니다(Firefox의 상한이며, iPhone과 iPad는 16,777,216픽셀에서 멈추므로 그 경우 긴 변을 지정하세요). 제한을 넘거나 디코딩되지 않는 파일은 이유와 함께 목록에 표시되고, 나머지는 압축됩니다. 설정을 바꾸면 원본에서 전체를 다시 압축합니다. 모두 다운로드는 파일을 하나씩 저장하며, 브라우저가 여러 다운로드 허용을 물을 수 있습니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크 모드와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","이미지 압축기 — JPEG, PNG, WebP 일괄 축소, 업로드 없음 — MDV","최대 50개의 이미지를 한 번에 WebP 또는 JPEG로 압축합니다. 품질 슬라이더와 선택 가능한 크기 제한이 있고, 파일별 절감량을 확인하며 전후를 비교할 수 있습니다. 사진은 기기를 벗어나지 않습니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","압축할 이미지 선택","저장 형식","긴 변","원본","압축됨","파일 {total}개가 놓였습니다. 처음 {max}개는 압축하고 나머지 {skipped}개는 제외했습니다.","{type}은(는) 이미지가 아닙니다","알 수 없는 형식은 이미지가 아닙니다","SVG는 픽셀이 아니라 텍스트이므로 이 도구는 압축하지 않습니다","{size}은(는) 100 MiB 제한을 넘습니다","이미지에 픽셀 크기가 없습니다","{w} × {h}은(는) 100메가픽셀 제한을 넘습니다","{w} × {h}은(는) 캔버스 제한 {area}픽셀을 넘습니다. 긴 변을 지정하세요","브라우저가 {w} × {h} 캔버스에서 이미지를 반환하지 않았습니다. 대개 메모리 부족 때문이니 긴 변을 더 작게 지정하세요","여기에는 {want} 인코더가 없어 {got}(으)로 저장했습니다","첫 프레임만","원본이 이미 더 작아 원본을 유지했습니다. 메타데이터도 그대로 남습니다","이 브라우저가 디코딩할 수 있는 이미지가 아닙니다(HEIC는 대부분의 브라우저에서 디코딩되지 않으니 먼저 JPEG로 내보내세요)","이 브라우저가 디코딩할 수 있는 이미지가 아닙니다","비교","다운로드","{done} / {total}","{images}, {failed}개 실패","없음","{before} → {after}: 이 설정으로는 파일이 더 커집니다","압축 중…","원본 · {size} · {type}","원본 유지 · {size} · {type}","압축됨 · {size} · {type}","이미지 {n}개","이미지 {n}개","이미지와 미디어",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","拖入图片,选择压缩程度,下载体积更小的文件。","在此设备上运行","可离线使用","拖入最多 50 张 JPEG、PNG、WebP 或 GIF 图片","保存为","保持原格式","质量","最长边","保持原样","原图已经更小时保留原图","将图片拖到上方","无法使用这些文件","节省","文件","压缩前","压缩后","添加或替换图片","全部下载","压缩前后","工作原理","浏览器用 \u003ccode>createImageBitmap\u003c/code> 解码每张图片,它会应用 EXIF 方向,让手机照片保持正立;随后绘制到 \u003ccode>&lt;canvas&gt;\u003c/code> 上,再用 \u003ccode>canvas.toBlob(type, quality)\u003c/code> 重新编码。对 WebP 和 JPEG 来说这是有损的:新文件的细节比原图少,质量越低越明显,同一个文件压缩两次,每次都会再损失一点。下载前请用“对比”先看看。PNG 是无损的,不受质量滑块影响,所以“保持原格式”很少能让 PNG 变小;WebP 通常可以。JPEG 不支持透明,透明像素会变成白色。","\u003cstrong>最长边\u003c/strong>会按比例缩小图片,使较长的一边不超过该像素数;不会放大。\u003cstrong>原图已经更小时保留原图\u003c/strong>:只要新文件不比原文件轻,就原样交还原文件,该行会注明。重新编码会丢掉所有非像素信息:EXIF(包括 GPS 位置、相机型号和日期)、色彩配置文件,以及动画 GIF 除第一帧外的所有帧。这通常正是所需,但保留下来的原图会保留这一切,该行也会注明。颜色按画布使用的 sRGB 空间绘制,因此广色域照片可能显得饱和度略低。没有 WebP 编码器的浏览器会改为返回 PNG，页面会报告实际得到的类型。","限制:一次最多 50 张,每张解码后不超过 100 MiB 和 100 百万像素,输出画布最多 124,992,400 像素(Firefox 的上限;iPhone 和 iPad 在 16,777,216 像素处停止,请在那里指定最长边)。超出限制或无法解码的文件会连同原因一起列出,其余的照常压缩。更改任何设置都会从原图重新压缩整批。“全部下载”会逐个保存文件,浏览器可能会询问是否允许多次下载。不会上传任何内容:此文件中没有服务器。","“深色”和“语言”按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的任何内容都不会被保存。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","图片压缩器 — 批量压缩 JPEG、PNG 和 WebP，绝不上传 — MDV","一次最多把 50 张图片压缩为 WebP 或 JPEG，带质量滑块和可选的尺寸上限。可查看每个文件节省了多少,并对比压缩前后。照片不会离开你的设备。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择要压缩的图片","保存为","最长边","原图","已压缩","共拖入 {total} 个文件;压缩前 {max} 个,其余 {skipped} 个被略过。","{type} 不是图片","未知类型不是图片","SVG 是文本而非像素,此工具不压缩它","{size} 超过了 100 MiB 的限制","图片没有像素尺寸","{w} × {h} 超过了 100 百万像素的限制","{w} × {h} 超过了画布 {area} 像素的限制;请指定最长边","浏览器没有为 {w} × {h} 的画布返回图片,通常是内存不足;请指定更小的最长边","此处没有 {want} 编码器,已保存为 {got}","仅第一帧","原图已经更小,已保留原图;其中的元数据也会保留","这些字节不是此浏览器能解码的图片(大多数浏览器无法解码 HEIC，请先导出为 JPEG)","这些字节不是此浏览器能解码的图片","对比","下载","{done} / {total}","{images},{failed} 个失败","无","{before} → {after}:这些设置会让文件变大","压缩中…","原图 · {size} · {type}","保留原图 · {size} · {type}","已压缩 · {size} · {type}","{n} 张图片","{n} 张图片","图像与媒体",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2418,7 +2631,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var $ = function (id) { return document.getElementById(id); };
   var drop = $("drop"), file = $("file"), q = $("q"), keepSmaller = $("keepSmaller"), empty = $("empty"), err = $("err"), errmsg = $("errmsg");
   var result = $("result"), rowsEl = $("rows"), total = $("total"), totalnote = $("totalnote"), progress = $("progress"), bar = $("bar"), allBtn = $("all");
-  var fmt = "image/webp", maxSide = 0, items = [], run = 0, selected = null;
+  var fmt = "image/webp", maxSide = 0, items = [], run = 0, selected = null, dropped = 0;
 
   function pick(attr, value) {
     Array.prototype.forEach.call(document.querySelectorAll("[" + attr + "]"), function (b) {
@@ -2428,6 +2641,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   }
 
+  function showDropped() {
+    errmsg.textContent = tr("{total} files were dropped; the first {max} are compressed and the other {skipped} left out.",
+      { total: num(dropped + MAX_FILES), max: MAX_FILES, skipped: num(dropped) });
+    err.hidden = false;
+  }
+  // a failure the page words itself: the key and its values are kept, so it can be worded again in another language
+  function bad(key, vars) { var e = new Error(key); e.known = true; e.vars = vars; return e; }
+  function say(m) { return m && m.key ? tr(m.key, m.vars) : ""; }
+
   function take(list) {
     err.hidden = true;
     var files = Array.prototype.slice.call(list);
@@ -2435,8 +2657,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var skipped = files.length > MAX_FILES ? files.length - MAX_FILES : 0;
     files = files.slice(0, MAX_FILES);
     items.forEach(function (it) { if (it.outUrl) URL.revokeObjectURL(it.outUrl); if (it.srcUrl) URL.revokeObjectURL(it.srcUrl); });
-    items = files.map(function (f) { return { file: f, name: f.name, srcUrl: null, out: null, outUrl: null, note: "", error: "" }; });
-    if (skipped) { errmsg.textContent = num(skipped + MAX_FILES) + " files were dropped; the first " + MAX_FILES + " are compressed and the other " + num(skipped) + " left out."; err.hidden = false; }
+    items = files.map(function (f) { return { file: f, name: f.name, srcUrl: null, out: null, outUrl: null, notes: [], error: null }; });
+    dropped = skipped;
+    if (skipped) showDropped();
     selected = null;
     $("compare").hidden = true;
     compressAll();
@@ -2457,28 +2680,28 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     empty.hidden = items.length > 0;
     result.hidden = !items.length;
     allBtn.disabled = true;
-    items.forEach(function (it) { it.out = null; it.note = ""; it.error = ""; if (it.outUrl) { URL.revokeObjectURL(it.outUrl); it.outUrl = null; } });
+    items.forEach(function (it) { it.out = null; it.notes = []; it.error = null; if (it.outUrl) { URL.revokeObjectURL(it.outUrl); it.outUrl = null; } });
     paint();
     var i = 0;
     (function next() {
       if (my !== run) return;
       if (i >= items.length) { finish(); return; }
       var it = items[i++];
-      one(it).then(function () { if (my === run) { paint(); next(); } }, function (e) { if (my === run) { it.error = String(e && e.message || e); paint(); next(); } });
+      one(it).then(function () { if (my === run) { paint(); next(); } }, function (e) { if (my === run) { it.error = { key: String(e && e.message || e), vars: e && e.vars }; paint(); next(); } });
     })();
   }
 
   function one(it) {
     var f = it.file, type = f.type;
-    if (!/^image\//.test(type)) return Promise.reject(new Error((type || "an unknown type") + " is not an image"));
-    if (type === "image/svg+xml") return Promise.reject(new Error("SVG is text, not pixels; this tool does not compress it"));
-    if (f.size > MAX_FILE) return Promise.reject(new Error(fmtBytes(f.size) + " is past the 100 MiB limit"));
+    if (!/^image\//.test(type)) return Promise.reject(type ? bad(trk("{type} is not an image"), { type: type }) : bad(trk("an unknown type is not an image")));
+    if (type === "image/svg+xml") return Promise.reject(bad(trk("SVG is text, not pixels; this tool does not compress it")));
+    if (f.size > MAX_FILE) return Promise.reject(bad(trk("{size} is past the 100 MiB limit"), { size: fmtBytes(f.size) }));
     return decode(f).then(function (bmp) {
       var sw = bmp.width || bmp.naturalWidth, sh = bmp.height || bmp.naturalHeight;
-      if (!(sw > 0 && sh > 0)) throw new Error("the image has no pixel size");
-      if (sw * sh > MAX_SRC) { if (bmp.close) bmp.close(); throw new Error(num(sw) + " × " + num(sh) + " is past the 100-megapixel limit"); }
+      if (!(sw > 0 && sh > 0)) throw bad(trk("the image has no pixel size"));
+      if (sw * sh > MAX_SRC) { if (bmp.close) bmp.close(); throw bad(trk("{w} × {h} is past the 100-megapixel limit"), { w: num(sw), h: num(sh) }); }
       var size = fitSize(sw, sh, maxSide);
-      if (size.w * size.h > MAX_AREA) { if (bmp.close) bmp.close(); throw new Error(num(size.w) + " × " + num(size.h) + " is past the " + num(MAX_AREA) + "-pixel canvas limit; pick a Longest side"); }
+      if (size.w * size.h > MAX_AREA) { if (bmp.close) bmp.close(); throw bad(trk("{w} × {h} is past the {area}-pixel canvas limit; pick a Longest side"), { w: num(size.w), h: num(size.h), area: num(MAX_AREA) }); }
       var want = targetType(type, fmt), c = document.createElement("canvas");
       c.width = size.w; c.height = size.h;
       var g = c.getContext("2d");
@@ -2490,24 +2713,26 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       return new Promise(function (res, rej) {
         c.toBlob(function (b) {
           c.width = c.height = 0;
-          if (!b) { rej(new Error("the browser returned no image for a " + num(size.w) + " × " + num(size.h) + " canvas, usually for lack of memory; pick a smaller Longest side")); return; }
+          if (!b) { rej(bad(trk("the browser returned no image for a {w} × {h} canvas, usually for lack of memory; pick a smaller Longest side"), { w: num(size.w), h: num(size.h) })); return; }
           var got = b.type || want, notes = [];
-          if (got !== want) notes.push("no " + LABEL[want] + " encoder here, saved as " + (LABEL[got] || got));
-          if (type === "image/gif") notes.push("first frame only");
+          if (got !== want) notes.push({ key: trk("no {want} encoder here, saved as {got}"), vars: { want: LABEL[want], got: LABEL[got] || got } });
+          if (type === "image/gif") notes.push({ key: trk("first frame only") });
           if (keepSmaller.checked && b.size >= f.size && !size.scaled) {
             it.out = f; it.kept = true;
-            notes.unshift("original kept, it was already smaller; any metadata in it stays");
+            notes.unshift({ key: trk("original kept, it was already smaller; any metadata in it stays") });
           } else {
             it.out = b; it.kept = false;
           }
           it.outType = it.kept ? type : got;
-          it.note = notes.join("; ");
+          it.notes = notes;
           res();
         }, want, parseFloat(q.value));
       });
     }, function (e) {
-      if (e && /limit|pixel size|not an image|SVG/.test(e.message)) throw e;
-      throw new Error("the bytes are not an image this browser can decode" + (/heic|heif/i.test(f.name) ? " (HEIC is not decoded by most browsers; export it as JPEG first)" : ""));
+      if (e && e.known) throw e;
+      throw /heic|heif/i.test(f.name)
+        ? bad(trk("the bytes are not an image this browser can decode (HEIC is not decoded by most browsers; export it as JPEG first)"))
+        : bad(trk("the bytes are not an image this browser can decode"));
     });
   }
 
@@ -2521,7 +2746,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     rowsEl.textContent = "";
     var before = 0, after = 0, done = 0, failed = 0;
     items.forEach(function (it, idx) {
-      var tr = document.createElement("tr");
+      var row = document.createElement("tr");
       var name = document.createElement("td"), b = document.createElement("td"), a = document.createElement("td"), s = document.createElement("td"), act = document.createElement("td");
       name.textContent = it.name;
       name.style.overflowWrap = "anywhere";
@@ -2530,32 +2755,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       if (it.error) {
         failed++;
         a.textContent = "—"; s.textContent = "—";
-        var why = document.createElement("div"); why.className = "mdv-hint"; why.style.color = "var(--state-bad)"; why.textContent = it.error; name.appendChild(why);
+        var why = document.createElement("div"); why.className = "mdv-hint"; why.style.color = "var(--state-bad)"; why.textContent = say(it.error); name.appendChild(why);
       } else if (it.out) {
         done++; before += it.file.size; after += it.out.size;
         a.textContent = fmtBytes(it.out.size);
         var pct = Math.round((1 - it.out.size / it.file.size) * 100);
         s.textContent = it.kept ? "0%" : (pct >= 0 ? "−" + pct + "%" : "+" + Math.abs(pct) + "%");
-        var info = document.createElement("div"); info.className = "mdv-hint"; info.textContent = it.dims + (it.note ? " · " + it.note : ""); name.appendChild(info);
-        var cmp = document.createElement("button"); cmp.type = "button"; cmp.className = "mdv-mini"; cmp.textContent = "Compare";
+        var info = document.createElement("div"); info.className = "mdv-hint"; info.textContent = it.dims + (it.notes.length ? " · " + it.notes.map(say).join("; ") : ""); name.appendChild(info);
+        var cmp = document.createElement("button"); cmp.type = "button"; cmp.className = "mdv-mini"; cmp.textContent = tr("Compare");
         cmp.addEventListener("click", function () { compare(idx); });
-        var dl = document.createElement("button"); dl.type = "button"; dl.className = "mdv-mini"; dl.textContent = "Download";
+        var dl = document.createElement("button"); dl.type = "button"; dl.className = "mdv-mini"; dl.textContent = tr("Download");
         dl.addEventListener("click", function () { save(it); });
         act.appendChild(cmp); act.appendChild(document.createTextNode(" ")); act.appendChild(dl);
       } else {
         a.textContent = "…"; s.textContent = "";
       }
-      tr.appendChild(name); tr.appendChild(b); tr.appendChild(a); tr.appendChild(s); tr.appendChild(act);
-      rowsEl.appendChild(tr);
+      row.appendChild(name); row.appendChild(b); row.appendChild(a); row.appendChild(s); row.appendChild(act);
+      rowsEl.appendChild(row);
     });
     var finished = done + failed;
-    progress.textContent = finished < items.length ? num(finished) + " of " + num(items.length) : num(done) + (done === 1 ? " image" : " images") + (failed ? ", " + num(failed) + " failed" : "");
+    progress.textContent = finished < items.length ? tr("{done} of {total}", { done: num(finished), total: num(items.length) }) :
+      failed ? tr("{images}, {failed} failed", { images: trn(done, "{n} image", "{n} images"), failed: num(failed) }) : trn(done, "{n} image", "{n} images");
     bar.style.width = items.length ? Math.round(finished / items.length * 100) + "%" : "0";
     if (done) {
       var pct = Math.round((1 - after / before) * 100);
-      total.textContent = pct >= 0 ? pct + "%" : "none";
-      totalnote.textContent = fmtBytes(before) + " → " + fmtBytes(after) + (pct < 0 ? ": these settings make the files larger" : "");
-    } else { total.textContent = "—"; totalnote.textContent = finished < items.length ? "compressing…" : ""; }
+      total.textContent = pct >= 0 ? pct + "%" : tr("none");
+      totalnote.textContent = pct < 0 ? tr("{before} → {after}: these settings make the files larger", { before: fmtBytes(before), after: fmtBytes(after) }) :
+        fmtBytes(before) + " → " + fmtBytes(after);
+    } else { total.textContent = "—"; totalnote.textContent = finished < items.length ? tr("compressing…") : ""; }
   }
   function finish() { paint(); allBtn.disabled = !items.some(function (it) { return it.out; }); if (selected !== null) compare(selected); }
 
@@ -2567,8 +2794,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!it.outUrl) it.outUrl = URL.createObjectURL(it.out);
     $("before").src = it.srcUrl; $("after").src = it.outUrl;
     $("cmpname").textContent = it.name;
-    $("beforecap").textContent = "Original · " + fmtBytes(it.file.size) + " · " + (LABEL[it.file.type] || it.file.type);
-    $("aftercap").textContent = (it.kept ? "Kept original · " : "Compressed · ") + fmtBytes(it.out.size) + " · " + (LABEL[it.outType] || it.outType);
+    $("beforecap").textContent = tr("Original · {size} · {type}", { size: fmtBytes(it.file.size), type: LABEL[it.file.type] || it.file.type });
+    var av = { size: fmtBytes(it.out.size), type: LABEL[it.outType] || it.outType };
+    $("aftercap").textContent = it.kept ? tr("Kept original · {size} · {type}", av) : tr("Compressed · {size} · {type}", av);
     $("compare").hidden = false;
   }
   function save(it) {
@@ -2600,6 +2828,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   allBtn.addEventListener("click", function () {
     var list = items.filter(function (it) { return it.out; }), k = 0;
     (function next() { if (k >= list.length) return; save(list[k++]); setTimeout(next, 350); })();
+  });
+  // the words the script wrote are redrawn from the kept results; nothing is compressed again
+  onLang(function () {
+    paint();
+    if (selected !== null) compare(selected);
+    if (dropped && !err.hidden) showDropped();
   });
   drop.focus({ preventScroll: true });
 })();

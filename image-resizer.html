@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link is-here" href="./image-resizer.html" aria-current="page" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link is-here" href="./image-resizer.html" aria-current="page" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,57 +2353,57 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Image resize</h1>
+      <h1 class="mdv-head-name" data-t="54">Image resize</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Drop an image, give it a width, download the re-encoded file.
+    <p class="mdv-head-line" data-t="79">Drop an image, give it a width, download the re-encoded file.
       The aspect ratio is kept.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
-  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose an image">
+  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose an image" data-t-attrs="aria-label">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
-    <span class="mdv-tag">Drop a PNG, JPEG, WebP or GIF</span>
-    <span class="mdv-hint" style="margin:0">Decoded in this tab. Nothing is uploaded. Up to 100 MiB and 100 megapixels.</span>
+    <span class="mdv-tag" data-t="82">Drop a PNG, JPEG, WebP or GIF</span>
+    <span class="mdv-hint" style="margin:0" data-t="83">Decoded in this tab. Nothing is uploaded. Up to 100 MiB and 100 megapixels.</span>
     <input type="file" id="file" accept="image/*" class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <section id="panel" hidden class="mdv-stack">
     <div class="mdv-cols">
       <div class="mdv-panel is-flush">
-        <div class="mdv-panel-head"><span class="mdv-tag">Source</span><span class="mdv-tag mdv-mono" id="src-dim">—</span></div>
+        <div class="mdv-panel-head"><span class="mdv-tag" data-t="84">Source</span><span class="mdv-tag mdv-mono" id="src-dim">—</span></div>
         <div class="mdv-panel-body" style="display:flex;align-items:center;justify-content:center;min-height:190px;background:var(--hatch-fine)">
           <img id="preview" alt="" style="max-width:100%;max-height:190px;display:block;border:var(--hair)">
         </div>
       </div>
       <div class="mdv-stack is-tight">
         <div>
-          <label class="mdv-label" for="width">Target width (px)</label>
+          <label class="mdv-label" for="width" data-t="85">Target width (px)</label>
           <input class="mdv-input mdv-mono" id="width" type="number" min="1" max="12000" step="1" value="1200" aria-describedby="width-hint">
-          <p class="mdv-hint" id="width-hint">Output up to 12,000 px on either side and 124,992,400 pixels in all. iPhones and iPads stop at 16,777,216.</p>
+          <p class="mdv-hint" id="width-hint" data-t="86">Output up to 12,000 px on either side and 124,992,400 pixels in all. iPhones and iPads stop at 16,777,216.</p>
         </div>
         <div>
-          <span class="mdv-label">Format</span>
-          <div class="mdv-seg" role="group" aria-label="Format">
+          <span class="mdv-label" data-t="87">Format</span>
+          <div class="mdv-seg" role="group" aria-label="Format" data-t-attrs="aria-label">
             <button type="button" data-fmt="image/webp" class="is-on">WebP</button>
             <button type="button" data-fmt="image/jpeg">JPEG</button>
             <button type="button" data-fmt="image/png">PNG</button>
           </div>
         </div>
         <div id="qwrap">
-          <label class="mdv-label" for="q">Quality <span class="mdv-mono" id="qval">0.82</span></label>
+          <label class="mdv-label" for="q"><span data-t="88">Quality</span> <span class="mdv-mono" id="qval">0.82</span></label>
           <input id="q" type="range" min="0.3" max="1" step="0.01" value="0.82" style="width:100%;accent-color:var(--accent)">
         </div>
-        <label class="mdv-check"><input type="checkbox" id="noup" checked> Never enlarge past the original</label>
+        <label class="mdv-check"><input type="checkbox" id="noup" checked> <span data-t="89">Never enlarge past the original</span></label>
       </div>
     </div>
 
     <div class="mdv-panel-ink">
       <div class="mdv-row is-between">
-        <span class="mdv-tag">Output</span>
+        <span class="mdv-tag" data-t="90">Output</span>
         <span class="mdv-tag mdv-mono" id="out-dim">—</span>
       </div>
       <div class="mdv-readout" id="out-size" style="margin-top:var(--space-3)">—</div>
@@ -2299,27 +2411,27 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     </div>
 
     <div class="mdv-btn-row">
-      <button class="mdv-btn is-primary" id="save" type="button" disabled>Download</button>
-      <button class="mdv-btn is-quiet" id="another" type="button">Use another image</button>
+      <button class="mdv-btn is-primary" id="save" type="button" disabled><span data-t="91">Download</span></button>
+      <button class="mdv-btn is-quiet" id="another" type="button"><span data-t="92">Use another image</span></button>
     </div>
   </section>
 
   <div class="mdv-notice is-warn" id="warn" hidden>
-    <span class="mdv-notice-title">Note</span><span id="warnmsg"></span>
+    <span class="mdv-notice-title" data-t="93">Note</span><span id="warnmsg"></span>
   </div>
   <div class="mdv-notice is-bad" id="err" hidden>
     <span class="mdv-notice-title" id="errtitle">Could not use that file</span><span id="errmsg"></span>
   </div>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="94">How this works</summary>
     <div class="mdv-method-body">
-      <p>The image is decoded by the browser, drawn once into a <code>&lt;canvas&gt;</code> at the
+      <p data-t="95">The image is decoded by the browser, drawn once into a <code>&lt;canvas&gt;</code> at the
         target size with <code>imageSmoothingQuality = "high"</code>, then read back with
         <code>canvas.toBlob(type, quality)</code>. Height is <code>round(width × h / w)</code>.
         JPEG has no transparency, so for JPEG the canvas is filled with white first: transparent
         pixels come out white, not black.</p>
-      <p>Re-encoding is lossy for JPEG and WebP: the pixels are not the original pixels, and
+      <p data-t="96">Re-encoding is lossy for JPEG and WebP: the pixels are not the original pixels, and
         running the tool twice compounds that. PNG ignores the quality slider. A browser that cannot
         encode the format you picked hands back PNG instead (Safari has long had no WebP encoder);
         the tool reads the type of what came back, says so, and sizes and names the download by
@@ -2328,30 +2440,31 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         the ICC profile, animation frames after the first — which is often the point but is never a
         secret. Enlarging past the source adds no detail, so it is off by default; a wider target is
         then held at the source width, and the output panel says so.</p>
-      <p>Limits: the file up to 100 MiB and 100,000,000 decoded pixels; the output up to 12,000 px on
+      <p data-t="97">Limits: the file up to 100 MiB and 100,000,000 decoded pixels; the output up to 12,000 px on
         either side and 124,992,400 pixels in all (11,180 × 11,180), the largest canvas Firefox will
         draw — Chrome and desktop Safari go further. Above them the tool encodes nothing and prints
         the numbers, with the widest width the image allows. iPhones and iPads stop much lower, at
         16,777,216 pixels (4096 × 4096); there, and on any device short of memory, the browser returns
         no image and the tool says so: a smaller width helps, another format does not.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="98">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Image &amp; Media">
-    <span class="mdv-tag">Also in Image &amp; Media</span>
-    <a href="./pixelate-image.html">Redact an image</a>
-    <a href="./social-cropper.html">Social media cropper</a>
-    <a href="./watermark.html">Watermark</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Image &amp; Media"}'>Also in Image &amp; Media</span>
+    <a href="./pixelate-image.html" data-t="55">Redact an image</a>
+    <a href="./social-cropper.html" data-t="56">Social media cropper</a>
+    <a href="./watermark.html" data-t="57">Watermark</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="99">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="100">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="101" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-14</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="102">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2362,6 +2475,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Image resize — MDV","Scale an image to a width and re-encode it. Never uploaded.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Choose an image","Format","Could not use that file","That is {type}. This tool only decodes images.","an unknown type","This file is {size} ({bytes} bytes). The limit is 100 MiB ({limit} bytes). Nothing was read.","The browser could not read the file.","The bytes are not a decodable image. A renamed file, or a format this browser does not support.","This image has no pixel size of its own, as with an SVG that sets no width and height, so there is nothing to scale.","This image is {w} × {h}, {pixels} pixels. The limit is {limit} pixels (100 megapixels); decoding more can run a tab out of memory. Nothing was drawn.","At 1 px wide this image would be {height} px tall, past the {limit} px limit on either side, so no width works.","This is a GIF: only the first frame survives re-encoding.","Encoding.","Width must be a positive whole number.","Held at the source width, {n} px: enlarging is off.","{width} px is past the {limit} px limit on either side. Nothing was encoded. Use a width of {most} px or less.","At {width} px wide this image is {height} px tall, past the {limit} px limit on either side. Nothing was encoded. Use a width of {most} px or less.","{w} × {h} is {pixels} pixels, past the {limit}-pixel limit (11,180 × 11,180). Nothing was encoded. Use a width of {most} px or less.","This browser cannot encode {wanted}, so it returned {got}. The size shown and the download (.{ext}) are {got}, and the quality slider does nothing.","This browser cannot encode {wanted}, so it returned {got}. The size shown and the download (.{ext}) are {got}.","{pct}% smaller than the original {size}","{pct}% larger than the original — this format is not helping here","No output.","Could not encode","The browser returned no {format} for a {w} × {h} canvas. That is almost always the tab running short of memory for a canvas that size — iPhones and iPads stop at 16,777,216 pixels (4096 × 4096) — so try a smaller width. Another format will not help.","Image & Media","2026-11-02"],"h":103,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Suelta una imagen, indica un ancho y descarga el archivo recodificado. Se mantiene la proporción.","En este dispositivo","Funciona sin conexión","Suelta un PNG, JPEG, WebP o GIF","Se decodifica en esta pestaña. No se sube nada. Hasta 100 MiB y 100 megapíxeles.","Origen","Ancho final (px)","Salida de hasta 12.000 px por lado y 124.992.400 píxeles en total. Los iPhone y iPad se detienen en 16.777.216.","Formato","Calidad","No ampliar más allá del original","Salida","Descargar","Usar otra imagen","Nota","Cómo funciona","El navegador decodifica la imagen, se dibuja una vez en un \u003ccode>&lt;canvas&gt;\u003c/code> al tamaño final con \u003ccode>imageSmoothingQuality = \"high\"\u003c/code> y luego se lee con \u003ccode>canvas.toBlob(type, quality)\u003c/code>. El alto es \u003ccode>round(width × h / w)\u003c/code>. JPEG no admite transparencia, así que para JPEG el lienzo se rellena antes de blanco: los píxeles transparentes salen blancos, no negros.","Recodificar es con pérdida en JPEG y WebP: los píxeles no son los originales, y usar la herramienta dos veces lo agrava. PNG ignora el control de calidad. Un navegador que no puede codificar el formato elegido devuelve PNG en su lugar (Safari lleva mucho tiempo sin codificador WebP); la herramienta lee el tipo de lo que volvió, lo indica, y calcula el tamaño y nombra la descarga según él. El navegador aplica la orientación EXIF al decodificar, así que los píxeles salen derechos; la propia etiqueta de orientación se descarta junto con todo lo que no son píxeles (el resto del EXIF, el perfil ICC, los fotogramas de animación después del primero), lo cual suele ser el objetivo pero nunca es un secreto. Ampliar más allá del origen no añade detalle, por eso está desactivado de forma predeterminada; un ancho mayor se queda entonces en el ancho del origen, y el panel de salida lo indica.","Límites: el archivo hasta 100 MiB y 100.000.000 de píxeles decodificados; la salida hasta 12.000 px por lado y 124.992.400 píxeles en total (11.180 × 11.180), el lienzo más grande que dibujará Firefox; Chrome y Safari de escritorio llegan más lejos. Por encima de esos límites la herramienta no codifica nada e imprime las cifras, con el mayor ancho que permite la imagen. Los iPhone y iPad se detienen mucho antes, en 16.777.216 píxeles (4096 × 4096); ahí, y en cualquier dispositivo corto de memoria, el navegador no devuelve ninguna imagen y la herramienta lo dice: ayuda un ancho menor, no otro formato.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Redimensionar imagen — MDV","Escala una imagen a un ancho y vuelve a codificarla. Nunca se sube.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elegir una imagen","Formato","No se puede usar ese archivo","Es {type}. Esta herramienta solo decodifica imágenes.","un tipo desconocido","Este archivo pesa {size} ({bytes} bytes). El límite es 100 MiB ({limit} bytes). No se leyó nada.","El navegador no pudo leer el archivo.","Los bytes no son una imagen decodificable. Puede ser un archivo renombrado o un formato que este navegador no admite.","Esta imagen no tiene un tamaño de píxeles propio, como un SVG sin ancho ni alto, así que no hay nada que escalar.","Esta imagen mide {w} × {h}, {pixels} píxeles. El límite es {limit} píxeles (100 megapíxeles); decodificar más puede agotar la memoria de una pestaña. No se dibujó nada.","Con 1 px de ancho esta imagen tendría {height} px de alto, por encima del límite de {limit} px por lado, así que ningún ancho sirve.","Es un GIF: solo sobrevive el primer fotograma al recodificar.","Codificando.","El ancho debe ser un número entero positivo.","Se mantiene el ancho del origen, {n} px: la ampliación está desactivada.","{width} px supera el límite de {limit} px por lado. No se codificó nada. Usa un ancho de {most} px o menos.","Con {width} px de ancho esta imagen mide {height} px de alto, por encima del límite de {limit} px por lado. No se codificó nada. Usa un ancho de {most} px o menos.","{w} × {h} son {pixels} píxeles, por encima del límite de {limit} píxeles (11.180 × 11.180). No se codificó nada. Usa un ancho de {most} px o menos.","Este navegador no puede codificar {wanted}, así que devolvió {got}. El tamaño mostrado y la descarga (.{ext}) son {got}, y el control de calidad no hace nada.","Este navegador no puede codificar {wanted}, así que devolvió {got}. El tamaño mostrado y la descarga (.{ext}) son {got}.","{pct} % más pequeño que el original de {size}","{pct} % más grande que el original: este formato no ayuda aquí","Sin salida.","No se pudo codificar","El navegador no devolvió ningún {format} para un lienzo de {w} × {h}. Casi siempre es que la pestaña se queda sin memoria para un lienzo de ese tamaño (los iPhone y iPad se detienen en 16.777.216 píxeles, 4096 × 4096), así que prueba con un ancho menor. Otro formato no ayudará.","Imagen y multimedia",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Déposez une image, donnez une largeur, téléchargez le fichier réencodé. Le rapport d’aspect est conservé.","Sur cet appareil","Fonctionne hors ligne","Déposez un PNG, JPEG, WebP ou GIF","Décodé dans cet onglet. Rien n’est envoyé. Jusqu’à 100 Mio et 100 mégapixels.","Source","Largeur cible (px)","Sortie jusqu’à 12 000 px par côté et 124 992 400 pixels au total. Les iPhone et iPad s’arrêtent à 16 777 216.","Format","Qualité","Ne pas agrandir au-delà de l’original","Sortie","Télécharger","Utiliser une autre image","Note","Comment ça marche","L’image est décodée par le navigateur, dessinée une fois dans un \u003ccode>&lt;canvas&gt;\u003c/code> à la taille cible avec \u003ccode>imageSmoothingQuality = \"high\"\u003c/code>, puis relue avec \u003ccode>canvas.toBlob(type, quality)\u003c/code>. La hauteur est \u003ccode>round(width × h / w)\u003c/code>. Le JPEG n’a pas de transparence : pour le JPEG, le canevas est donc d’abord rempli de blanc, et les pixels transparents sortent blancs, pas noirs.","Le réencodage est destructif pour le JPEG et le WebP : les pixels ne sont plus les pixels d’origine, et lancer l’outil deux fois aggrave cela. Le PNG ignore le curseur de qualité. Un navigateur qui ne peut pas encoder le format choisi renvoie du PNG à la place (Safari n’a longtemps eu aucun encodeur WebP) ; l’outil lit le type de ce qui est revenu, le signale, puis dimensionne et nomme le téléchargement d’après lui. Le navigateur applique l’orientation EXIF au décodage, les pixels sortent donc droits ; la balise d’orientation elle-même est supprimée avec tout ce qui n’est pas pixel (le reste de l’EXIF, le profil ICC, les images d’animation après la première), ce qui est souvent le but mais n’est jamais un secret. Agrandir au-delà de la source n’ajoute aucun détail : c’est désactivé par défaut ; une largeur supérieure est alors ramenée à la largeur de la source, et le panneau de sortie le dit.","Limites : le fichier jusqu’à 100 Mio et 100 000 000 de pixels décodés ; la sortie jusqu’à 12 000 px par côté et 124 992 400 pixels au total (11 180 × 11 180), le plus grand canevas que Firefox dessinera — Chrome et Safari de bureau vont plus loin. Au-delà, l’outil n’encode rien et affiche les chiffres, avec la plus grande largeur que l’image permet. Les iPhone et iPad s’arrêtent bien plus bas, à 16 777 216 pixels (4096 × 4096) ; là, et sur tout appareil à court de mémoire, le navigateur ne renvoie aucune image et l’outil le dit : une largeur plus petite aide, un autre format non.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Redimensionner une image — MDV","Mettez une image à une largeur donnée et réencodez-la. Jamais envoyée.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisir une image","Format","Impossible d’utiliser ce fichier","C’est {type}. Cet outil ne décode que des images.","un type inconnu","Ce fichier fait {size} ({bytes} octets). La limite est de 100 Mio ({limit} octets). Rien n’a été lu.","Le navigateur n’a pas pu lire le fichier.","Ces octets ne forment pas une image décodable. Fichier renommé, ou format que ce navigateur ne gère pas.","Cette image n’a pas de taille en pixels propre, comme un SVG sans largeur ni hauteur : il n’y a rien à mettre à l’échelle.","Cette image fait {w} × {h}, soit {pixels} pixels. La limite est de {limit} pixels (100 mégapixels) ; décoder davantage peut épuiser la mémoire d’un onglet. Rien n’a été dessiné.","À 1 px de large, cette image ferait {height} px de haut, au-delà de la limite de {limit} px par côté : aucune largeur ne convient.","C’est un GIF : seule la première image survit au réencodage.","Encodage en cours.","La largeur doit être un entier positif.","Largeur de la source conservée, {n} px : l’agrandissement est désactivé.","{width} px dépasse la limite de {limit} px par côté. Rien n’a été encodé. Utilisez une largeur de {most} px ou moins.","À {width} px de large, cette image fait {height} px de haut, au-delà de la limite de {limit} px par côté. Rien n’a été encodé. Utilisez une largeur de {most} px ou moins.","{w} × {h} fait {pixels} pixels, au-delà de la limite de {limit} pixels (11 180 × 11 180). Rien n’a été encodé. Utilisez une largeur de {most} px ou moins.","Ce navigateur ne peut pas encoder en {wanted} ; il a renvoyé du {got}. La taille affichée et le téléchargement (.{ext}) sont en {got}, et le curseur de qualité ne fait rien.","Ce navigateur ne peut pas encoder en {wanted} ; il a renvoyé du {got}. La taille affichée et le téléchargement (.{ext}) sont en {got}.","{pct} % plus petit que l’original de {size}","{pct} % plus grand que l’original : ce format n’aide pas ici","Aucune sortie.","Encodage impossible","Le navigateur n’a renvoyé aucun {format} pour un canevas de {w} × {h}. C’est presque toujours un onglet à court de mémoire pour un canevas de cette taille (les iPhone et iPad s’arrêtent à 16 777 216 pixels, 4096 × 4096) : essayez une largeur plus petite. Un autre format n’aidera pas.","Image et médias",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Lege ein Bild ab, gib eine Breite an, lade die neu kodierte Datei herunter. Das Seitenverhältnis bleibt erhalten.","Läuft auf diesem Gerät","Funktioniert offline","PNG, JPEG, WebP oder GIF ablegen","In diesem Tab dekodiert. Nichts wird hochgeladen. Bis 100 MiB und 100 Megapixel.","Quelle","Zielbreite (px)","Ausgabe bis 12.000 px pro Seite und 124.992.400 Pixel insgesamt. iPhones und iPads hören bei 16.777.216 auf.","Format","Qualität","Nie über das Original hinaus vergrößern","Ausgabe","Herunterladen","Anderes Bild verwenden","Hinweis","So funktioniert es","Der Browser dekodiert das Bild, es wird einmal in der Zielgröße in ein \u003ccode>&lt;canvas&gt;\u003c/code> gezeichnet, mit \u003ccode>imageSmoothingQuality = \"high\"\u003c/code>, und dann mit \u003ccode>canvas.toBlob(type, quality)\u003c/code> zurückgelesen. Die Höhe ist \u003ccode>round(width × h / w)\u003c/code>. JPEG kennt keine Transparenz, daher wird die Zeichenfläche für JPEG zuerst weiß gefüllt: Transparente Pixel werden weiß, nicht schwarz.","Das erneute Kodieren ist bei JPEG und WebP verlustbehaftet: Die Pixel sind nicht mehr die ursprünglichen, und ein zweiter Durchlauf verschlimmert das. PNG ignoriert den Qualitätsregler. Ein Browser, der das gewählte Format nicht kodieren kann, liefert stattdessen PNG zurück (Safari hatte lange keinen WebP-Encoder); das Werkzeug liest den Typ des Zurückgelieferten, sagt es und bemisst und benennt den Download danach. Der Browser wendet beim Dekodieren die EXIF-Ausrichtung an, die Pixel kommen also aufrecht heraus; das Ausrichtungs-Tag selbst fällt zusammen mit allem anderen, was kein Pixel ist, weg (der Rest der EXIF-Daten, das ICC-Profil, die Animationsbilder nach dem ersten), was oft der Zweck, aber nie ein Geheimnis ist. Vergrößern über die Quelle hinaus fügt keine Details hinzu und ist daher standardmäßig aus; eine größere Zielbreite wird dann auf die Quellbreite begrenzt, und das Ausgabefeld sagt es.","Grenzen: die Datei bis 100 MiB und 100.000.000 dekodierte Pixel; die Ausgabe bis 12.000 px pro Seite und 124.992.400 Pixel insgesamt (11.180 × 11.180), die größte Zeichenfläche, die Firefox zeichnet; Chrome und Desktop-Safari gehen weiter. Darüber kodiert das Werkzeug nichts und gibt die Zahlen aus, mit der größten Breite, die das Bild zulässt. iPhones und iPads hören viel früher auf, bei 16.777.216 Pixeln (4096 × 4096); dort und auf jedem Gerät mit zu wenig Speicher liefert der Browser kein Bild, und das Werkzeug sagt es: Eine kleinere Breite hilft, ein anderes Format nicht.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Bildgröße ändern — MDV","Skaliere ein Bild auf eine Breite und kodiere es neu. Wird nie hochgeladen.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Bild wählen","Format","Diese Datei lässt sich nicht verwenden","Das ist {type}. Dieses Werkzeug dekodiert nur Bilder.","ein unbekannter Typ","Diese Datei ist {size} groß ({bytes} Bytes). Die Grenze ist 100 MiB ({limit} Bytes). Nichts wurde gelesen.","Der Browser konnte die Datei nicht lesen.","Die Bytes sind kein dekodierbares Bild. Eine umbenannte Datei oder ein Format, das dieser Browser nicht unterstützt.","Dieses Bild hat keine eigene Pixelgröße, etwa ein SVG ohne Breite und Höhe, es gibt also nichts zu skalieren.","Dieses Bild ist {w} × {h}, {pixels} Pixel. Die Grenze ist {limit} Pixel (100 Megapixel); mehr zu dekodieren kann einem Tab den Speicher ausgehen lassen. Nichts wurde gezeichnet.","Bei 1 px Breite wäre dieses Bild {height} px hoch, über der Grenze von {limit} px pro Seite, also funktioniert keine Breite.","Das ist ein GIF: Nur das erste Bild überlebt das erneute Kodieren.","Kodiere.","Die Breite muss eine positive ganze Zahl sein.","Auf der Quellbreite von {n} px gehalten: Vergrößern ist aus.","{width} px überschreiten die Grenze von {limit} px pro Seite. Nichts wurde kodiert. Verwende eine Breite von höchstens {most} px.","Bei {width} px Breite ist dieses Bild {height} px hoch, über der Grenze von {limit} px pro Seite. Nichts wurde kodiert. Verwende eine Breite von höchstens {most} px.","{w} × {h} sind {pixels} Pixel, über der Grenze von {limit} Pixeln (11.180 × 11.180). Nichts wurde kodiert. Verwende eine Breite von höchstens {most} px.","Dieser Browser kann {wanted} nicht kodieren und hat {got} geliefert. Die angezeigte Größe und der Download (.{ext}) sind {got}, und der Qualitätsregler bewirkt nichts.","Dieser Browser kann {wanted} nicht kodieren und hat {got} geliefert. Die angezeigte Größe und der Download (.{ext}) sind {got}.","{pct} % kleiner als das Original mit {size}","{pct} % größer als das Original — dieses Format hilft hier nicht","Keine Ausgabe.","Kodieren nicht möglich","Der Browser lieferte kein {format} für eine Zeichenfläche von {w} × {h}. Das liegt fast immer daran, dass dem Tab für eine Zeichenfläche dieser Größe der Speicher ausgeht (iPhones und iPads hören bei 16.777.216 Pixeln auf, 4096 × 4096), also versuche eine kleinere Breite. Ein anderes Format hilft nicht.","Bild und Medien",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Trascina un’immagine, indica una larghezza, scarica il file ricodificato. Le proporzioni restano invariate.","Su questo dispositivo","Funziona offline","Trascina un PNG, JPEG, WebP o GIF","Decodificata in questa scheda. Non viene caricato nulla. Fino a 100 MiB e 100 megapixel.","Origine","Larghezza finale (px)","Output fino a 12.000 px per lato e 124.992.400 pixel in tutto. iPhone e iPad si fermano a 16.777.216.","Formato","Qualità","Non ingrandire oltre l’originale","Output","Scarica","Usa un’altra immagine","Nota","Come funziona","L’immagine viene decodificata dal browser, disegnata una volta in un \u003ccode>&lt;canvas&gt;\u003c/code> alla dimensione finale con \u003ccode>imageSmoothingQuality = \"high\"\u003c/code>, poi riletta con \u003ccode>canvas.toBlob(type, quality)\u003c/code>. L’altezza è \u003ccode>round(width × h / w)\u003c/code>. Il JPEG non ha trasparenza, quindi per il JPEG il canvas viene prima riempito di bianco: i pixel trasparenti escono bianchi, non neri.","La ricodifica è con perdita per JPEG e WebP: i pixel non sono più quelli originali, e usare lo strumento due volte peggiora le cose. Il PNG ignora il cursore della qualità. Un browser che non sa codificare il formato scelto restituisce invece un PNG (Safari per molto tempo non ha avuto un encoder WebP); lo strumento legge il tipo di ciò che è tornato, lo segnala, e dimensiona e nomina il download in base a esso. Il browser applica l’orientamento EXIF durante la decodifica, quindi i pixel escono dritti; il tag di orientamento stesso viene scartato insieme a tutto ciò che non è pixel (il resto dell’EXIF, il profilo ICC, i fotogrammi dell’animazione dopo il primo), il che spesso è lo scopo ma non è mai un segreto. Ingrandire oltre l’origine non aggiunge dettaglio, quindi è disattivato per impostazione predefinita; una larghezza maggiore viene allora fermata alla larghezza dell’origine, e il pannello di output lo dice.","Limiti: il file fino a 100 MiB e 100.000.000 di pixel decodificati; l’output fino a 12.000 px per lato e 124.992.400 pixel in tutto (11.180 × 11.180), il canvas più grande che Firefox disegna; Chrome e Safari desktop vanno oltre. Sopra questi limiti lo strumento non codifica nulla e stampa i numeri, con la larghezza massima consentita dall’immagine. iPhone e iPad si fermano molto prima, a 16.777.216 pixel (4096 × 4096); lì, e su qualsiasi dispositivo a corto di memoria, il browser non restituisce alcuna immagine e lo strumento lo dice: aiuta una larghezza minore, non un altro formato.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Ridimensiona immagine — MDV","Scala un’immagine a una larghezza e ricodificala. Non viene mai caricata.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli un’immagine","Formato","Impossibile usare questo file","È {type}. Questo strumento decodifica solo immagini.","un tipo sconosciuto","Questo file è di {size} ({bytes} byte). Il limite è 100 MiB ({limit} byte). Non è stato letto nulla.","Il browser non è riuscito a leggere il file.","I byte non formano un’immagine decodificabile. Un file rinominato, o un formato che questo browser non supporta.","Questa immagine non ha una dimensione in pixel propria, come un SVG senza larghezza e altezza, quindi non c’è nulla da scalare.","Questa immagine è {w} × {h}, {pixels} pixel. Il limite è {limit} pixel (100 megapixel); decodificarne di più può esaurire la memoria di una scheda. Non è stato disegnato nulla.","A 1 px di larghezza questa immagine sarebbe alta {height} px, oltre il limite di {limit} px per lato, quindi nessuna larghezza funziona.","È una GIF: dopo la ricodifica sopravvive solo il primo fotogramma.","Codifica in corso.","La larghezza deve essere un numero intero positivo.","Mantenuta la larghezza dell’origine, {n} px: l’ingrandimento è disattivato.","{width} px supera il limite di {limit} px per lato. Non è stato codificato nulla. Usa una larghezza di {most} px o meno.","A {width} px di larghezza questa immagine è alta {height} px, oltre il limite di {limit} px per lato. Non è stato codificato nulla. Usa una larghezza di {most} px o meno.","{w} × {h} sono {pixels} pixel, oltre il limite di {limit} pixel (11.180 × 11.180). Non è stato codificato nulla. Usa una larghezza di {most} px o meno.","Questo browser non può codificare {wanted}, quindi ha restituito {got}. La dimensione mostrata e il download (.{ext}) sono {got}, e il cursore della qualità non fa nulla.","Questo browser non può codificare {wanted}, quindi ha restituito {got}. La dimensione mostrata e il download (.{ext}) sono {got}.","{pct}% più piccolo dell’originale di {size}","{pct}% più grande dell’originale: questo formato qui non aiuta","Nessun output.","Impossibile codificare","Il browser non ha restituito alcun {format} per un canvas di {w} × {h}. Quasi sempre significa che la scheda resta senza memoria per un canvas di quella dimensione (iPhone e iPad si fermano a 16.777.216 pixel, 4096 × 4096), quindi prova una larghezza minore. Un altro formato non aiuterà.","Immagini e media",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Solte uma imagem, informe uma largura e baixe o arquivo recodificado. A proporção é mantida.","Neste dispositivo","Funciona offline","Solte um PNG, JPEG, WebP ou GIF","Decodificada nesta aba. Nada é enviado. Até 100 MiB e 100 megapixels.","Origem","Largura final (px)","Saída de até 12.000 px por lado e 124.992.400 pixels no total. iPhones e iPads param em 16.777.216.","Formato","Qualidade","Nunca ampliar além do original","Saída","Baixar","Usar outra imagem","Nota","Como funciona","A imagem é decodificada pelo navegador, desenhada uma vez em um \u003ccode>&lt;canvas&gt;\u003c/code> no tamanho final com \u003ccode>imageSmoothingQuality = \"high\"\u003c/code> e depois lida de volta com \u003ccode>canvas.toBlob(type, quality)\u003c/code>. A altura é \u003ccode>round(width × h / w)\u003c/code>. JPEG não tem transparência, então para JPEG o canvas é preenchido de branco antes: pixels transparentes saem brancos, não pretos.","Recodificar tem perda em JPEG e WebP: os pixels não são os originais, e usar a ferramenta duas vezes agrava isso. PNG ignora o controle de qualidade. Um navegador que não consegue codificar o formato escolhido devolve PNG no lugar (o Safari ficou muito tempo sem codificador WebP); a ferramenta lê o tipo do que voltou, avisa, e dimensiona e nomeia o download por ele. O navegador aplica a orientação EXIF ao decodificar, então os pixels saem na posição certa; a própria marca de orientação é descartada junto com tudo o que não é pixel (o resto do EXIF, o perfil ICC, os quadros de animação depois do primeiro), o que muitas vezes é o objetivo, mas nunca é segredo. Ampliar além da origem não acrescenta detalhe, então vem desligado por padrão; uma largura maior fica então na largura da origem, e o painel de saída avisa.","Limites: o arquivo até 100 MiB e 100.000.000 de pixels decodificados; a saída até 12.000 px por lado e 124.992.400 pixels no total (11.180 × 11.180), o maior canvas que o Firefox desenha; Chrome e Safari de desktop vão além. Acima disso a ferramenta não codifica nada e imprime os números, com a maior largura que a imagem permite. iPhones e iPads param bem antes, em 16.777.216 pixels (4096 × 4096); ali, e em qualquer dispositivo com pouca memória, o navegador não devolve imagem e a ferramenta avisa: uma largura menor ajuda, outro formato não.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Redimensionar imagem — MDV","Dimensione uma imagem para uma largura e recodifique. Nunca é enviada.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolher uma imagem","Formato","Não foi possível usar esse arquivo","É {type}. Esta ferramenta só decodifica imagens.","um tipo desconhecido","Este arquivo tem {size} ({bytes} bytes). O limite é 100 MiB ({limit} bytes). Nada foi lido.","O navegador não conseguiu ler o arquivo.","Os bytes não formam uma imagem decodificável. Um arquivo renomeado, ou um formato que este navegador não suporta.","Esta imagem não tem tamanho de pixels próprio, como um SVG sem largura e altura, então não há nada para escalar.","Esta imagem tem {w} × {h}, {pixels} pixels. O limite é {limit} pixels (100 megapixels); decodificar mais pode esgotar a memória de uma aba. Nada foi desenhado.","Com 1 px de largura esta imagem teria {height} px de altura, acima do limite de {limit} px por lado, então nenhuma largura serve.","É um GIF: só o primeiro quadro sobrevive à recodificação.","Codificando.","A largura deve ser um número inteiro positivo.","Mantida a largura da origem, {n} px: a ampliação está desligada.","{width} px passa do limite de {limit} px por lado. Nada foi codificado. Use uma largura de {most} px ou menos.","Com {width} px de largura esta imagem tem {height} px de altura, acima do limite de {limit} px por lado. Nada foi codificado. Use uma largura de {most} px ou menos.","{w} × {h} são {pixels} pixels, acima do limite de {limit} pixels (11.180 × 11.180). Nada foi codificado. Use uma largura de {most} px ou menos.","Este navegador não consegue codificar {wanted}, então devolveu {got}. O tamanho mostrado e o download (.{ext}) são {got}, e o controle de qualidade não faz nada.","Este navegador não consegue codificar {wanted}, então devolveu {got}. O tamanho mostrado e o download (.{ext}) são {got}.","{pct}% menor que o original de {size}","{pct}% maior que o original: este formato não ajuda aqui","Sem saída.","Não foi possível codificar","O navegador não devolveu nenhum {format} para um canvas de {w} × {h}. Quase sempre é a aba ficando sem memória para um canvas desse tamanho (iPhones e iPads param em 16.777.216 pixels, 4096 × 4096), então tente uma largura menor. Outro formato não vai ajudar.","Imagem e mídia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","画像をドロップして幅を指定すると、再エンコードしたファイルをダウンロードできます。縦横比は保たれます。","この端末で動作","オフラインで動作","PNG、JPEG、WebP、GIF をドロップ","このタブ内でデコードします。何もアップロードされません。100 MiB、100 メガピクセルまで。","元画像","出力幅(px)","出力は1辺 12,000 px、合計 124,992,400 ピクセルまで。iPhone と iPad は 16,777,216 で止まります。","形式","品質","元のサイズを超えて拡大しない","出力","ダウンロード","別の画像を使う","注意","仕組み","画像はブラウザーがデコードし、\u003ccode>imageSmoothingQuality = \"high\"\u003c/code> を設定した \u003ccode>&lt;canvas&gt;\u003c/code> に出力サイズで一度だけ描画され、\u003ccode>canvas.toBlob(type, quality)\u003c/code> で読み戻されます。高さは \u003ccode>round(width × h / w)\u003c/code> です。JPEG には透明がないため、JPEG ではキャンバスを先に白で塗りつぶします。透明なピクセルは黒ではなく白になります。","再エンコードは JPEG と WebP では非可逆です。ピクセルは元のピクセルではなくなり、ツールを 2 回通すと劣化が重なります。PNG は品質スライダーを無視します。選んだ形式をエンコードできないブラウザーは代わりに PNG を返します(Safari には長く WebP エンコーダーがありませんでした)。ツールは返ってきたものの種類を読み取ってそのことを表示し、それに合わせてダウンロードのサイズと名前を決めます。ブラウザーはデコード時に EXIF の向きを適用するので、ピクセルは正しい向きで出てきます。向きのタグ自体は、他のピクセル以外のデータ(EXIF の残り、ICC プロファイル、2 枚目以降のアニメーションフレーム)とともに破棄されます。多くの場合それが目的ですが、秘密にはなりません。元より大きくしても細部は増えないため、拡大は既定でオフです。その場合、より広い指定幅は元の幅に抑えられ、出力パネルにそう表示されます。","上限: ファイルは 100 MiB、デコード後 100,000,000 ピクセルまで。出力は1辺 12,000 px、合計 124,992,400 ピクセル(11,180 × 11,180)までで、これは Firefox が描画できる最大のキャンバスです。Chrome とデスクトップ版 Safari はそれ以上に対応します。これらを超えるとツールは何もエンコードせず、数値と、その画像で許される最大の幅を表示します。iPhone と iPad ははるかに低い 16,777,216 ピクセル(4096 × 4096)で止まります。そこや、メモリが足りないあらゆる端末では、ブラウザーが画像を返さず、ツールがそのことを表示します。幅を小さくすると改善しますが、別の形式では改善しません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","画像リサイズ — MDV","画像を指定した幅に拡大縮小して再エンコードします。アップロードはされません。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","画像を選択","形式","そのファイルは使えません","{type} です。このツールは画像だけをデコードします。","不明な種類","このファイルは {size}({bytes} バイト)です。上限は 100 MiB({limit} バイト)です。何も読み込んでいません。","ブラウザーがファイルを読み込めませんでした。","このバイト列はデコードできる画像ではありません。名前を変えただけのファイルか、このブラウザーが対応していない形式です。","この画像には固有のピクセルサイズがありません(幅と高さのない SVG など)。拡大縮小するものがありません。","この画像は {w} × {h}、{pixels} ピクセルです。上限は {limit} ピクセル(100 メガピクセル)で、それ以上をデコードするとタブのメモリが不足することがあります。何も描画していません。","幅 1 px でもこの画像の高さは {height} px になり、1辺の上限 {limit} px を超えるため、使える幅がありません。","GIF です。再エンコードで残るのは最初のフレームだけです。","エンコード中。","幅は正の整数にしてください。","元の幅 {n} px に抑えました。拡大はオフです。","{width} px は1辺の上限 {limit} px を超えています。何もエンコードしていません。幅は {most} px 以下にしてください。","幅 {width} px では、この画像の高さは {height} px になり、1辺の上限 {limit} px を超えます。何もエンコードしていません。幅は {most} px 以下にしてください。","{w} × {h} は {pixels} ピクセルで、上限の {limit} ピクセル(11,180 × 11,180)を超えています。何もエンコードしていません。幅は {most} px 以下にしてください。","このブラウザーは {wanted} をエンコードできないため、{got} を返しました。表示されているサイズとダウンロード(.{ext})は {got} で、品質スライダーは効きません。","このブラウザーは {wanted} をエンコードできないため、{got} を返しました。表示されているサイズとダウンロード(.{ext})は {got} です。","元の {size} より {pct}% 小さい","元より {pct}% 大きい — この形式はここでは役に立っていません","出力なし。","エンコードできませんでした","ブラウザーは {w} × {h} のキャンバスに対して {format} を返しませんでした。ほとんどの場合、そのサイズのキャンバスでタブのメモリが不足したためです(iPhone と iPad は 16,777,216 ピクセル、4096 × 4096 で止まります)。幅を小さくしてみてください。別の形式では解決しません。","画像とメディア",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","이미지를 놓고 너비를 지정한 뒤 다시 인코딩된 파일을 내려받으세요. 가로세로 비율은 유지됩니다.","이 기기에서 실행","오프라인 작동","PNG, JPEG, WebP, GIF를 놓으세요","이 탭에서 디코딩합니다. 아무것도 업로드되지 않습니다. 최대 100 MiB, 100 메가픽셀.","원본","목표 너비(px)","출력은 한 변 최대 12,000 px, 전체 124,992,400 픽셀까지입니다. iPhone과 iPad는 16,777,216에서 멈춥니다.","형식","품질","원본보다 크게 확대하지 않음","출력","다운로드","다른 이미지 사용","참고","작동 방식","이미지는 브라우저가 디코딩하고, \u003ccode>imageSmoothingQuality = \"high\"\u003c/code>로 설정한 \u003ccode>&lt;canvas&gt;\u003c/code>에 목표 크기로 한 번 그린 뒤 \u003ccode>canvas.toBlob(type, quality)\u003c/code>로 다시 읽습니다. 높이는 \u003ccode>round(width × h / w)\u003c/code>입니다. JPEG에는 투명도가 없으므로 JPEG일 때는 캔버스를 먼저 흰색으로 채웁니다. 투명한 픽셀은 검은색이 아니라 흰색이 됩니다.","다시 인코딩하면 JPEG와 WebP에서는 손실이 생깁니다. 픽셀이 원래 픽셀과 같지 않고, 도구를 두 번 돌리면 손실이 누적됩니다. PNG는 품질 슬라이더를 무시합니다. 고른 형식을 인코딩하지 못하는 브라우저는 대신 PNG를 돌려줍니다(Safari는 오랫동안 WebP 인코더가 없었습니다). 도구는 돌아온 결과의 형식을 읽어 그 사실을 알리고, 그에 맞춰 다운로드의 크기와 이름을 정합니다. 브라우저는 디코딩할 때 EXIF 방향을 적용하므로 픽셀은 똑바로 나옵니다. 방향 태그 자체는 픽셀이 아닌 나머지(EXIF의 나머지, ICC 프로필, 첫 프레임 이후의 애니메이션 프레임)와 함께 버려지는데, 이는 흔히 의도한 바이지만 비밀은 아닙니다. 원본보다 크게 늘려도 세부 정보는 늘지 않으므로 확대는 기본적으로 꺼져 있습니다. 그 경우 더 넓은 목표 너비는 원본 너비로 유지되며, 출력 패널이 그 사실을 알려 줍니다.","한계: 파일은 100 MiB, 디코딩 후 100,000,000 픽셀까지입니다. 출력은 한 변 12,000 px, 전체 124,992,400 픽셀(11,180 × 11,180)까지이며, 이는 Firefox가 그릴 수 있는 가장 큰 캔버스입니다. Chrome과 데스크톱 Safari는 더 큰 크기도 처리합니다. 이를 넘으면 도구는 아무것도 인코딩하지 않고 수치와 이미지가 허용하는 가장 넓은 너비를 표시합니다. iPhone과 iPad는 훨씬 낮은 16,777,216 픽셀(4096 × 4096)에서 멈춥니다. 그곳이나 메모리가 부족한 모든 기기에서는 브라우저가 이미지를 돌려주지 않고 도구가 그 사실을 알립니다. 너비를 줄이면 도움이 되지만 다른 형식은 도움이 되지 않습니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","이미지 크기 조정 — MDV","이미지를 지정한 너비로 줄이거나 늘려 다시 인코딩합니다. 업로드되지 않습니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","이미지 선택","형식","그 파일은 사용할 수 없음","{type}입니다. 이 도구는 이미지만 디코딩합니다.","알 수 없는 형식","이 파일은 {size}({bytes} 바이트)입니다. 한도는 100 MiB({limit} 바이트)입니다. 아무것도 읽지 않았습니다.","브라우저가 파일을 읽지 못했습니다.","이 바이트는 디코딩할 수 있는 이미지가 아닙니다. 이름만 바꾼 파일이거나 이 브라우저가 지원하지 않는 형식입니다.","이 이미지에는 고유한 픽셀 크기가 없습니다(너비와 높이를 지정하지 않은 SVG 등). 확대·축소할 대상이 없습니다.","이 이미지는 {w} × {h}, {pixels} 픽셀입니다. 한도는 {limit} 픽셀(100 메가픽셀)이며, 더 많이 디코딩하면 탭의 메모리가 부족해질 수 있습니다. 아무것도 그리지 않았습니다.","너비 1 px에서도 이 이미지의 높이는 {height} px가 되어 한 변 한도 {limit} px를 넘으므로 사용할 수 있는 너비가 없습니다.","GIF입니다. 다시 인코딩하면 첫 프레임만 남습니다.","인코딩 중.","너비는 양의 정수여야 합니다.","원본 너비 {n} px로 유지했습니다. 확대는 꺼져 있습니다.","{width} px는 한 변 한도 {limit} px를 넘습니다. 아무것도 인코딩하지 않았습니다. 너비를 {most} px 이하로 하세요.","너비 {width} px에서 이 이미지의 높이는 {height} px가 되어 한 변 한도 {limit} px를 넘습니다. 아무것도 인코딩하지 않았습니다. 너비를 {most} px 이하로 하세요.","{w} × {h}은(는) {pixels} 픽셀로, 한도 {limit} 픽셀(11,180 × 11,180)을 넘습니다. 아무것도 인코딩하지 않았습니다. 너비를 {most} px 이하로 하세요.","이 브라우저는 {wanted}을(를) 인코딩할 수 없어 {got}을(를) 돌려주었습니다. 표시된 크기와 다운로드(.{ext})는 {got}이며 품질 슬라이더는 아무 효과가 없습니다.","이 브라우저는 {wanted}을(를) 인코딩할 수 없어 {got}을(를) 돌려주었습니다. 표시된 크기와 다운로드(.{ext})는 {got}입니다.","원본 {size}보다 {pct}% 작음","원본보다 {pct}% 큼 — 이 형식은 여기서 도움이 되지 않습니다","출력 없음.","인코딩할 수 없음","브라우저가 {w} × {h} 캔버스에 대해 {format}을(를) 돌려주지 않았습니다. 대부분 그 크기의 캔버스에 쓸 탭 메모리가 부족해서입니다(iPhone과 iPad는 16,777,216 픽셀, 4096 × 4096에서 멈춥니다). 더 작은 너비를 시도하세요. 다른 형식은 도움이 되지 않습니다.","이미지와 미디어",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","拖入图片,给出宽度,下载重新编码的文件。宽高比保持不变。","在此设备上运行","可离线使用","拖入 PNG、JPEG、WebP 或 GIF","在此标签页内解码。不会上传任何内容。最大 100 MiB 和 100 兆像素。","来源","目标宽度(px)","输出每边最多 12,000 px，总计最多 124,992,400 像素。iPhone 和 iPad 在 16,777,216 处停止。","格式","质量","不放大到原图以上","输出","下载","使用另一张图片","注意","工作原理","图片由浏览器解码,按目标尺寸一次性绘制到 \u003ccode>&lt;canvas&gt;\u003c/code> 中,并设置 \u003ccode>imageSmoothingQuality = \"high\"\u003c/code>,再用 \u003ccode>canvas.toBlob(type, quality)\u003c/code> 读回。高度为 \u003ccode>round(width × h / w)\u003c/code>。JPEG 没有透明度,所以对 JPEG 会先把画布填成白色:透明像素变成白色,而不是黑色。","重新编码对 JPEG 和 WebP 是有损的:像素不再是原来的像素,把工具运行两次会让损失叠加。PNG 会忽略质量滑块。如果浏览器无法编码你选的格式,会改为返回 PNG(Safari 长期没有 WebP 编码器);工具会读取返回内容的类型,加以说明,并据此确定下载的大小和名称。浏览器在解码时会应用 EXIF 方向,所以像素是正着输出的;方向标签本身会和其他非像素数据(其余 EXIF、ICC 配置文件、第一帧之后的动画帧)一起被丢弃,这往往正是目的,但绝不是什么秘密。放大到超过原图并不会增加细节,所以默认关闭;此时更宽的目标宽度会被限制为原图宽度,输出面板会说明这一点。","限制:文件最大 100 MiB 和 100,000,000 个解码像素;输出每边最多 12,000 px，总计最多 124,992,400 像素(11,180 × 11,180),这是 Firefox 能绘制的最大画布,Chrome 和桌面版 Safari 可以更大。超过这些限制时,工具不会编码任何内容,而是输出相关数字,以及图片允许的最大宽度。iPhone 和 iPad 低得多,停在 16,777,216 像素(4096 × 4096);在那里以及任何内存不足的设备上,浏览器不会返回图像,工具会说明:换小一点的宽度有帮助,换格式则没有。","深色和语言按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","图片缩放 — MDV","把图片缩放到指定宽度并重新编码。绝不上传。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择图片","格式","无法使用该文件","这是 {type}。此工具只能解码图片。","未知类型","此文件大小为 {size}({bytes} 字节)。上限为 100 MiB({limit} 字节)。未读取任何内容。","浏览器无法读取该文件。","这些字节不是可解码的图片。可能是改了扩展名的文件,或是此浏览器不支持的格式。","这张图片没有自身的像素尺寸,例如未设置宽度和高度的 SVG，所以没有可缩放的内容。","这张图片是 {w} × {h},共 {pixels} 像素。上限为 {limit} 像素(100 兆像素);解码更多可能耗尽标签页内存。未绘制任何内容。","宽度为 1 px 时,这张图片高度将为 {height} px，超过每边 {limit} px 的上限,所以任何宽度都不可行。","这是 GIF:重新编码后只保留第一帧。","正在编码。","宽度必须是正整数。","已限制在原图宽度 {n} px:放大已关闭。","{width} px 超过每边 {limit} px 的上限。未编码任何内容。请使用不超过 {most} px 的宽度。","宽度为 {width} px 时,这张图片高 {height} px，超过每边 {limit} px 的上限。未编码任何内容。请使用不超过 {most} px 的宽度。","{w} × {h} 为 {pixels} 像素,超过 {limit} 像素的上限(11,180 × 11,180)。未编码任何内容。请使用不超过 {most} px 的宽度。","此浏览器无法编码 {wanted},因此返回了 {got}。显示的大小和下载文件(.{ext})都是 {got},质量滑块不起作用。","此浏览器无法编码 {wanted},因此返回了 {got}。显示的大小和下载文件(.{ext})都是 {got}。","比原来的 {size} 小 {pct}%","比原图大 {pct}% — 此格式在这里没有帮助","没有输出。","无法编码","浏览器没有为 {w} × {h} 的画布返回 {format}。这几乎总是因为标签页没有足够内存来处理这么大的画布(iPhone 和 iPad 停在 16,777,216 像素,即 4096 × 4096),请尝试更小的宽度。换格式没有用。","图像与媒体",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2390,7 +2603,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   var picks = 0;              // bumps on every file picked; an older file finishing late is dropped
   var gen = 0;                // bumps on every encode and every reset; an older toBlob is dropped
-  var srcNote = "", encNote = "", encFailed = false;
+  var srcNote = null, encNote = null, encFailed = false;   // srcNote and encNote are functions that return the sentence, so a language change can write it again
+  var errFn = null, deltaFn = null;
 
   function fmtBytes(n) {
     if (n < 1024) return n + " B";
@@ -2410,61 +2624,65 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     return w;
   }
 
-  function fail(title, msg) { document.getElementById("errtitle").textContent = title; errmsg.textContent = msg; err.hidden = false; }
-  function notes() { warnmsg.textContent = [srcNote, encNote].filter(Boolean).join(" "); warn.hidden = !warnmsg.textContent; }
+  // fn returns [title, message], translated
+  function fail(fn) { errFn = fn; showFail(); err.hidden = false; }
+  function showFail() { var t = errFn(); document.getElementById("errtitle").textContent = t[0]; errmsg.textContent = t[1]; }
+  function notes() { warnmsg.textContent = [srcNote, encNote].filter(Boolean).map(function (fn) { return fn(); }).join(" "); warn.hidden = !warnmsg.textContent; }
+  function say(fn) { deltaFn = fn; delta.textContent = fn(); }
 
   // No output: drop the blob, cancel any encode still running, say why in the output panel.
+  // why is a function that returns the sentence.
   function stop(why) {
     gen++;
     blob = null; outName = "";
     if (url) { URL.revokeObjectURL(url); url = null; }
     save.disabled = true;
     outSize.textContent = "—";
-    delta.textContent = why;
+    say(why);
   }
 
   function load(f) {
     var my = ++picks;
     err.hidden = true; encFailed = false;
     if (!f.type || f.type.indexOf("image/") !== 0) {
-      fail("Could not use that file", "That is " + (f.type || "an unknown type") + ". This tool only decodes images.");
+      fail(function () { return [tr("Could not use that file"), tr("That is {type}. This tool only decodes images.", { type: f.type || tr("an unknown type") })]; });
       return;
     }
     if (f.size > MAX_FILE) {
-      fail("Could not use that file", "This file is " + fmtBytes(f.size) + " (" + num(f.size) + " bytes). The limit is 100 MiB (" +
-           num(MAX_FILE) + " bytes). Nothing was read.");
+      fail(function () { return [tr("Could not use that file"), tr("This file is {size} ({bytes} bytes). The limit is 100 MiB ({limit} bytes). Nothing was read.",
+        { size: fmtBytes(f.size), bytes: num(f.size), limit: num(MAX_FILE) })]; });
       return;
     }
     var fr = new FileReader();
-    fr.onerror = function () { if (my === picks) fail("Could not use that file", "The browser could not read the file."); };
+    fr.onerror = function () { if (my === picks) fail(function () { return [tr("Could not use that file"), tr("The browser could not read the file.")]; }); };
     fr.onload = function () {
       if (my !== picks) return;
       var i = new Image();
-      i.onerror = function () { if (my === picks) fail("Could not use that file", "The bytes are not a decodable image. A renamed file, or a format this browser does not support."); };
+      i.onerror = function () { if (my === picks) fail(function () { return [tr("Could not use that file"), tr("The bytes are not a decodable image. A renamed file, or a format this browser does not support.")]; }); };
       i.onload = function () {
         if (my !== picks) return;
         var sw = i.naturalWidth, sh = i.naturalHeight;
         if (!(sw > 0 && sh > 0)) {
-          fail("Could not use that file", "This image has no pixel size of its own, as with an SVG that sets no width and height, so there is nothing to scale.");
+          fail(function () { return [tr("Could not use that file"), tr("This image has no pixel size of its own, as with an SVG that sets no width and height, so there is nothing to scale.")]; });
           return;
         }
         if (sw * sh > MAX_SRC) {
-          fail("Could not use that file", "This image is " + num(sw) + " × " + num(sh) + ", " + num(sw * sh) + " pixels. The limit is " +
-               num(MAX_SRC) + " pixels (100 megapixels); decoding more can run a tab out of memory. Nothing was drawn.");
+          fail(function () { return [tr("Could not use that file"), tr("This image is {w} × {h}, {pixels} pixels. The limit is {limit} pixels (100 megapixels); decoding more can run a tab out of memory. Nothing was drawn.",
+            { w: num(sw), h: num(sh), pixels: num(sw * sh), limit: num(MAX_SRC) })]; });
           return;
         }
         if (!widest(sw, sh)) {
-          fail("Could not use that file", "At 1 px wide this image would be " + num(outHeight(1, sw, sh)) + " px tall, past the " +
-               num(MAX_SIDE) + " px limit on either side, so no width works.");
+          fail(function () { return [tr("Could not use that file"), tr("At 1 px wide this image would be {height} px tall, past the {limit} px limit on either side, so no width works.",
+            { height: num(outHeight(1, sw, sh)), limit: num(MAX_SIDE) })]; });
           return;
         }
         img = i; srcBytes = f.size; srcName = f.name.replace(/\.[^.]+$/, "");
         preview.src = i.src;
         document.getElementById("src-dim").textContent = sw + " × " + sh + " · " + fmtBytes(f.size);
         panel.hidden = false;
-        srcNote = f.type === "image/gif" ? "This is a GIF: only the first frame survives re-encoding." : "";
-        encNote = ""; notes();
-        stop("Encoding.");
+        srcNote = f.type === "image/gif" ? function () { return tr("This is a GIF: only the first frame survives re-encoding."); } : null;
+        encNote = null; notes();
+        stop(function () { return tr("Encoding."); });
         widthEl.value = Math.min(1200, sw, widest(sw, sh));
         encode();
       };
@@ -2480,33 +2698,33 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     timer = setTimeout(doEncode, 120);
   }
   function doEncode() {
-    var sw = img.naturalWidth, sh = img.naturalHeight, asked = parseInt(widthEl.value, 10), target = asked, held = "";
+    var sw = img.naturalWidth, sh = img.naturalHeight, asked = parseInt(widthEl.value, 10), target = asked, held = function () { return ""; };
     if (encFailed) { err.hidden = true; encFailed = false; }   // file errors stay up; a stale encode error does not
-    encNote = ""; notes();
+    encNote = null; notes();
     outDim.textContent = "—";
-    if (!(asked > 0)) { stop("Width must be a positive whole number."); return; }
+    if (!(asked > 0)) { stop(function () { return tr("Width must be a positive whole number."); }); return; }
     if (document.getElementById("noup").checked && asked > sw) {
       target = sw;
-      held = "Held at the source width, " + num(sw) + " px: enlarging is off. ";
+      held = function () { return tr("Held at the source width, {n} px: enlarging is off.", { n: num(sw) }) + " "; };
     }
     var h = outHeight(target, sw, sh), most = num(widest(sw, sh));
     if (target > MAX_SIDE) {
-      stop(held + num(target) + " px is past the " + num(MAX_SIDE) + " px limit on either side. Nothing was encoded. " +
-           "Use a width of " + most + " px or less.");
+      stop(function () { return held() + tr("{width} px is past the {limit} px limit on either side. Nothing was encoded. Use a width of {most} px or less.",
+        { width: num(target), limit: num(MAX_SIDE), most: most }); });
       return;
     }
     if (h > MAX_SIDE) {
-      stop(held + "At " + num(target) + " px wide this image is " + num(h) + " px tall, past the " + num(MAX_SIDE) +
-           " px limit on either side. Nothing was encoded. Use a width of " + most + " px or less.");
+      stop(function () { return held() + tr("At {width} px wide this image is {height} px tall, past the {limit} px limit on either side. Nothing was encoded. Use a width of {most} px or less.",
+        { width: num(target), height: num(h), limit: num(MAX_SIDE), most: most }); });
       return;
     }
     if (target * h > MAX_AREA) {
-      stop(held + num(target) + " × " + num(h) + " is " + num(target * h) + " pixels, past the " + num(MAX_AREA) +
-           "-pixel limit (11,180 × 11,180). Nothing was encoded. Use a width of " + most + " px or less.");
+      stop(function () { return held() + tr("{w} × {h} is {pixels} pixels, past the {limit}-pixel limit (11,180 × 11,180). Nothing was encoded. Use a width of {most} px or less.",
+        { w: num(target), h: num(h), pixels: num(target * h), limit: num(MAX_AREA), most: most }); });
       return;
     }
 
-    stop(held + "Encoding.");
+    stop(function () { return held() + tr("Encoding."); });
     var my = gen, want = fmt;
     var c = document.createElement("canvas");
     c.width = target; c.height = h;
@@ -2526,24 +2744,28 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       outName = srcName + "-" + target + "." + got.split("/")[1];
       outDim.textContent = target + " × " + h + " · " + label(got);
       if (got !== want) {
-        encNote = "This browser cannot encode " + label(want) + ", so it returned " + label(got) + ". The size shown and the download (." +
-          got.split("/")[1] + ") are " + label(got) + (got === "image/png" ? ", and the quality slider does nothing." : ".");
+        var vars = { wanted: label(want), got: label(got), ext: got.split("/")[1] };
+        encNote = got === "image/png"
+          ? function () { return tr("This browser cannot encode {wanted}, so it returned {got}. The size shown and the download (.{ext}) are {got}, and the quality slider does nothing.", vars); }
+          : function () { return tr("This browser cannot encode {wanted}, so it returned {got}. The size shown and the download (.{ext}) are {got}.", vars); };
         notes();
       }
       outSize.textContent = fmtBytes(b.size);
       var pct = Math.round((1 - b.size / srcBytes) * 100);
-      delta.textContent = held + (pct > 0
-        ? pct + "% smaller than the original " + fmtBytes(srcBytes)
-        : Math.abs(pct) + "% larger than the original — this format is not helping here");
+      say(function () {
+        return held() + (pct > 0
+          ? tr("{pct}% smaller than the original {size}", { pct: pct, size: fmtBytes(srcBytes) })
+          : tr("{pct}% larger than the original — this format is not helping here", { pct: Math.abs(pct) }));
+      });
       save.disabled = false;
     }, want, parseFloat(q.value));
   }
 
   function broke(w, h, type) {
-    stop("No output.");
+    stop(function () { return tr("No output."); });
     encFailed = true;
-    fail("Could not encode", "The browser returned no " + label(type) + " for a " + num(w) + " × " + num(h) + " canvas. " +
-         "That is almost always the tab running short of memory for a canvas that size — iPhones and iPads stop at 16,777,216 pixels (4096 × 4096) — so try a smaller width. Another format will not help.");
+    fail(function () { return [tr("Could not encode"), tr("The browser returned no {format} for a {w} × {h} canvas. That is almost always the tab running short of memory for a canvas that size — iPhones and iPads stop at 16,777,216 pixels (4096 × 4096) — so try a smaller width. Another format will not help.",
+      { format: label(type), w: num(w), h: num(h) })]; });
   }
 
   drop.addEventListener("click", function () { file.click(); });
@@ -2575,6 +2797,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     a.click();
   });
   document.getElementById("another").addEventListener("click", function () { file.click(); });
+  onLang(function () { if (!err.hidden && errFn) showFail(); notes(); if (deltaFn) delta.textContent = deltaFn(); });
 })();
 </script>
 </body>

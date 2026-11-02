@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link is-here" href="./json-to-csv.html" aria-current="page" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link is-here" href="./json-to-csv.html" aria-current="page" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,13 +2353,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">JSON and CSV converter</h1>
+      <h1 class="mdv-head-name" data-t="31">JSON and CSV converter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Paste JSON or CSV on either side; the other side follows, as CSV or TSV.</p>
+    <p class="mdv-head-line" data-t="79">Paste JSON or CSV on either side; the other side follows, as CSV or TSV.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
@@ -2257,7 +2369,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-block-label">
         <label for="json">JSON</label>
         <span class="mdv-count" id="cJson"></span>
-        <button class="mdv-mini" id="copyJson" type="button" disabled>Copy</button>
+        <button class="mdv-mini" id="copyJson" type="button" disabled><span>Copy</span></button>
       </div>
       <textarea class="mdv-textarea is-mono" id="json" spellcheck="false" autocomplete="off"
         placeholder='[{"name":"aerial screw","wings":2,"notes":{"page":83}}]'></textarea>
@@ -2273,41 +2385,41 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-block-label">
         <label for="csv" id="csvLabel">CSV</label>
         <span class="mdv-count" id="cCsv"></span>
-        <button class="mdv-mini" id="download" type="button" disabled>Download</button>
-        <button class="mdv-mini" id="copyCsv" type="button" disabled>Copy</button>
+        <button class="mdv-mini" id="download" type="button" disabled><span>Download</span></button>
+        <button class="mdv-mini" id="copyCsv" type="button" disabled><span>Copy</span></button>
       </div>
       <textarea class="mdv-textarea is-mono" id="csv" spellcheck="false" autocomplete="off" wrap="off"
-        placeholder="Or paste CSV or TSV to turn it into JSON"></textarea>
+        placeholder="Or paste CSV or TSV to turn it into JSON" data-t-attrs="placeholder"></textarea>
     </section>
 
     <div class="mdv-block">
       <div class="mdv-row is-between">
-        <div class="mdv-seg" role="group" aria-label="Separator">
-          <button type="button" data-sep="," class="is-on" aria-pressed="true">Comma</button>
-          <button type="button" data-sep=";" aria-pressed="false">Semicolon</button>
-          <button type="button" data-sep="&#9;" aria-pressed="false">Tab · TSV</button>
+        <div class="mdv-seg" role="group" aria-label="Separator" data-t-attrs="aria-label">
+          <button type="button" data-sep="," class="is-on" aria-pressed="true" data-t="82">Comma</button>
+          <button type="button" data-sep=";" aria-pressed="false" data-t="83">Semicolon</button>
+          <button type="button" data-sep="&#9;" aria-pressed="false" data-t="84">Tab · TSV</button>
         </div>
         <div class="mdv-row">
-          <label class="mdv-check"><input type="checkbox" id="header" checked> First row names the columns</label>
-          <label class="mdv-check"><input type="checkbox" id="types" checked> Read numbers and true/false</label>
+          <label class="mdv-check"><input type="checkbox" id="header" checked> <span data-t="85">First row names the columns</span></label>
+          <label class="mdv-check"><input type="checkbox" id="types" checked> <span data-t="86">Read numbers and true/false</span></label>
         </div>
       </div>
     </div>
 
     <div class="mdv-block">
-      <div class="mdv-empty is-slim" id="empty"><span>paste json or csv above</span></div>
+      <div class="mdv-empty is-slim" id="empty"><span data-t="87">paste json or csv above</span></div>
       <div class="mdv-row is-between" id="status" hidden>
         <p class="mdv-dot-note" id="note" role="status"></p>
-        <button class="mdv-mini" id="clear" type="button">Clear both</button>
+        <button class="mdv-mini" id="clear" type="button"><span data-t="88">Clear both</span></button>
       </div>
     </div>
 
   </div>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="89">How this works</summary>
     <div class="mdv-method-body">
-      <p><strong>JSON to CSV.</strong> The JSON is read with the browser's <code>JSON.parse</code>, whose
+      <p data-t="90"><strong>JSON to CSV.</strong> The JSON is read with the browser's <code>JSON.parse</code>, whose
         error position the page turns into a line and column. An array of objects becomes one row per
         object; a single object becomes one row; an array of arrays is written row for row; an array of
         plain values becomes one column called <code>value</code>. The columns are every key that appears
@@ -2319,7 +2431,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         4180 sets out. Lines end in LF in the box; Download writes CRLF and starts the file with a UTF-8
         byte order mark, so Excel reads accents correctly. TSV has no quoting standard, so when a TSV cell
         needs quotes the page says so.</p>
-      <p><strong>CSV to JSON.</strong> A parser in this page reads RFC 4180: fields in double quotes can
+      <p data-t="91"><strong>CSV to JSON.</strong> A parser in this page reads RFC 4180: fields in double quotes can
         hold the separator, doubled quotes and line breaks, and lines may end in CRLF, LF or CR. A quote in
         the middle of an unquoted field, or a quoted field that never closes, stops the reading with the line
         and column. When the first line holds none of the chosen separator but does hold another, the page
@@ -2328,34 +2440,35 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <code>_2</code>, a row with fewer fields fills the rest with empty strings, a longer row puts the
         extras under <code>_6</code> and so on, and dotted names such as <code>notes.page</code> are nested
         back into objects. Without it, the result is an array of arrays.</p>
-      <p><strong>Read numbers and true/false</strong> turns a cell into a number only when it is written
+      <p data-t="92"><strong>Read numbers and true/false</strong> turns a cell into a number only when it is written
         the way JSON writes numbers and comes back with the same digits — <code>42</code>,
         <code>-3.5</code>, <code>1e3</code> — so <code>02134</code>, <code>1,5</code> and
         <code>12345678901234567890</code> stay text. <code>true</code>, <code>false</code> and
         <code>null</code> become those values, and a cell that starts with <code>[</code> or
         <code>{</code> and parses as JSON becomes that array or object, which is how arrays make the round
         trip. Unticked, every cell stays a string.</p>
-      <p>A spreadsheet can treat a cell that starts with <code>=</code>, <code>+</code>, <code>-</code> or
+      <p data-t="93">A spreadsheet can treat a cell that starts with <code>=</code>, <code>+</code>, <code>-</code> or
         <code>@</code> as a formula; the page does not alter such cells, so open CSV from a source you do
         not trust with care. Each box takes up to 5,000,000 characters, and a result that would pass that
         is refused. Nothing is uploaded: there is no server in this file, and neither box is stored.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="94">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Format Converters">
-    <span class="mdv-tag">Also in Format Converters</span>
-    <a href="./json-to-yaml.html">JSON and YAML converter</a>
-    <a href="./base-converter.html">Base converter</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Format Converters"}'>Also in Format Converters</span>
+    <a href="./json-to-yaml.html" data-t="32">JSON and YAML converter</a>
+    <a href="./base-converter.html" data-t="33">Base converter</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="95">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="96">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="97" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="98">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2368,6 +2481,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   window.addEventListener("load", count);
 })();
 </script>
+<script type="application/json" id="mdv-i18n">{"k":["JSON to CSV and CSV to JSON Converter — TSV too — MDV","Convert a JSON array to CSV or TSV, or CSV and TSV back to JSON, as you type. Nested objects become dotted columns, quoting follows RFC 4180, and a broken quote is named by line and column. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Or paste CSV or TSV to turn it into JSON","Separator","comma","semicolon","tab","commas","semicolons","tabs","a closing quote must be followed by the separator or the end of the line, but “{ch}” follows it","a quote in the middle of a field that does not start with a quote. Put the whole field in quotes and double the quote inside","this quoted field is never closed. Add the closing quote","line {line}, column {col}","Copied","Copy","Download .{ext}","{from} to {to}","Too much {format}: {n} characters is past the {limit}-character ceiling.","Not valid JSON at {where}: {message}.","Not valid JSON: {message}.","The JSON is an empty array, so there are no rows to write.","Too long as {format}: {n} characters, past the {limit}-character ceiling.","{rows} × {cols}.","{rows}, written row for row.","{rows} of plain values in one column.","No header row written.","The first line has no {from} but has {to}, so it was read with {to}.","Not read: at {where}, {error}.","No rows.","{rows} × {cols}, keyed by the first row.","Dotted column names were nested into objects.","Dotted names were kept flat, because a plain column has the same name as the first part of one.","{rows} as arrays, no header.","The browser refused the clipboard. Select the box and copy it by hand.","{n} character","{n} characters","{n} row","{n} rows","{n} column","{n} columns","{n} cell holds a tab, quote or line break and went in quotes, which not every TSV reader expects.","{n} cells hold a tab, quote or line break and went in quotes, which not every TSV reader expects.","{n} row has a different number of fields than the header; short rows were filled with empty strings and extras named by position.","{n} rows have a different number of fields than the header; short rows were filled with empty strings and extras named by position.","Format Converters","2026-11-02"],"h":99,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Pega JSON o CSV en cualquier lado; el otro lado lo sigue, como CSV o TSV.","En este dispositivo","Funciona sin conexión","Coma","Punto y coma","Tab · TSV","La primera fila nombra las columnas","Leer números y true/false","pega json o csv arriba","Borrar ambos","Cómo funciona","\u003cstrong>JSON a CSV.\u003c/strong> El JSON se lee con el \u003ccode>JSON.parse\u003c/code> del navegador, cuya posición de error la página convierte en línea y columna. Un array de objetos pasa a ser una fila por objeto; un solo objeto pasa a ser una fila; un array de arrays se escribe fila por fila; un array de valores simples pasa a ser una columna llamada \u003ccode>value\u003c/code>. Las columnas son todas las claves que aparecen en alguna fila, en el orden en que aparecen por primera vez, así que una clave que falta en un objeto deja esa celda vacía. Un objeto anidado se despliega en columnas con puntos — \u003ccode>{\"notes\":{\"page\":83}}\u003c/code> pasa a ser una columna \u003ccode>notes.page\u003c/code> — y un array dentro de una fila se escribe como su texto JSON en una sola celda. \u003ccode>null\u003c/code> es una celda vacía. Un campo se pone entre comillas dobles cuando contiene el separador, una comilla, un salto de línea o espacios en cualquiera de los extremos, y una comilla interior se duplica, como establece la RFC 4180. Las líneas terminan en LF en el cuadro; Descargar escribe CRLF y empieza el archivo con una marca de orden de bytes UTF-8, para que Excel lea bien los acentos. TSV no tiene un estándar de comillas, así que cuando una celda TSV necesita comillas, la página lo indica.","\u003cstrong>CSV a JSON.\u003c/strong> Un analizador de esta página lee la RFC 4180: los campos entre comillas dobles pueden contener el separador, comillas duplicadas y saltos de línea, y las líneas pueden terminar en CRLF, LF o CR. Una comilla en medio de un campo sin comillas, o un campo entrecomillado que nunca se cierra, detiene la lectura e indica la línea y la columna. Cuando la primera línea no contiene el separador elegido pero sí otro, la página cambia a ese y lo avisa. Con \u003cstrong>La primera fila nombra las columnas\u003c/strong>, cada fila pasa a ser un objeto con las claves de la cabecera; un nombre vacío pasa a ser \u003ccode>column_3\u003c/code>, un nombre repetido recibe \u003ccode>_2\u003c/code>, una fila con menos campos rellena el resto con cadenas vacías, una fila más larga pone los sobrantes bajo \u003ccode>_6\u003c/code> y así sucesivamente, y los nombres con puntos como \u003ccode>notes.page\u003c/code> se anidan de nuevo en objetos. Sin esa opción, el resultado es un array de arrays.","\u003cstrong>Leer números y true/false\u003c/strong> convierte una celda en número solo cuando está escrita como JSON escribe los números y vuelve con los mismos dígitos — \u003ccode>42\u003c/code>, \u003ccode>-3.5\u003c/code>, \u003ccode>1e3\u003c/code> — así que \u003ccode>02134\u003c/code>, \u003ccode>1,5\u003c/code> y \u003ccode>12345678901234567890\u003c/code> siguen siendo texto. \u003ccode>true\u003c/code>, \u003ccode>false\u003c/code> y \u003ccode>null\u003c/code> pasan a ser esos valores, y una celda que empieza por \u003ccode>[\u003c/code> o \u003ccode>{\u003c/code> y se analiza como JSON pasa a ser ese array u objeto, que es como los arrays hacen el viaje de ida y vuelta. Sin marcar, cada celda sigue siendo una cadena.","Una hoja de cálculo puede tratar una celda que empieza por \u003ccode>=\u003c/code>, \u003ccode>+\u003c/code>, \u003ccode>-\u003c/code> o \u003ccode>@\u003c/code> como una fórmula; la página no modifica esas celdas, así que abre con cuidado el CSV de una fuente en la que no confíes. Cada cuadro admite hasta 5.000.000 de caracteres, y un resultado que lo superaría se rechaza. No se sube nada: este archivo no tiene servidor, y ninguno de los dos cuadros se guarda.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Conversor de JSON a CSV y de CSV a JSON — también TSV — MDV","Convierte un array JSON a CSV o TSV, o CSV y TSV de vuelta a JSON, mientras escribes. Los objetos anidados pasan a columnas con puntos, las comillas siguen la RFC 4180 y una comilla rota se indica por línea y columna. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","O pega CSV o TSV para convertirlo en JSON","Separador","coma","punto y coma","tabulador","comas","puntos y comas","tabuladores","una comilla de cierre debe ir seguida del separador o del final de la línea, pero la sigue “{ch}”","una comilla en medio de un campo que no empieza con comilla. Pon todo el campo entre comillas y duplica la comilla interior","este campo entrecomillado nunca se cierra. Añade la comilla de cierre","línea {line}, columna {col}","Copiado","Copiar","Descargar .{ext}","{from} a {to}","Demasiado {format}: {n} caracteres superan el límite de {limit} caracteres.","JSON no válido en {where}: {message}.","JSON no válido: {message}.","El JSON es un array vacío, así que no hay filas que escribir.","Demasiado largo como {format}: {n} caracteres, por encima del límite de {limit} caracteres.","{rows} × {cols}.","{rows}, escritas fila por fila.","{rows} de valores simples en una columna.","No se escribió fila de cabecera.","La primera línea no tiene {from} pero sí {to}, así que se leyó con {to}.","No se pudo leer: en {where}, {error}.","Sin filas.","{rows} × {cols}, con las claves de la primera fila.","Los nombres de columna con puntos se anidaron en objetos.","Los nombres con puntos se dejaron planos, porque una columna simple tiene el mismo nombre que la primera parte de uno de ellos.","{rows} como arrays, sin cabecera.","El navegador rechazó el portapapeles. Selecciona el cuadro y copia a mano.","{n} carácter","{n} caracteres","{n} fila","{n} filas","{n} columna","{n} columnas","{n} celda contiene un tabulador, una comilla o un salto de línea y se puso entre comillas, algo que no todos los lectores de TSV esperan.","{n} celdas contienen un tabulador, una comilla o un salto de línea y se pusieron entre comillas, algo que no todos los lectores de TSV esperan.","{n} fila tiene un número de campos distinto al de la cabecera; las filas cortas se rellenaron con cadenas vacías y los sobrantes se nombraron por posición.","{n} filas tienen un número de campos distinto al de la cabecera; las filas cortas se rellenaron con cadenas vacías y los sobrantes se nombraron por posición.","Conversores de formato",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Collez du JSON ou du CSV d’un côté ; l’autre côté suit, en CSV ou TSV.","Sur cet appareil","Fonctionne hors ligne","Virgule","Point-virgule","Tab · TSV","La première ligne nomme les colonnes","Lire nombres et true/false","collez du json ou du csv ci-dessus","Tout effacer","Comment ça marche","\u003cstrong>JSON vers CSV.\u003c/strong> Le JSON est lu avec le \u003ccode>JSON.parse\u003c/code> du navigateur, dont la page convertit la position d’erreur en ligne et colonne. Un tableau d’objets devient une ligne par objet ; un objet seul devient une ligne ; un tableau de tableaux est écrit ligne par ligne ; un tableau de valeurs simples devient une colonne nommée \u003ccode>value\u003c/code>. Les colonnes sont toutes les clés présentes dans une ligne quelconque, dans l’ordre de leur première apparition : une clé absente d’un objet laisse cette cellule vide. Un objet imbriqué est déployé en colonnes pointées — \u003ccode>{\"notes\":{\"page\":83}}\u003c/code> devient une colonne \u003ccode>notes.page\u003c/code> — et un tableau dans une ligne est écrit sous forme de texte JSON dans une seule cellule. \u003ccode>null\u003c/code> est une cellule vide. Un champ est mis entre guillemets doubles quand il contient le séparateur, un guillemet, un saut de ligne ou une espace à l’une des extrémités, et un guillemet intérieur est doublé, comme le prévoit la RFC 4180. Les lignes se terminent par LF dans la zone ; Télécharger écrit CRLF et commence le fichier par une marque d’ordre des octets UTF-8, pour qu’Excel lise bien les accents. Le TSV n’a pas de norme de guillemets : quand une cellule TSV en demande, la page le signale.","\u003cstrong>CSV vers JSON.\u003c/strong> Un analyseur de cette page lit la RFC 4180 : les champs entre guillemets doubles peuvent contenir le séparateur, des guillemets doublés et des sauts de ligne, et les lignes peuvent se terminer par CRLF, LF ou CR. Un guillemet au milieu d’un champ non entre guillemets, ou un champ entre guillemets qui ne se ferme jamais, interrompt la lecture avec la ligne et la colonne. Quand la première ligne ne contient pas le séparateur choisi mais en contient un autre, la page passe à celui-ci et le signale. Avec \u003cstrong>La première ligne nomme les colonnes\u003c/strong>, chaque ligne devient un objet dont les clés sont celles de l’en-tête ; un nom vide devient \u003ccode>column_3\u003c/code>, un nom répété reçoit \u003ccode>_2\u003c/code>, une ligne avec moins de champs complète le reste par des chaînes vides, une ligne plus longue place les champs en trop sous \u003ccode>_6\u003c/code> et ainsi de suite, et les noms pointés comme \u003ccode>notes.page\u003c/code> sont réimbriqués en objets. Sans cette option, le résultat est un tableau de tableaux.","\u003cstrong>Lire nombres et true/false\u003c/strong> ne convertit une cellule en nombre que si elle est écrite comme JSON écrit les nombres et ressort avec les mêmes chiffres — \u003ccode>42\u003c/code>, \u003ccode>-3.5\u003c/code>, \u003ccode>1e3\u003c/code> — si bien que \u003ccode>02134\u003c/code>, \u003ccode>1,5\u003c/code> et \u003ccode>12345678901234567890\u003c/code> restent du texte. \u003ccode>true\u003c/code>, \u003ccode>false\u003c/code> et \u003ccode>null\u003c/code> deviennent ces valeurs, et une cellule qui commence par \u003ccode>[\u003c/code> ou \u003ccode>{\u003c/code> et s’analyse comme du JSON devient ce tableau ou cet objet, ce qui permet aux tableaux de faire l’aller-retour. Décochée, chaque cellule reste une chaîne.","Un tableur peut traiter une cellule commençant par \u003ccode>=\u003c/code>, \u003ccode>+\u003c/code>, \u003ccode>-\u003c/code> ou \u003ccode>@\u003c/code> comme une formule ; la page ne modifie pas ces cellules, ouvrez donc avec précaution un CSV dont vous ne connaissez pas la source. Chaque zone accepte jusqu’à 5 000 000 de caractères, et un résultat qui dépasserait cette limite est refusé. Rien n’est envoyé : ce fichier n’a pas de serveur, et aucune des deux zones n’est conservée.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Convertisseur JSON vers CSV et CSV vers JSON — TSV aussi — MDV","Convertissez un tableau JSON en CSV ou TSV, ou du CSV et du TSV en JSON, pendant la saisie. Les objets imbriqués deviennent des colonnes pointées, les guillemets suivent la RFC 4180 et un guillemet défaillant est signalé par ligne et colonne. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Ou collez du CSV ou du TSV pour le convertir en JSON","Séparateur","virgule","point-virgule","tabulation","virgules","points-virgules","tabulations","un guillemet fermant doit être suivi du séparateur ou de la fin de la ligne, mais il est suivi de « {ch} »","un guillemet au milieu d’un champ qui ne commence pas par un guillemet. Mettez tout le champ entre guillemets et doublez le guillemet intérieur","ce champ entre guillemets n’est jamais fermé. Ajoutez le guillemet fermant","ligne {line}, colonne {col}","Copié","Copier","Télécharger .{ext}","{from} vers {to}","Trop de {format} : {n} caractères dépassent la limite de {limit} caractères.","JSON non valide à {where} : {message}.","JSON non valide : {message}.","Le JSON est un tableau vide : il n’y a aucune ligne à écrire.","Trop long en {format} : {n} caractères, au-delà de la limite de {limit} caractères.","{rows} × {cols}.","{rows}, écrites ligne par ligne.","{rows} de valeurs simples dans une colonne.","Aucune ligne d’en-tête écrite.","La première ligne n’a pas de {from} mais a des {to}, elle a donc été lue avec des {to}.","Lecture impossible : à {where}, {error}.","Aucune ligne.","{rows} × {cols}, avec les clés de la première ligne.","Les noms de colonne pointés ont été imbriqués en objets.","Les noms pointés ont été laissés à plat, car une colonne simple porte le même nom que la première partie de l’un d’eux.","{rows} sous forme de tableaux, sans en-tête.","Le navigateur a refusé le presse-papiers. Sélectionnez la zone et copiez à la main.","{n} caractère","{n} caractères","{n} ligne","{n} lignes","{n} colonne","{n} colonnes","{n} cellule contient une tabulation, un guillemet ou un saut de ligne et a été mise entre guillemets, ce que tous les lecteurs TSV n’attendent pas.","{n} cellules contiennent une tabulation, un guillemet ou un saut de ligne et ont été mises entre guillemets, ce que tous les lecteurs TSV n’attendent pas.","{n} ligne a un nombre de champs différent de celui de l’en-tête ; les lignes courtes ont été complétées par des chaînes vides et les champs en trop nommés par position.","{n} lignes ont un nombre de champs différent de celui de l’en-tête ; les lignes courtes ont été complétées par des chaînes vides et les champs en trop nommés par position.","Convertisseurs de format",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Füge JSON oder CSV auf einer Seite ein; die andere folgt, als CSV oder TSV.","Läuft auf diesem Gerät","Funktioniert offline","Komma","Semikolon","Tab · TSV","Erste Zeile benennt die Spalten","Zahlen und true/false lesen","json oder csv oben einfügen","Beide leeren","So funktioniert es","\u003cstrong>JSON zu CSV.\u003c/strong> Das JSON wird mit dem \u003ccode>JSON.parse\u003c/code> des Browsers gelesen; die Seite macht aus dessen Fehlerposition Zeile und Spalte. Ein Array von Objekten wird zu einer Zeile pro Objekt; ein einzelnes Objekt wird zu einer Zeile; ein Array von Arrays wird Zeile für Zeile geschrieben; ein Array einfacher Werte wird zu einer Spalte namens \u003ccode>value\u003c/code>. Die Spalten sind alle Schlüssel, die in irgendeiner Zeile vorkommen, in der Reihenfolge ihres ersten Auftretens; fehlt ein Schlüssel in einem Objekt, bleibt die Zelle leer. Ein verschachteltes Objekt wird in Spalten mit Punkten aufgefächert — \u003ccode>{\"notes\":{\"page\":83}}\u003c/code> wird zur Spalte \u003ccode>notes.page\u003c/code> — und ein Array innerhalb einer Zeile wird als sein JSON-Text in eine Zelle geschrieben. \u003ccode>null\u003c/code> ist eine leere Zelle. Ein Feld steht in doppelten Anführungszeichen, wenn es das Trennzeichen, ein Anführungszeichen, einen Zeilenumbruch oder Leerraum an einem Ende enthält; ein Anführungszeichen darin wird verdoppelt, wie RFC 4180 es vorsieht. Zeilen enden im Feld mit LF; Herunterladen schreibt CRLF und beginnt die Datei mit einer UTF-8-Bytereihenfolge-Marke, damit Excel Umlaute richtig liest. TSV hat keinen Standard für Anführungszeichen; braucht eine TSV-Zelle welche, sagt die Seite das.","\u003cstrong>CSV zu JSON.\u003c/strong> Ein Parser in dieser Seite liest RFC 4180: Felder in doppelten Anführungszeichen können das Trennzeichen, verdoppelte Anführungszeichen und Zeilenumbrüche enthalten, und Zeilen dürfen mit CRLF, LF oder CR enden. Ein Anführungszeichen mitten in einem Feld ohne Anführungszeichen oder ein Feld in Anführungszeichen, das nie schließt, stoppt das Lesen mit Zeile und Spalte. Enthält die erste Zeile das gewählte Trennzeichen nicht, aber ein anderes, wechselt die Seite dorthin und sagt es. Mit \u003cstrong>Erste Zeile benennt die Spalten\u003c/strong> wird jede Zeile zu einem Objekt mit den Schlüsseln der Kopfzeile; ein leerer Name wird zu \u003ccode>column_3\u003c/code>, ein wiederholter Name bekommt \u003ccode>_2\u003c/code>, eine Zeile mit weniger Feldern füllt den Rest mit leeren Zeichenketten, eine längere Zeile legt die überzähligen unter \u003ccode>_6\u003c/code> und so weiter, und Namen mit Punkten wie \u003ccode>notes.page\u003c/code> werden wieder zu Objekten verschachtelt. Ohne diese Option ist das Ergebnis ein Array von Arrays.","\u003cstrong>Zahlen und true/false lesen\u003c/strong> macht eine Zelle nur dann zur Zahl, wenn sie so geschrieben ist, wie JSON Zahlen schreibt, und mit denselben Ziffern zurückkommt — \u003ccode>42\u003c/code>, \u003ccode>-3.5\u003c/code>, \u003ccode>1e3\u003c/code> —, sodass \u003ccode>02134\u003c/code>, \u003ccode>1,5\u003c/code> und \u003ccode>12345678901234567890\u003c/code> Text bleiben. \u003ccode>true\u003c/code>, \u003ccode>false\u003c/code> und \u003ccode>null\u003c/code> werden zu diesen Werten, und eine Zelle, die mit \u003ccode>[\u003c/code> oder \u003ccode>{\u003c/code> beginnt und sich als JSON parsen lässt, wird zu diesem Array oder Objekt; so überstehen Arrays den Hin- und Rückweg. Ohne Haken bleibt jede Zelle eine Zeichenkette.","Eine Tabellenkalkulation kann eine Zelle, die mit \u003ccode>=\u003c/code>, \u003ccode>+\u003c/code>, \u003ccode>-\u003c/code> oder \u003ccode>@\u003c/code> beginnt, als Formel behandeln; die Seite verändert solche Zellen nicht, öffne CSV aus einer Quelle, der du nicht traust, also mit Vorsicht. Jedes Feld nimmt bis zu 5.000.000 Zeichen auf, und ein Ergebnis, das darüber läge, wird abgelehnt. Nichts wird hochgeladen: Diese Datei hat keinen Server, und keines der beiden Felder wird gespeichert.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","JSON-zu-CSV- und CSV-zu-JSON-Konverter — auch TSV — MDV","Wandle ein JSON-Array in CSV oder TSV um, oder CSV und TSV zurück in JSON, während du tippst. Verschachtelte Objekte werden zu Spalten mit Punkten, die Anführungszeichen folgen RFC 4180, und ein fehlerhaftes Anführungszeichen wird mit Zeile und Spalte benannt. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Oder füge CSV oder TSV ein, um es in JSON umzuwandeln","Trennzeichen","Komma","Semikolon","Tabulator","Kommas","Semikolons","Tabulatoren","auf ein schließendes Anführungszeichen müssen das Trennzeichen oder das Zeilenende folgen, stattdessen folgt „{ch}“","ein Anführungszeichen mitten in einem Feld, das nicht mit einem Anführungszeichen beginnt. Setze das ganze Feld in Anführungszeichen und verdopple das innere","dieses Feld in Anführungszeichen wird nie geschlossen. Füge das schließende Anführungszeichen hinzu","Zeile {line}, Spalte {col}","Kopiert","Kopieren","Herunterladen .{ext}","{from} zu {to}","Zu viel {format}: {n} Zeichen überschreiten die Grenze von {limit} Zeichen.","Kein gültiges JSON bei {where}: {message}.","Kein gültiges JSON: {message}.","Das JSON ist ein leeres Array, also gibt es keine Zeilen zu schreiben.","Zu lang als {format}: {n} Zeichen, über der Grenze von {limit} Zeichen.","{rows} × {cols}.","{rows}, Zeile für Zeile geschrieben.","{rows} einfacher Werte in einer Spalte.","Keine Kopfzeile geschrieben.","Die erste Zeile enthält kein {from}, aber {to}; sie wurde deshalb mit {to} gelesen.","Nicht gelesen: bei {where}, {error}.","Keine Zeilen.","{rows} × {cols}, benannt nach der ersten Zeile.","Spaltennamen mit Punkten wurden zu Objekten verschachtelt.","Namen mit Punkten blieben flach, weil eine einfache Spalte denselben Namen hat wie der erste Teil eines solchen Namens.","{rows} als Arrays, ohne Kopfzeile.","Der Browser hat die Zwischenablage verweigert. Markiere das Feld und kopiere von Hand.","{n} Zeichen","{n} Zeichen","{n} Zeile","{n} Zeilen","{n} Spalte","{n} Spalten","{n} Zelle enthält einen Tabulator, ein Anführungszeichen oder einen Zeilenumbruch und wurde in Anführungszeichen gesetzt, was nicht jeder TSV-Leser erwartet.","{n} Zellen enthalten einen Tabulator, ein Anführungszeichen oder einen Zeilenumbruch und wurden in Anführungszeichen gesetzt, was nicht jeder TSV-Leser erwartet.","{n} Zeile hat eine andere Anzahl Felder als die Kopfzeile; kurze Zeilen wurden mit leeren Zeichenketten aufgefüllt, überzählige nach Position benannt.","{n} Zeilen haben eine andere Anzahl Felder als die Kopfzeile; kurze Zeilen wurden mit leeren Zeichenketten aufgefüllt, überzählige nach Position benannt.","Formatkonverter",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Incolla JSON o CSV da un lato; l’altro lato segue, come CSV o TSV.","Su questo dispositivo","Funziona offline","Virgola","Punto e virgola","Tab · TSV","La prima riga dà il nome alle colonne","Leggi numeri e true/false","incolla json o csv qui sopra","Cancella entrambi","Come funziona","\u003cstrong>da JSON a CSV.\u003c/strong> Il JSON viene letto con il \u003ccode>JSON.parse\u003c/code> del browser, la cui posizione di errore la pagina trasforma in riga e colonna. Un array di oggetti diventa una riga per oggetto; un oggetto singolo diventa una riga; un array di array viene scritto riga per riga; un array di valori semplici diventa una colonna chiamata \u003ccode>value\u003c/code>. Le colonne sono tutte le chiavi che compaiono in una qualsiasi riga, nell’ordine in cui compaiono per la prima volta, quindi una chiave mancante in un oggetto lascia vuota quella cella. Un oggetto annidato viene espanso in colonne con il punto — \u003ccode>{\"notes\":{\"page\":83}}\u003c/code> diventa una colonna \u003ccode>notes.page\u003c/code> — e un array dentro una riga viene scritto come testo JSON in una sola cella. \u003ccode>null\u003c/code> è una cella vuota. Un campo viene messo tra virgolette doppie quando contiene il separatore, una virgoletta, un a capo o uno spazio a una delle estremità, e una virgoletta interna viene raddoppiata, come stabilisce la RFC 4180. Le righe finiscono con LF nel riquadro; Scarica scrive CRLF e apre il file con un byte order mark UTF-8, così Excel legge bene gli accenti. Il TSV non ha uno standard per le virgolette, quindi quando una cella TSV ne ha bisogno la pagina lo segnala.","\u003cstrong>da CSV a JSON.\u003c/strong> Un parser in questa pagina legge la RFC 4180: i campi tra virgolette doppie possono contenere il separatore, virgolette raddoppiate e a capo, e le righe possono finire con CRLF, LF o CR. Una virgoletta in mezzo a un campo senza virgolette, o un campo tra virgolette che non si chiude mai, interrompe la lettura con riga e colonna. Quando la prima riga non contiene il separatore scelto ma ne contiene un altro, la pagina passa a quello e lo segnala. Con \u003cstrong>La prima riga dà il nome alle colonne\u003c/strong>, ogni riga diventa un oggetto con le chiavi dell’intestazione; un nome vuoto diventa \u003ccode>column_3\u003c/code>, un nome ripetuto riceve \u003ccode>_2\u003c/code>, una riga con meno campi riempie il resto con stringhe vuote, una riga più lunga mette gli extra sotto \u003ccode>_6\u003c/code> e così via, e i nomi con il punto come \u003ccode>notes.page\u003c/code> vengono annidati di nuovo in oggetti. Senza questa opzione, il risultato è un array di array.","\u003cstrong>Leggi numeri e true/false\u003c/strong> trasforma una cella in numero solo quando è scritta come JSON scrive i numeri e torna con le stesse cifre — \u003ccode>42\u003c/code>, \u003ccode>-3.5\u003c/code>, \u003ccode>1e3\u003c/code> — quindi \u003ccode>02134\u003c/code>, \u003ccode>1,5\u003c/code> e \u003ccode>12345678901234567890\u003c/code> restano testo. \u003ccode>true\u003c/code>, \u003ccode>false\u003c/code> e \u003ccode>null\u003c/code> diventano quei valori, e una cella che inizia con \u003ccode>[\u003c/code> o \u003ccode>{\u003c/code> e si legge come JSON diventa quell’array o oggetto, ed è così che gli array fanno il viaggio di andata e ritorno. Senza la spunta, ogni cella resta una stringa.","Un foglio di calcolo può trattare come formula una cella che inizia con \u003ccode>=\u003c/code>, \u003ccode>+\u003c/code>, \u003ccode>-\u003c/code> o \u003ccode>@\u003c/code>; la pagina non modifica queste celle, quindi apri con cautela un CSV di cui non ti fidi. Ogni riquadro accetta fino a 5.000.000 di caratteri, e un risultato che lo supererebbe viene rifiutato. Non viene caricato nulla: questo file non ha un server, e nessuno dei due riquadri viene salvato.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Convertitore da JSON a CSV e da CSV a JSON — anche TSV — MDV","Converti un array JSON in CSV o TSV, o CSV e TSV di nuovo in JSON, mentre scrivi. Gli oggetti annidati diventano colonne con il punto, le virgolette seguono la RFC 4180 e una virgoletta errata viene indicata per riga e colonna. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Oppure incolla CSV o TSV per convertirlo in JSON","Separatore","virgola","punto e virgola","tabulazione","virgole","punti e virgola","tabulazioni","una virgoletta di chiusura deve essere seguita dal separatore o dalla fine della riga, ma è seguita da “{ch}”","una virgoletta in mezzo a un campo che non inizia con una virgoletta. Metti tutto il campo tra virgolette e raddoppia quella interna","questo campo tra virgolette non si chiude mai. Aggiungi la virgoletta di chiusura","riga {line}, colonna {col}","Copiato","Copia","Scarica .{ext}","da {from} a {to}","Troppo {format}: {n} caratteri superano il limite di {limit} caratteri.","JSON non valido a {where}: {message}.","JSON non valido: {message}.","Il JSON è un array vuoto, quindi non ci sono righe da scrivere.","Troppo lungo come {format}: {n} caratteri, oltre il limite di {limit} caratteri.","{rows} × {cols}.","{rows}, scritte riga per riga.","{rows} di valori semplici in una colonna.","Nessuna riga di intestazione scritta.","La prima riga non ha {from} ma ha {to}, quindi è stata letta con {to}.","Non letto: a {where}, {error}.","Nessuna riga.","{rows} × {cols}, con le chiavi della prima riga.","I nomi di colonna con il punto sono stati annidati in oggetti.","I nomi con il punto sono stati lasciati piatti, perché una colonna semplice ha lo stesso nome della prima parte di uno di essi.","{rows} come array, senza intestazione.","Il browser ha rifiutato gli appunti. Seleziona il riquadro e copia a mano.","{n} carattere","{n} caratteri","{n} riga","{n} righe","{n} colonna","{n} colonne","{n} cella contiene una tabulazione, una virgoletta o un a capo ed è stata messa tra virgolette, cosa che non tutti i lettori TSV si aspettano.","{n} celle contengono una tabulazione, una virgoletta o un a capo e sono state messe tra virgolette, cosa che non tutti i lettori TSV si aspettano.","{n} riga ha un numero di campi diverso dall’intestazione; le righe corte sono state riempite con stringhe vuote e gli extra nominati per posizione.","{n} righe hanno un numero di campi diverso dall’intestazione; le righe corte sono state riempite con stringhe vuote e gli extra nominati per posizione.","Convertitori di formato",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Cole JSON ou CSV em qualquer lado; o outro lado acompanha, como CSV ou TSV.","Neste dispositivo","Funciona offline","Vírgula","Ponto e vírgula","Tab · TSV","A primeira linha nomeia as colunas","Ler números e true/false","cole json ou csv acima","Limpar ambos","Como funciona","\u003cstrong>JSON para CSV.\u003c/strong> O JSON é lido com o \u003ccode>JSON.parse\u003c/code> do navegador, cuja posição de erro a página transforma em linha e coluna. Um array de objetos vira uma linha por objeto; um único objeto vira uma linha; um array de arrays é escrito linha a linha; um array de valores simples vira uma coluna chamada \u003ccode>value\u003c/code>. As colunas são todas as chaves que aparecem em qualquer linha, na ordem em que aparecem pela primeira vez, então uma chave ausente em um objeto deixa aquela célula vazia. Um objeto aninhado é aberto em colunas com ponto — \u003ccode>{\"notes\":{\"page\":83}}\u003c/code> vira uma coluna \u003ccode>notes.page\u003c/code> — e um array dentro de uma linha é escrito como seu texto JSON em uma única célula. \u003ccode>null\u003c/code> é uma célula vazia. Um campo vai entre aspas duplas quando contém o separador, uma aspa, uma quebra de linha ou espaço em qualquer extremidade, e uma aspa interna é dobrada, como a RFC 4180 define. As linhas terminam em LF na caixa; Baixar escreve CRLF e começa o arquivo com uma marca de ordem de bytes UTF-8, para o Excel ler bem os acentos. O TSV não tem padrão de aspas, então quando uma célula TSV precisa de aspas a página avisa.","\u003cstrong>CSV para JSON.\u003c/strong> Um analisador desta página lê a RFC 4180: campos entre aspas duplas podem conter o separador, aspas dobradas e quebras de linha, e as linhas podem terminar em CRLF, LF ou CR. Uma aspa no meio de um campo sem aspas, ou um campo entre aspas que nunca fecha, interrompe a leitura com a linha e a coluna. Quando a primeira linha não contém o separador escolhido mas contém outro, a página muda para ele e avisa. Com \u003cstrong>A primeira linha nomeia as colunas\u003c/strong>, cada linha vira um objeto com as chaves do cabeçalho; um nome vazio vira \u003ccode>column_3\u003c/code>, um nome repetido recebe \u003ccode>_2\u003c/code>, uma linha com menos campos preenche o resto com strings vazias, uma linha mais longa coloca os excedentes em \u003ccode>_6\u003c/code> e assim por diante, e nomes com ponto como \u003ccode>notes.page\u003c/code> voltam a ser aninhados em objetos. Sem essa opção, o resultado é um array de arrays.","\u003cstrong>Ler números e true/false\u003c/strong> transforma uma célula em número apenas quando ela está escrita como o JSON escreve números e volta com os mesmos dígitos — \u003ccode>42\u003c/code>, \u003ccode>-3.5\u003c/code>, \u003ccode>1e3\u003c/code> — então \u003ccode>02134\u003c/code>, \u003ccode>1,5\u003c/code> e \u003ccode>12345678901234567890\u003c/code> continuam texto. \u003ccode>true\u003c/code>, \u003ccode>false\u003c/code> e \u003ccode>null\u003c/code> viram esses valores, e uma célula que começa com \u003ccode>[\u003c/code> ou \u003ccode>{\u003c/code> e é lida como JSON vira esse array ou objeto, que é como os arrays fazem a viagem de ida e volta. Desmarcada, toda célula continua string.","Uma planilha pode tratar como fórmula uma célula que começa com \u003ccode>=\u003c/code>, \u003ccode>+\u003c/code>, \u003ccode>-\u003c/code> ou \u003ccode>@\u003c/code>; a página não altera essas células, então abra com cuidado CSV de uma fonte em que você não confia. Cada caixa aceita até 5.000.000 de caracteres, e um resultado que passasse disso é recusado. Nada é enviado: este arquivo não tem servidor, e nenhuma das duas caixas é armazenada.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Conversor de JSON para CSV e de CSV para JSON — também TSV — MDV","Converta um array JSON em CSV ou TSV, ou CSV e TSV de volta em JSON, enquanto você digita. Objetos aninhados viram colunas com ponto, as aspas seguem a RFC 4180 e uma aspa quebrada é indicada por linha e coluna. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Ou cole CSV ou TSV para convertê-lo em JSON","Separador","vírgula","ponto e vírgula","tabulação","vírgulas","pontos e vírgulas","tabulações","uma aspa de fechamento deve ser seguida pelo separador ou pelo fim da linha, mas é seguida por “{ch}”","uma aspa no meio de um campo que não começa com aspa. Coloque o campo inteiro entre aspas e dobre a aspa interna","este campo entre aspas nunca é fechado. Adicione a aspa de fechamento","linha {line}, coluna {col}","Copiado","Copiar","Baixar .{ext}","{from} para {to}","{format} demais: {n} caracteres passam do limite de {limit} caracteres.","JSON inválido em {where}: {message}.","JSON inválido: {message}.","O JSON é um array vazio, então não há linhas para escrever.","Longo demais como {format}: {n} caracteres, acima do limite de {limit} caracteres.","{rows} × {cols}.","{rows}, escritas linha a linha.","{rows} de valores simples em uma coluna.","Nenhuma linha de cabeçalho escrita.","A primeira linha não tem {from}, mas tem {to}, então foi lida com {to}.","Não foi lido: em {where}, {error}.","Sem linhas.","{rows} × {cols}, com as chaves da primeira linha.","Nomes de coluna com ponto foram aninhados em objetos.","Nomes com ponto foram mantidos planos, porque uma coluna simples tem o mesmo nome da primeira parte de um deles.","{rows} como arrays, sem cabeçalho.","O navegador recusou a área de transferência. Selecione a caixa e copie manualmente.","{n} caractere","{n} caracteres","{n} linha","{n} linhas","{n} coluna","{n} colunas","{n} célula contém uma tabulação, aspa ou quebra de linha e foi colocada entre aspas, algo que nem todo leitor de TSV espera.","{n} células contêm uma tabulação, aspa ou quebra de linha e foram colocadas entre aspas, algo que nem todo leitor de TSV espera.","{n} linha tem um número de campos diferente do cabeçalho; as linhas curtas foram preenchidas com strings vazias e os excedentes nomeados por posição.","{n} linhas têm um número de campos diferente do cabeçalho; as linhas curtas foram preenchidas com strings vazias e os excedentes nomeados por posição.","Conversores de formato",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","どちらか一方に JSON または CSV を貼り付けると、もう一方が CSV または TSV で追従します。","この端末で動作","オフラインで動作","カンマ","セミコロン","タブ · TSV","1 行目を列名にする","数値と true/false を読み取る","上に json または csv を貼り付け","両方クリア","仕組み","\u003cstrong>JSON から CSV へ。\u003c/strong>JSON はブラウザーの \u003ccode>JSON.parse\u003c/code> で読み込まれ、そのエラー位置をページが行と列に変換します。オブジェクトの配列は 1 オブジェクトにつき 1 行になり、単一のオブジェクトは 1 行になり、配列の配列は行ごとにそのまま書き出され、単純な値の配列は \u003ccode>value\u003c/code> という 1 列になります。列は、いずれかの行に現れるすべてのキーを最初に現れた順に並べたもので、あるオブジェクトにキーがなければそのセルは空になります。入れ子のオブジェクトはドット付きの列に展開され(\u003ccode>{\"notes\":{\"page\":83}}\u003c/code> は \u003ccode>notes.page\u003c/code> 列になります)、行の中の配列は JSON テキストとして 1 つのセルに書かれます。\u003ccode>null\u003c/code> は空のセルです。フィールドは、区切り文字、引用符、改行、または前後の空白を含む場合にダブルクォートで囲まれ、中の引用符は RFC 4180 のとおり二重にされます。ボックス内の改行は LF で、ダウンロードでは CRLF で書き出し、Excel がアクセント付き文字を正しく読めるよう UTF-8 のバイトオーダーマークをファイルの先頭に付けます。TSV には引用符の標準がないため、TSV のセルに引用符が必要になった場合はページがそれを表示します。","\u003cstrong>CSV から JSON へ。\u003c/strong>このページ内のパーサーが RFC 4180 を読みます。ダブルクォートで囲んだフィールドには、区切り文字、二重にした引用符、改行を含められ、行末は CRLF、LF、CR のいずれでも構いません。引用符で囲まれていないフィールドの途中にある引用符や、閉じられない引用符付きフィールドがあると、行と列を示して読み込みを止めます。最初の行に選択中の区切り文字がなく、別の区切り文字がある場合は、ページがそちらに切り替えてその旨を表示します。\u003cstrong>1 行目を列名にする\u003c/strong>がオンのときは、各行がヘッダーをキーとするオブジェクトになります。空の名前は \u003ccode>column_3\u003c/code> に、重複した名前には \u003ccode>_2\u003c/code> が付き、フィールドが足りない行は残りが空文字列で埋められ、長い行の余分なフィールドは \u003ccode>_6\u003c/code> のように位置で名付けられ、\u003ccode>notes.page\u003c/code> のようなドット付きの名前はオブジェクトに入れ子で戻されます。オフのときの結果は配列の配列です。","\u003cstrong>数値と true/false を読み取る\u003c/strong>は、セルが JSON の数値の書き方で書かれていて、同じ桁で戻せる場合にだけ数値に変換します(\u003ccode>42\u003c/code>、\u003ccode>-3.5\u003c/code>、\u003ccode>1e3\u003c/code>)。そのため \u003ccode>02134\u003c/code>、\u003ccode>1,5\u003c/code>、\u003ccode>12345678901234567890\u003c/code> は文字列のままです。\u003ccode>true\u003c/code>、\u003ccode>false\u003c/code>、\u003ccode>null\u003c/code> はその値になり、\u003ccode>[\u003c/code> または \u003ccode>{\u003c/code> で始まり JSON として解析できるセルはその配列やオブジェクトになります。これにより配列も往復できます。オフにすると、すべてのセルが文字列のままになります。","スプレッドシートは、\u003ccode>=\u003c/code>、\u003ccode>+\u003c/code>、\u003ccode>-\u003c/code>、\u003ccode>@\u003c/code> で始まるセルを数式として扱うことがあります。ページはそうしたセルを書き換えないので、信頼できない出所の CSV は注意して開いてください。各ボックスは 5,000,000 文字まで受け付け、それを超える結果は拒否されます。何もアップロードされません。このファイルにはサーバーがなく、どちらのボックスも保存されません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","JSON から CSV、CSV から JSON への変換 — TSV 対応 — MDV","入力しながら、JSON 配列を CSV または TSV に、CSV や TSV を JSON に変換します。入れ子のオブジェクトはドット付きの列になり、引用符は RFC 4180 に従い、壊れた引用符は行と列で示されます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","または CSV や TSV を貼り付けて JSON に変換","区切り文字","カンマ","セミコロン","タブ","カンマ","セミコロン","タブ","閉じる引用符の後には区切り文字か行末が必要ですが、「{ch}」が続いています","引用符で始まっていないフィールドの途中に引用符があります。フィールド全体を引用符で囲み、中の引用符は二重にしてください","この引用符付きフィールドが閉じられていません。閉じる引用符を追加してください","{line} 行目、{col} 列目","コピーしました","コピー",".{ext} をダウンロード","{from} から {to}","{format} が大きすぎます。{n} 文字は上限の {limit} 文字を超えています。","JSON として無効です({where}): {message}。","JSON として無効です: {message}。","JSON が空の配列なので、書き出す行がありません。","{format} として長すぎます。{n} 文字で、上限の {limit} 文字を超えています。","{rows} × {cols}。","{rows}。行ごとにそのまま書き出しました。","単純な値の {rows}(1 列)。","ヘッダー行は書き出していません。","最初の行に {from} はなく {to} があるため、{to} で読み込みました。","読み込めませんでした({where}): {error}。","行がありません。","{rows} × {cols}。1 行目をキーにしています。","ドット付きの列名はオブジェクトに入れ子にしました。","ドット付きの名前は、同名の通常の列がその最初の部分と重なるため、入れ子にせずそのままにしました。","{rows}を配列として出力。ヘッダーなし。","ブラウザーがクリップボードを拒否しました。ボックスを選択して手動でコピーしてください。","{n} 文字","{n} 文字","{n} 行","{n} 行","{n} 列","{n} 列","{n} 個のセルにタブ、引用符、または改行が含まれていたため引用符で囲みました。すべての TSV リーダーがこれに対応しているわけではありません。","{n} 個のセルにタブ、引用符、または改行が含まれていたため引用符で囲みました。すべての TSV リーダーがこれに対応しているわけではありません。","{n} 行のフィールド数がヘッダーと異なります。足りない行は空文字列で埋め、余分なフィールドは位置で名付けました。","{n} 行のフィールド数がヘッダーと異なります。足りない行は空文字列で埋め、余分なフィールドは位置で名付けました。","形式変換",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","어느 쪽이든 JSON 또는 CSV를 붙여넣으세요. 반대쪽이 CSV 또는 TSV로 따라옵니다.","이 기기에서 실행","오프라인 작동","쉼표","세미콜론","탭 · TSV","첫 행을 열 이름으로","숫자와 true/false 읽기","위에 json 또는 csv 붙여넣기","모두 지우기","작동 방식","\u003cstrong>JSON에서 CSV로.\u003c/strong> JSON은 브라우저의 \u003ccode>JSON.parse\u003c/code>로 읽으며, 그 오류 위치를 페이지가 줄과 열로 바꿔 보여 줍니다. 객체 배열은 객체당 한 행이 되고, 객체 하나는 한 행이 되며, 배열의 배열은 행 단위로 그대로 기록되고, 단순 값의 배열은 \u003ccode>value\u003c/code>라는 한 열이 됩니다. 열은 어느 행에든 나타나는 모든 키를 처음 나타난 순서대로 모은 것이라서, 어떤 객체에 키가 없으면 그 셀은 비어 있습니다. 중첩된 객체는 점으로 이어진 열로 펼쳐지고(\u003ccode>{\"notes\":{\"page\":83}}\u003c/code>는 \u003ccode>notes.page\u003c/code> 열이 됩니다), 행 안의 배열은 JSON 텍스트로 한 셀에 기록됩니다. \u003ccode>null\u003c/code>은 빈 셀입니다. 필드는 구분자, 따옴표, 줄바꿈, 또는 앞뒤 공백을 포함하면 큰따옴표로 감싸며, 안의 따옴표는 RFC 4180에 따라 두 번 씁니다. 상자 안의 줄 끝은 LF이고, 다운로드는 CRLF로 기록하며 Excel이 악센트 문자를 올바르게 읽도록 파일을 UTF-8 바이트 순서 표시로 시작합니다. TSV에는 따옴표 표준이 없으므로, TSV 셀에 따옴표가 필요하면 페이지가 알려 줍니다.","\u003cstrong>CSV에서 JSON으로.\u003c/strong> 이 페이지의 파서가 RFC 4180을 읽습니다. 큰따옴표로 감싼 필드에는 구분자, 두 번 쓴 따옴표, 줄바꿈이 들어갈 수 있고, 줄 끝은 CRLF, LF, CR 모두 가능합니다. 따옴표 없는 필드 중간의 따옴표나 닫히지 않는 따옴표 필드가 있으면 줄과 열을 알리며 읽기를 멈춥니다. 첫 줄에 선택한 구분자는 없고 다른 구분자가 있으면 페이지가 그쪽으로 바꾸고 알려 줍니다. \u003cstrong>첫 행을 열 이름으로\u003c/strong>를 켜면 각 행이 헤더를 키로 하는 객체가 됩니다. 빈 이름은 \u003ccode>column_3\u003c/code>이 되고, 중복된 이름에는 \u003ccode>_2\u003c/code>가 붙으며, 필드가 모자란 행은 나머지를 빈 문자열로 채우고, 더 긴 행의 남는 필드는 \u003ccode>_6\u003c/code>처럼 위치로 이름을 붙이며, \u003ccode>notes.page\u003c/code> 같은 점이 있는 이름은 다시 객체로 중첩됩니다. 끄면 결과는 배열의 배열입니다.","\u003cstrong>숫자와 true/false 읽기\u003c/strong>는 셀이 JSON이 숫자를 쓰는 방식으로 적혀 있고 같은 자릿수로 되돌아올 때만 숫자로 바꿉니다(\u003ccode>42\u003c/code>, \u003ccode>-3.5\u003c/code>, \u003ccode>1e3\u003c/code>). 그래서 \u003ccode>02134\u003c/code>, \u003ccode>1,5\u003c/code>, \u003ccode>12345678901234567890\u003c/code>은 텍스트로 남습니다. \u003ccode>true\u003c/code>, \u003ccode>false\u003c/code>, \u003ccode>null\u003c/code>은 해당 값이 되고, \u003ccode>[\u003c/code> 또는 \u003ccode>{\u003c/code>로 시작하며 JSON으로 해석되는 셀은 그 배열이나 객체가 됩니다. 이렇게 배열도 왕복할 수 있습니다. 끄면 모든 셀이 문자열로 남습니다.","스프레드시트는 \u003ccode>=\u003c/code>, \u003ccode>+\u003c/code>, \u003ccode>-\u003c/code>, \u003ccode>@\u003c/code>로 시작하는 셀을 수식으로 처리할 수 있습니다. 페이지는 이런 셀을 바꾸지 않으므로, 신뢰할 수 없는 출처의 CSV는 주의해서 여세요. 각 상자는 최대 5,000,000자를 받으며, 이를 넘는 결과는 거부됩니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없고, 어느 상자도 저장되지 않습니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","JSON을 CSV로, CSV를 JSON으로 변환 — TSV 지원 — MDV","입력하는 대로 JSON 배열을 CSV 또는 TSV로, CSV와 TSV를 JSON으로 변환합니다. 중첩된 객체는 점으로 이어진 열이 되고, 따옴표는 RFC 4180을 따르며, 잘못된 따옴표는 줄과 열로 알려 줍니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","또는 CSV나 TSV를 붙여넣어 JSON으로 변환","구분자","쉼표","세미콜론","탭","쉼표","세미콜론","탭","닫는 따옴표 뒤에는 구분자나 줄 끝이 와야 하지만, “{ch}”이(가) 뒤따릅니다","따옴표로 시작하지 않는 필드 중간에 따옴표가 있습니다. 필드 전체를 따옴표로 감싸고 안의 따옴표는 두 번 쓰세요","이 따옴표 필드가 닫히지 않았습니다. 닫는 따옴표를 추가하세요","{line}행 {col}열","복사됨","복사",".{ext} 다운로드","{from} → {to}","{format}이(가) 너무 큽니다. {n}자는 상한인 {limit}자를 넘습니다.","{where}에서 유효하지 않은 JSON: {message}.","유효하지 않은 JSON: {message}.","JSON이 빈 배열이라 쓸 행이 없습니다.","{format}(으)로 너무 깁니다. {n}자로, 상한인 {limit}자를 넘습니다.","{rows} × {cols}.","{rows}, 행 단위로 기록했습니다.","한 열에 단순 값 {rows}.","헤더 행은 기록하지 않았습니다.","첫 줄에 {from}은(는) 없고 {to}이(가) 있어서 {to}(으)로 읽었습니다.","읽지 못했습니다: {where}, {error}.","행이 없습니다.","{rows} × {cols}, 첫 행을 키로 사용했습니다.","점이 있는 열 이름을 객체로 중첩했습니다.","일반 열의 이름이 점이 있는 이름의 첫 부분과 같아서, 점이 있는 이름은 중첩하지 않고 그대로 두었습니다.","{rows}을(를) 배열로, 헤더 없음.","브라우저가 클립보드를 거부했습니다. 상자를 선택해 직접 복사하세요.","{n}자","{n}자","{n}행","{n}행","{n}열","{n}열","셀 {n}개에 탭, 따옴표 또는 줄바꿈이 있어 따옴표로 감쌌습니다. 모든 TSV 리더가 이를 지원하지는 않습니다.","셀 {n}개에 탭, 따옴표 또는 줄바꿈이 있어 따옴표로 감쌌습니다. 모든 TSV 리더가 이를 지원하지는 않습니다.","{n}개 행의 필드 수가 헤더와 다릅니다. 짧은 행은 빈 문자열로 채우고 남는 필드는 위치로 이름을 붙였습니다.","{n}개 행의 필드 수가 헤더와 다릅니다. 짧은 행은 빈 문자열로 채우고 남는 필드는 위치로 이름을 붙였습니다.","형식 변환기",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","在任一侧粘贴 JSON 或 CSV，另一侧会以 CSV 或 TSV 形式同步更新。","在此设备上运行","可离线使用","逗号","分号","制表符 · TSV","首行为列名","识别数字和 true/false","在上方粘贴 json 或 csv","全部清除","工作原理","\u003cstrong>JSON 转 CSV。\u003c/strong>JSON 由浏览器的 \u003ccode>JSON.parse\u003c/code> 读取,页面会把它的错误位置换算成行和列。对象数组每个对象生成一行;单个对象生成一行;数组的数组按行原样写出;简单值的数组生成名为 \u003ccode>value\u003c/code> 的一列。列是所有行中出现过的每个键,按首次出现的顺序排列,所以某个对象缺少的键会让该单元格为空。嵌套对象会展开成带点的列(\u003ccode>{\"notes\":{\"page\":83}}\u003c/code> 变成 \u003ccode>notes.page\u003c/code> 列),行内的数组则以其 JSON 文本写入一个单元格。\u003ccode>null\u003c/code> 是空单元格。字段含有分隔符、引号、换行,或首尾有空格时,会加上双引号,内部的引号按 RFC 4180 的规定写成两个。文本框中的换行为 LF;下载时写成 CRLF，并在文件开头加上 UTF-8 字节顺序标记,以便 Excel 正确读取带重音的字符。TSV 没有引号标准,所以当 TSV 单元格需要引号时,页面会说明。","\u003cstrong>CSV 转 JSON。\u003c/strong>页面内的解析器按 RFC 4180 读取:双引号字段可以包含分隔符、成对的引号和换行,行可以以 CRLF、LF 或 CR 结尾。未加引号字段中间出现引号,或带引号的字段始终没有闭合,都会中止读取并给出行和列。当首行不含所选分隔符、但含有另一种分隔符时,页面会切换到那一种并予以说明。勾选\u003cstrong>首行为列名\u003c/strong>时,每一行变成以表头为键的对象;空名称变成 \u003ccode>column_3\u003c/code>,重复的名称加上 \u003ccode>_2\u003c/code>,字段较少的行用空字符串补齐,较长的行把多出的字段按位置命名为 \u003ccode>_6\u003c/code> 等,带点的名称(如 \u003ccode>notes.page\u003c/code>)会重新嵌套为对象。不勾选时,结果是数组的数组。","\u003cstrong>识别数字和 true/false\u003c/strong>只在单元格按 JSON 的数字写法书写、且转换后数字不变时,才把它变成数字(\u003ccode>42\u003c/code>、\u003ccode>-3.5\u003c/code>、\u003ccode>1e3\u003c/code>),因此 \u003ccode>02134\u003c/code>、\u003ccode>1,5\u003c/code> 和 \u003ccode>12345678901234567890\u003c/code> 仍是文本。\u003ccode>true\u003c/code>、\u003ccode>false\u003c/code> 和 \u003ccode>null\u003c/code> 会变成对应的值;以 \u003ccode>[\u003c/code> 或 \u003ccode>{\u003c/code> 开头且能解析为 JSON 的单元格会变成该数组或对象,数组就是这样完成往返的。取消勾选时,所有单元格都保持为字符串。","电子表格可能把以 \u003ccode>=\u003c/code>、\u003ccode>+\u003c/code>、\u003ccode>-\u003c/code> 或 \u003ccode>@\u003c/code> 开头的单元格当作公式;页面不会改动这类单元格,所以打开来源不可信的 CSV 时请小心。每个文本框最多接受 5,000,000 个字符,超出该上限的结果会被拒绝。不会上传任何内容:此文件没有服务器,两个文本框的内容也都不会被保存。","深色和语言按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","JSON 转 CSV 与 CSV 转 JSON 转换器 — 支持 TSV — MDV","输入时即可将 JSON 数组转为 CSV 或 TSV，或把 CSV 和 TSV 转回 JSON。嵌套对象变成带点的列,引号遵循 RFC 4180，损坏的引号会按行和列指出。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","或粘贴 CSV 或 TSV，将其转换为 JSON","分隔符","逗号","分号","制表符","逗号","分号","制表符","结束引号之后必须是分隔符或行尾,但后面是“{ch}”","在不以引号开头的字段中间出现了引号。请将整个字段用引号括起,并把内部的引号写成两个","此带引号的字段始终没有闭合。请补上结束引号","第 {line} 行,第 {col} 列","已复制","复制","下载 .{ext}","{from} 转 {to}","{format} 过多:{n} 个字符超出了 {limit} 个字符的上限。","JSON 无效,位于{where}:{message}。","JSON 无效:{message}。","该 JSON 是空数组,没有可写出的行。","作为 {format} 太长:{n} 个字符,超出 {limit} 个字符的上限。","{rows} × {cols}。","{rows},按行原样写出。","单列简单值,{rows}。","未写出表头行。","首行没有{from},但有{to},因此按{to}读取。","无法读取:在{where},{error}。","没有行。","{rows} × {cols},以首行为键。","带点的列名已嵌套为对象。","带点的名称保持为平铺,因为有一列普通列与其中某个名称的第一段同名。","{rows}以数组形式输出,无表头。","浏览器拒绝了剪贴板。请选中文本框后手动复制。","{n} 个字符","{n} 个字符","{n} 行","{n} 行","{n} 列","{n} 列","{n} 个单元格含有制表符、引号或换行,已加上引号,并非所有 TSV 读取器都支持这样做。","{n} 个单元格含有制表符、引号或换行,已加上引号,并非所有 TSV 读取器都支持这样做。","{n} 行的字段数与表头不同;较短的行已用空字符串补齐,多出的字段按位置命名。","{n} 行的字段数与表头不同;较短的行已用空字符串补齐,多出的字段按位置命名。","格式转换",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
+})();
+</script>
 
 </main>
 
@@ -2375,7 +2588,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 (function () {
   "use strict";
   var LIMIT = 5000000;
-  var SEP_NAMES = { ",": "comma", ";": "semicolon", "\t": "tab" };
+  var SEP_NAMES = { ",": trk("comma"), ";": trk("semicolon"), "\t": trk("tab") };
+  var SEP_PLURAL = { ",": trk("commas"), ";": trk("semicolons"), "\t": trk("tabs") };
 
   /* ---------- pure: JSON -> table ---------- */
 
@@ -2437,13 +2651,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
           if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
           quoted = false; i++;
           if (i < len && text[i] !== sep && text[i] !== "\n" && text[i] !== "\r")
-            return { error: "a closing quote must be followed by the separator or the end of the line, but “" + text[i] + "” follows it", at: i };
+            return { error: trk("a closing quote must be followed by the separator or the end of the line, but “{ch}” follows it"), vars: { ch: text[i] }, at: i };
           continue;
         }
         field += c; i++; continue;
       }
       if (c === '"') {
-        if (i !== fieldStart) return { error: "a quote in the middle of a field that does not start with a quote. Put the whole field in quotes and double the quote inside", at: i };
+        if (i !== fieldStart) return { error: trk("a quote in the middle of a field that does not start with a quote. Put the whole field in quotes and double the quote inside"), at: i };
         quoted = true; i++; continue;
       }
       if (c === sep) { row.push(field); field = ""; i++; fieldStart = i; continue; }
@@ -2453,14 +2667,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       }
       field += c; i++;
     }
-    if (quoted) return { error: "this quoted field is never closed. Add the closing quote", at: fieldStart };
+    if (quoted) return { error: trk("this quoted field is never closed. Add the closing quote"), at: fieldStart };
     if (field !== "" || row.length) { row.push(field); rows.push(row); }
     return { rows: rows };
   }
   function lineCol(text, at) {
     var line = 1, last = -1;
     for (var k = text.indexOf("\n"); k >= 0 && k < at; k = text.indexOf("\n", k + 1)) { line++; last = k; }
-    return "line " + n(line) + ", column " + n(at - last);
+    return tr("line {line}, column {col}", { line: n(line), col: n(at - last) });
   }
   // The separator the first line uses, outside quotes, if the chosen one is absent there.
   function sniff(text, sep) {
@@ -2529,6 +2743,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function write(field, value) { echo = true; field.value = value; echo = false; }
   function flags(field, cls) { json.classList.remove("is-bad", "is-stale"); csv.classList.remove("is-bad", "is-stale"); if (field) field.classList.add(cls); }
   function sepName() { return sep === "\t" ? "TSV" : "CSV"; }
+  function paintWords() {
+    copyJson.firstChild.textContent = copyJson.classList.contains("is-done") ? tr("Copied") : tr("Copy");
+    copyCsv.firstChild.textContent = copyCsv.classList.contains("is-done") ? tr("Copied") : tr("Copy");
+  }
   function paintSep() {
     Array.prototype.forEach.call(document.querySelectorAll("[data-sep]"), function (b) {
       var on = b.getAttribute("data-sep") === sep;
@@ -2536,13 +2754,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
     csvLabel.textContent = sepName();
-    download.textContent = "Download ." + sepName().toLowerCase();
-    dirLabel.textContent = last === "toCsv" ? "JSON to " + sepName() : sepName() + " to JSON";
+    download.firstChild.textContent = tr("Download .{ext}", { ext: sepName().toLowerCase() });
+    dirLabel.textContent = last === "toCsv" ? tr("{from} to {to}", { from: "JSON", to: sepName() }) : tr("{from} to {to}", { from: sepName(), to: "JSON" });
   }
   function direction(dir) { last = dir; flow.classList.toggle("is-up", dir === "toJson"); paintSep(); }
   function counts() {
-    cJson.textContent = json.value ? n(json.value.length) + " characters" : "";
-    cCsv.textContent = csv.value ? n(csv.value.length) + " characters" : "";
+    cJson.textContent = json.value ? trn(json.value.length, "{n} character", "{n} characters") : "";
+    cCsv.textContent = csv.value ? trn(csv.value.length, "{n} character", "{n} characters") : "";
     copyJson.disabled = !json.value; copyCsv.disabled = !csv.value; download.disabled = !csv.value;
   }
   function refuse(field, other, message) { flags(field, "is-bad"); other.classList.add("is-stale"); counts(); say(message, "bad"); }
@@ -2551,43 +2769,49 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var text = json.value;
     flags(null);
     if (!text.trim()) { write(csv, ""); counts(); rest(); return; }
-    if (text.length > LIMIT) return refuse(json, csv, "Too much JSON: " + n(text.length) + " characters is past the " + n(LIMIT) + "-character ceiling.");
+    if (text.length > LIMIT) return refuse(json, csv, tr("Too much {format}: {n} characters is past the {limit}-character ceiling.", { format: "JSON", n: n(text.length), limit: n(LIMIT) }));
     var value;
     try { value = JSON.parse(text); }
     catch (e) {
       var m = /position (\d+)/.exec(String(e.message));
       var msg = String(e.message).replace(/^JSON\.parse: /, "").replace(/ in JSON at position \d+.*$/, "").replace(/ \(line \d+ column \d+\)$/, "");
-      return refuse(json, csv, "Not valid JSON" + (m ? " at " + lineCol(text, Number(m[1])) : "") + ": " + msg + ".");
+      return refuse(json, csv, m ? tr("Not valid JSON at {where}: {message}.", { where: lineCol(text, Number(m[1])), message: msg })
+        : tr("Not valid JSON: {message}.", { message: msg }));
     }
     var t = tableOf(value);
-    if (t.shape === "empty") { write(csv, ""); counts(); return say("The JSON is an empty array, so there are no rows to write.", "warn"); }
+    if (t.shape === "empty") { write(csv, ""); counts(); return say(tr("The JSON is an empty array, so there are no rows to write."), "warn"); }
     if (!header.checked && t.header) t.rows = t.rows.slice(1);
     var out = writeTable(t.rows, sep, "\n");
-    if (out.text.length > LIMIT) return refuse(json, csv, "Too long as " + sepName() + ": " + n(out.text.length) + " characters, past the " + n(LIMIT) + "-character ceiling.");
+    if (out.text.length > LIMIT) return refuse(json, csv, tr("Too long as {format}: {n} characters, past the {limit}-character ceiling.", { format: sepName(), n: n(out.text.length), limit: n(LIMIT) }));
     write(csv, out.text);
     lastTable = t;
     counts();
     var body = t.rows.length - (t.header && header.checked ? 1 : 0), notes = [];
-    notes.push(n(body) + (body === 1 ? " row" : " rows") + (t.shape === "objects" ? " × " + n(t.cols) + (t.cols === 1 ? " column" : " columns") : "") +
-      (t.shape === "arrays" ? ", written row for row" : t.shape === "values" ? " of plain values in one column" : "") + ".");
-    if (!header.checked && t.header) notes.push("No header row written.");
-    if (sep === "\t" && out.quoted) notes.push(n(out.quoted) + (out.quoted === 1 ? " cell holds" : " cells hold") + " a tab, quote or line break and went in quotes, which not every TSV reader expects.");
+    var rowsText = trn(body, "{n} row", "{n} rows");
+    notes.push(t.shape === "objects" ? tr("{rows} × {cols}.", { rows: rowsText, cols: trn(t.cols, "{n} column", "{n} columns") })
+      : t.shape === "arrays" ? tr("{rows}, written row for row.", { rows: rowsText })
+      : tr("{rows} of plain values in one column.", { rows: rowsText }));
+    if (!header.checked && t.header) notes.push(tr("No header row written."));
+    if (sep === "\t" && out.quoted) notes.push(trn(out.quoted, "{n} cell holds a tab, quote or line break and went in quotes, which not every TSV reader expects.", "{n} cells hold a tab, quote or line break and went in quotes, which not every TSV reader expects."));
     say(notes.join(" "), sep === "\t" && out.quoted ? "warn" : "ok");
   }
 
   // sniffing only for text just typed or pasted: a separator you click is the one used
-  function toJsonNow(mayGuess) {
+  var sniffed = null;
+  function toJsonNow(mayGuess, keep) {
     var text = csv.value;
     flags(null);
     if (!text.trim()) { write(json, ""); counts(); rest(); return; }
-    if (text.length > LIMIT) return refuse(csv, json, "Too much " + sepName() + ": " + n(text.length) + " characters is past the " + n(LIMIT) + "-character ceiling.");
+    if (text.length > LIMIT) return refuse(csv, json, tr("Too much {format}: {n} characters is past the {limit}-character ceiling.", { format: sepName(), n: n(text.length), limit: n(LIMIT) }));
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
     var notes = [], found = mayGuess ? sniff(text, sep) : sep;
-    if (found !== sep) { notes.push("The first line has no " + SEP_NAMES[sep] + " but has " + SEP_NAMES[found] + "s, so it was read with " + SEP_NAMES[found] + "s."); sep = found; paintSep(); }
+    if (!keep) sniffed = null;
+    if (found !== sep) { sniffed = { from: sep, to: found }; sep = found; paintSep(); }
+    if (sniffed) notes.push(tr("The first line has no {from} but has {to}, so it was read with {to}.", { from: tr(SEP_NAMES[sniffed.from]), to: tr(SEP_PLURAL[sniffed.to]) }));
     var p = parseCsv(text, sep);
-    if (p.error) return refuse(csv, json, "Not read: at " + lineCol(text, p.at) + ", " + p.error + ".");
+    if (p.error) return refuse(csv, json, tr("Not read: at {where}, {error}.", { where: lineCol(text, p.at), error: tr(p.error, p.vars) }));
     var rows = p.rows, value;
-    if (!rows.length) { write(json, "[]"); counts(); return say("No rows.", "warn"); }
+    if (!rows.length) { write(json, "[]"); counts(); return say(tr("No rows."), "warn"); }
     var conv = types.checked ? typed : function (x) { return x; };
     if (header.checked) {
       var names = [], used = Object.create(null), ragged = 0;
@@ -2606,21 +2830,22 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         }
         return o;
       });
-      notes.unshift(n(value.length) + (value.length === 1 ? " row" : " rows") + " × " + n(names.length) + (names.length === 1 ? " column" : " columns") + ", keyed by the first row.");
-      if (ragged) notes.push(n(ragged) + (ragged === 1 ? " row has" : " rows have") + " a different number of fields than the header; short rows were filled with empty strings and extras named by position.");
-      if (dotted) notes.push(nested ? "Dotted column names were nested into objects." : "Dotted names were kept flat, because a plain column has the same name as the first part of one.");
+      notes.unshift(tr("{rows} × {cols}, keyed by the first row.", { rows: trn(value.length, "{n} row", "{n} rows"), cols: trn(names.length, "{n} column", "{n} columns") }));
+      if (ragged) notes.push(trn(ragged, "{n} row has a different number of fields than the header; short rows were filled with empty strings and extras named by position.", "{n} rows have a different number of fields than the header; short rows were filled with empty strings and extras named by position."));
+      if (dotted) notes.push(nested ? tr("Dotted column names were nested into objects.") : tr("Dotted names were kept flat, because a plain column has the same name as the first part of one."));
     } else {
       value = rows.map(function (r) { return r.map(conv); });
-      notes.unshift(n(value.length) + (value.length === 1 ? " row" : " rows") + " as arrays, no header.");
+      notes.unshift(tr("{rows} as arrays, no header.", { rows: trn(value.length, "{n} row", "{n} rows") }));
     }
     var out = JSON.stringify(value, null, 2);
-    if (out.length > LIMIT) return refuse(csv, json, "Too long as JSON: " + n(out.length) + " characters, past the " + n(LIMIT) + "-character ceiling.");
+    if (out.length > LIMIT) return refuse(csv, json, tr("Too long as {format}: {n} characters, past the {limit}-character ceiling.", { format: "JSON", n: n(out.length), limit: n(LIMIT) }));
     write(json, out);
     counts();
     say(notes.join(" "), ragged ? "warn" : "ok");
   }
 
   function redo() { if (last === "toJson") toJsonNow(); else toCsvNow(); }
+  function relang() { paintSep(); paintWords(); if (last === "toJson") toJsonNow(false, true); else toCsvNow(); }
   json.addEventListener("input", function () { if (echo) return; direction("toCsv"); toCsvNow(); });
   csv.addEventListener("input", function () { if (echo) return; direction("toJson"); toJsonNow(true); });
   [header, types].forEach(function (c) { c.addEventListener("change", redo); });
@@ -2632,9 +2857,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     btn.addEventListener("click", function () {
       if (!field.value || !navigator.clipboard) return;
       navigator.clipboard.writeText(field.value).then(function () {
-        btn.textContent = "Copied"; btn.classList.add("is-done");
-        setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("is-done"); }, 1600);
-      }, function () { say("The browser refused the clipboard. Select the box and copy it by hand.", "bad"); });
+        btn.classList.add("is-done"); paintWords();
+        setTimeout(function () { btn.classList.remove("is-done"); paintWords(); }, 1600);
+      }, function () { say(tr("The browser refused the clipboard. Select the box and copy it by hand."), "bad"); });
     });
   }
   wireCopy(copyJson, json);
@@ -2658,6 +2883,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     write(json, ""); write(csv, ""); flags(null); direction("toCsv"); counts(); rest(); json.focus({ preventScroll: true });
   });
 
+  onLang(relang);
   paintSep();
   if (csv.value && !json.value) { direction("toJson"); toJsonNow(true); } else toCsvNow();
   json.focus({ preventScroll: true });

@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link is-here" href="./percentage-calculator.html" aria-current="page" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link is-here" href="./percentage-calculator.html" aria-current="page" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,13 +2353,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Percentage calculator</h1>
+      <h1 class="mdv-head-name" data-t="65">Percentage calculator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Change any number in a question and read its answer beside it.</p>
+    <p class="mdv-head-line" data-t="79">Change any number in a question and read its answer beside it.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
@@ -2255,10 +2367,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <section class="mdv-block" data-ask="of">
       <div class="mdv-row mdv-ask">
-        <span>What is</span>
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="15" aria-label="Percent" data-v="p">
-        <span>% of</span>
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="80" aria-label="Number" data-v="x">
+        <span data-t="82">What is</span>
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="15" aria-label="Percent" data-t-attrs="aria-label" data-v="p">
+        <span data-t="83">% of</span>
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="80" aria-label="Number" data-t-attrs="aria-label" data-v="x">
         <span>?</span>
       </div>
       <div class="mdv-row is-between" style="margin-top:var(--space-2)">
@@ -2269,9 +2381,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <section class="mdv-block" data-ask="ratio">
       <div class="mdv-row mdv-ask">
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="12" aria-label="Part" data-v="a">
-        <span>is what percent of</span>
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="80" aria-label="Whole" data-v="b">
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="12" aria-label="Part" data-t-attrs="aria-label" data-v="a">
+        <span data-t="84">is what percent of</span>
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="80" aria-label="Whole" data-t-attrs="aria-label" data-v="b">
         <span>?</span>
       </div>
       <div class="mdv-row is-between" style="margin-top:var(--space-2)">
@@ -2282,10 +2394,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <section class="mdv-block" data-ask="change">
       <div class="mdv-row mdv-ask">
-        <span>The percentage change from</span>
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="80" aria-label="From" data-v="a">
-        <span>to</span>
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="92" aria-label="To" data-v="b">
+        <span data-t="85">The percentage change from</span>
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="80" aria-label="From" data-t-attrs="aria-label" data-v="a">
+        <span data-t="86">to</span>
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="92" aria-label="To" data-t-attrs="aria-label" data-v="b">
         <span>?</span>
       </div>
       <div class="mdv-row is-between" style="margin-top:var(--space-2)">
@@ -2296,13 +2408,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <section class="mdv-block" data-ask="apply">
       <div class="mdv-row mdv-ask">
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="80" aria-label="Starting number" data-v="x">
-        <div class="mdv-seg" role="group" aria-label="Increase or decrease">
-          <button type="button" data-dir="1" class="is-on" aria-pressed="true">increased by</button>
-          <button type="button" data-dir="-1" aria-pressed="false">decreased by</button>
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="80" aria-label="Starting number" data-t-attrs="aria-label" data-v="x">
+        <div class="mdv-seg" role="group" aria-label="Increase or decrease" data-t-attrs="aria-label">
+          <button type="button" data-dir="1" class="is-on" aria-pressed="true" data-t="87">increased by</button>
+          <button type="button" data-dir="-1" aria-pressed="false" data-t="88">decreased by</button>
         </div>
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="15" aria-label="Percent" data-v="p">
-        <span>% is?</span>
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="15" aria-label="Percent" data-t-attrs="aria-label" data-v="p">
+        <span data-t="89">% is?</span>
       </div>
       <div class="mdv-row is-between" style="margin-top:var(--space-2)">
         <output class="mdv-answer" data-a></output>
@@ -2312,15 +2424,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <section class="mdv-block" data-ask="before">
       <div class="mdv-row mdv-ask">
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="92" aria-label="Number after the change" data-v="y">
-        <span>after a</span>
-        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="15" aria-label="Percent" data-v="p">
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="92" aria-label="Number after the change" data-t-attrs="aria-label" data-v="y">
+        <span data-t="90">after a</span>
+        <input class="mdv-input mdv-mono is-num" type="text" inputmode="decimal" value="15" aria-label="Percent" data-t-attrs="aria-label" data-v="p">
         <span>%</span>
-        <div class="mdv-seg" role="group" aria-label="Increase or decrease">
-          <button type="button" data-dir="1" class="is-on" aria-pressed="true">increase</button>
-          <button type="button" data-dir="-1" aria-pressed="false">decrease</button>
+        <div class="mdv-seg" role="group" aria-label="Increase or decrease" data-t-attrs="aria-label">
+          <button type="button" data-dir="1" class="is-on" aria-pressed="true" data-t="91">increase</button>
+          <button type="button" data-dir="-1" aria-pressed="false" data-t="92">decrease</button>
         </div>
-        <span>was what before?</span>
+        <span data-t="93">was what before?</span>
       </div>
       <div class="mdv-row is-between" style="margin-top:var(--space-2)">
         <output class="mdv-answer" data-a></output>
@@ -2331,46 +2443,47 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </div>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="94">How this works</summary>
     <div class="mdv-method-body">
-      <p>Each question is one formula. <em>p</em>% of <em>x</em> is <code>x × p ÷ 100</code>. <em>a</em> as a
+      <p data-t="95">Each question is one formula. <em>p</em>% of <em>x</em> is <code>x × p ÷ 100</code>. <em>a</em> as a
         percent of <em>b</em> is <code>a ÷ b × 100</code>. The change from <em>a</em> to <em>b</em> is
         <code>(b − a) ÷ a × 100</code>, printed with its sign and the difference itself. <em>x</em> increased
         by <em>p</em>% is <code>x × (100 + p) ÷ 100</code>, and decreased, <code>x × (100 − p) ÷ 100</code>.
         The value before a change is the last one run backwards: <code>y × 100 ÷ (100 + p)</code> for an
         increase, <code>y × 100 ÷ (100 − p)</code> for a decrease — which is why taking 15% off 92 does not
         give back 80.</p>
-      <p>The arithmetic is exact: every number is read as a decimal fraction held in whole-number
+      <p data-t="96">The arithmetic is exact: every number is read as a decimal fraction held in whole-number
         <code>BigInt</code>s, not as a floating-point number, so 0.1 + 0.2 stays 0.3 and a price keeps its
         cents. An answer that does not end within 10 decimal places — 1 as a percent of 3 — is rounded half
         up to 10 places and marked with ≈; Copy copies the printed digits. A percentage change from 0 has no
         value, and neither does a percent of 0 or the value before a 100% decrease; each says why instead of
         printing Infinity.</p>
-      <p>A number can have a leading sign, a decimal point or a decimal comma, spaces or apostrophes
+      <p data-t="97">A number can have a leading sign, a decimal point or a decimal comma, spaces or apostrophes
         between digit groups, and a trailing %. When a number holds both a point and a comma, the last one
         is the decimal mark; a lone point is always a decimal point, and two or more points or commas are
         digit groups. A lone comma between one to three digits and exactly three more, as in
         <code>1,500</code>, could mean fifteen hundred or one and a half, so it is refused with that
         question rather than guessed.
         A number takes up to 40 characters. Nothing is uploaded: there is no server in this file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="98">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Math &amp; Units">
-    <span class="mdv-tag">Also in Math &amp; Units</span>
-    <a href="./random-number-generator.html">Random number generator</a>
-    <a href="./unit-converter.html">Unit converter</a>
-    <a href="./aspect-ratio-calculator.html">Aspect ratio</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Math &amp; Units"}'>Also in Math &amp; Units</span>
+    <a href="./random-number-generator.html" data-t="66">Random number generator</a>
+    <a href="./unit-converter.html" data-t="64">Unit converter</a>
+    <a href="./aspect-ratio-calculator.html" data-t="63">Aspect ratio</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="99">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="100">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="101" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="102">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2381,6 +2494,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Percentage Calculator — percent of, what percent, percentage change, increase, decrease — MDV","Five percentage questions answered as you type: X% of Y, X is what percent of Y, the percentage change from X to Y, Y increased or decreased by X%, and the value before a percentage change. Exact decimals. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Percent","Number","Part","Whole","From","To","Starting number","Increase or decrease","Number after the change","“{head}…” is {n} characters long; a number here takes up to {max}.","“{raw}” could be {a} or {b}. Write it without the comma, or with a point for the decimal.","“{raw}” is not a number.","No answer: a percent of 0 does not exist, because nothing is 100% of nothing.","No percentage: a change from 0 is not a multiple of anything. The difference is {diff}.","an increase","a decrease","no change","{word}, measured against a negative start","No answer: a 100% decrease leaves 0 whatever the start was.","{label}: {message}","fill in both numbers","Copied","Copy","Math & Units","2026-11-02"],"h":103,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Cambia cualquier número de una pregunta y lee la respuesta a su lado.","En este dispositivo","Funciona sin conexión","¿Cuánto es el","% de","es qué porcentaje de","La variación porcentual de","a","aumentado en","disminuido en","% es?","tras un","aumento","descuento","era cuánto antes?","Cómo funciona","Cada pregunta es una fórmula. El \u003cem>p\u003c/em> % de \u003cem>x\u003c/em> es \u003ccode>x × p ÷ 100\u003c/code>. \u003cem>a\u003c/em> como porcentaje de \u003cem>b\u003c/em> es \u003ccode>a ÷ b × 100\u003c/code>. La variación de \u003cem>a\u003c/em> a \u003cem>b\u003c/em> es \u003ccode>(b − a) ÷ a × 100\u003c/code>, escrita con su signo y con la diferencia en sí. \u003cem>x\u003c/em> aumentado en \u003cem>p\u003c/em> % es \u003ccode>x × (100 + p) ÷ 100\u003c/code> y, disminuido, \u003ccode>x × (100 − p) ÷ 100\u003c/code>. El valor anterior a un cambio es la última fórmula al revés: \u003ccode>y × 100 ÷ (100 + p)\u003c/code> para un aumento, \u003ccode>y × 100 ÷ (100 − p)\u003c/code> para una disminución, por eso quitar un 15 % a 92 no devuelve 80.","La aritmética es exacta: cada número se lee como una fracción decimal guardada en \u003ccode>BigInt\u003c/code> enteros, no como número de coma flotante, de modo que 0,1 + 0,2 sigue siendo 0,3 y un precio conserva sus céntimos. Una respuesta que no termina en 10 decimales (1 como porcentaje de 3) se redondea hacia arriba en el punto medio a 10 decimales y se marca con ≈; Copiar copia las cifras mostradas. Una variación porcentual desde 0 no tiene valor, ni tampoco un porcentaje de 0 o el valor anterior a una disminución del 100 %; cada caso explica por qué en lugar de mostrar Infinity.","Un número puede llevar un signo inicial, un punto decimal o una coma decimal, espacios o apóstrofos entre grupos de dígitos, y un % final. Cuando un número tiene a la vez un punto y una coma, el último es la marca decimal; un punto suelto es siempre un punto decimal, y dos o más puntos o comas son separadores de grupos de dígitos. Una coma suelta entre uno y tres dígitos y exactamente tres más, como en \u003ccode>1,500\u003c/code>, podría significar mil quinientos o uno y medio, así que se rechaza con esa pregunta en lugar de adivinar. Un número admite hasta 40 caracteres. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Calculadora de porcentajes: porcentaje de, qué porcentaje, variación, aumento, disminución — MDV","Cinco preguntas de porcentajes respondidas mientras escribes: X % de Y, X es qué porcentaje de Y, la variación porcentual de X a Y, Y aumentado o disminuido en X % y el valor anterior a una variación porcentual. Decimales exactos. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Porcentaje","Número","Parte","Total","Desde","Hasta","Número inicial","Aumento o disminución","Número tras el cambio","«{head}…» tiene {n} caracteres; un número aquí admite hasta {max}.","«{raw}» podría ser {a} o {b}. Escríbelo sin la coma, o con un punto para el decimal.","«{raw}» no es un número.","Sin respuesta: no existe un porcentaje de 0, porque nada es el 100 % de nada.","Sin porcentaje: una variación desde 0 no es múltiplo de nada. La diferencia es {diff}.","un aumento","una disminución","sin cambio","{word}, medido respecto a un inicio negativo","Sin respuesta: una disminución del 100 % deja 0 sea cual sea el inicio.","{label}: {message}","rellena ambos números","Copiado","Copiar","Matemáticas y unidades",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Modifiez n’importe quel nombre d’une question et lisez la réponse à côté.","Sur cet appareil","Fonctionne hors ligne","Combien font","% de","représente quel pourcentage de","La variation en pourcentage de","à","augmenté de","diminué de","% donne ?","après un","hausse","baisse","valait combien avant ?","Comment ça marche","Chaque question est une formule. \u003cem>p\u003c/em> % de \u003cem>x\u003c/em>, c’est \u003ccode>x × p ÷ 100\u003c/code>. \u003cem>a\u003c/em> en pourcentage de \u003cem>b\u003c/em>, c’est \u003ccode>a ÷ b × 100\u003c/code>. La variation de \u003cem>a\u003c/em> à \u003cem>b\u003c/em> est \u003ccode>(b − a) ÷ a × 100\u003c/code>, écrite avec son signe et la différence elle-même. \u003cem>x\u003c/em> augmenté de \u003cem>p\u003c/em> % vaut \u003ccode>x × (100 + p) ÷ 100\u003c/code> et, diminué, \u003ccode>x × (100 − p) ÷ 100\u003c/code>. La valeur avant un changement est la dernière formule à l’envers : \u003ccode>y × 100 ÷ (100 + p)\u003c/code> pour une hausse, \u003ccode>y × 100 ÷ (100 − p)\u003c/code> pour une baisse — c’est pourquoi retirer 15 % à 92 ne redonne pas 80.","Le calcul est exact : chaque nombre est lu comme une fraction décimale conservée dans des \u003ccode>BigInt\u003c/code> entiers, et non comme un nombre à virgule flottante, si bien que 0,1 + 0,2 reste 0,3 et qu’un prix garde ses centimes. Une réponse qui ne se termine pas en 10 décimales — 1 en pourcentage de 3 — est arrondie à 10 décimales (la moitié vers le haut) et marquée d’un ≈ ; Copier copie les chiffres affichés. Une variation en pourcentage depuis 0 n’a pas de valeur, pas plus qu’un pourcentage de 0 ou la valeur avant une baisse de 100 % ; chacun dit pourquoi au lieu d’afficher Infinity.","Un nombre peut avoir un signe initial, un point décimal ou une virgule décimale, des espaces ou des apostrophes entre les groupes de chiffres, et un % final. Quand un nombre contient à la fois un point et une virgule, le dernier est le séparateur décimal ; un point seul est toujours un point décimal, et deux points ou virgules ou plus sont des séparateurs de groupes. Une virgule seule entre un et trois chiffres et exactement trois autres, comme dans \u003ccode>1,500\u003c/code>, pourrait signifier mille cinq cents ou un et demi : elle est donc refusée avec cette question plutôt que devinée. Un nombre peut compter jusqu’à 40 caractères. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Calculateur de pourcentages : pourcentage de, quel pourcentage, variation, hausse, baisse — MDV","Cinq questions de pourcentage résolues pendant que vous tapez : X % de Y, X représente quel pourcentage de Y, la variation en pourcentage de X à Y, Y augmenté ou diminué de X %, et la valeur avant une variation en pourcentage. Décimales exactes. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Pourcentage","Nombre","Partie","Total","De","À","Nombre de départ","Hausse ou baisse","Nombre après la variation","« {head}… » compte {n} caractères ; un nombre peut en compter jusqu’à {max} ici.","« {raw} » pourrait valoir {a} ou {b}. Écrivez-le sans la virgule, ou avec un point pour la décimale.","« {raw} » n’est pas un nombre.","Pas de réponse : un pourcentage de 0 n’existe pas, car rien n’est 100 % de rien.","Pas de pourcentage : une variation depuis 0 n’est un multiple de rien. La différence est {diff}.","une hausse","une baisse","aucun changement","{word}, mesuré par rapport à un départ négatif","Pas de réponse : une baisse de 100 % laisse 0 quel que soit le départ.","{label} : {message}","remplissez les deux nombres","Copié","Copier","Maths et unités",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Ändere eine beliebige Zahl in einer Frage und lies die Antwort daneben.","Läuft auf diesem Gerät","Funktioniert offline","Wie viel sind","% von","sind wie viel Prozent von","Die prozentuale Änderung von","auf","erhöht um","verringert um","% ergibt?","nach einer","Erhöhung","Senkung","war vorher wie viel?","So funktioniert es","Jede Frage ist eine Formel. \u003cem>p\u003c/em> % von \u003cem>x\u003c/em> ist \u003ccode>x × p ÷ 100\u003c/code>. \u003cem>a\u003c/em> in Prozent von \u003cem>b\u003c/em> ist \u003ccode>a ÷ b × 100\u003c/code>. Die Änderung von \u003cem>a\u003c/em> auf \u003cem>b\u003c/em> ist \u003ccode>(b − a) ÷ a × 100\u003c/code>, mit Vorzeichen und der Differenz selbst ausgegeben. \u003cem>x\u003c/em> erhöht um \u003cem>p\u003c/em> % ist \u003ccode>x × (100 + p) ÷ 100\u003c/code>, verringert \u003ccode>x × (100 − p) ÷ 100\u003c/code>. Der Wert vor einer Änderung ist die letzte Formel rückwärts: \u003ccode>y × 100 ÷ (100 + p)\u003c/code> bei einer Erhöhung, \u003ccode>y × 100 ÷ (100 − p)\u003c/code> bei einer Senkung – deshalb ergeben 15 % Abzug von 92 nicht wieder 80.","Die Rechnung ist exakt: Jede Zahl wird als Dezimalbruch aus ganzzahligen \u003ccode>BigInt\u003c/code>s gelesen, nicht als Gleitkommazahl, sodass 0,1 + 0,2 genau 0,3 bleibt und ein Preis seine Cent behält. Eine Antwort, die nicht innerhalb von 10 Nachkommastellen endet – 1 in Prozent von 3 –, wird auf 10 Stellen kaufmännisch gerundet und mit ≈ markiert; Kopieren kopiert die angezeigten Ziffern. Eine prozentuale Änderung von 0 aus hat keinen Wert, ebenso wenig ein Prozentsatz von 0 oder der Wert vor einer Senkung um 100 %; jeder Fall nennt den Grund, statt Infinity auszugeben.","Eine Zahl darf ein Vorzeichen am Anfang, einen Dezimalpunkt oder ein Dezimalkomma, Leerzeichen oder Apostrophe zwischen Ziffergruppen und ein abschließendes % haben. Enthält eine Zahl Punkt und Komma, ist das letzte das Dezimalzeichen; ein einzelner Punkt ist immer ein Dezimalpunkt, und zwei oder mehr Punkte oder Kommas trennen Ziffergruppen. Ein einzelnes Komma zwischen ein bis drei Ziffern und genau drei weiteren, wie in \u003ccode>1,500\u003c/code>, könnte fünfzehnhundert oder eineinhalb bedeuten und wird deshalb mit dieser Frage abgelehnt, statt zu raten. Eine Zahl darf bis zu 40 Zeichen lang sein. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Prozentrechner: Prozent von, wie viel Prozent, prozentuale Änderung, Erhöhung, Senkung — MDV","Fünf Prozentfragen, beantwortet beim Tippen: X % von Y, X ist wie viel Prozent von Y, die prozentuale Änderung von X auf Y, Y erhöht oder verringert um X % und der Wert vor einer prozentualen Änderung. Exakte Dezimalstellen. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Prozent","Zahl","Teil","Ganzes","Von","Auf","Ausgangszahl","Erhöhung oder Senkung","Zahl nach der Änderung","„{head}…“ ist {n} Zeichen lang; eine Zahl darf hier bis zu {max} haben.","„{raw}“ könnte {a} oder {b} sein. Schreibe es ohne Komma oder mit Punkt für die Dezimalstelle.","„{raw}“ ist keine Zahl.","Keine Antwort: Ein Prozentsatz von 0 existiert nicht, denn nichts ist 100 % von nichts.","Kein Prozentsatz: Eine Änderung von 0 aus ist kein Vielfaches von irgendetwas. Die Differenz beträgt {diff}.","eine Erhöhung","eine Senkung","keine Änderung","{word}, gemessen an einem negativen Ausgangswert","Keine Antwort: Eine Senkung um 100 % ergibt 0, egal was der Ausgangswert war.","{label}: {message}","beide Zahlen ausfüllen","Kopiert","Kopieren","Mathe und Einheiten",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Cambia un numero qualsiasi in una domanda e leggi la risposta accanto.","Su questo dispositivo","Funziona offline","Quanto fa il","% di","è quale percentuale di","La variazione percentuale da","a","aumentato del","diminuito del","% fa?","dopo un","aumento","calo","valeva prima quanto?","Come funziona","Ogni domanda è una formula. Il \u003cem>p\u003c/em>% di \u003cem>x\u003c/em> è \u003ccode>x × p ÷ 100\u003c/code>. \u003cem>a\u003c/em> come percentuale di \u003cem>b\u003c/em> è \u003ccode>a ÷ b × 100\u003c/code>. La variazione da \u003cem>a\u003c/em> a \u003cem>b\u003c/em> è \u003ccode>(b − a) ÷ a × 100\u003c/code>, stampata con il suo segno e la differenza stessa. \u003cem>x\u003c/em> aumentato del \u003cem>p\u003c/em>% è \u003ccode>x × (100 + p) ÷ 100\u003c/code> e, diminuito, \u003ccode>x × (100 − p) ÷ 100\u003c/code>. Il valore prima di una variazione è l’ultima formula al contrario: \u003ccode>y × 100 ÷ (100 + p)\u003c/code> per un aumento, \u003ccode>y × 100 ÷ (100 − p)\u003c/code> per un calo — per questo togliere il 15% a 92 non restituisce 80.","L’aritmetica è esatta: ogni numero viene letto come frazione decimale tenuta in \u003ccode>BigInt\u003c/code> interi, non come numero in virgola mobile, quindi 0,1 + 0,2 resta 0,3 e un prezzo mantiene i centesimi. Una risposta che non termina entro 10 decimali — 1 come percentuale di 3 — viene arrotondata per eccesso a metà a 10 decimali e segnata con ≈; Copia copia le cifre mostrate. Una variazione percentuale da 0 non ha valore, e nemmeno una percentuale di 0 o il valore prima di un calo del 100%; ciascuno dice il perché invece di stampare Infinity.","Un numero può avere un segno iniziale, un punto o una virgola decimale, spazi o apostrofi tra i gruppi di cifre e un % finale. Quando un numero contiene sia un punto sia una virgola, l’ultimo è il separatore decimale; un punto isolato è sempre un punto decimale, e due o più punti o virgole sono separatori di gruppi di cifre. Una virgola isolata tra una e tre cifre e esattamente altre tre, come in \u003ccode>1,500\u003c/code>, potrebbe voler dire millecinquecento o uno e mezzo, quindi viene rifiutata con questa domanda invece di essere indovinata. Un numero può avere fino a 40 caratteri. Non viene caricato nulla: questo file non ha un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Calcolatrice di percentuali: percentuale di, quale percentuale, variazione, aumento, calo — MDV","Cinque domande sulle percentuali con risposta mentre scrivi: X% di Y, X è quale percentuale di Y, la variazione percentuale da X a Y, Y aumentato o diminuito del X% e il valore prima di una variazione percentuale. Decimali esatti. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Percentuale","Numero","Parte","Totale","Da","A","Numero iniziale","Aumento o calo","Numero dopo la variazione","«{head}…» è lungo {n} caratteri; qui un numero può averne fino a {max}.","«{raw}» potrebbe essere {a} o {b}. Scrivilo senza la virgola, o con un punto per il decimale.","«{raw}» non è un numero.","Nessuna risposta: una percentuale di 0 non esiste, perché nulla è il 100% di nulla.","Nessuna percentuale: una variazione da 0 non è multiplo di nulla. La differenza è {diff}.","un aumento","un calo","nessuna variazione","{word}, misurato rispetto a un inizio negativo","Nessuna risposta: un calo del 100% lascia 0 qualunque fosse l’inizio.","{label}: {message}","compila entrambi i numeri","Copiato","Copia","Matematica e unità",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Mude qualquer número de uma pergunta e leia a resposta ao lado.","Neste dispositivo","Funciona offline","Quanto é","% de","é qual porcentagem de","A variação percentual de","para","aumentado em","diminuído em","% é?","após um","aumento","redução","era quanto antes?","Como funciona","Cada pergunta é uma fórmula. \u003cem>p\u003c/em>% de \u003cem>x\u003c/em> é \u003ccode>x × p ÷ 100\u003c/code>. \u003cem>a\u003c/em> como porcentagem de \u003cem>b\u003c/em> é \u003ccode>a ÷ b × 100\u003c/code>. A variação de \u003cem>a\u003c/em> para \u003cem>b\u003c/em> é \u003ccode>(b − a) ÷ a × 100\u003c/code>, impressa com o sinal e a própria diferença. \u003cem>x\u003c/em> aumentado em \u003cem>p\u003c/em>% é \u003ccode>x × (100 + p) ÷ 100\u003c/code> e, diminuído, \u003ccode>x × (100 − p) ÷ 100\u003c/code>. O valor antes de uma mudança é a última fórmula ao contrário: \u003ccode>y × 100 ÷ (100 + p)\u003c/code> para um aumento, \u003ccode>y × 100 ÷ (100 − p)\u003c/code> para uma redução — por isso tirar 15% de 92 não devolve 80.","A aritmética é exata: cada número é lido como uma fração decimal guardada em \u003ccode>BigInt\u003c/code>s inteiros, não como número de ponto flutuante, então 0,1 + 0,2 continua 0,3 e um preço mantém os centavos. Uma resposta que não termina em 10 casas decimais — 1 como porcentagem de 3 — é arredondada para cima no ponto médio a 10 casas e marcada com ≈; Copiar copia os dígitos exibidos. Uma variação percentual a partir de 0 não tem valor, nem uma porcentagem de 0 ou o valor antes de uma redução de 100%; cada caso diz o motivo em vez de imprimir Infinity.","Um número pode ter um sinal no início, um ponto decimal ou uma vírgula decimal, espaços ou apóstrofos entre grupos de dígitos e um % no fim. Quando um número tem ponto e vírgula, o último é a marca decimal; um ponto isolado é sempre ponto decimal, e dois ou mais pontos ou vírgulas são separadores de grupos de dígitos. Uma vírgula isolada entre um e três dígitos e exatamente mais três, como em \u003ccode>1,500\u003c/code>, pode significar mil e quinhentos ou um e meio, então é recusada com essa pergunta em vez de adivinhada. Um número aceita até 40 caracteres. Nada é enviado: este arquivo não tem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Calculadora de porcentagem: porcentagem de, qual porcentagem, variação, aumento, redução — MDV","Cinco perguntas de porcentagem respondidas enquanto você digita: X% de Y, X é qual porcentagem de Y, a variação percentual de X para Y, Y aumentado ou reduzido em X% e o valor antes de uma variação percentual. Decimais exatos. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Porcentagem","Número","Parte","Total","De","Para","Número inicial","Aumento ou redução","Número após a variação","«{head}…» tem {n} caracteres; um número aqui aceita até {max}.","«{raw}» pode ser {a} ou {b}. Escreva sem a vírgula, ou com ponto para o decimal.","«{raw}» não é um número.","Sem resposta: não existe porcentagem de 0, porque nada é 100% de nada.","Sem porcentagem: uma variação a partir de 0 não é múltiplo de nada. A diferença é {diff}.","um aumento","uma redução","sem variação","{word}, medido em relação a um início negativo","Sem resposta: uma redução de 100% deixa 0, qualquer que fosse o início.","{label}: {message}","preencha os dois números","Copiado","Copiar","Matemática e unidades",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","質問の数値を変えると、その横に答えが表示されます。","この端末で動作","オフラインで動作","計算:","% ×","は次の何パーセントか:","変化率: 変更前","変更後","増加:","減少:","% の結果は?","は、変化率","増加","減少","の後の値。変化前は?","仕組み","各質問は 1 つの式です。\u003cem>x\u003c/em> の \u003cem>p\u003c/em>% は \u003ccode>x × p ÷ 100\u003c/code>。\u003cem>a\u003c/em> が \u003cem>b\u003c/em> の何パーセントかは \u003ccode>a ÷ b × 100\u003c/code>。\u003cem>a\u003c/em> から \u003cem>b\u003c/em> への変化率は \u003ccode>(b − a) ÷ a × 100\u003c/code> で、符号付きで、差そのものとともに表示されます。\u003cem>x\u003c/em> を \u003cem>p\u003c/em>% 増やした値は \u003ccode>x × (100 + p) ÷ 100\u003c/code>、減らした値は \u003ccode>x × (100 − p) ÷ 100\u003c/code>。変化前の値は直前の式を逆にしたもので、増加なら \u003ccode>y × 100 ÷ (100 + p)\u003c/code>、減少なら \u003ccode>y × 100 ÷ (100 − p)\u003c/code> です。92 から 15% 引いても 80 に戻らないのはこのためです。","計算は正確です。すべての数値は浮動小数点数ではなく、整数の \u003ccode>BigInt\u003c/code> で保持した小数の分数として読み込むため、0.1 + 0.2 は 0.3 のままで、価格のセントも保たれます。小数 10 桁以内で終わらない答え(たとえば 1 は 3 の何パーセントか)は、10 桁で四捨五入し、≈ を付けて表示します。コピーでは表示された桁がそのままコピーされます。0 からの変化率には値がなく、0 に対するパーセントや 100% 減少の前の値も同様で、Infinity を表示せずにそれぞれ理由を示します。","数値には、先頭の符号、小数点または小数カンマ、桁区切りのスペースやアポストロフィ、末尾の % を付けられます。小数点とカンマの両方がある場合は、後にある方が小数記号です。点が 1 つだけなら常に小数点で、点やカンマが 2 つ以上あればそれは桁区切りです。\u003ccode>1,500\u003c/code> のように、1〜3 桁のあとにカンマがひとつだけあり、その後ろがちょうど 3 桁の場合は、1500 とも 1.5 とも読めるため、推測せずにその旨を尋ねて拒否します。数値は 40 文字までです。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","パーセント計算機: 〇%の値、何パーセントか、変化率、増加、減少 — MDV","入力しながら答えが出る 5 つのパーセント計算: Y の X%、X は Y の何パーセントか、X から Y への変化率、Y を X% 増減した値、変化前の値。小数は正確に計算します。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","パーセント","数値","部分","全体","変更前","変更後","開始の数値","増加または減少","変化後の数値","「{head}…」は {n} 文字あります。ここで使える数値は {max} 文字までです。","「{raw}」は {a} とも {b} とも読めます。カンマなしで書くか、小数には点を使ってください。","「{raw}」は数値ではありません。","答えなし: 0 に対するパーセントは存在しません。何もないものの 100% は何もないからです。","変化率なし: 0 からの変化は何の倍数でもありません。差は {diff} です。","増加","減少","変化なし","{word}(負の開始値を基準)","答えなし: 100% 減少は、開始値が何であっても 0 になります。","{label}: {message}","両方の数値を入力","コピーしました","コピー","数学と単位",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","질문의 숫자를 바꾸면 바로 옆에 답이 나옵니다.","이 기기에서 실행","오프라인 작동","계산:","% ×","은(는) 다음의 몇 퍼센트:","변화율: 기존값","변경값","증가:","감소:","% 후 값은?","는, 변화율","증가","감소","후의 값. 변화 전은?","작동 방식","각 질문은 하나의 공식입니다. \u003cem>x\u003c/em>의 \u003cem>p\u003c/em>%는 \u003ccode>x × p ÷ 100\u003c/code>입니다. \u003cem>a\u003c/em>가 \u003cem>b\u003c/em>의 몇 퍼센트인지는 \u003ccode>a ÷ b × 100\u003c/code>입니다. \u003cem>a\u003c/em>에서 \u003cem>b\u003c/em>로의 변화율은 \u003ccode>(b − a) ÷ a × 100\u003c/code>이며 부호와 차이값 자체를 함께 표시합니다. \u003cem>x\u003c/em>를 \u003cem>p\u003c/em>% 증가시킨 값은 \u003ccode>x × (100 + p) ÷ 100\u003c/code>, 감소시킨 값은 \u003ccode>x × (100 − p) ÷ 100\u003c/code>입니다. 변화 전의 값은 바로 앞 공식을 거꾸로 푼 것으로, 증가라면 \u003ccode>y × 100 ÷ (100 + p)\u003c/code>, 감소라면 \u003ccode>y × 100 ÷ (100 − p)\u003c/code>입니다. 92에서 15%를 빼도 80으로 돌아오지 않는 이유가 이것입니다.","계산은 정확합니다. 모든 숫자를 부동소수점이 아니라 정수 \u003ccode>BigInt\u003c/code>로 보관한 소수 분수로 읽으므로 0.1 + 0.2는 0.3 그대로이고 가격의 센트도 유지됩니다. 소수점 10자리 안에서 끝나지 않는 답(예: 1은 3의 몇 퍼센트인가)은 10자리에서 반올림하고 ≈를 붙여 표시하며, 복사는 표시된 숫자를 그대로 복사합니다. 0에서의 변화율은 값이 없고, 0의 퍼센트나 100% 감소 전의 값도 마찬가지이며, Infinity를 출력하는 대신 각각 이유를 알려 줍니다.","숫자 앞에는 부호를, 소수점이나 소수 쉼표를, 자릿수 묶음 사이에는 공백이나 아포스트로피를, 끝에는 %를 붙일 수 있습니다. 한 숫자에 점과 쉼표가 모두 있으면 뒤에 오는 쪽이 소수 기호입니다. 점 하나만 있으면 항상 소수점이고, 점이나 쉼표가 둘 이상이면 자릿수 구분 기호입니다. \u003ccode>1,500\u003c/code>처럼 1~3자리 뒤에 쉼표가 하나뿐이고 그 뒤에 정확히 3자리가 오면 천오백인지 1.5인지 알 수 없으므로, 추측하지 않고 그 질문을 하며 거부합니다. 숫자는 최대 40자입니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","퍼센트 계산기: 퍼센트 값, 몇 퍼센트인지, 변화율, 증가, 감소 — MDV","입력하는 동안 답이 나오는 퍼센트 질문 다섯 가지: Y의 X%, X는 Y의 몇 퍼센트인가, X에서 Y로의 변화율, Y를 X% 증감한 값, 변화 전의 값. 소수는 정확하게 계산합니다. 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","퍼센트","숫자","부분","전체","기존값","변경값","시작 숫자","증가 또는 감소","변화 후 숫자","\"{head}…\"은(는) {n}자입니다. 여기서 숫자는 최대 {max}자입니다.","\"{raw}\"은(는) {a} 또는 {b}일 수 있습니다. 쉼표 없이 쓰거나 소수는 점으로 쓰세요.","\"{raw}\"은(는) 숫자가 아닙니다.","답 없음: 0에 대한 퍼센트는 존재하지 않습니다. 아무것도 없는 것의 100%는 아무것도 없기 때문입니다.","퍼센트 없음: 0에서의 변화는 어떤 것의 배수도 아닙니다. 차이는 {diff}입니다.","증가","감소","변화 없음","{word}, 음수 시작값 기준","답 없음: 100% 감소는 시작값이 무엇이든 0이 됩니다.","{label}: {message}","두 숫자를 모두 입력","복사됨","복사","수학과 단위",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","修改问题中的任意数字,答案就显示在旁边。","在此设备上运行","可离线使用","计算","% ×","占以下数值的百分之几:","百分比变化:从","到","增加","减少","% 后是多少?","经过","增加","减少","之前是多少?","工作原理","每个问题对应一个公式。\u003cem>x\u003c/em> 的 \u003cem>p\u003c/em>% 是 \u003ccode>x × p ÷ 100\u003c/code>。\u003cem>a\u003c/em> 占 \u003cem>b\u003c/em> 的百分比是 \u003ccode>a ÷ b × 100\u003c/code>。从 \u003cem>a\u003c/em> 到 \u003cem>b\u003c/em> 的变化是 \u003ccode>(b − a) ÷ a × 100\u003c/code>,连同符号和差值本身一起显示。\u003cem>x\u003c/em> 增加 \u003cem>p\u003c/em>% 是 \u003ccode>x × (100 + p) ÷ 100\u003c/code>,减少则是 \u003ccode>x × (100 − p) ÷ 100\u003c/code>。变化前的值是上一个公式的逆运算:增加用 \u003ccode>y × 100 ÷ (100 + p)\u003c/code>,减少用 \u003ccode>y × 100 ÷ (100 − p)\u003c/code>——这就是为什么 92 减去 15% 并不会回到 80。","计算是精确的:每个数字都按十进制分数读取,并用整数 \u003ccode>BigInt\u003c/code> 保存,而不是浮点数,所以 0.1 + 0.2 仍是 0.3，价格也不会丢分。若答案无法在 10 位小数内结束(例如 1 占 3 的百分比),会四舍五入到 10 位并标上 ≈;复制会复制显示出来的数字。从 0 出发的百分比变化没有值,0 的百分比或减少 100% 之前的值同样没有;各自会说明原因,而不是输出 Infinity。","数字可以带前导符号、小数点或小数逗号、数位组之间的空格或撇号,以及末尾的 %。数字中同时有点和逗号时,最后出现的是小数符号;单独一个点始终是小数点;出现两个或更多点或逗号时,则是数位分隔符。单独一个逗号,前面有一到三位数字、后面恰好有三位数字,如 \u003ccode>1,500\u003c/code>,既可能是一千五百,也可能是一点五,因此会带着这个疑问被拒绝,而不是猜测。一个数字最多 40 个字符。不会上传任何内容:此文件没有服务器。","“深色”和“语言”按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的任何内容都不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","百分比计算器:求百分之几、占百分之几、变化率、增加、减少 — MDV","输入时即得答案的五类百分比问题:Y 的 X%、X 占 Y 的百分之几、从 X 到 Y 的变化率、Y 增加或减少 X%,以及百分比变化前的值。小数精确计算。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","百分比","数字","部分","整体","从","到","起始数字","增加或减少","变化后的数字","“{head}…”长 {n} 个字符;此处的数字最多 {max} 个字符。","“{raw}”可能是 {a},也可能是 {b}。请去掉逗号,或用小数点表示小数。","“{raw}”不是数字。","无答案:0 的百分比不存在,因为什么都没有的东西不存在 100%。","无百分比:从 0 出发的变化不是任何数的倍数。差值为 {diff}。","增加","减少","无变化","{word},以负数起点为基准","无答案:减少 100% 后无论起点是多少都是 0。","{label}:{message}","请填写两个数字","已复制","复制","数学与单位",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2411,21 +2624,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function read(raw) {
     var s = raw.trim().replace(/[\s'’_]/g, "").replace(/−/g, "-").replace(/%$/, "");
     if (!s) return null;
-    if (raw.length > MAXLEN) throw "“" + raw.trim().slice(0, 12) + "…” is " + raw.length + " characters long; a number here takes up to " + MAXLEN + ".";
+    if (raw.length > MAXLEN) throw { m: trk("“{head}…” is {n} characters long; a number here takes up to {max}."), v: { head: raw.trim().slice(0, 12), n: raw.length, max: MAXLEN } };
     var dot = s.lastIndexOf("."), comma = s.lastIndexOf(",");
     if (dot >= 0 && comma >= 0) {
       var mark = dot > comma ? "." : ",", group = mark === "." ? "," : ".";
       s = s.split(group).join("").replace(mark, ".");
     } else if (comma >= 0) {
       var commas = s.split(",").length - 1;
-      if (commas === 1 && /^[+-]?[1-9]\d{0,2},\d{3}$/.test(s)) throw "“" + raw.trim() + "” could be " + s.replace(",", "") + " or " + s.replace(",", ".") +
-        ". Write it without the comma, or with a point for the decimal.";
+      if (commas === 1 && /^[+-]?[1-9]\d{0,2},\d{3}$/.test(s)) throw { m: trk("“{raw}” could be {a} or {b}. Write it without the comma, or with a point for the decimal."), v: { raw: raw.trim(), a: s.replace(",", ""), b: s.replace(",", ".") } };
       s = commas === 1 ? s.replace(",", ".") : s.split(",").join("");
     } else if (dot >= 0 && s.split(".").length > 2) {
       s = s.split(".").join("");
     }
     var m = /^([+-]?)(\d*)(?:\.(\d*))?$/.exec(s);
-    if (!m || !(m[2] + (m[3] || ""))) throw "“" + raw.trim() + "” is not a number.";
+    if (!m || !(m[2] + (m[3] || ""))) throw { m: trk("“{raw}” is not a number."), v: { raw: raw.trim() } };
     var digits = (m[2] + (m[3] || "")).replace(/^0+(?=\d)/, "");
     return frac(BigInt((m[1] === "-" ? "-" : "") + (digits || "0")), 10n ** BigInt((m[3] || "").length));
   }
@@ -2448,14 +2660,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var ASK = {
     of: function (g) { return fmt(mul(g.x, div(g.p, HUNDRED))); },
     ratio: function (g) {
-      if (isZero(g.b)) throw "No answer: a percent of 0 does not exist, because nothing is 100% of nothing.";
+      if (isZero(g.b)) throw { m: trk("No answer: a percent of 0 does not exist, because nothing is 100% of nothing.") };
       return fmt(mul(div(g.a, g.b), HUNDRED), "%");
     },
     change: function (g) {
-      if (isZero(g.a)) throw "No percentage: a change from 0 is not a multiple of anything. The difference is " + show(g.b).text + ".";
+      if (isZero(g.a)) throw { m: trk("No percentage: a change from 0 is not a multiple of anything. The difference is {diff}."), v: { diff: show(g.b).text } };
       var diff = sub(g.b, g.a), pct = mul(div(diff, g.a), HUNDRED), p = show(pct), d = show(diff);
-      var plus = pct.n > 0n ? "+" : "", word = pct.n > 0n ? "an increase" : pct.n < 0n ? "a decrease" : "no change";
-      if (g.a.n < 0n) word += ", measured against a negative start";
+      var plus = pct.n > 0n ? "+" : "", word = pct.n > 0n ? tr("an increase") : pct.n < 0n ? tr("a decrease") : tr("no change");
+      if (g.a.n < 0n) word = tr("{word}, measured against a negative start", { word: word });
       return { text: (p.exact ? "" : "≈ ") + plus + p.text + "% · " + (diff.n > 0n ? "+" : "") + d.text + " (" + word + ")",
         copy: plus + p.text.replace("−", "-") + "%" };
     },
@@ -2464,7 +2676,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     },
     before: function (g, dir) {
       var factor = add(HUNDRED, dir > 0 ? g.p : frac(-g.p.n, g.p.d));
-      if (isZero(factor)) throw "No answer: a 100% decrease leaves 0 whatever the start was.";
+      if (isZero(factor)) throw { m: trk("No answer: a 100% decrease leaves 0 whatever the start was.") };
       return fmt(div(mul(g.y, HUNDRED), factor));
     }
   };
@@ -2474,21 +2686,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   Array.prototype.forEach.call(document.querySelectorAll("[data-ask]"), function (row) {
     var q = row.getAttribute("data-ask"), answer = row.querySelector("[data-a]"), copyBtn = row.querySelector("[data-copy]");
     var fields = row.querySelectorAll("[data-v]"), dir = 1, copyText = "";
+    var LABELS = { "of/p": trk("Percent"), "of/x": trk("Number"), "ratio/a": trk("Part"), "ratio/b": trk("Whole"), "change/a": trk("From"), "change/b": trk("To"),
+      "apply/x": trk("Starting number"), "apply/p": trk("Percent"), "before/y": trk("Number after the change"), "before/p": trk("Percent") };
     function run() {
       var got = {}, missing = false, problem = null;
       Array.prototype.forEach.call(fields, function (f) {
         f.removeAttribute("aria-invalid");
         try { var v = read(f.value); if (v === null) missing = true; else got[f.getAttribute("data-v")] = v; }
-        catch (e) { if (!problem) { problem = f.getAttribute("aria-label") + ": " + e; f.setAttribute("aria-invalid", "true"); } }
+        catch (e) { if (!problem) { problem = tr("{label}: {message}", { label: tr(LABELS[q + "/" + f.getAttribute("data-v")]), message: tr(e.m, e.v) }); f.setAttribute("aria-invalid", "true"); } }
       });
       copyText = "";
       if (problem) { answer.textContent = problem; answer.className = "mdv-answer is-none"; }
-      else if (missing) { answer.textContent = "fill in both numbers"; answer.className = "mdv-answer is-none"; }
+      else if (missing) { answer.textContent = tr("fill in both numbers"); answer.className = "mdv-answer is-none"; }
       else {
         try { var r = ASK[q](got, dir); answer.textContent = "= " + r.text; answer.className = "mdv-answer"; copyText = r.copy; }
-        catch (e) { answer.textContent = String(e); answer.className = "mdv-answer is-none"; }
+        catch (e) { answer.textContent = e.m ? tr(e.m, e.v) : String(e); answer.className = "mdv-answer is-none"; }
       }
       copyBtn.disabled = !copyText;
+      copyBtn.textContent = copyBtn.classList.contains("is-done") ? tr("Copied") : tr("Copy");
     }
     Array.prototype.forEach.call(fields, function (f) { f.addEventListener("input", run); });
     Array.prototype.forEach.call(row.querySelectorAll("[data-dir]"), function (b) {
@@ -2504,11 +2719,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     copyBtn.addEventListener("click", function () {
       if (!copyText || !navigator.clipboard) return;
       navigator.clipboard.writeText(copyText).then(function () {
-        copyBtn.textContent = "Copied";
+        copyBtn.textContent = tr("Copied");
         copyBtn.classList.add("is-done");
-        setTimeout(function () { copyBtn.textContent = "Copy"; copyBtn.classList.remove("is-done"); }, 1400);
+        setTimeout(function () { copyBtn.classList.remove("is-done"); copyBtn.textContent = tr("Copy"); }, 1400);
       }, function () {});
     });
+    onLang(run);
     run();
   });
   document.querySelector("[data-v]").focus({ preventScroll: true });

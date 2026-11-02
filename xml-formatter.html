@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link is-here" href="./xml-formatter.html" aria-current="page" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link is-here" href="./xml-formatter.html" aria-current="page" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,19 +2353,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">XML formatter</h1>
+      <h1 class="mdv-head-name" data-t="41">XML formatter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Paste XML. Get it indented or minified, and told where it stops being well-formed.</p>
+    <p class="mdv-head-line" data-t="79">Paste XML. Get it indented or minified, and told where it stops being well-formed.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <label class="mdv-label" style="margin:0" for="in">Input</label>
+      <label class="mdv-label" style="margin:0" for="in" data-t="82">Input</label>
       <span class="mdv-hint mdv-mono" style="margin:0" id="size">0 bytes</span>
     </div>
     <textarea class="mdv-textarea" id="in" spellcheck="false" autocomplete="off"
@@ -2261,26 +2373,26 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <div class="mdv-row is-between">
-    <div class="mdv-seg" role="group" aria-label="Output shape">
-      <button type="button" data-mode="2" class="is-on" aria-pressed="true">Indent 2</button>
-      <button type="button" data-mode="4" aria-pressed="false">Indent 4</button>
-      <button type="button" data-mode="tab" aria-pressed="false">Tab</button>
-      <button type="button" data-mode="min" aria-pressed="false">Minify</button>
+    <div class="mdv-seg" role="group" aria-label="Output shape" data-t-attrs="aria-label">
+      <button type="button" data-mode="2" class="is-on" aria-pressed="true" data-t="83">Indent 2</button>
+      <button type="button" data-mode="4" aria-pressed="false" data-t="84">Indent 4</button>
+      <button type="button" data-mode="tab" aria-pressed="false" data-t="85">Tab</button>
+      <button type="button" data-mode="min" aria-pressed="false" data-t="86">Minify</button>
     </div>
-    <label class="mdv-check"><input type="checkbox" id="decl"> Keep the XML declaration</label>
+    <label class="mdv-check"><input type="checkbox" id="decl"> <span data-t="87">Keep the XML declaration</span></label>
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
     <div class="mdv-row is-between">
-      <span class="mdv-label" style="margin:0">Result</span>
+      <span class="mdv-label" style="margin:0" data-t="88">Result</span>
       <div class="mdv-btn-row">
-        <span class="mdv-badge is-ok" id="wellformed" hidden>Well-formed</span>
-        <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-        <button class="mdv-btn is-sm is-quiet" id="copy" type="button">Copy</button>
+        <span class="mdv-badge is-ok" id="wellformed" hidden><span data-t="89">Well-formed</span></span>
+        <span class="mdv-badge is-accent" id="copied" hidden><span data-t="90">Copied</span></span>
+        <button class="mdv-btn is-sm is-quiet" id="copy" type="button"><span data-t="91">Copy</span></button>
       </div>
     </div>
 
-    <div class="mdv-empty" id="empty"><span>paste xml above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="92">paste xml above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Not well-formed</span>
@@ -2293,16 +2405,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="93">How this works</summary>
     <div class="mdv-method-body">
-      <p>The text is handed to the browser's own XML parser, the same one it uses for real documents, and
+      <p data-t="94">The text is handed to the browser's own XML parser, the same one it uses for real documents, and
         then walked node by node to write it back out with indentation. That means well-formedness is judged
         by a real parser rather than by pattern matching: a missing close tag, a stray <code>&amp;</code>, a
         second root element or a mismatched name is reported with the line and column the parser stopped at,
         and the line itself is printed with a caret under the spot. XML is case-sensitive and every tag must
         close, so <code>&lt;BR&gt;</code> and <code>&lt;br&gt;</code> are different elements and neither may
         stand alone.</p>
-      <p>Only the whitespace between elements is touched — the line breaks and indentation of the layout
+      <p data-t="95">Only the whitespace between elements is touched — the line breaks and indentation of the layout
         itself. Anything holding text, text mixed with child elements, or nothing but whitespace is written
         out on one line exactly as it came in, because in XML those spaces are part of the content and a
         formatter that reflows them changes the document: <code>&lt;b&gt;&#160;&#160;&lt;/b&gt;</code>
@@ -2312,30 +2424,30 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         instructions, CDATA sections and attribute order are kept. Attribute values are re-quoted with
         double quotes and their special characters escaped, which is what the serializer does; empty
         elements come back in the short <code>&lt;name/&gt;</code> form.</p>
-      <p>What the page does not do: it does not validate against a DTD or schema, it does not resolve
+      <p data-t="96">What the page does not do: it does not validate against a DTD or schema, it does not resolve
         external entities or fetch anything a <code>DOCTYPE</code> points at, and it does not reformat
         namespaces or rewrite prefixes. Well-formed is not the same as valid — a document can be perfectly
         well-formed and still break the schema it claims to follow. Input is capped at 2 MB; past that the
         page refuses rather than lock the tab.</p>
-      <p>Everything happens in this tab. Nothing is uploaded and nothing you paste is stored; the Dark
-        button keeps its own setting in this browser's local storage.</p>
+      <p data-t="97">Everything happens in this tab. Nothing is uploaded and nothing you paste is stored; the Dark and language buttons keep their own settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Developer">
-    <span class="mdv-tag">Also in Developer</span>
-    <a href="./chmod-calculator.html">Chmod calculator</a>
-    <a href="./cron-generator.html">Cron expression</a>
-    <a href="./json-diff.html">JSON diff</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Developer"}'>Also in Developer</span>
+    <a href="./chmod-calculator.html" data-t="35">Chmod calculator</a>
+    <a href="./cron-generator.html" data-t="36">Cron expression</a>
+    <a href="./json-diff.html" data-t="38">JSON diff</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="98">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="99">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="100" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="101">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2346,6 +2458,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["XML Formatter — indent, minify and check well-formedness — MDV","Paste XML, get it indented or minified, with the first error named by line and column. Comments, CDATA and mixed text are kept as they were. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Output shape","Too large","That is {size}. This page formats up to {limit} — past that the tab would stall while the parser walks it.","Not well-formed","{message} The parser did not say where.","The DOCTYPE is kept as text: nothing it points at is fetched, and no entity in it is resolved.","Elements holding text are left on one line, because that whitespace is part of the content.","{n} byte","{n} bytes","{n} element, root \u003c{root}>.","{n} elements, root \u003c{root}>.","Developer","2026-11-02"],"h":102,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Pega XML. Obtenlo con sangría o minificado, y se te indica dónde deja de estar bien formado.","En este dispositivo","Funciona sin conexión","Entrada","Sangría 2","Sangría 4","Tab","Minificar","Conservar la declaración XML","Resultado","Bien formado","Copiado","Copiar","pega xml arriba","Cómo funciona","El texto se entrega al analizador XML del propio navegador, el mismo que usa para los documentos reales, y luego se recorre nodo a nodo para volver a escribirlo con sangría. Eso significa que el que esté bien formado lo juzga un analizador real y no una coincidencia de patrones: una etiqueta de cierre que falta, un \u003ccode>&amp;\u003c/code> suelto, un segundo elemento raíz o un nombre que no coincide se indican con la línea y la columna en que el analizador se detuvo, y la propia línea se imprime con un cursor ^ bajo el punto. XML distingue mayúsculas de minúsculas y toda etiqueta debe cerrarse, así que \u003ccode>&lt;BR&gt;\u003c/code> y \u003ccode>&lt;br&gt;\u003c/code> son elementos distintos y ninguno puede quedar solo.","Solo se toca el espacio en blanco entre elementos: los saltos de línea y la sangría del propio diseño. Todo lo que contiene texto, texto mezclado con elementos hijo o solo espacios en blanco se escribe en una línea exactamente como entró, porque en XML esos espacios forman parte del contenido y un formateador que los recoloca cambia el documento: \u003ccode>&lt;b&gt;&#160;&#160;&lt;/b&gt;\u003c/code> sobrevive tanto a la sangría como a la minificación. En rigor, el espacio entre elementos también es contenido, y solo una DTD o un esquema puede decir que es ignorable; esa es la única licencia que se toma un formateador, y es la razón por la que tanto el XML con sangría como el minificado son legibles. Se conservan los comentarios, las instrucciones de procesamiento, las secciones CDATA y el orden de los atributos. Los valores de atributo se vuelven a entrecomillar con comillas dobles y se escapan sus caracteres especiales, que es lo que hace el serializador; los elementos vacíos vuelven en la forma corta \u003ccode>&lt;name/&gt;\u003c/code>.","Lo que la página no hace: no valida contra una DTD ni un esquema, no resuelve entidades externas ni descarga nada a lo que apunte un \u003ccode>DOCTYPE\u003c/code>, y no reformatea espacios de nombres ni reescribe prefijos. Bien formado no es lo mismo que válido: un documento puede estar perfectamente bien formado y aun así incumplir el esquema que dice seguir. La entrada está limitada a 2 MB; por encima, la página la rechaza en lugar de bloquear la pestaña.","Todo ocurre en esta pestaña. No se sube nada y nada de lo que pegas se guarda; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Formateador XML — sangría, minificado y comprobación de buena formación — MDV","Pega XML y obtenlo con sangría o minificado, con el primer error indicado por línea y columna. Los comentarios, CDATA y el texto mixto se conservan tal cual. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Forma de salida","Demasiado grande","Son {size}. Esta página formatea hasta {limit}; por encima, la pestaña se bloquearía mientras el analizador lo recorre.","Mal formado","{message} El analizador no indicó dónde.","El DOCTYPE se conserva como texto: no se descarga nada a lo que apunte y no se resuelve ninguna entidad que contenga.","Los elementos que contienen texto se dejan en una sola línea, porque ese espacio en blanco forma parte del contenido.","{n} byte","{n} bytes","{n} elemento, raíz \u003c{root}>.","{n} elementos, raíz \u003c{root}>.","Desarrollo",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Collez du XML. Obtenez-le indenté ou minifié, avec l’endroit où il cesse d’être bien formé.","Sur cet appareil","Fonctionne hors ligne","Entrée","Retrait 2","Retrait 4","Tab","Minifier","Conserver la déclaration XML","Résultat","Bien formé","Copié","Copier","collez du xml ci-dessus","Comment ça marche","Le texte est confié à l’analyseur XML du navigateur lui-même, celui qu’il utilise pour les vrais documents, puis parcouru nœud par nœud pour être réécrit avec indentation. La bonne formation est donc jugée par un vrai analyseur et non par de la recherche de motifs : une balise fermante manquante, un \u003ccode>&amp;\u003c/code> isolé, un second élément racine ou un nom qui ne correspond pas sont signalés avec la ligne et la colonne où l’analyseur s’est arrêté, et la ligne elle-même est affichée avec un repère ^ sous l’endroit. XML distingue les majuscules des minuscules et chaque balise doit se fermer : \u003ccode>&lt;BR&gt;\u003c/code> et \u003ccode>&lt;br&gt;\u003c/code> sont donc des éléments différents et aucun des deux ne peut rester seul.","Seuls les espaces entre les éléments sont touchés : les retours à la ligne et l’indentation de la mise en page elle-même. Tout ce qui contient du texte, du texte mêlé d’éléments enfants, ou rien que des espaces est écrit sur une seule ligne exactement comme il est entré, car en XML ces espaces font partie du contenu et un formateur qui les réagence modifie le document : \u003ccode>&lt;b&gt;&#160;&#160;&lt;/b&gt;\u003c/code> survit à l’indentation comme à la minification. À proprement parler, les espaces entre les éléments sont aussi du contenu, et seule une DTD ou un schéma peut dire qu’ils sont ignorables ; c’est la seule liberté que prend un formateur, et c’est la raison pour laquelle le XML indenté comme le XML minifié restent lisibles. Les commentaires, les instructions de traitement, les sections CDATA et l’ordre des attributs sont conservés. Les valeurs d’attribut sont remises entre guillemets doubles avec leurs caractères spéciaux échappés, ce que fait le sérialiseur ; les éléments vides reviennent sous la forme courte \u003ccode>&lt;name/&gt;\u003c/code>.","Ce que la page ne fait pas : elle ne valide pas selon une DTD ou un schéma, ne résout pas les entités externes, ne récupère rien de ce que désigne un \u003ccode>DOCTYPE\u003c/code>, et ne reformate pas les espaces de noms ni ne réécrit les préfixes. Bien formé n’est pas valide : un document peut être parfaitement bien formé et pourtant enfreindre le schéma qu’il prétend suivre. L’entrée est limitée à 2 Mo ; au-delà, la page refuse plutôt que de bloquer l’onglet.","Tout se passe dans cet onglet. Rien n’est envoyé et rien de ce que vous collez n’est conservé ; les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Formateur XML — indenter, minifier et vérifier la bonne formation — MDV","Collez du XML, obtenez-le indenté ou minifié, avec la première erreur indiquée par ligne et colonne. Commentaires, CDATA et texte mixte sont conservés tels quels. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Format de sortie","Trop volumineux","Cela fait {size}. Cette page formate jusqu’à {limit} — au-delà, l’onglet se figerait pendant que l’analyseur le parcourt.","Mal formé","{message} L’analyseur n’a pas dit où.","Le DOCTYPE est conservé comme texte : rien de ce qu’il désigne n’est récupéré et aucune entité qu’il contient n’est résolue.","Les éléments contenant du texte restent sur une seule ligne, car ces espaces font partie du contenu.","{n} octet","{n} octets","{n} élément, racine \u003c{root}>.","{n} éléments, racine \u003c{root}>.","Développement",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Füge XML ein. Du bekommst es eingerückt oder minimiert und erfährst, wo es nicht mehr wohlgeformt ist.","Läuft auf diesem Gerät","Funktioniert offline","Eingabe","Einzug 2","Einzug 4","Tab","Minimieren","XML-Deklaration behalten","Ergebnis","Wohlgeformt","Kopiert","Kopieren","xml oben einfügen","So funktioniert es","Der Text wird dem XML-Parser des Browsers selbst übergeben, demselben, den er für echte Dokumente nutzt, und dann Knoten für Knoten durchlaufen, um ihn eingerückt neu zu schreiben. Ob er wohlgeformt ist, beurteilt also ein echter Parser und kein Mustervergleich: Ein fehlendes schließendes Tag, ein einzelnes \u003ccode>&amp;\u003c/code>, ein zweites Wurzelelement oder ein nicht passender Name wird mit Zeile und Spalte gemeldet, an der der Parser angehalten hat, und die Zeile selbst wird mit einem Zeiger ^ unter der Stelle ausgegeben. XML unterscheidet Groß- und Kleinschreibung, und jedes Tag muss geschlossen werden, daher sind \u003ccode>&lt;BR&gt;\u003c/code> und \u003ccode>&lt;br&gt;\u003c/code> verschiedene Elemente, und keines darf allein stehen.","Angetastet wird nur der Leerraum zwischen Elementen — die Zeilenumbrüche und der Einzug des Layouts selbst. Alles, was Text enthält, Text zusammen mit Kindelementen oder nur Leerraum, wird in einer Zeile genau so ausgegeben, wie es hineinkam, denn in XML gehören diese Leerzeichen zum Inhalt, und ein Formatierer, der sie umbricht, verändert das Dokument: \u003ccode>&lt;b&gt;&#160;&#160;&lt;/b&gt;\u003c/code> übersteht Einrücken wie Minimieren. Streng genommen ist auch der Leerraum zwischen Elementen Inhalt, und nur eine DTD oder ein Schema kann sagen, dass er ignorierbar ist; das ist die eine Freiheit, die sich ein Formatierer nimmt, und der Grund, warum eingerücktes wie minimiertes XML überhaupt lesbar ist. Kommentare, Verarbeitungsanweisungen, CDATA-Abschnitte und die Reihenfolge der Attribute bleiben erhalten. Attributwerte werden mit doppelten Anführungszeichen neu eingefasst und ihre Sonderzeichen maskiert, wie es der Serialisierer tut; leere Elemente kommen in der Kurzform \u003ccode>&lt;name/&gt;\u003c/code> zurück.","Was die Seite nicht tut: Sie validiert nicht gegen eine DTD oder ein Schema, löst keine externen Entitäten auf, lädt nichts nach, worauf ein \u003ccode>DOCTYPE\u003c/code> zeigt, und formatiert weder Namensräume um noch schreibt sie Präfixe neu. Wohlgeformt ist nicht dasselbe wie gültig — ein Dokument kann völlig wohlgeformt sein und trotzdem das Schema verletzen, dem es zu folgen vorgibt. Die Eingabe ist auf 2 MB begrenzt; darüber lehnt die Seite ab, statt den Tab zu blockieren.","Alles geschieht in diesem Tab. Nichts wird hochgeladen und nichts, was du einfügst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","XML-Formatierer — einrücken, minimieren und Wohlgeformtheit prüfen — MDV","Füge XML ein und erhalte es eingerückt oder minimiert, mit dem ersten Fehler nach Zeile und Spalte benannt. Kommentare, CDATA und gemischter Text bleiben unverändert. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Ausgabeformat","Zu groß","Das sind {size}. Diese Seite formatiert bis {limit} — darüber würde der Tab hängen, während der Parser es durchläuft.","Nicht wohlgeformt","{message} Der Parser hat nicht gesagt, wo.","Der DOCTYPE bleibt als Text erhalten: Nichts, worauf er zeigt, wird geladen, und keine darin enthaltene Entität wird aufgelöst.","Elemente mit Text bleiben in einer Zeile, weil dieser Leerraum zum Inhalt gehört.","{n} Byte","{n} Bytes","{n} Element, Wurzel \u003c{root}>.","{n} Elemente, Wurzel \u003c{root}>.","Entwicklung",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Incolla XML. Ottienilo indentato o minificato, con l’indicazione del punto in cui smette di essere ben formato.","Su questo dispositivo","Funziona offline","Input","Rientro 2","Rientro 4","Tab","Minifica","Mantieni la dichiarazione XML","Risultato","Ben formato","Copiato","Copia","incolla xml qui sopra","Come funziona","Il testo viene passato al parser XML del browser stesso, lo stesso che usa per i documenti veri, e poi percorso nodo per nodo per riscriverlo con l’indentazione. Questo significa che la buona formazione è giudicata da un parser vero e non da un confronto di pattern: un tag di chiusura mancante, una \u003ccode>&amp;\u003c/code> isolata, un secondo elemento radice o un nome che non corrisponde vengono segnalati con la riga e la colonna in cui il parser si è fermato, e la riga stessa viene stampata con un cursore ^ sotto il punto. XML distingue maiuscole e minuscole e ogni tag deve chiudersi, quindi \u003ccode>&lt;BR&gt;\u003c/code> e \u003ccode>&lt;br&gt;\u003c/code> sono elementi diversi e nessuno dei due può restare da solo.","Viene toccato solo lo spazio bianco tra gli elementi: gli a capo e l’indentazione del layout stesso. Tutto ciò che contiene testo, testo misto a elementi figli o solo spazi bianchi viene scritto su una riga esattamente come è entrato, perché in XML quegli spazi fanno parte del contenuto e un formattatore che li riorganizza cambia il documento: \u003ccode>&lt;b&gt;&#160;&#160;&lt;/b&gt;\u003c/code> sopravvive sia all’indentazione sia alla minificazione. A rigore anche lo spazio tra gli elementi è contenuto, e solo una DTD o uno schema può dire che è ignorabile; è l’unica libertà che si prende un formattatore, ed è il motivo per cui sia l’XML indentato sia quello minificato sono leggibili. Commenti, istruzioni di elaborazione, sezioni CDATA e ordine degli attributi vengono mantenuti. I valori degli attributi vengono rimessi tra virgolette doppie con i caratteri speciali con escape, come fa il serializzatore; gli elementi vuoti tornano nella forma breve \u003ccode>&lt;name/&gt;\u003c/code>.","Ciò che la pagina non fa: non convalida rispetto a una DTD o a uno schema, non risolve entità esterne né scarica nulla a cui punti un \u003ccode>DOCTYPE\u003c/code>, e non riformatta i namespace né riscrive i prefissi. Ben formato non significa valido: un documento può essere perfettamente ben formato e violare comunque lo schema che dichiara di seguire. L’input è limitato a 2 MB; oltre, la pagina rifiuta invece di bloccare la scheda.","Tutto avviene in questa scheda. Non viene caricato nulla e nulla di ciò che incolli viene salvato; i pulsanti Scuro e Lingua conservano la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Formattatore XML — indenta, minifica e verifica la buona formazione — MDV","Incolla XML e ottienilo indentato o minificato, con il primo errore indicato per riga e colonna. Commenti, CDATA e testo misto restano invariati. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Formato di output","Troppo grande","Sono {size}. Questa pagina formatta fino a {limit}: oltre, la scheda si bloccherebbe mentre il parser lo percorre.","Non ben formato","{message} Il parser non ha indicato dove.","Il DOCTYPE viene mantenuto come testo: nulla di ciò a cui punta viene scaricato e nessuna entità al suo interno viene risolta.","Gli elementi che contengono testo restano su una sola riga, perché quello spazio bianco fa parte del contenuto.","{n} byte","{n} byte","{n} elemento, radice \u003c{root}>.","{n} elementi, radice \u003c{root}>.","Sviluppo",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Cole XML. Receba-o indentado ou minificado, e saiba onde ele deixa de ser bem formado.","Neste dispositivo","Funciona offline","Entrada","Recuo 2","Recuo 4","Tab","Minificar","Manter a declaração XML","Resultado","Bem formado","Copiado","Copiar","cole xml acima","Como funciona","O texto é entregue ao analisador XML do próprio navegador, o mesmo que ele usa para documentos reais, e depois percorrido nó a nó para ser reescrito com indentação. Isso significa que a boa formação é julgada por um analisador de verdade e não por correspondência de padrões: uma tag de fechamento ausente, um \u003ccode>&amp;\u003c/code> solto, um segundo elemento raiz ou um nome que não confere são indicados com a linha e a coluna em que o analisador parou, e a própria linha é impressa com um cursor ^ sob o ponto. XML diferencia maiúsculas de minúsculas e toda tag precisa ser fechada, então \u003ccode>&lt;BR&gt;\u003c/code> e \u003ccode>&lt;br&gt;\u003c/code> são elementos diferentes e nenhum dos dois pode ficar sozinho.","Só o espaço em branco entre elementos é alterado: as quebras de linha e a indentação do próprio layout. Tudo que contém texto, texto misturado com elementos filhos ou apenas espaço em branco é escrito em uma linha exatamente como entrou, porque em XML esses espaços fazem parte do conteúdo e um formatador que os reorganiza altera o documento: \u003ccode>&lt;b&gt;&#160;&#160;&lt;/b&gt;\u003c/code> sobrevive tanto à indentação quanto à minificação. A rigor, o espaço entre elementos também é conteúdo, e só uma DTD ou um esquema pode dizer que é ignorável; essa é a única liberdade que um formatador toma, e é o motivo de tanto o XML indentado quanto o minificado serem legíveis. Comentários, instruções de processamento, seções CDATA e a ordem dos atributos são mantidos. Os valores de atributo são colocados de novo entre aspas duplas, com os caracteres especiais escapados, como faz o serializador; elementos vazios voltam na forma curta \u003ccode>&lt;name/&gt;\u003c/code>.","O que a página não faz: não valida contra uma DTD ou esquema, não resolve entidades externas nem baixa nada para o qual um \u003ccode>DOCTYPE\u003c/code> aponte, e não reformata namespaces nem reescreve prefixos. Bem formado não é o mesmo que válido: um documento pode ser perfeitamente bem formado e ainda assim violar o esquema que diz seguir. A entrada é limitada a 2 MB; acima disso, a página recusa em vez de travar a aba.","Tudo acontece nesta aba. Nada é enviado e nada do que você cola é armazenado; os botões Escuro e Idioma guardam sua própria configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Formatador XML — indente, minifique e verifique a boa formação — MDV","Cole XML e receba-o indentado ou minificado, com o primeiro erro indicado por linha e coluna. Comentários, CDATA e texto misto são mantidos como estavam. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Formato de saída","Grande demais","São {size}. Esta página formata até {limit}; acima disso, a aba travaria enquanto o analisador percorre o texto.","Mal formado","{message} O analisador não disse onde.","O DOCTYPE é mantido como texto: nada para o que ele aponte é baixado, e nenhuma entidade dentro dele é resolvida.","Elementos que contêm texto ficam em uma só linha, porque esse espaço em branco faz parte do conteúdo.","{n} byte","{n} bytes","{n} elemento, raiz \u003c{root}>.","{n} elementos, raiz \u003c{root}>.","Desenvolvimento",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","XML を貼り付けてください。インデント付きまたは最小化した形で取得でき、整形式でなくなる位置も示されます。","この端末で動作","オフラインで動作","入力","インデント 2","インデント 4","タブ","最小化","XML 宣言を残す","結果","整形式","コピーしました","コピー","上に xml を貼り付け","仕組み","テキストはブラウザー自身の XML パーサー(実際の文書に使うものと同じ)に渡され、ノードを 1 つずつたどってインデント付きで書き直されます。つまり、整形式かどうかはパターンマッチではなく本物のパーサーが判定します。閉じタグの欠落、単独の \u003ccode>&amp;\u003c/code>、2 つ目のルート要素、名前の不一致は、パーサーが止まった行と列とともに報告され、その行自体も位置の下にキャレット ^ を付けて表示されます。XML は大文字と小文字を区別し、すべてのタグを閉じる必要があるので、\u003ccode>&lt;BR&gt;\u003c/code> と \u003ccode>&lt;br&gt;\u003c/code> は別の要素であり、どちらも単独では置けません。","変更されるのは要素間の空白、つまりレイアウト自体の改行とインデントだけです。テキストを含むもの、テキストと子要素が混在するもの、空白しかないものは、入力されたとおりに 1 行で書き出されます。XML ではそれらの空白は内容の一部であり、再配置する整形ツールは文書を変えてしまうからです。\u003ccode>&lt;b&gt;&#160;&#160;&lt;/b&gt;\u003c/code> はインデントでも最小化でも保たれます。厳密には要素間の空白も内容であり、無視してよいと言えるのは DTD やスキーマだけです。これは整形ツールが取る唯一の自由であり、インデントした XML も最小化した XML も読める理由です。コメント、処理命令、CDATA セクション、属性の順序は保持されます。属性値はシリアライザーの動作どおり、ダブルクォートで囲み直され特殊文字がエスケープされます。空要素は短い形式の \u003ccode>&lt;name/&gt;\u003c/code> で戻ります。","このページが行わないこと。DTD やスキーマに対する検証、外部エンティティの解決、\u003ccode>DOCTYPE\u003c/code> が指すものの取得、名前空間の再整形やプレフィックスの書き換えは行いません。整形式であることは妥当であることと同じではありません。文書は完全に整形式でも、従うと称するスキーマには違反していることがあります。入力は 2 MB までで、それを超えるとタブを固めずに拒否します。","すべてこのタブの中で完結します。何もアップロードされず、貼り付けた内容も保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","XML フォーマッター — インデント、最小化、整形式チェック — MDV","XML を貼り付けると、インデント付きまたは最小化した形で取得でき、最初のエラーは行と列で示されます。コメント、CDATA、混在テキストはそのまま保持されます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","出力形式","大きすぎます","{size} あります。このページが整形できるのは {limit} までで、それを超えるとパーサーが走査する間タブが止まってしまいます。","整形式ではありません","{message} パーサーは位置を示しませんでした。","DOCTYPE はテキストのまま保持されます。それが指すものは取得されず、中のエンティティも解決されません。","テキストを含む要素は、その空白が内容の一部であるため、1 行のまま残されます。","{n} バイト","{n} バイト","{n} 個の要素、ルートは \u003c{root}>。","{n} 個の要素、ルートは \u003c{root}>。","開発",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","XML을 붙여넣으세요. 들여쓰기 또는 압축된 형태로 받고, 올바른 형식이 깨지는 위치도 알려 줍니다.","이 기기에서 실행","오프라인 작동","입력","들여쓰기 2","들여쓰기 4","탭","압축","XML 선언 유지","결과","올바른 형식","복사됨","복사","위에 xml 붙여넣기","작동 방식","텍스트는 실제 문서에 쓰는 것과 같은 브라우저 자체의 XML 파서에 전달된 뒤, 노드를 하나씩 따라가며 들여쓰기를 넣어 다시 기록됩니다. 즉 올바른 형식인지는 패턴 매칭이 아니라 실제 파서가 판정합니다. 빠진 닫는 태그, 홀로 있는 \u003ccode>&amp;\u003c/code>, 두 번째 루트 요소, 이름 불일치는 파서가 멈춘 줄과 열로 보고되고, 그 줄 자체도 해당 위치 아래에 캐럿 ^과 함께 표시됩니다. XML은 대소문자를 구분하며 모든 태그는 닫혀야 하므로 \u003ccode>&lt;BR&gt;\u003c/code>과 \u003ccode>&lt;br&gt;\u003c/code>은 서로 다른 요소이고 어느 쪽도 홀로 있을 수 없습니다.","요소 사이의 공백, 즉 레이아웃 자체의 줄바꿈과 들여쓰기만 건드립니다. 텍스트를 담은 것, 텍스트와 자식 요소가 섞인 것, 공백뿐인 것은 입력된 그대로 한 줄로 기록합니다. XML에서는 그 공백이 내용의 일부여서, 이를 다시 배치하는 포맷터는 문서를 바꾸게 되기 때문입니다. \u003ccode>&lt;b&gt;&#160;&#160;&lt;/b&gt;\u003c/code>는 들여쓰기와 압축 모두에서 유지됩니다. 엄밀히 말하면 요소 사이의 공백도 내용이며 무시해도 된다고 말할 수 있는 것은 DTD나 스키마뿐입니다. 이것이 포맷터가 취하는 유일한 재량이며, 들여쓴 XML과 압축한 XML을 모두 읽을 수 있는 이유입니다. 주석, 처리 명령, CDATA 섹션, 속성 순서는 유지됩니다. 속성 값은 직렬화기가 하듯 큰따옴표로 다시 감싸고 특수 문자를 이스케이프하며, 빈 요소는 짧은 형태인 \u003ccode>&lt;name/&gt;\u003c/code>으로 돌아옵니다.","이 페이지가 하지 않는 일: DTD나 스키마에 대한 검증, 외부 엔티티 해석, \u003ccode>DOCTYPE\u003c/code>이 가리키는 것의 가져오기, 네임스페이스 재포맷이나 접두사 다시 쓰기는 하지 않습니다. 올바른 형식(well-formed)이 유효(valid)와 같은 것은 아닙니다. 문서가 완벽하게 올바른 형식이어도 따르겠다고 밝힌 스키마를 어길 수 있습니다. 입력은 2MB까지이며, 그 이상은 탭을 멈추게 하지 않고 거부합니다.","모든 작업은 이 탭 안에서 이루어집니다. 아무것도 업로드되지 않으며 붙여넣은 내용도 저장되지 않습니다. 다크 및 언어 버튼은 각자의 설정을 이 브라우저의 로컬 스토리지에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","XML 포맷터 — 들여쓰기, 압축, 올바른 형식 검사 — MDV","XML을 붙여넣으면 들여쓰기 또는 압축된 형태로 받고, 첫 오류는 줄과 열로 알려 줍니다. 주석, CDATA, 혼합 텍스트는 그대로 유지됩니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","출력 형식","너무 큽니다","{size}입니다. 이 페이지는 {limit}까지 포맷하며, 그 이상은 파서가 훑는 동안 탭이 멈추게 됩니다.","올바른 형식이 아님","{message} 파서가 위치를 알려 주지 않았습니다.","DOCTYPE은 텍스트로 유지됩니다. 그것이 가리키는 것은 가져오지 않으며 그 안의 엔티티도 해석하지 않습니다.","텍스트를 담은 요소는 그 공백이 내용의 일부이므로 한 줄로 유지됩니다.","{n}바이트","{n}바이트","요소 {n}개, 루트 \u003c{root}>.","요소 {n}개, 루트 \u003c{root}>.","개발",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","粘贴 XML，即可得到缩进或压缩后的结果,并告知它在何处不再符合格式良好的要求。","在此设备上运行","可离线使用","输入","缩进 2","缩进 4","制表符","压缩","保留 XML 声明","结果","格式良好","已复制","复制","在上方粘贴 xml","工作原理","文本会交给浏览器自带的 XML 解析器(与处理真实文档所用的相同),再逐个节点遍历,以缩进的形式重新写出。也就是说,格式是否良好由真正的解析器判断,而不是靠模式匹配:缺少结束标签、孤立的 \u003ccode>&amp;\u003c/code>、第二个根元素或名称不匹配,都会连同解析器停下的行和列一并报告,并在该行下方用插入符 ^ 标出位置。XML 区分大小写,每个标签都必须闭合,因此 \u003ccode>&lt;BR&gt;\u003c/code> 和 \u003ccode>&lt;br&gt;\u003c/code> 是不同的元素,且都不能单独存在。","只会改动元素之间的空白,即布局本身的换行和缩进。凡是包含文本、文本与子元素混合、或仅含空白的内容,都会原样写在一行里,因为在 XML 中这些空格属于内容,重新排版它们的格式化工具会改变文档:\u003ccode>&lt;b&gt;&#160;&#160;&lt;/b&gt;\u003c/code> 在缩进和压缩时都会保留。严格说来,元素之间的空白同样是内容,只有 DTD 或模式才能声明它可以忽略;这是格式化工具唯一享有的自由,也是缩进和压缩后的 XML 都能阅读的原因。注释、处理指令、CDATA 区段和属性顺序都会保留。属性值会按序列化器的做法重新用双引号括起,并转义其中的特殊字符;空元素以简短的 \u003ccode>&lt;name/&gt;\u003c/code> 形式返回。","本页不做的事:不依据 DTD 或模式进行验证,不解析外部实体,也不获取 \u003ccode>DOCTYPE\u003c/code> 指向的任何内容,不重新格式化命名空间或改写前缀。格式良好并不等于有效——文档可以完全格式良好,却仍违反它声称遵循的模式。输入上限为 2 MB;超过后页面会拒绝处理,而不是让标签页卡死。","一切都在此标签页内完成。不会上传任何内容,你粘贴的内容也不会被保存;深色和语言按钮会把各自的设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","XML 格式化工具 — 缩进、压缩并检查格式是否良好 — MDV","粘贴 XML 即可得到缩进或压缩后的结果,并按行和列指出第一个错误。注释、CDATA 和混合文本均保持原样。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","输出格式","文件过大","当前为 {size}。本页最多格式化 {limit};超过后解析器遍历时标签页会卡住。","格式不良","{message} 解析器没有指出位置。","DOCTYPE 以文本形式保留:不会获取它指向的任何内容,其中的实体也不会被解析。","包含文本的元素保留在同一行,因为那些空白属于内容的一部分。","{n} 字节","{n} 字节","{n} 个元素,根元素为 \u003c{root}>。","{n} 个元素,根元素为 \u003c{root}>。","开发",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2414,7 +2626,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var text = lines[line - 1];
     return line + " | " + text + "\n" + new Array(String(line).length + 4).join(" ") + new Array(Math.max(column, 1)).join(" ") + "^";
   }
-  function bytes(n) { return n < 1024 ? n + " bytes" : n < 1048576 ? (n / 1024).toFixed(1) + " kB" : (n / 1048576).toFixed(2) + " MB"; }
+  function bytes(n) { return n < 1024 ? trn(n, "{n} byte", "{n} bytes") : n < 1048576 ? (n / 1024).toFixed(1) + " kB" : (n / 1048576).toFixed(2) + " MB"; }
 
   /* ---------- page ---------- */
 
@@ -2436,8 +2648,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     $("size").textContent = bytes(text.length);
     if (!text.trim()) { state("empty"); return; }
     if (text.length > LIMIT) {
-      errtitle.textContent = "Too large";
-      errmsg.textContent = "That is " + bytes(text.length) + ". This page formats up to " + bytes(LIMIT) + " — past that the tab would stall while the parser walks it.";
+      errtitle.textContent = tr("Too large");
+      errmsg.textContent = tr("That is {size}. This page formats up to {limit} — past that the tab would stall while the parser walks it.", { size: bytes(text.length), limit: bytes(LIMIT) });
       errat.textContent = "";
       state("error");
       return;
@@ -2446,8 +2658,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var doc = new DOMParser().parseFromString(text, "application/xml");
     var problem = errorOf(doc);
     if (problem) {
-      errtitle.textContent = "Not well-formed";
-      errmsg.textContent = problem.message + (problem.line ? "" : " The parser did not say where.");
+      errtitle.textContent = tr("Not well-formed");
+      errmsg.textContent = problem.line ? problem.message : tr("{message} The parser did not say where.", { message: problem.message });
       errat.textContent = caret(text, problem.line, problem.column);
       errat.hidden = !errat.textContent;
       state("error");
@@ -2467,9 +2679,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     var notes = [];
     var mixed = doc.getElementsByTagName("*").length;
-    notes.push(mixed.toLocaleString() + (mixed === 1 ? " element" : " elements") + ", root <" + (doc.documentElement ? doc.documentElement.nodeName : "?") + ">.");
-    if (/<!DOCTYPE/i.test(text)) notes.push("The DOCTYPE is kept as text: nothing it points at is fetched, and no entity in it is resolved.");
-    if (mode !== "min" && /<[^>]*>[^<]*\S[^<]*<\//.test(text)) notes.push("Elements holding text are left on one line, because that whitespace is part of the content.");
+    notes.push(trn(mixed, "{n} element, root <{root}>.", "{n} elements, root <{root}>.", { root: doc.documentElement ? doc.documentElement.nodeName : "?" }));
+    if (/<!DOCTYPE/i.test(text)) notes.push(tr("The DOCTYPE is kept as text: nothing it points at is fetched, and no entity in it is resolved."));
+    if (mode !== "min" && /<[^>]*>[^<]*\S[^<]*<\//.test(text)) notes.push(tr("Elements holding text are left on one line, because that whitespace is part of the content."));
     said.textContent = notes.join(" ");
     said.hidden = !notes.length;
     state("ok");
@@ -2502,6 +2714,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   input.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

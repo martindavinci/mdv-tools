@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link is-here" href="./html-entities.html" aria-current="page" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link is-here" href="./html-entities.html" aria-current="page" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,13 +2353,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">HTML entities</h1>
+      <h1 class="mdv-head-name" data-t="21">HTML entities</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Escape text so a browser reads it as text, or turn entities back into characters. Type on either side.</p>
+    <p class="mdv-head-line" data-t="79">Escape text so a browser reads it as text, or turn entities back into characters. Type on either side.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
@@ -2255,9 +2367,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <section class="mdv-block">
       <div class="mdv-block-label">
-        <label for="txt">Text</label>
+        <label for="txt" data-t="4">Text</label>
         <span class="mdv-count" id="cTxt"></span>
-        <button class="mdv-mini" id="copyTxt" type="button" disabled>Copy</button>
+        <button class="mdv-mini" id="copyTxt" type="button" disabled><span>Copy</span></button>
       </div>
       <textarea class="mdv-textarea" id="txt" spellcheck="false" autocomplete="off"
         placeholder='<a href="x?a=1&b=2">wings & rope</a>'></textarea>
@@ -2271,37 +2383,37 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <section class="mdv-block" data-mdv-result>
       <div class="mdv-block-label">
-        <label for="enc">Escaped</label>
+        <label for="enc" data-t="82">Escaped</label>
         <span class="mdv-count" id="cEnc"></span>
-        <button class="mdv-mini" id="copyEnc" type="button" disabled>Copy</button>
+        <button class="mdv-mini" id="copyEnc" type="button" disabled><span>Copy</span></button>
       </div>
       <textarea class="mdv-textarea is-mono" id="enc" spellcheck="false" autocomplete="off"
-        placeholder="Or paste &amp;lt;p&amp;gt;caf&amp;eacute;&amp;lt;/p&amp;gt; to decode it"></textarea>
+        placeholder="Or paste &amp;lt;p&amp;gt;caf&amp;eacute;&amp;lt;/p&amp;gt; to decode it" data-t-attrs="placeholder"></textarea>
     </section>
 
     <div class="mdv-block">
-      <div class="mdv-seg" role="group" aria-label="How much to escape">
-        <button type="button" data-set="text" class="is-on" aria-pressed="true">Text content</button>
-        <button type="button" data-set="attr" aria-pressed="false">Attribute value</button>
-        <button type="button" data-set="all" aria-pressed="false">Everything non-ASCII</button>
+      <div class="mdv-seg" role="group" aria-label="How much to escape" data-t-attrs="aria-label">
+        <button type="button" data-set="text" class="is-on" aria-pressed="true" data-t="83">Text content</button>
+        <button type="button" data-set="attr" aria-pressed="false" data-t="84">Attribute value</button>
+        <button type="button" data-set="all" aria-pressed="false" data-t="85">Everything non-ASCII</button>
       </div>
-      <label class="mdv-check" style="margin-top:var(--space-3)"><input type="checkbox" id="numeric"> Numeric entities only, no names</label>
+      <label class="mdv-check" style="margin-top:var(--space-3)"><input type="checkbox" id="numeric"> <span data-t="86">Numeric entities only, no names</span></label>
     </div>
 
     <div class="mdv-block">
-      <div class="mdv-empty is-slim" id="empty"><span>type on either side</span></div>
+      <div class="mdv-empty is-slim" id="empty"><span data-t="87">type on either side</span></div>
       <div class="mdv-row is-between" id="status" hidden>
         <p class="mdv-dot-note" id="note" role="status"></p>
-        <button class="mdv-mini" id="clear" type="button">Clear both</button>
+        <button class="mdv-mini" id="clear" type="button"><span data-t="88">Clear both</span></button>
       </div>
     </div>
 
   </div>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="89">How this works</summary>
     <div class="mdv-method-body">
-      <p>Escaping replaces the characters that would otherwise be read as markup. <strong>Text
+      <p data-t="90">Escaping replaces the characters that would otherwise be read as markup. <strong>Text
         content</strong> escapes <code>&amp;</code>, <code>&lt;</code> and <code>&gt;</code>, which is all
         that text between tags needs. <strong>Attribute value</strong> also escapes both quote marks, so
         the result is safe to drop inside <code>"…"</code> or <code>'…'</code>. <strong>Everything
@@ -2311,36 +2423,36 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         tick the box to get numeric ones such as <code>&amp;#xE9;</code> throughout. Characters outside the
         basic plane, emoji among them, are written as one numeric entity for the whole character rather
         than as two halves of a surrogate pair.</p>
-      <p>Decoding is done by the browser's own HTML parser, through <code>DOMParser</code>, so every named
+      <p data-t="91">Decoding is done by the browser's own HTML parser, through <code>DOMParser</code>, so every named
         entity the HTML standard defines is understood — all two thousand-odd of them — along with decimal
         and hexadecimal numeric forms. That is a parser reading a string, not a page being built: nothing
         in what you paste is loaded or run, no script executes, no image is fetched, and no markup is
         rendered. Tags are left as text rather than stripped: pasting <code>&lt;b&gt;</code> gives you
         <code>&lt;b&gt;</code> back, because this page converts entities and does not edit HTML.</p>
-      <p>Two details that trip people up, and the page names both when it sees them. HTML's own rules let
+      <p data-t="92">Two details that trip people up, and the page names both when it sees them. HTML's own rules let
         some entities be written without the closing semicolon, so <code>&amp;ampfoo</code> decodes to
         <code>&amp;foo</code>; and text that was escaped twice decodes to something still holding
         <code>&amp;lt;</code>, which the page points out rather than leave you puzzling. Each side is capped
         at 200,000 characters.</p>
-      <p>Everything runs in this tab. Nothing is uploaded and nothing you paste is stored; the Dark button
-        keeps its own setting in this browser's local storage.</p>
+      <p data-t="93">Everything runs in this tab. Nothing is uploaded and nothing you paste is stored; the Dark and language buttons keep their own settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Encoding &amp; Crypto">
-    <span class="mdv-tag">Also in Encoding &amp; Crypto</span>
-    <a href="./base64-image.html">Image to data URI</a>
-    <a href="./jwt-decoder.html">JWT decoder</a>
-    <a href="./password-generator.html">Password generator</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Encoding &amp; Crypto"}'>Also in Encoding &amp; Crypto</span>
+    <a href="./base64-image.html" data-t="18">Image to data URI</a>
+    <a href="./jwt-decoder.html" data-t="22">JWT decoder</a>
+    <a href="./password-generator.html" data-t="23">Password generator</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="94">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="95">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="96" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="97">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2351,6 +2463,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["HTML Entity Encoder and Decoder — escape and unescape, both ways — MDV","Escape text for HTML or decode named and numeric entities back to characters, with a choice of how much to escape. Both sides live. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Or paste &lt;p&gt;caf&eacute;&lt;/p&gt; to decode it","How much to escape","text between tags","an attribute value","text with every non-ASCII character escaped","decoding","escaping","Copied","Copy","Too much text. {n} characters is past the {limit}-character ceiling, so nothing was escaped.","Position {pos} holds half of a surrogate pair (U+{code}), which is not a character, so nothing was escaped. Delete it or paste the whole character again.","Too long once escaped: {n} characters, past the {limit}-character ceiling, so nothing was written.","Nothing here needs escaping for {what}; both sides are the same.","Escaped for {what}.","The text already held entities and each & became &amp;. If it was escaped once already, paste it on the other side to decode it.","Too much to decode. {n} characters is past the {limit}-character ceiling, so nothing was decoded.","No entities to decode; the text is unchanged.","The result still holds entities, so the text was probably escaped twice: paste it back into this side to decode it again.","Some entities had no closing semicolon; HTML allows that for a few of them, and they were decoded the way a browser would.","The browser refused the clipboard. Select the field and copy it by hand.","{n} character","{n} characters","Decoded {n} entity with the browser's own HTML parser.","Decoded {n} entities with the browser's own HTML parser.","Encoding & Crypto","2026-11-02"],"h":98,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Escapa texto para que un navegador lo lea como texto, o convierte entidades de nuevo en caracteres. Escribe en cualquiera de los dos lados.","En este dispositivo","Funciona sin conexión","Escapado","Contenido de texto","Valor de atributo","Todo lo no ASCII","Solo entidades numéricas, sin nombres","escribe en cualquiera de los lados","Borrar ambos","Cómo funciona","El escape sustituye los caracteres que, de otro modo, se leerían como marcado. \u003cstrong>Contenido de texto\u003c/strong> escapa \u003ccode>&amp;\u003c/code>, \u003ccode>&lt;\u003c/code> y \u003ccode>&gt;\u003c/code>, que es todo lo que necesita el texto entre etiquetas. \u003cstrong>Valor de atributo\u003c/strong> escapa además ambas comillas, de modo que el resultado se puede poner con seguridad dentro de \u003ccode>\"…\"\u003c/code> o \u003ccode>'…'\u003c/code>. \u003cstrong>Todo lo no ASCII\u003c/strong> añade todos los caracteres por encima del ASCII de 7 bits, que es lo que conviene para un archivo que puede servirse sin codificación UTF-8 declarada — y en ningún otro caso, porque una página UTF-8 lleva \u003ccode>é\u003c/code> sin problema. Se usan entidades con nombre donde existe un nombre corto estándar; marca la casilla para obtener entidades numéricas como \u003ccode>&amp;#xE9;\u003c/code> en todo el texto. Los caracteres fuera del plano básico, entre ellos los emoji, se escriben como una sola entidad numérica para todo el carácter y no como las dos mitades de un par sustituto.","La decodificación la hace el propio analizador HTML del navegador, mediante \u003ccode>DOMParser\u003c/code>, así que se entienden todas las entidades con nombre que define el estándar HTML — unas dos mil — además de las formas numéricas decimal y hexadecimal. Es un analizador que lee una cadena, no una página que se construye: nada de lo que pegas se carga ni se ejecuta, no se ejecuta ningún script, no se descarga ninguna imagen y no se renderiza ningún marcado. Las etiquetas se dejan como texto en lugar de eliminarse: al pegar \u003ccode>&lt;b&gt;\u003c/code> obtienes de vuelta \u003ccode>&lt;b&gt;\u003c/code>, porque esta página convierte entidades y no edita HTML.","Hay dos detalles que confunden a la gente, y la página nombra ambos cuando los ve. Las propias reglas de HTML permiten escribir algunas entidades sin el punto y coma final, así que \u003ccode>&amp;ampfoo\u003c/code> se decodifica como \u003ccode>&amp;foo\u003c/code>; y el texto que se escapó dos veces se decodifica en algo que aún contiene \u003ccode>&amp;lt;\u003c/code>, algo que la página señala para que no te quedes dudando. Cada lado admite hasta 200.000 caracteres.","Todo se ejecuta en esta pestaña. No se sube nada y nada de lo que pegas se guarda; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Codificador y decodificador de entidades HTML — escapar y desescapar, en ambos sentidos — MDV","Escapa texto para HTML o decodifica entidades con nombre y numéricas de vuelta a caracteres, eligiendo cuánto escapar. Ambos lados en vivo. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","O pega &lt;p&gt;caf&eacute;&lt;/p&gt; para decodificarlo","Cuánto escapar","texto entre etiquetas","un valor de atributo","texto con todos los caracteres no ASCII escapados","decodificando","escapando","Copiado","Copiar","Demasiado texto. {n} caracteres superan el límite de {limit} caracteres, así que no se escapó nada.","La posición {pos} contiene la mitad de un par sustituto (U+{code}), que no es un carácter, así que no se escapó nada. Bórrala o pega de nuevo el carácter completo.","Demasiado largo tras escapar: {n} caracteres, por encima del límite de {limit} caracteres, así que no se escribió nada.","Aquí nada necesita escape para {what}; ambos lados son iguales.","Escapado para {what}.","El texto ya contenía entidades y cada & pasó a &amp;. Si ya estaba escapado una vez, pégalo en el otro lado para decodificarlo.","Demasiado para decodificar. {n} caracteres superan el límite de {limit} caracteres, así que no se decodificó nada.","No hay entidades que decodificar; el texto no cambia.","El resultado aún contiene entidades, así que el texto probablemente se escapó dos veces: vuelve a pegarlo en este lado para decodificarlo otra vez.","Algunas entidades no tenían punto y coma final; HTML lo permite para unas pocas, y se decodificaron como lo haría un navegador.","El navegador rechazó el portapapeles. Selecciona el campo y copia a mano.","{n} carácter","{n} caracteres","Se decodificó {n} entidad con el propio analizador HTML del navegador.","Se decodificaron {n} entidades con el propio analizador HTML del navegador.","Codificación y criptografía",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Échappez du texte pour qu’un navigateur le lise comme du texte, ou reconvertissez des entités en caractères. Saisissez d’un côté ou de l’autre.","Sur cet appareil","Fonctionne hors ligne","Échappé","Contenu texte","Valeur d’attribut","Tout non-ASCII","Entités numériques uniquement, sans noms","saisissez d’un côté ou de l’autre","Tout effacer","Comment ça marche","L’échappement remplace les caractères qui seraient sinon lus comme du balisage. \u003cstrong>Contenu texte\u003c/strong> échappe \u003ccode>&amp;\u003c/code>, \u003ccode>&lt;\u003c/code> et \u003ccode>&gt;\u003c/code>, ce qui suffit au texte entre les balises. \u003cstrong>Valeur d’attribut\u003c/strong> échappe en plus les deux guillemets, si bien que le résultat peut se placer sans risque dans \u003ccode>\"…\"\u003c/code> ou \u003ccode>'…'\u003c/code>. \u003cstrong>Tout non-ASCII\u003c/strong> ajoute tous les caractères au-dessus de l’ASCII 7 bits, ce qu’il faut pour un fichier susceptible d’être servi sans encodage UTF-8 déclaré — et nulle part ailleurs, puisqu’une page UTF-8 porte très bien \u003ccode>é\u003c/code>. Des entités nommées sont utilisées lorsqu’un nom court standard existe ; cochez la case pour obtenir partout des entités numériques comme \u003ccode>&amp;#xE9;\u003c/code>. Les caractères hors du plan de base, emoji compris, sont écrits comme une seule entité numérique pour le caractère entier, et non comme les deux moitiés d’une paire de substitution.","Le décodage est assuré par l’analyseur HTML du navigateur lui-même, via \u003ccode>DOMParser\u003c/code> : toutes les entités nommées que définit la norme HTML sont donc comprises — plus de deux mille — ainsi que les formes numériques décimales et hexadécimales. C’est un analyseur qui lit une chaîne, non une page qu’on construit : rien de ce que vous collez n’est chargé ni exécuté, aucun script ne s’exécute, aucune image n’est téléchargée et aucun balisage n’est rendu. Les balises restent du texte au lieu d’être supprimées : coller \u003ccode>&lt;b&gt;\u003c/code> vous rend \u003ccode>&lt;b&gt;\u003c/code>, car cette page convertit des entités et ne modifie pas le HTML.","Deux détails piègent souvent, et la page nomme les deux quand elle les voit. Les règles propres de HTML permettent d’écrire certaines entités sans le point-virgule final, si bien que \u003ccode>&amp;ampfoo\u003c/code> se décode en \u003ccode>&amp;foo\u003c/code> ; et un texte échappé deux fois se décode en quelque chose qui contient encore \u003ccode>&amp;lt;\u003c/code>, ce que la page signale plutôt que de vous laisser perplexe. Chaque côté est limité à 200 000 caractères.","Tout s’exécute dans cet onglet. Rien n’est envoyé et rien de ce que vous collez n’est conservé ; les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Encodeur et décodeur d’entités HTML — échapper et décoder, dans les deux sens — MDV","Échappez du texte pour HTML ou décodez des entités nommées et numériques en caractères, en choisissant l’étendue de l’échappement. Les deux côtés en direct. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Ou collez &lt;p&gt;caf&eacute;&lt;/p&gt; pour le décoder","Étendue de l’échappement","le texte entre balises","une valeur d’attribut","un texte dont tous les caractères non ASCII sont échappés","décodage","échappement","Copié","Copier","Trop de texte. {n} caractères dépassent la limite de {limit} caractères : rien n’a été échappé.","La position {pos} contient la moitié d’une paire de substitution (U+{code}), ce qui n’est pas un caractère : rien n’a été échappé. Supprimez-la ou collez de nouveau le caractère entier.","Trop long une fois échappé : {n} caractères, au-delà de la limite de {limit} caractères : rien n’a été écrit.","Rien ici n’a besoin d’être échappé pour {what} ; les deux côtés sont identiques.","Échappé pour {what}.","Le texte contenait déjà des entités et chaque & est devenu &amp;. S’il était déjà échappé une fois, collez-le de l’autre côté pour le décoder.","Trop à décoder. {n} caractères dépassent la limite de {limit} caractères : rien n’a été décodé.","Aucune entité à décoder ; le texte est inchangé.","Le résultat contient encore des entités : le texte a probablement été échappé deux fois. Recollez-le de ce côté pour le décoder à nouveau.","Certaines entités n’avaient pas de point-virgule final ; HTML l’autorise pour quelques-unes, et elles ont été décodées comme le ferait un navigateur.","Le navigateur a refusé le presse-papiers. Sélectionnez le champ et copiez à la main.","{n} caractère","{n} caractères","{n} entité décodée avec l’analyseur HTML du navigateur lui-même.","{n} entités décodées avec l’analyseur HTML du navigateur lui-même.","Encodage et cryptographie",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Maskiere Text, damit ein Browser ihn als Text liest, oder wandle Entitäten zurück in Zeichen. Tippe auf einer der beiden Seiten.","Läuft auf diesem Gerät","Funktioniert offline","Maskiert","Textinhalt","Attributwert","Alles Nicht-ASCII","Nur numerische Entitäten, keine Namen","auf einer der Seiten tippen","Beide leeren","So funktioniert es","Beim Maskieren werden die Zeichen ersetzt, die sonst als Auszeichnung gelesen würden. \u003cstrong>Textinhalt\u003c/strong> maskiert \u003ccode>&amp;\u003c/code>, \u003ccode>&lt;\u003c/code> und \u003ccode>&gt;\u003c/code>, mehr braucht Text zwischen Tags nicht. \u003cstrong>Attributwert\u003c/strong> maskiert zusätzlich beide Anführungszeichen, sodass das Ergebnis sicher in \u003ccode>\"…\"\u003c/code> oder \u003ccode>'…'\u003c/code> eingesetzt werden kann. \u003cstrong>Alles Nicht-ASCII\u003c/strong> fügt jedes Zeichen oberhalb von 7-Bit-ASCII hinzu, was du für eine Datei willst, die ohne erklärte UTF-8-Kodierung ausgeliefert werden könnte — und sonst nirgends, denn eine UTF-8-Seite trägt \u003ccode>é\u003c/code> völlig problemlos. Benannte Entitäten werden verwendet, wo es einen kurzen Standardnamen gibt; setze den Haken, um durchgehend numerische wie \u003ccode>&amp;#xE9;\u003c/code> zu erhalten. Zeichen außerhalb der Basisebene, darunter Emoji, werden als eine einzige numerische Entität für das ganze Zeichen geschrieben und nicht als zwei Hälften eines Surrogatpaars.","Das Dekodieren übernimmt der HTML-Parser des Browsers selbst, über \u003ccode>DOMParser\u003c/code>; verstanden werden also alle benannten Entitäten, die der HTML-Standard definiert — gut zweitausend —, dazu dezimale und hexadezimale numerische Formen. Das ist ein Parser, der eine Zeichenkette liest, keine Seite, die aufgebaut wird: Nichts von dem, was du einfügst, wird geladen oder ausgeführt, kein Skript läuft, kein Bild wird geholt und keine Auszeichnung wird dargestellt. Tags bleiben Text und werden nicht entfernt: Fügst du \u003ccode>&lt;b&gt;\u003c/code> ein, bekommst du \u003ccode>&lt;b&gt;\u003c/code> zurück, denn diese Seite wandelt Entitäten um und bearbeitet kein HTML.","Zwei Details bringen Leute oft ins Stolpern, und die Seite benennt beide, wenn sie sie sieht. Nach den eigenen Regeln von HTML dürfen manche Entitäten ohne abschließendes Semikolon geschrieben werden, sodass \u003ccode>&amp;ampfoo\u003c/code> zu \u003ccode>&amp;foo\u003c/code> dekodiert wird; und doppelt maskierter Text wird zu etwas dekodiert, das noch \u003ccode>&amp;lt;\u003c/code> enthält, worauf die Seite hinweist, statt dich rätseln zu lassen. Jede Seite ist auf 200.000 Zeichen begrenzt.","Alles läuft in diesem Tab. Nichts wird hochgeladen und nichts, was du einfügst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","HTML-Entitäten-Kodierer und -Dekodierer — maskieren und entmaskieren, in beide Richtungen — MDV","Maskiere Text für HTML oder dekodiere benannte und numerische Entitäten zurück in Zeichen, mit Wahl, wie viel maskiert wird. Beide Seiten live. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Oder füge &lt;p&gt;caf&eacute;&lt;/p&gt; ein, um es zu dekodieren","Umfang der Maskierung","Text zwischen Tags","einen Attributwert","Text mit maskierten Nicht-ASCII-Zeichen","Dekodierung","Maskierung","Kopiert","Kopieren","Zu viel Text. {n} Zeichen überschreiten die Grenze von {limit} Zeichen, daher wurde nichts maskiert.","Position {pos} enthält die Hälfte eines Surrogatpaars (U+{code}), das kein Zeichen ist, daher wurde nichts maskiert. Lösche sie oder füge das ganze Zeichen erneut ein.","Nach dem Maskieren zu lang: {n} Zeichen, über der Grenze von {limit} Zeichen, daher wurde nichts geschrieben.","Hier muss nichts für {what} maskiert werden; beide Seiten sind gleich.","Maskiert für {what}.","Der Text enthielt bereits Entitäten, und jedes & wurde zu &amp;. Wurde er schon einmal maskiert, füge ihn auf der anderen Seite ein, um ihn zu dekodieren.","Zu viel zum Dekodieren. {n} Zeichen überschreiten die Grenze von {limit} Zeichen, daher wurde nichts dekodiert.","Keine Entitäten zu dekodieren; der Text bleibt unverändert.","Das Ergebnis enthält noch Entitäten, der Text wurde also wahrscheinlich doppelt maskiert: Füge ihn erneut auf dieser Seite ein, um ihn noch einmal zu dekodieren.","Einigen Entitäten fehlte das abschließende Semikolon; HTML erlaubt das bei einigen, und sie wurden so dekodiert, wie es ein Browser täte.","Der Browser hat die Zwischenablage verweigert. Markiere das Feld und kopiere von Hand.","{n} Zeichen","{n} Zeichen","{n} Entität mit dem HTML-Parser des Browsers dekodiert.","{n} Entitäten mit dem HTML-Parser des Browsers dekodiert.","Kodierung und Krypto",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Esegui l’escape del testo perché un browser lo legga come testo, oppure riconverti le entità in caratteri. Scrivi su uno qualsiasi dei due lati.","Su questo dispositivo","Funziona offline","Con escape","Contenuto testuale","Valore di attributo","Tutto il non ASCII","Solo entità numeriche, senza nomi","scrivi su uno dei due lati","Cancella entrambi","Come funziona","L’escape sostituisce i caratteri che altrimenti verrebbero letti come markup. \u003cstrong>Contenuto testuale\u003c/strong> esegue l’escape di \u003ccode>&amp;\u003c/code>, \u003ccode>&lt;\u003c/code> e \u003ccode>&gt;\u003c/code>, che è tutto ciò che serve al testo tra i tag. \u003cstrong>Valore di attributo\u003c/strong> esegue l’escape anche di entrambe le virgolette, così il risultato si può inserire senza rischi dentro \u003ccode>\"…\"\u003c/code> o \u003ccode>'…'\u003c/code>. \u003cstrong>Tutto il non ASCII\u003c/strong> aggiunge ogni carattere oltre l’ASCII a 7 bit, che è ciò che serve per un file che potrebbe essere servito senza una codifica UTF-8 dichiarata — e in nessun altro caso, perché una pagina UTF-8 porta \u003ccode>é\u003c/code> senza problemi. Si usano entità con nome dove esiste un nome breve standard; spunta la casella per ottenere ovunque entità numeriche come \u003ccode>&amp;#xE9;\u003c/code>. I caratteri fuori dal piano base, emoji compresi, vengono scritti come un’unica entità numerica per l’intero carattere e non come le due metà di una coppia surrogata.","La decodifica è affidata al parser HTML del browser stesso, tramite \u003ccode>DOMParser\u003c/code>, quindi vengono comprese tutte le entità con nome definite dallo standard HTML — oltre duemila — insieme alle forme numeriche decimali ed esadecimali. È un parser che legge una stringa, non una pagina che viene costruita: nulla di ciò che incolli viene caricato o eseguito, nessuno script gira, nessuna immagine viene scaricata e nessun markup viene reso. I tag restano testo invece di essere rimossi: incollando \u003ccode>&lt;b&gt;\u003c/code> ottieni di nuovo \u003ccode>&lt;b&gt;\u003c/code>, perché questa pagina converte entità e non modifica HTML.","Ci sono due dettagli su cui si inciampa, e la pagina li segnala entrambi quando li vede. Le regole stesse di HTML permettono di scrivere alcune entità senza il punto e virgola finale, quindi \u003ccode>&amp;ampfoo\u003c/code> si decodifica in \u003ccode>&amp;foo\u003c/code>; e il testo con doppio escape si decodifica in qualcosa che contiene ancora \u003ccode>&amp;lt;\u003c/code>, cosa che la pagina fa notare invece di lasciarti a rifletterci. Ogni lato è limitato a 200.000 caratteri.","Tutto gira in questa scheda. Non viene caricato nulla e nulla di ciò che incolli viene salvato; i pulsanti Scuro e Lingua conservano la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Codificatore e decodificatore di entità HTML — escape e unescape, in entrambe le direzioni — MDV","Esegui l’escape del testo per HTML o decodifica le entità con nome e numeriche in caratteri, scegliendo quanto eseguire l’escape. Entrambi i lati in tempo reale. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Oppure incolla &lt;p&gt;caf&eacute;&lt;/p&gt; per decodificarlo","Quanto eseguire l’escape","testo tra i tag","un valore di attributo","testo con tutti i caratteri non ASCII con escape","decodifica","escape","Copiato","Copia","Troppo testo. {n} caratteri superano il limite di {limit} caratteri, quindi non è stato eseguito alcun escape.","La posizione {pos} contiene metà di una coppia surrogata (U+{code}), che non è un carattere, quindi non è stato eseguito alcun escape. Eliminala o incolla di nuovo il carattere intero.","Troppo lungo dopo l’escape: {n} caratteri, oltre il limite di {limit} caratteri, quindi non è stato scritto nulla.","Qui nulla richiede escape per {what}; i due lati sono uguali.","Escape eseguito per {what}.","Il testo conteneva già entità e ogni & è diventato &amp;. Se era già stato sottoposto a escape una volta, incollalo sull’altro lato per decodificarlo.","Troppo da decodificare. {n} caratteri superano il limite di {limit} caratteri, quindi non è stato decodificato nulla.","Nessuna entità da decodificare; il testo è invariato.","Il risultato contiene ancora entità, quindi il testo probabilmente ha subito un doppio escape: incollalo di nuovo su questo lato per decodificarlo ancora.","Alcune entità non avevano il punto e virgola finale; HTML lo consente per poche di esse, e sono state decodificate come farebbe un browser.","Il browser ha rifiutato gli appunti. Seleziona il campo e copia a mano.","{n} carattere","{n} caratteri","Decodificata {n} entità con il parser HTML del browser stesso.","Decodificate {n} entità con il parser HTML del browser stesso.","Codifica e crittografia",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Escape texto para que o navegador o leia como texto, ou converta entidades de volta em caracteres. Digite em qualquer um dos lados.","Neste dispositivo","Funciona offline","Com escape","Conteúdo de texto","Valor de atributo","Tudo que não é ASCII","Somente entidades numéricas, sem nomes","digite em qualquer um dos lados","Limpar ambos","Como funciona","O escape substitui os caracteres que, de outra forma, seriam lidos como marcação. \u003cstrong>Conteúdo de texto\u003c/strong> faz escape de \u003ccode>&amp;\u003c/code>, \u003ccode>&lt;\u003c/code> e \u003ccode>&gt;\u003c/code>, que é tudo de que o texto entre tags precisa. \u003cstrong>Valor de atributo\u003c/strong> também faz escape das duas aspas, de modo que o resultado pode ser colocado com segurança dentro de \u003ccode>\"…\"\u003c/code> ou \u003ccode>'…'\u003c/code>. \u003cstrong>Tudo que não é ASCII\u003c/strong> acrescenta todo caractere acima do ASCII de 7 bits, o que serve para um arquivo que pode ser entregue sem codificação UTF-8 declarada — e em nenhum outro caso, pois uma página UTF-8 carrega \u003ccode>é\u003c/code> perfeitamente. Entidades nomeadas são usadas onde existe um nome curto padrão; marque a caixa para obter entidades numéricas como \u003ccode>&amp;#xE9;\u003c/code> em todo o texto. Caracteres fora do plano básico, emojis entre eles, são escritos como uma única entidade numérica para o caractere inteiro, e não como as duas metades de um par substituto.","A decodificação é feita pelo próprio analisador HTML do navegador, por meio do \u003ccode>DOMParser\u003c/code>, então todas as entidades nomeadas que o padrão HTML define são entendidas — mais de duas mil — junto com as formas numéricas decimal e hexadecimal. É um analisador lendo uma string, não uma página sendo construída: nada do que você cola é carregado ou executado, nenhum script roda, nenhuma imagem é baixada e nenhuma marcação é renderizada. As tags ficam como texto em vez de serem removidas: colar \u003ccode>&lt;b&gt;\u003c/code> devolve \u003ccode>&lt;b&gt;\u003c/code>, porque esta página converte entidades e não edita HTML.","Há dois detalhes que confundem as pessoas, e a página nomeia ambos quando os vê. As próprias regras do HTML permitem escrever algumas entidades sem o ponto e vírgula final, então \u003ccode>&amp;ampfoo\u003c/code> é decodificado como \u003ccode>&amp;foo\u003c/code>; e um texto que passou por escape duas vezes é decodificado em algo que ainda contém \u003ccode>&amp;lt;\u003c/code>, o que a página aponta em vez de deixar você sem entender. Cada lado é limitado a 200.000 caracteres.","Tudo roda nesta aba. Nada é enviado e nada do que você cola é armazenado; os botões Escuro e Idioma guardam sua própria configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Codificador e decodificador de entidades HTML — escape e unescape, nos dois sentidos — MDV","Faça escape de texto para HTML ou decodifique entidades nomeadas e numéricas de volta em caracteres, escolhendo quanto escapar. Os dois lados ao vivo. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Ou cole &lt;p&gt;caf&eacute;&lt;/p&gt; para decodificá-lo","Quanto escapar","texto entre tags","um valor de atributo","texto com todos os caracteres não ASCII escapados","decodificando","escapando","Copiado","Copiar","Texto demais. {n} caracteres passam do limite de {limit} caracteres, então nada foi escapado.","A posição {pos} contém metade de um par substituto (U+{code}), que não é um caractere, então nada foi escapado. Apague-a ou cole o caractere inteiro de novo.","Longo demais depois do escape: {n} caracteres, acima do limite de {limit} caracteres, então nada foi escrito.","Nada aqui precisa de escape para {what}; os dois lados são iguais.","Escape feito para {what}.","O texto já continha entidades e cada & virou &amp;. Se ele já passou por escape uma vez, cole-o no outro lado para decodificá-lo.","Demais para decodificar. {n} caracteres passam do limite de {limit} caracteres, então nada foi decodificado.","Nenhuma entidade para decodificar; o texto não mudou.","O resultado ainda contém entidades, então o texto provavelmente passou por escape duas vezes: cole-o de novo neste lado para decodificá-lo mais uma vez.","Algumas entidades não tinham ponto e vírgula final; o HTML permite isso para algumas delas, e elas foram decodificadas como um navegador faria.","O navegador recusou a área de transferência. Selecione o campo e copie manualmente.","{n} caractere","{n} caracteres","{n} entidade decodificada com o próprio analisador HTML do navegador.","{n} entidades decodificadas com o próprio analisador HTML do navegador.","Codificação e criptografia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","ブラウザーがテキストとして読めるようにテキストをエスケープするか、エンティティを文字に戻します。どちら側にも入力できます。","この端末で動作","オフラインで動作","エスケープ済み","テキスト内容","属性値","ASCII 以外すべて","数値エンティティのみ(名前なし)","どちら側にも入力","両方クリア","仕組み","エスケープは、そのままではマークアップとして読まれてしまう文字を置き換えます。\u003cstrong>テキスト内容\u003c/strong>は \u003ccode>&amp;\u003c/code>、\u003ccode>&lt;\u003c/code>、\u003ccode>&gt;\u003c/code> をエスケープします。タグの間のテキストに必要なのはこれだけです。\u003cstrong>属性値\u003c/strong>は両方の引用符もエスケープするので、結果は \u003ccode>\"…\"\u003c/code> や \u003ccode>'…'\u003c/code> の中に安全に置けます。\u003cstrong>ASCII 以外すべて\u003c/strong>は 7 ビット ASCII を超えるすべての文字を加えます。UTF-8 の指定なしで配信されるかもしれないファイルに向いた設定で、それ以外には不要です。UTF-8 のページなら \u003ccode>é\u003c/code> をそのまま扱えます。標準の短い名前がある場合は名前付きエンティティを使います。チェックボックスをオンにすると、\u003ccode>&amp;#xE9;\u003c/code> のような数値エンティティだけになります。絵文字など基本多言語面の外にある文字は、サロゲートペアの 2 つの半分ではなく、文字全体で 1 つの数値エンティティとして書き出されます。","デコードはブラウザー自身の HTML パーサーが \u003ccode>DOMParser\u003c/code> を通じて行うので、HTML 標準が定めるすべての名前付きエンティティ(2,000 余り)と、10 進および 16 進の数値形式を解釈できます。これは文字列を読むパーサーであり、ページを組み立てているわけではありません。貼り付けた内容は読み込まれも実行もされず、スクリプトは動かず、画像は取得されず、マークアップは描画されません。タグは取り除かれずテキストのまま残ります。\u003ccode>&lt;b&gt;\u003c/code> を貼り付けると \u003ccode>&lt;b&gt;\u003c/code> が返ってきます。このページはエンティティを変換するだけで、HTML を編集しないためです。","つまずきやすい点が 2 つあり、ページはそれを検出すると両方とも知らせます。HTML 自身の規則では、一部のエンティティは末尾のセミコロンなしで書けるため、\u003ccode>&amp;ampfoo\u003c/code> は \u003ccode>&amp;foo\u003c/code> にデコードされます。また、2 回エスケープされたテキストはデコード後も \u003ccode>&amp;lt;\u003c/code> を含んだままになり、ページはそれを指摘するので、迷うことはありません。各側は 200,000 文字までです。","すべてこのタブの中で動作します。何もアップロードされず、貼り付けた内容も保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","HTML エンティティのエンコード・デコード — エスケープと復元を双方向で — MDV","テキストを HTML 用にエスケープしたり、名前付き・数値エンティティを文字に戻したりできます。エスケープの範囲も選べます。両側がリアルタイムで動作します。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","または &lt;p&gt;caf&eacute;&lt;/p&gt; を貼り付けてデコード","エスケープの範囲","タグの間のテキスト","属性値","ASCII 以外の文字をすべてエスケープしたテキスト","デコード","エスケープ","コピーしました","コピー","テキストが多すぎます。{n} 文字は上限の {limit} 文字を超えているため、何もエスケープしませんでした。","{pos} 文字目にサロゲートペアの片方(U+{code})があります。これは文字ではないため、何もエスケープしませんでした。削除するか、文字全体を貼り付け直してください。","エスケープ後が長すぎます。{n} 文字で上限の {limit} 文字を超えているため、何も書き出しませんでした。","{what}としてエスケープが必要なものはありません。両側は同じです。","{what}としてエスケープしました。","テキストにはすでにエンティティが含まれていて、各 & が &amp; になりました。すでに一度エスケープ済みの場合は、反対側に貼り付けてデコードしてください。","デコードする量が多すぎます。{n} 文字は上限の {limit} 文字を超えているため、何もデコードしませんでした。","デコードするエンティティはありません。テキストは変わりません。","結果にまだエンティティが含まれているため、テキストは 2 回エスケープされた可能性があります。この側に貼り付け直すと、もう一度デコードできます。","一部のエンティティに末尾のセミコロンがありませんでした。HTML では一部のエンティティで許されており、ブラウザーと同じ方法でデコードしました。","ブラウザーがクリップボードを拒否しました。フィールドを選択して手動でコピーしてください。","{n} 文字","{n} 文字","ブラウザー自身の HTML パーサーで {n} 個のエンティティをデコードしました。","ブラウザー自身の HTML パーサーで {n} 個のエンティティをデコードしました。","エンコードと暗号",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","브라우저가 텍스트로 읽도록 텍스트를 이스케이프하거나, 엔티티를 다시 문자로 바꿉니다. 어느 쪽에든 입력하세요.","이 기기에서 실행","오프라인 작동","이스케이프됨","텍스트 내용","속성 값","비ASCII 전체","숫자 엔티티만, 이름 없이","어느 쪽이든 입력","모두 지우기","작동 방식","이스케이프는 그대로 두면 마크업으로 읽힐 문자를 바꿉니다. \u003cstrong>텍스트 내용\u003c/strong>은 \u003ccode>&amp;\u003c/code>, \u003ccode>&lt;\u003c/code>, \u003ccode>&gt;\u003c/code>를 이스케이프하며, 태그 사이의 텍스트에는 이것만 있으면 됩니다. \u003cstrong>속성 값\u003c/strong>은 두 종류의 따옴표도 이스케이프하므로 결과를 \u003ccode>\"…\"\u003c/code>나 \u003ccode>'…'\u003c/code> 안에 안전하게 넣을 수 있습니다. \u003cstrong>비ASCII 전체\u003c/strong>는 7비트 ASCII를 넘는 모든 문자를 추가하며, UTF-8 인코딩이 선언되지 않은 채 제공될 수 있는 파일에 알맞고 그 외에는 필요 없습니다. UTF-8 페이지는 \u003ccode>é\u003c/code>를 문제없이 담을 수 있기 때문입니다. 표준 짧은 이름이 있으면 이름 있는 엔티티를 쓰고, 체크하면 \u003ccode>&amp;#xE9;\u003c/code> 같은 숫자 엔티티를 전체에 씁니다. 이모지를 비롯해 기본 평면 밖의 문자는 서로게이트 쌍의 두 반쪽이 아니라 문자 전체를 하나의 숫자 엔티티로 기록합니다.","디코딩은 브라우저 자체의 HTML 파서가 \u003ccode>DOMParser\u003c/code>를 통해 수행하므로, HTML 표준이 정의한 이름 있는 엔티티 2천여 개 전부와 10진 및 16진 숫자 형식을 모두 이해합니다. 이것은 문자열을 읽는 파서이지 페이지를 만드는 것이 아닙니다. 붙여넣은 내용은 불러오거나 실행되지 않고, 스크립트는 실행되지 않으며, 이미지도 가져오지 않고, 마크업도 렌더링하지 않습니다. 태그는 제거되지 않고 텍스트로 남습니다. \u003ccode>&lt;b&gt;\u003c/code>를 붙여넣으면 \u003ccode>&lt;b&gt;\u003c/code>가 그대로 돌아오는데, 이 페이지는 엔티티를 변환할 뿐 HTML을 편집하지 않기 때문입니다.","헷갈리기 쉬운 점이 두 가지 있으며, 페이지는 이를 발견하면 둘 다 알려 줍니다. HTML 자체 규칙은 일부 엔티티를 끝의 세미콜론 없이 쓰는 것을 허용하므로 \u003ccode>&amp;ampfoo\u003c/code>는 \u003ccode>&amp;foo\u003c/code>로 디코딩됩니다. 또한 두 번 이스케이프된 텍스트는 디코딩 후에도 \u003ccode>&amp;lt;\u003c/code>가 남아 있는데, 페이지가 이를 알려 주므로 헤맬 필요가 없습니다. 각 쪽은 200,000자까지입니다.","모든 작업은 이 탭 안에서 실행됩니다. 아무것도 업로드되지 않으며 붙여넣은 내용도 저장되지 않습니다. 다크 및 언어 버튼은 각자의 설정을 이 브라우저의 로컬 스토리지에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","HTML 엔티티 인코더 및 디코더 — 이스케이프와 복원을 양방향으로 — MDV","텍스트를 HTML용으로 이스케이프하거나, 이름 있는 엔티티와 숫자 엔티티를 문자로 되돌립니다. 이스케이프 범위를 선택할 수 있고 양쪽이 실시간으로 동작합니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","또는 &lt;p&gt;caf&eacute;&lt;/p&gt;를 붙여넣어 디코딩","이스케이프 범위","태그 사이의 텍스트","속성 값","모든 비ASCII 문자를 이스케이프한 텍스트","디코딩","이스케이프","복사됨","복사","텍스트가 너무 많습니다. {n}자는 상한인 {limit}자를 넘어 아무것도 이스케이프하지 않았습니다.","{pos}번째 위치에 서로게이트 쌍의 반쪽(U+{code})이 있습니다. 이는 문자가 아니므로 아무것도 이스케이프하지 않았습니다. 삭제하거나 문자 전체를 다시 붙여넣으세요.","이스케이프 후 너무 깁니다. {n}자로 상한인 {limit}자를 넘어 아무것도 기록하지 않았습니다.","{what}에 대해 이스케이프할 것이 없습니다. 양쪽이 같습니다.","{what}에 맞게 이스케이프했습니다.","텍스트에 이미 엔티티가 들어 있었고 각 &가 &amp;로 바뀌었습니다. 이미 한 번 이스케이프된 것이라면 반대쪽에 붙여넣어 디코딩하세요.","디코딩할 양이 너무 많습니다. {n}자는 상한인 {limit}자를 넘어 아무것도 디코딩하지 않았습니다.","디코딩할 엔티티가 없습니다. 텍스트는 그대로입니다.","결과에 아직 엔티티가 남아 있으므로 텍스트가 두 번 이스케이프되었을 가능성이 큽니다. 이쪽에 다시 붙여넣어 한 번 더 디코딩하세요.","일부 엔티티에 끝 세미콜론이 없었습니다. HTML은 몇몇 엔티티에 대해 이를 허용하며, 브라우저와 같은 방식으로 디코딩했습니다.","브라우저가 클립보드를 거부했습니다. 필드를 선택해 직접 복사하세요.","{n}자","{n}자","브라우저 자체 HTML 파서로 엔티티 {n}개를 디코딩했습니다.","브라우저 자체 HTML 파서로 엔티티 {n}개를 디코딩했습니다.","인코딩과 암호화",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","转义文本,使浏览器将其当作文本读取,或把实体还原为字符。在任一侧输入即可。","在此设备上运行","可离线使用","已转义","文本内容","属性值","所有非 ASCII","仅数字实体,不用名称","在任一侧输入","全部清除","工作原理","转义会替换那些否则会被当作标记读取的字符。\u003cstrong>文本内容\u003c/strong>转义 \u003ccode>&amp;\u003c/code>、\u003ccode>&lt;\u003c/code> 和 \u003ccode>&gt;\u003c/code>,标签之间的文本只需要这些。\u003cstrong>属性值\u003c/strong>还会转义两种引号,因此结果可以安全地放进 \u003ccode>\"…\"\u003c/code> 或 \u003ccode>'…'\u003c/code> 中。\u003cstrong>所有非 ASCII\u003c/strong>会加上 7 位 ASCII 之外的所有字符,适用于可能在未声明 UTF-8 编码的情况下提供的文件,其他场合不需要,因为 UTF-8 页面完全可以直接承载 \u003ccode>é\u003c/code>。凡有标准短名称之处使用命名实体;勾选复选框则全部使用数字实体,如 \u003ccode>&amp;#xE9;\u003c/code>。基本平面之外的字符(包括 emoji)会作为整个字符的一个数字实体写出,而不是代理对的两半。","解码由浏览器自带的 HTML 解析器通过 \u003ccode>DOMParser\u003c/code> 完成,因此 HTML 标准定义的所有命名实体(两千多个)以及十进制和十六进制数字形式都能识别。这是解析器在读取一个字符串,而不是在构建页面:你粘贴的内容不会被加载或运行,不执行任何脚本,不获取任何图片,也不渲染任何标记。标签保留为文本而不会被剥除:粘贴 \u003ccode>&lt;b&gt;\u003c/code> 会原样得到 \u003ccode>&lt;b&gt;\u003c/code>,因为本页转换的是实体,而不是编辑 HTML。","有两个细节容易让人困惑,页面一旦发现就会指出。HTML 自身的规则允许某些实体省略结尾的分号,所以 \u003ccode>&amp;ampfoo\u003c/code> 会解码为 \u003ccode>&amp;foo\u003c/code>;而被转义过两次的文本解码后仍含有 \u003ccode>&amp;lt;\u003c/code>,页面会指出这一点,免得你困惑。每一侧最多 200,000 个字符。","一切都在此标签页内运行。不会上传任何内容,你粘贴的内容也不会被保存;深色和语言按钮会把各自的设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","HTML 实体编码与解码器 — 双向转义与还原 — MDV","为 HTML 转义文本,或把命名实体和数字实体还原为字符,可选择转义范围。两侧实时联动。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","或粘贴 &lt;p&gt;caf&eacute;&lt;/p&gt; 进行解码","转义范围","标签之间的文本","属性值","所有非 ASCII 字符均已转义的文本","解码","转义","已复制","复制","文本过多。{n} 个字符超出 {limit} 个字符的上限,因此未做任何转义。","第 {pos} 个位置是代理对的一半(U+{code}),它不是字符,因此未做任何转义。请删除它,或重新粘贴完整的字符。","转义后过长:{n} 个字符,超出 {limit} 个字符的上限,因此未写出任何内容。","此处没有需要为{what}转义的内容;两侧相同。","已为{what}转义。","文本中已含有实体,每个 & 都变成了 &amp;。如果它已经转义过一次,请粘贴到另一侧进行解码。","待解码内容过多。{n} 个字符超出 {limit} 个字符的上限,因此未做任何解码。","没有可解码的实体;文本保持不变。","结果中仍含有实体,说明文本可能被转义了两次:请将其再次粘贴到这一侧,再解码一次。","部分实体缺少结尾的分号;HTML 允许少数实体这样写,已按浏览器的方式解码。","浏览器拒绝了剪贴板。请选中该字段后手动复制。","{n} 个字符","{n} 个字符","已用浏览器自带的 HTML 解析器解码 {n} 个实体。","已用浏览器自带的 HTML 解析器解码 {n} 个实体。","编码与加密",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2412,7 +2624,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       cTxt = $("cTxt"), cEnc = $("cEnc"), copyTxt = $("copyTxt"), copyEnc = $("copyEnc"),
       clearBtn = $("clear"), empty = $("empty"), status = $("status"), numericBox = $("numeric");
   var set = "text", last = "escape", echo = false;
-  var NAMES = { text: "text between tags", attr: "an attribute value", all: "text with every non-ASCII character escaped" };
+  var NAMES = { text: trk("text between tags"), attr: trk("an attribute value"), all: trk("text with every non-ASCII character escaped") };
 
   function say(text, kind) {
     note.textContent = text;
@@ -2429,11 +2641,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   function direction(dir) {
     flow.classList.toggle("is-up", dir === "unescape");
-    dirLabel.textContent = dir === "unescape" ? "decoding" : "escaping";
+    dirLabel.textContent = dir === "unescape" ? tr("decoding") : tr("escaping");
   }
   function counts() {
-    cTxt.textContent = txt.value ? n(txt.value.length) + " characters" : "";
-    cEnc.textContent = enc.value ? n(enc.value.length) + " characters" : "";
+    cTxt.textContent = txt.value ? trn(txt.value.length, "{n} character", "{n} characters") : "";
+    cEnc.textContent = enc.value ? trn(enc.value.length, "{n} character", "{n} characters") : "";
+    copyTxt.firstChild.textContent = copyTxt.classList.contains("is-done") ? tr("Copied") : tr("Copy");
+    copyEnc.firstChild.textContent = copyEnc.classList.contains("is-done") ? tr("Copied") : tr("Copy");
     copyTxt.disabled = !txt.value;
     copyEnc.disabled = !enc.value;
   }
@@ -2448,18 +2662,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var s = txt.value;
     flags(null);
     if (!s) { write(enc, ""); counts(); rest(); return; }
-    if (s.length > LIMIT) return refuse(txt, enc, "Too much text. " + n(s.length) + " characters is past the " + n(LIMIT) + "-character ceiling, so nothing was escaped.");
+    if (s.length > LIMIT) return refuse(txt, enc, tr("Too much text. {n} characters is past the {limit}-character ceiling, so nothing was escaped.", { n: n(s.length), limit: n(LIMIT) }));
     var lone = loneSurrogate(s);
-    if (lone >= 0) return refuse(txt, enc, "Position " + n(lone + 1) + " holds half of a surrogate pair (U+" + s.charCodeAt(lone).toString(16).toUpperCase() +
-      "), which is not a character, so nothing was escaped. Delete it or paste the whole character again.");
+    if (lone >= 0) return refuse(txt, enc, tr("Position {pos} holds half of a surrogate pair (U+{code}), which is not a character, so nothing was escaped. Delete it or paste the whole character again.",
+      { pos: n(lone + 1), code: s.charCodeAt(lone).toString(16).toUpperCase() }));
     var out = escapeText(s, set, numericBox.checked);
-    if (out.length > LIMIT) return refuse(txt, enc, "Too long once escaped: " + n(out.length) + " characters, past the " + n(LIMIT) + "-character ceiling, so nothing was written.");
+    if (out.length > LIMIT) return refuse(txt, enc, tr("Too long once escaped: {n} characters, past the {limit}-character ceiling, so nothing was written.", { n: n(out.length), limit: n(LIMIT) }));
     write(enc, out);
     counts();
     var already = /&(#[0-9]+|#[xX][0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]*);/.test(s);
-    var msg = out === s ? "Nothing here needs escaping for " + NAMES[set] + "; both sides are the same."
-      : "Escaped for " + NAMES[set] + ".";
-    if (already && out !== s) msg += " The text already held entities and each & became &amp;. If it was escaped once already, paste it on the other side to decode it.";
+    var msg = out === s ? tr("Nothing here needs escaping for {what}; both sides are the same.", { what: tr(NAMES[set]) })
+      : tr("Escaped for {what}.", { what: tr(NAMES[set]) });
+    if (already && out !== s) msg += " " + tr("The text already held entities and each & became &amp;. If it was escaped once already, paste it on the other side to decode it.");
     say(msg, already && out !== s ? "warn" : "ok");
   }
 
@@ -2467,16 +2681,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var s = enc.value;
     flags(null);
     if (!s) { write(txt, ""); counts(); rest(); return; }
-    if (s.length > LIMIT) return refuse(enc, txt, "Too much to decode. " + n(s.length) + " characters is past the " + n(LIMIT) + "-character ceiling, so nothing was decoded.");
+    if (s.length > LIMIT) return refuse(enc, txt, tr("Too much to decode. {n} characters is past the {limit}-character ceiling, so nothing was decoded.", { n: n(s.length), limit: n(LIMIT) }));
     var found = countEntities(s), out = unescapeHtml(s);
     write(txt, out);
     counts();
-    var msg = found ? "Decoded " + n(found) + (found === 1 ? " entity" : " entities") + " with the browser's own HTML parser."
-      : "No entities to decode; the text is unchanged.";
+    var msg = found ? trn(found, "Decoded {n} entity with the browser's own HTML parser.", "Decoded {n} entities with the browser's own HTML parser.")
+      : tr("No entities to decode; the text is unchanged.");
     var still = /&(#[0-9]+|#[xX][0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]*);/.test(out);
     var loose = /&[A-Za-z][A-Za-z0-9]*[^;A-Za-z0-9]/.test(s);
-    if (still) msg += " The result still holds entities, so the text was probably escaped twice: paste it back into this side to decode it again.";
-    else if (loose) msg += " Some entities had no closing semicolon; HTML allows that for a few of them, and they were decoded the way a browser would.";
+    if (still) msg += " " + tr("The result still holds entities, so the text was probably escaped twice: paste it back into this side to decode it again.");
+    else if (loose) msg += " " + tr("Some entities had no closing semicolon; HTML allows that for a few of them, and they were decoded the way a browser would.");
     say(msg, still ? "warn" : "ok");
   }
 
@@ -2498,10 +2712,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     btn.addEventListener("click", function () {
       if (!field.value || !navigator.clipboard) return;
       navigator.clipboard.writeText(field.value).then(function () {
-        btn.textContent = "Copied";
-        btn.classList.add("is-done");
-        setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("is-done"); }, 1600);
-      }, function () { say("The browser refused the clipboard. Select the field and copy it by hand.", "bad"); });
+        btn.classList.add("is-done"); counts();
+        setTimeout(function () { btn.classList.remove("is-done"); counts(); }, 1600);
+      }, function () { say(tr("The browser refused the clipboard. Select the field and copy it by hand."), "bad"); });
     });
   }
   wireCopy(copyTxt, txt);
@@ -2511,8 +2724,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     flags(null); last = "escape"; direction("escape"); counts(); rest(); txt.focus({ preventScroll: true });
   });
 
+  function redo() { direction(last); if (last === "unescape") unescapeNow(); else escapeNow(); }
+  onLang(redo);
   // the browser may have restored either field (reload, back/forward)
-  if (enc.value && !txt.value) { last = "unescape"; direction("unescape"); unescapeNow(); } else escapeNow();
+  if (enc.value && !txt.value) { last = "unescape"; direction("unescape"); unescapeNow(); } else { direction("escape"); escapeNow(); }
   txt.focus({ preventScroll: true });
 })();
 </script>

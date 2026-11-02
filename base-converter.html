@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link is-here" href="./base-converter.html" aria-current="page" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link is-here" href="./base-converter.html" aria-current="page" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,20 +2353,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Base converter</h1>
+      <h1 class="mdv-head-name" data-t="33">Base converter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Type a number in one base. Read it in binary, octal, decimal, hex, base 36
+    <p class="mdv-head-line" data-t="79">Type a number in one base. Read it in binary, octal, decimal, hex, base 36
       and any other base from 2 to 36, exactly — integers of any size, no floating point, no rounding.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <label class="mdv-label" style="margin:0" for="in">Number</label>
+      <label class="mdv-label" style="margin:0" for="in" data-t="82">Number</label>
       <span class="mdv-hint mdv-mono" style="margin:0" id="size">0 digits</span>
     </div>
     <input class="mdv-input mdv-mono" id="in" type="text" spellcheck="false" autocomplete="off"
@@ -2263,27 +2375,27 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <div class="mdv-row is-between">
     <div class="mdv-row">
-      <div class="mdv-seg" role="group" aria-label="Input base">
-        <button type="button" data-base="2">Binary</button>
-        <button type="button" data-base="8">Octal</button>
-        <button type="button" data-base="10" class="is-on">Decimal</button>
-        <button type="button" data-base="16">Hex</button>
-        <button type="button" data-base="36">Base 36</button>
-        <button type="button" data-base="custom">Custom</button>
+      <div class="mdv-seg" role="group" aria-label="Input base" data-t-attrs="aria-label">
+        <button type="button" data-base="2" data-t="83">Binary</button>
+        <button type="button" data-base="8" data-t="84">Octal</button>
+        <button type="button" data-base="10" class="is-on" data-t="85">Decimal</button>
+        <button type="button" data-base="16" data-t="86">Hex</button>
+        <button type="button" data-base="36" data-t="87">Base 36</button>
+        <button type="button" data-base="custom" data-t="88">Custom</button>
       </div>
       <input class="mdv-input mdv-mono" id="custom" type="number" min="2" max="36" step="1" value="12"
-        aria-label="Custom base, 2 to 36" style="width:6em" hidden>
+        aria-label="Custom base, 2 to 36" data-t-attrs="aria-label" style="width:6em" hidden>
     </div>
     <div class="mdv-row">
-      <label class="mdv-check"><input type="checkbox" id="upper"> Uppercase</label>
-      <label class="mdv-check"><input type="checkbox" id="group"> Group digits</label>
+      <label class="mdv-check"><input type="checkbox" id="upper"> <span data-t="89">Uppercase</span></label>
+      <label class="mdv-check"><input type="checkbox" id="group"> <span data-t="90">Group digits</span></label>
     </div>
   </div>
 
   <section class="mdv-stack is-tight">
-    <span class="mdv-label" style="margin:0">Result</span>
+    <span class="mdv-label" style="margin:0" data-t="91">Result</span>
 
-    <div class="mdv-empty" id="empty"><span>type a number above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="92">type a number above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Could not read that number</span>
@@ -2292,34 +2404,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <div class="mdv-panel is-flush" id="result" hidden>
       <dl class="mdv-kv">
-        <dt>Read as</dt><dd id="k-kind">—</dd>
-        <dt>Binary</dt>
-        <dd><div class="mdv-row is-between"><span id="k-2" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-2">Copy</button></span></div></dd>
-        <dt>Octal</dt>
-        <dd><div class="mdv-row is-between"><span id="k-8" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-8">Copy</button></span></div></dd>
-        <dt>Decimal</dt>
-        <dd><div class="mdv-row is-between"><span id="k-10" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-10">Copy</button></span></div></dd>
-        <dt>Hex</dt>
-        <dd><div class="mdv-row is-between"><span id="k-16" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-16">Copy</button></span></div></dd>
-        <dt>Base 36</dt>
-        <dd><div class="mdv-row is-between"><span id="k-36" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-36">Copy</button></span></div></dd>
-        <dt><label for="outbase">Other base</label></dt>
-        <dd><div class="mdv-row is-between"><input class="mdv-input mdv-mono" id="outbase" type="number" min="2" max="36" step="1" value="7" style="width:6em"><span id="k-out" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-out">Copy</button></span></div></dd>
-        <dt>Bit length</dt><dd id="k-bits">—</dd>
-        <dt>Bytes, big-endian</dt>
-        <dd><div class="mdv-row is-between"><span id="k-bytes" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-bytes">Copy</button></span></div></dd>
-        <dt>Two's complement, 64-bit</dt>
-        <dd><div class="mdv-row is-between"><span id="k-tc64" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-tc64">Copy</button></span></div></dd>
-        <dt>Two's complement, 32-bit</dt>
-        <dd><div class="mdv-row is-between"><span id="k-tc32" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-tc32">Copy</button></span></div></dd>
+        <dt data-t="93">Read as</dt><dd id="k-kind">—</dd>
+        <dt data-t="83">Binary</dt>
+        <dd><div class="mdv-row is-between"><span id="k-2" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-2"><span data-t="95">Copy</span></button></span></div></dd>
+        <dt data-t="84">Octal</dt>
+        <dd><div class="mdv-row is-between"><span id="k-8" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-8"><span data-t="95">Copy</span></button></span></div></dd>
+        <dt data-t="85">Decimal</dt>
+        <dd><div class="mdv-row is-between"><span id="k-10" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-10"><span data-t="95">Copy</span></button></span></div></dd>
+        <dt data-t="86">Hex</dt>
+        <dd><div class="mdv-row is-between"><span id="k-16" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-16"><span data-t="95">Copy</span></button></span></div></dd>
+        <dt data-t="87">Base 36</dt>
+        <dd><div class="mdv-row is-between"><span id="k-36" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-36"><span data-t="95">Copy</span></button></span></div></dd>
+        <dt><label for="outbase" data-t="96">Other base</label></dt>
+        <dd><div class="mdv-row is-between"><input class="mdv-input mdv-mono" id="outbase" type="number" min="2" max="36" step="1" value="7" style="width:6em"><span id="k-out" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-out"><span data-t="95">Copy</span></button></span></div></dd>
+        <dt data-t="97">Bit length</dt><dd id="k-bits">—</dd>
+        <dt data-t="98">Bytes, big-endian</dt>
+        <dd><div class="mdv-row is-between"><span id="k-bytes" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-bytes"><span data-t="95">Copy</span></button></span></div></dd>
+        <dt data-t="99">Two's complement, 64-bit</dt>
+        <dd><div class="mdv-row is-between"><span id="k-tc64" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-tc64"><span data-t="95">Copy</span></button></span></div></dd>
+        <dt data-t="100">Two's complement, 32-bit</dt>
+        <dd><div class="mdv-row is-between"><span id="k-tc32" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="94">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-tc32"><span data-t="95">Copy</span></button></span></div></dd>
       </dl>
     </div>
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="101">How this works</summary>
     <div class="mdv-method-body">
-      <p>The input is read one character — one Unicode code point — at a time. A digit is worth 0–9 for
+      <p data-t="102">The input is read one character — one Unicode code point — at a time. A digit is worth 0–9 for
         <code>0</code>–<code>9</code> and 10–35 for <code>a</code>–<code>z</code> in either case; the
         running value is multiplied by the base and the digit added — Horner's rule — in
         <code>BigInt</code>, so there is no size at which digits start to be lost. <code>BigInt</code>
@@ -2335,7 +2447,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         count beside the input counts digits only — not the sign, the prefix or the separators — and shows
         a dash while the input cannot be read. Input
         above 10,000 digits is refused rather than attempted.</p>
-      <p>Every output row is <code>BigInt.prototype.toString(radix)</code>, the exact inverse. Other base
+      <p data-t="103">Every output row is <code>BigInt.prototype.toString(radix)</code>, the exact inverse. Other base
         takes any whole number from 2 to 36 and is independent of the input base. There is no
         <code>Number</code>, no <code>parseInt</code> and no floating point anywhere in the arithmetic,
         so 2<sup>64</sup>, 2<sup>128</sup> and a 10,000-digit decimal come out to the last digit. "Group
@@ -2343,30 +2455,31 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         display grouping only, and none for base 36 or Other base. Copy copies the value as shown,
         grouping and case included, without the note after it; the parser accepts those spaces back.
         Uppercase is likewise display only.</p>
-      <p>Bit length is the length of the magnitude in binary; zero has none. Bytes are the unsigned
+      <p data-t="104">Bit length is the length of the magnitude in binary; zero has none. Bytes are the unsigned
         big-endian bytes of a non-negative value, padded to a whole byte. Two's complement at width
         <em>w</em> shows a value from −2<sup>w−1</sup> up to 2<sup>w</sup>−1 as its bit pattern
         <code>(v mod 2^w)</code> in <em>w</em>/4 hex digits — what a <em>w</em>-bit register holds; when
         the value is 2<sup>w−1</sup> or more, a signed reader sees a negative number from the same bits,
         and the row says which. Outside that range the row says how many bits the value would need.
         Nothing is uploaded: there is no server in this file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="105">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Format Converters">
-    <span class="mdv-tag">Also in Format Converters</span>
-    <a href="./json-to-csv.html">JSON and CSV converter</a>
-    <a href="./json-to-yaml.html">JSON and YAML converter</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Format Converters"}'>Also in Format Converters</span>
+    <a href="./json-to-csv.html" data-t="31">JSON and CSV converter</a>
+    <a href="./json-to-yaml.html" data-t="32">JSON and YAML converter</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="106">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="107">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="108" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="109">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2377,6 +2490,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Base Converter — binary, octal, decimal, hex, any base to 36 — MDV","Convert a number between binary, octal, decimal, hex and any base to 36 with exact BigInt maths. Bit length, bytes, two's complement. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Input base","Custom base, 2 to 36","{prefix} prefix dropped","{prefix} read as digits, since {letter} is a base-{base} digit","base set by the {prefix} prefix, not the selected base {base}","{n} characters besides separators is past the {limit}-digit ceiling this tool will attempt.","{found} is not a base-{base} digit (position {pos}) — the {prefix} prefix set base {base}.","{found} is not a base-{base} digit (position {pos}).","No digits after the {prefix} prefix.","A sign with no digits after it.","Only separators — underscores or spaces — and no digits.","does not fit in {width} bits — needs {bits} unsigned","does not fit in {width} bits — needs {bits} signed","— a signed reader sees {value}","— an unsigned reader sees {value}","Pick a base","A custom base must be a whole number from 2 to 36; “{value}” is not.","Refused","Could not read that number","base {base}","negative","a minus sign on zero changes nothing","pick a whole base from 2 to 36; “{value}” is not","0 — the value is zero","no unsigned byte form for a negative value — see two's complement","{n} digit","{n} digits","{n} bit in the magnitude","{n} bits in the magnitude","{n} bit","{n} bits","{n} byte","{n} bytes","Format Converters","2026-11-02"],"h":110,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Escribe un número en una base. Léelo en binario, octal, decimal, hex, base 36 y cualquier otra base de 2 a 36, con exactitud: enteros de cualquier tamaño, sin coma flotante ni redondeo.","En este dispositivo","Funciona sin conexión","Número","Binario","Octal","Decimal","Hex","Base 36","Otra","Mayúsculas","Agrupar dígitos","Resultado","escribe un número arriba","Leído como","Copiado","Copiar","Otra base","Longitud en bits","Bytes, big-endian","Complemento a dos, 64 bits","Complemento a dos, 32 bits","Cómo funciona","La entrada se lee carácter a carácter, un punto de código Unicode cada vez. Un dígito vale 0–9 para \u003ccode>0\u003c/code>–\u003ccode>9\u003c/code> y 10–35 para \u003ccode>a\u003c/code>–\u003ccode>z\u003c/code>, en mayúscula o minúscula; el valor acumulado se multiplica por la base y se suma el dígito (regla de Horner) en \u003ccode>BigInt\u003c/code>, así que no hay un tamaño a partir del cual se pierdan dígitos. \u003ccode>BigInt\u003c/code> no tiene un analizador para una base arbitraria, y por eso existe este bucle. Un prefijo \u003ccode>0b\u003c/code>, \u003ccode>0o\u003c/code> o \u003ccode>0x\u003c/code> equivale a la base 2, 8 o 16. Si coincide con la base seleccionada, se descarta. Si la base seleccionada no tiene el dígito \u003ccode>b\u003c/code>, \u003ccode>o\u003c/code> o \u003ccode>x\u003c/code>, el prefijo decide la base (\u003ccode>0xff\u003c/code> con Decimal seleccionado se lee como hex) y la fila Leído como lo indica. Si la letra es un dígito de la base seleccionada, sigue siendo un dígito: en Hex, \u003ccode>0b1\u003c/code> es 177; en base 36, \u003ccode>x\u003c/code> vale 33. Los guiones bajos y los espacios son separadores y se ignoran; un signo menos inicial hace negativo el valor, salvo en el cero. Un carácter que no es un dígito de la base detiene el análisis y se nombra, con su punto de código si no es ASCII simple y con su posición contada en caracteres. El recuento de dígitos junto a la entrada cuenta solo dígitos (no el signo, el prefijo ni los separadores) y muestra un guion mientras la entrada no se puede leer. La entrada de más de 10.000 dígitos se rechaza en lugar de intentarlo.","Cada fila de salida es \u003ccode>BigInt.prototype.toString(radix)\u003c/code>, la inversa exacta. Otra base acepta cualquier número entero de 2 a 36 y es independiente de la base de entrada. No hay \u003ccode>Number\u003c/code>, ni \u003ccode>parseInt\u003c/code>, ni coma flotante en ninguna parte de la aritmética, así que 2\u003csup>64\u003c/sup>, 2\u003csup>128\u003c/sup> y un decimal de 10.000 dígitos salen exactos hasta el último dígito. “Agrupar dígitos” inserta un espacio cada 4 dígitos binarios, 3 octales o decimales, 2 hex; es solo una agrupación visual, y no se aplica a base 36 ni a Otra base. Copiar copia el valor tal como se muestra, con agrupación y mayúsculas, sin la nota que lo sigue; el analizador vuelve a aceptar esos espacios. Mayúsculas también es solo visual.","La longitud en bits es la longitud de la magnitud en binario; el cero no tiene. Los bytes son los bytes sin signo en big-endian de un valor no negativo, rellenados hasta un byte completo. El complemento a dos con anchura \u003cem>w\u003c/em> muestra un valor de −2\u003csup>w−1\u003c/sup> a 2\u003csup>w\u003c/sup>−1 como su patrón de bits \u003ccode>(v mod 2^w)\u003c/code> en \u003cem>w\u003c/em>/4 dígitos hex, lo que contiene un registro de \u003cem>w\u003c/em> bits; cuando el valor es 2\u003csup>w−1\u003c/sup> o más, un lector con signo ve un número negativo con los mismos bits, y la fila lo indica. Fuera de ese rango, la fila indica cuántos bits necesitaría el valor. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Conversor de bases — binario, octal, decimal, hex, cualquier base hasta 36 — MDV","Convierte un número entre binario, octal, decimal, hex y cualquier base hasta 36 con matemática BigInt exacta. Longitud en bits, bytes, complemento a dos. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Base de entrada","Base personalizada, de 2 a 36","prefijo {prefix} descartado","{prefix} se lee como dígitos, porque {letter} es un dígito de la base {base}","base fijada por el prefijo {prefix}, no por la base seleccionada {base}","{n} caracteres sin contar los separadores superan el límite de {limit} dígitos que esta herramienta intentará procesar.","{found} no es un dígito de la base {base} (posición {pos}); el prefijo {prefix} fijó la base {base}.","{found} no es un dígito de la base {base} (posición {pos}).","No hay dígitos después del prefijo {prefix}.","Un signo sin dígitos después.","Solo separadores (guiones bajos o espacios) y ningún dígito.","no cabe en {width} bits: necesita {bits} sin signo","no cabe en {width} bits: necesita {bits} con signo","— un lector con signo ve {value}","— un lector sin signo ve {value}","Elige una base","Una base personalizada debe ser un número entero de 2 a 36; “{value}” no lo es.","Rechazado","No se pudo leer ese número","base {base}","negativo","un signo menos en el cero no cambia nada","elige una base entera de 2 a 36; “{value}” no lo es","0 — el valor es cero","un valor negativo no tiene forma de bytes sin signo; consulta el complemento a dos","{n} dígito","{n} dígitos","{n} bit en la magnitud","{n} bits en la magnitud","{n} bit","{n} bits","{n} byte","{n} bytes","Conversores de formato",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Saisissez un nombre dans une base. Lisez-le en binaire, octal, décimal, hexadécimal, base 36 et toute autre base de 2 à 36, avec exactitude : entiers de toute taille, sans virgule flottante ni arrondi.","Sur cet appareil","Fonctionne hors ligne","Nombre","Binaire","Octal","Décimal","Hex","Base 36","Autre","Majuscules","Grouper les chiffres","Résultat","saisissez un nombre ci-dessus","Lu comme","Copié","Copier","Autre base","Longueur en bits","Octets, big-endian","Complément à deux, 64 bits","Complément à deux, 32 bits","Comment ça marche","L’entrée est lue caractère par caractère, un point de code Unicode à la fois. Un chiffre vaut 0–9 pour \u003ccode>0\u003c/code>–\u003ccode>9\u003c/code> et 10–35 pour \u003ccode>a\u003c/code>–\u003ccode>z\u003c/code>, en majuscule comme en minuscule ; la valeur courante est multipliée par la base et le chiffre est ajouté (règle de Horner) en \u003ccode>BigInt\u003c/code>, si bien qu’aucune taille ne fait perdre de chiffres. \u003ccode>BigInt\u003c/code> n’a pas d’analyseur pour une base arbitraire, d’où cette boucle. Un préfixe \u003ccode>0b\u003c/code>, \u003ccode>0o\u003c/code> ou \u003ccode>0x\u003c/code> désigne la base 2, 8 ou 16. S’il correspond à la base sélectionnée, il est écarté. Si la base sélectionnée n’a pas de chiffre \u003ccode>b\u003c/code>, \u003ccode>o\u003c/code> ou \u003ccode>x\u003c/code>, le préfixe décide de la base (\u003ccode>0xff\u003c/code> avec Décimal sélectionné est lu en hexadécimal) et la ligne Lu comme l’indique. Si la lettre est un chiffre de la base sélectionnée, elle reste un chiffre : en Hex, \u003ccode>0b1\u003c/code> vaut 177 ; en base 36, \u003ccode>x\u003c/code> vaut 33. Les tirets bas et les espaces sont des séparateurs ignorés ; un signe moins initial rend la valeur négative, sauf pour zéro. Un caractère qui n’est pas un chiffre de la base arrête l’analyse et est nommé, avec son point de code s’il n’est pas de l’ASCII simple, et sa position comptée en caractères. Le nombre de chiffres à côté de l’entrée ne compte que les chiffres (ni le signe, ni le préfixe, ni les séparateurs) et affiche un tiret tant que l’entrée ne peut pas être lue. Une entrée de plus de 10 000 chiffres est refusée plutôt que tentée.","Chaque ligne de sortie est \u003ccode>BigInt.prototype.toString(radix)\u003c/code>, l’inverse exact. Autre base accepte tout entier de 2 à 36 et ne dépend pas de la base d’entrée. Il n’y a ni \u003ccode>Number\u003c/code>, ni \u003ccode>parseInt\u003c/code>, ni virgule flottante dans le calcul, si bien que 2\u003csup>64\u003c/sup>, 2\u003csup>128\u003c/sup> et un décimal de 10 000 chiffres ressortent exacts jusqu’au dernier chiffre. « Grouper les chiffres » insère une espace tous les 4 chiffres binaires, 3 octaux ou décimaux, 2 hexadécimaux ; c’est un simple groupement d’affichage, sans effet sur la base 36 ni sur Autre base. Copier copie la valeur telle qu’affichée, groupement et casse compris, sans la note qui la suit ; l’analyseur accepte de nouveau ces espaces. Majuscules ne touche aussi que l’affichage.","La longueur en bits est la longueur de la magnitude en binaire ; zéro n’en a pas. Les octets sont les octets non signés en big-endian d’une valeur non négative, complétés jusqu’à un octet entier. Le complément à deux de largeur \u003cem>w\u003c/em> montre une valeur de −2\u003csup>w−1\u003c/sup> à 2\u003csup>w\u003c/sup>−1 comme son motif de bits \u003ccode>(v mod 2^w)\u003c/code> en \u003cem>w\u003c/em>/4 chiffres hexadécimaux, ce que contient un registre de \u003cem>w\u003c/em> bits ; quand la valeur vaut 2\u003csup>w−1\u003c/sup> ou plus, un lecteur signé voit un nombre négatif avec les mêmes bits, et la ligne le précise. Hors de cette plage, la ligne indique combien de bits la valeur exigerait. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Convertisseur de bases — binaire, octal, décimal, hex, toute base jusqu’à 36 — MDV","Convertissez un nombre entre binaire, octal, décimal, hex et toute base jusqu’à 36 avec un calcul BigInt exact. Longueur en bits, octets, complément à deux. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Base d’entrée","Base personnalisée, de 2 à 36","préfixe {prefix} écarté","{prefix} lu comme des chiffres, car {letter} est un chiffre de la base {base}","base fixée par le préfixe {prefix}, et non par la base sélectionnée {base}","{n} caractères hors séparateurs dépassent la limite de {limit} chiffres que cet outil acceptera de traiter.","{found} n’est pas un chiffre de la base {base} (position {pos}) ; le préfixe {prefix} a fixé la base {base}.","{found} n’est pas un chiffre de la base {base} (position {pos}).","Aucun chiffre après le préfixe {prefix}.","Un signe sans chiffres derrière.","Uniquement des séparateurs (tirets bas ou espaces) et aucun chiffre.","ne tient pas sur {width} bits : demande {bits} non signés","ne tient pas sur {width} bits : demande {bits} signés","— un lecteur signé voit {value}","— un lecteur non signé voit {value}","Choisissez une base","Une base personnalisée doit être un entier de 2 à 36 ; « {value} » n’en est pas un.","Refusé","Impossible de lire ce nombre","base {base}","négatif","un signe moins sur zéro ne change rien","choisissez une base entière de 2 à 36 ; « {value} » n’en est pas une","0 — la valeur est zéro","pas de forme en octets non signés pour une valeur négative ; voir le complément à deux","{n} chiffre","{n} chiffres","{n} bit dans la magnitude","{n} bits dans la magnitude","{n} bit","{n} bits","{n} octet","{n} octets","Convertisseurs de format",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Gib eine Zahl in einer Basis ein. Lies sie binär, oktal, dezimal, hexadezimal, zur Basis 36 und zu jeder anderen Basis von 2 bis 36 ab, exakt: ganze Zahlen beliebiger Größe, ohne Gleitkomma, ohne Rundung.","Läuft auf diesem Gerät","Funktioniert offline","Zahl","Binär","Oktal","Dezimal","Hex","Basis 36","Eigene","Großbuchstaben","Ziffern gruppieren","Ergebnis","oben eine Zahl eingeben","Gelesen als","Kopiert","Kopieren","Andere Basis","Bitlänge","Bytes, Big-Endian","Zweierkomplement, 64 Bit","Zweierkomplement, 32 Bit","So funktioniert es","Die Eingabe wird Zeichen für Zeichen gelesen, je ein Unicode-Codepoint. Eine Ziffer hat den Wert 0–9 für \u003ccode>0\u003c/code>–\u003ccode>9\u003c/code> und 10–35 für \u003ccode>a\u003c/code>–\u003ccode>z\u003c/code>, in Groß- oder Kleinschreibung; der laufende Wert wird mit der Basis multipliziert und die Ziffer addiert (Horner-Schema), in \u003ccode>BigInt\u003c/code>, sodass es keine Größe gibt, ab der Ziffern verloren gehen. \u003ccode>BigInt\u003c/code> hat keinen Parser für eine beliebige Basis, deshalb gibt es diese Schleife. Ein Präfix \u003ccode>0b\u003c/code>, \u003ccode>0o\u003c/code> oder \u003ccode>0x\u003c/code> steht für Basis 2, 8 oder 16. Passt er zur gewählten Basis, wird er verworfen. Hat die gewählte Basis keine Ziffer \u003ccode>b\u003c/code>, \u003ccode>o\u003c/code> oder \u003ccode>x\u003c/code>, bestimmt der Präfix stattdessen die Basis (\u003ccode>0xff\u003c/code> mit gewähltem Dezimal wird als Hex gelesen), und die Zeile Gelesen als sagt das. Ist der Buchstabe eine Ziffer der gewählten Basis, bleibt er eine Ziffer: in Hex ist \u003ccode>0b1\u003c/code> gleich 177; zur Basis 36 hat \u003ccode>x\u003c/code> den Wert 33. Unterstriche und Leerzeichen sind Trennzeichen und werden ignoriert; ein führendes Minus macht den Wert negativ, außer bei null. Ein Zeichen, das keine Ziffer der Basis ist, beendet das Parsen und wird genannt, mit seinem Codepoint, wenn es kein einfaches ASCII ist, und seiner in Zeichen gezählten Position. Die Ziffernzahl neben der Eingabe zählt nur Ziffern (nicht Vorzeichen, Präfix oder Trennzeichen) und zeigt einen Strich, solange die Eingabe nicht lesbar ist. Eingaben über 10.000 Ziffern werden abgelehnt, statt es zu versuchen.","Jede Ausgabezeile ist \u003ccode>BigInt.prototype.toString(radix)\u003c/code>, die exakte Umkehrung. Andere Basis nimmt jede ganze Zahl von 2 bis 36 und ist von der Eingabebasis unabhängig. Nirgends in der Arithmetik gibt es \u003ccode>Number\u003c/code>, \u003ccode>parseInt\u003c/code> oder Gleitkomma, sodass 2\u003csup>64\u003c/sup>, 2\u003csup>128\u003c/sup> und eine Dezimalzahl mit 10.000 Stellen bis zur letzten Ziffer exakt herauskommen. „Ziffern gruppieren“ fügt alle 4 Binärziffern, 3 Oktal- oder Dezimalziffern, 2 Hexziffern ein Leerzeichen ein; das ist nur eine Anzeigegruppierung und gilt nicht für Basis 36 oder Andere Basis. Kopieren kopiert den Wert wie angezeigt, samt Gruppierung und Schreibweise, ohne die Notiz dahinter; der Parser nimmt diese Leerzeichen wieder an. Großbuchstaben betrifft ebenfalls nur die Anzeige.","Die Bitlänge ist die Länge des Betrags in Binärdarstellung; null hat keine. Die Bytes sind die vorzeichenlosen Big-Endian-Bytes eines nichtnegativen Werts, auf ein ganzes Byte aufgefüllt. Das Zweierkomplement mit Breite \u003cem>w\u003c/em> zeigt einen Wert von −2\u003csup>w−1\u003c/sup> bis 2\u003csup>w\u003c/sup>−1 als sein Bitmuster \u003ccode>(v mod 2^w)\u003c/code> in \u003cem>w\u003c/em>/4 Hexziffern, also das, was ein \u003cem>w\u003c/em>-Bit-Register enthält; ist der Wert 2\u003csup>w−1\u003c/sup> oder größer, sieht ein vorzeichenbehafteter Leser aus denselben Bits eine negative Zahl, und die Zeile nennt sie. Außerhalb dieses Bereichs sagt die Zeile, wie viele Bits der Wert bräuchte. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Basisumrechner — binär, oktal, dezimal, hex, jede Basis bis 36 — MDV","Rechne eine Zahl zwischen binär, oktal, dezimal, hex und jeder Basis bis 36 um, mit exakter BigInt-Arithmetik. Bitlänge, Bytes, Zweierkomplement. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Eingabebasis","Eigene Basis, 2 bis 36","Präfix {prefix} verworfen","{prefix} als Ziffern gelesen, da {letter} eine Ziffer der Basis {base} ist","Basis vom Präfix {prefix} festgelegt, nicht von der gewählten Basis {base}","{n} Zeichen ohne Trennzeichen überschreiten die Grenze von {limit} Ziffern, die dieses Werkzeug zu verarbeiten versucht.","{found} ist keine Ziffer der Basis {base} (Position {pos}); das Präfix {prefix} hat die Basis {base} festgelegt.","{found} ist keine Ziffer der Basis {base} (Position {pos}).","Nach dem Präfix {prefix} folgen keine Ziffern.","Ein Vorzeichen ohne Ziffern danach.","Nur Trennzeichen (Unterstriche oder Leerzeichen) und keine Ziffern.","passt nicht in {width} Bit: braucht {bits} ohne Vorzeichen","passt nicht in {width} Bit: braucht {bits} mit Vorzeichen","— ein vorzeichenbehafteter Leser sieht {value}","— ein vorzeichenloser Leser sieht {value}","Basis wählen","Eine eigene Basis muss eine ganze Zahl von 2 bis 36 sein; „{value}“ ist keine.","Abgelehnt","Diese Zahl ließ sich nicht lesen","Basis {base}","negativ","ein Minuszeichen vor null ändert nichts","wähle eine ganze Basis von 2 bis 36; „{value}“ ist keine","0 — der Wert ist null","keine vorzeichenlose Byte-Form für einen negativen Wert; siehe Zweierkomplement","{n} Ziffer","{n} Ziffern","{n} Bit im Betrag","{n} Bit im Betrag","{n} Bit","{n} Bit","{n} Byte","{n} Bytes","Formatkonverter",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Scrivi un numero in una base. Leggilo in binario, ottale, decimale, esadecimale, base 36 e in qualsiasi altra base da 2 a 36, con esattezza: interi di qualsiasi dimensione, senza virgola mobile né arrotondamenti.","Su questo dispositivo","Funziona offline","Numero","Binario","Ottale","Decimale","Hex","Base 36","Altra","Maiuscole","Raggruppa cifre","Risultato","scrivi un numero qui sopra","Letto come","Copiato","Copia","Altra base","Lunghezza in bit","Byte, big-endian","Complemento a due, 64 bit","Complemento a due, 32 bit","Come funziona","L’input viene letto un carattere alla volta, un punto di codice Unicode per volta. Una cifra vale 0–9 per \u003ccode>0\u003c/code>–\u003ccode>9\u003c/code> e 10–35 per \u003ccode>a\u003c/code>–\u003ccode>z\u003c/code>, in maiuscolo o minuscolo; il valore corrente viene moltiplicato per la base e la cifra viene sommata (regola di Horner) in \u003ccode>BigInt\u003c/code>, quindi non esiste una dimensione oltre la quale le cifre si perdono. \u003ccode>BigInt\u003c/code> non ha un parser per una base arbitraria, ed è per questo che esiste questo ciclo. Un prefisso \u003ccode>0b\u003c/code>, \u003ccode>0o\u003c/code> o \u003ccode>0x\u003c/code> indica la base 2, 8 o 16. Se corrisponde alla base selezionata, viene scartato. Se la base selezionata non ha la cifra \u003ccode>b\u003c/code>, \u003ccode>o\u003c/code> o \u003ccode>x\u003c/code>, il prefisso decide invece la base (\u003ccode>0xff\u003c/code> con Decimale selezionato viene letto come esadecimale) e la riga Letto come lo dice. Se la lettera è una cifra della base selezionata, resta una cifra: in Hex, \u003ccode>0b1\u003c/code> vale 177; in base 36, \u003ccode>x\u003c/code> vale 33. Trattini bassi e spazi sono separatori e vengono ignorati; un meno iniziale rende il valore negativo, tranne che per lo zero. Un carattere che non è una cifra della base ferma l’analisi e viene indicato, con il suo punto di codice se non è ASCII semplice, e con la sua posizione contata in caratteri. Il conteggio delle cifre accanto all’input conta solo le cifre (non il segno, il prefisso o i separatori) e mostra un trattino finché l’input non è leggibile. Un input oltre 10.000 cifre viene rifiutato invece di essere tentato.","Ogni riga di output è \u003ccode>BigInt.prototype.toString(radix)\u003c/code>, l’inverso esatto. Altra base accetta qualsiasi numero intero da 2 a 36 ed è indipendente dalla base di input. Non ci sono \u003ccode>Number\u003c/code>, \u003ccode>parseInt\u003c/code> né virgola mobile in nessun punto dell’aritmetica, quindi 2\u003csup>64\u003c/sup>, 2\u003csup>128\u003c/sup> e un decimale di 10.000 cifre escono esatti fino all’ultima cifra. “Raggruppa cifre” inserisce uno spazio ogni 4 cifre binarie, 3 ottali o decimali, 2 esadecimali; è solo un raggruppamento di visualizzazione, e non vale per la base 36 né per Altra base. Copia copia il valore come mostrato, con raggruppamento e maiuscole, senza la nota che lo segue; il parser riaccetta quegli spazi. Anche Maiuscole riguarda solo la visualizzazione.","La lunghezza in bit è la lunghezza del modulo in binario; lo zero non ne ha. I byte sono i byte senza segno in big-endian di un valore non negativo, completati a un byte intero. Il complemento a due di larghezza \u003cem>w\u003c/em> mostra un valore da −2\u003csup>w−1\u003c/sup> a 2\u003csup>w\u003c/sup>−1 come il suo schema di bit \u003ccode>(v mod 2^w)\u003c/code> in \u003cem>w\u003c/em>/4 cifre esadecimali, ciò che contiene un registro a \u003cem>w\u003c/em> bit; quando il valore è 2\u003csup>w−1\u003c/sup> o più, un lettore con segno vede un numero negativo dagli stessi bit, e la riga lo dice. Fuori da questo intervallo la riga indica quanti bit servirebbero al valore. Non viene caricato nulla: questo file non ha un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Convertitore di basi — binario, ottale, decimale, hex, qualsiasi base fino a 36 — MDV","Converti un numero tra binario, ottale, decimale, hex e qualsiasi base fino a 36 con aritmetica BigInt esatta. Lunghezza in bit, byte, complemento a due. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Base di input","Base personalizzata, da 2 a 36","prefisso {prefix} scartato","{prefix} letto come cifre, perché {letter} è una cifra della base {base}","base impostata dal prefisso {prefix}, non dalla base selezionata {base}","{n} caratteri esclusi i separatori superano il limite di {limit} cifre che questo strumento tenterà di elaborare.","{found} non è una cifra della base {base} (posizione {pos}); il prefisso {prefix} ha impostato la base {base}.","{found} non è una cifra della base {base} (posizione {pos}).","Nessuna cifra dopo il prefisso {prefix}.","Un segno senza cifre dopo.","Solo separatori (trattini bassi o spazi) e nessuna cifra.","non entra in {width} bit: servono {bits} senza segno","non entra in {width} bit: servono {bits} con segno","— un lettore con segno vede {value}","— un lettore senza segno vede {value}","Scegli una base","Una base personalizzata deve essere un numero intero da 2 a 36; “{value}” non lo è.","Rifiutato","Impossibile leggere quel numero","base {base}","negativo","un segno meno sullo zero non cambia nulla","scegli una base intera da 2 a 36; “{value}” non lo è","0 — il valore è zero","nessuna forma in byte senza segno per un valore negativo; vedi il complemento a due","{n} cifra","{n} cifre","{n} bit nel modulo","{n} bit nel modulo","{n} bit","{n} bit","{n} byte","{n} byte","Convertitori di formato",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Digite um número em uma base. Leia-o em binário, octal, decimal, hexadecimal, base 36 e qualquer outra base de 2 a 36, com exatidão: inteiros de qualquer tamanho, sem ponto flutuante nem arredondamento.","Neste dispositivo","Funciona offline","Número","Binário","Octal","Decimal","Hex","Base 36","Outra","Maiúsculas","Agrupar dígitos","Resultado","digite um número acima","Lido como","Copiado","Copiar","Outra base","Comprimento em bits","Bytes, big-endian","Complemento de dois, 64 bits","Complemento de dois, 32 bits","Como funciona","A entrada é lida um caractere por vez, um ponto de código Unicode de cada vez. Um dígito vale 0–9 para \u003ccode>0\u003c/code>–\u003ccode>9\u003c/code> e 10–35 para \u003ccode>a\u003c/code>–\u003ccode>z\u003c/code>, em maiúscula ou minúscula; o valor acumulado é multiplicado pela base e o dígito é somado (regra de Horner) em \u003ccode>BigInt\u003c/code>, então não existe tamanho a partir do qual dígitos se percam. O \u003ccode>BigInt\u003c/code> não tem um analisador para uma base arbitrária, e por isso este laço existe. Um prefixo \u003ccode>0b\u003c/code>, \u003ccode>0o\u003c/code> ou \u003ccode>0x\u003c/code> representa a base 2, 8 ou 16. Quando coincide com a base selecionada, é descartado. Quando a base selecionada não tem o dígito \u003ccode>b\u003c/code>, \u003ccode>o\u003c/code> ou \u003ccode>x\u003c/code>, o prefixo decide a base (\u003ccode>0xff\u003c/code> com Decimal selecionado é lido como hex) e a linha Lido como avisa. Quando a letra é um dígito da base selecionada, continua sendo um dígito: em Hex, \u003ccode>0b1\u003c/code> é 177; na base 36, \u003ccode>x\u003c/code> vale 33. Sublinhados e espaços são separadores e são ignorados; um sinal de menos inicial torna o valor negativo, exceto no zero. Um caractere que não é dígito da base interrompe a análise e é nomeado, com seu ponto de código quando não é ASCII simples, e sua posição contada em caracteres. A contagem de dígitos ao lado da entrada conta só dígitos (não o sinal, o prefixo nem os separadores) e mostra um traço enquanto a entrada não pode ser lida. Entrada acima de 10.000 dígitos é recusada em vez de tentada.","Cada linha de saída é \u003ccode>BigInt.prototype.toString(radix)\u003c/code>, a inversa exata. Outra base aceita qualquer número inteiro de 2 a 36 e é independente da base de entrada. Não há \u003ccode>Number\u003c/code>, \u003ccode>parseInt\u003c/code> nem ponto flutuante em lugar nenhum da aritmética, então 2\u003csup>64\u003c/sup>, 2\u003csup>128\u003c/sup> e um decimal de 10.000 dígitos saem exatos até o último dígito. “Agrupar dígitos” insere um espaço a cada 4 dígitos binários, 3 octais ou decimais, 2 hex; é só um agrupamento de exibição, e não vale para a base 36 nem para Outra base. Copiar copia o valor como mostrado, com agrupamento e caixa, sem a nota que vem depois; o analisador aceita esses espaços de volta. Maiúsculas também é só de exibição.","O comprimento em bits é o comprimento da magnitude em binário; o zero não tem. Os bytes são os bytes sem sinal em big-endian de um valor não negativo, completados até um byte inteiro. O complemento de dois com largura \u003cem>w\u003c/em> mostra um valor de −2\u003csup>w−1\u003c/sup> a 2\u003csup>w\u003c/sup>−1 como seu padrão de bits \u003ccode>(v mod 2^w)\u003c/code> em \u003cem>w\u003c/em>/4 dígitos hex, o que um registrador de \u003cem>w\u003c/em> bits guarda; quando o valor é 2\u003csup>w−1\u003c/sup> ou mais, um leitor com sinal vê um número negativo nos mesmos bits, e a linha informa qual. Fora desse intervalo, a linha informa quantos bits o valor precisaria. Nada é enviado: este arquivo não tem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Conversor de bases — binário, octal, decimal, hex, qualquer base até 36 — MDV","Converta um número entre binário, octal, decimal, hex e qualquer base até 36 com matemática BigInt exata. Comprimento em bits, bytes, complemento de dois. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Base de entrada","Base personalizada, de 2 a 36","prefixo {prefix} descartado","{prefix} lido como dígitos, pois {letter} é um dígito da base {base}","base definida pelo prefixo {prefix}, não pela base selecionada {base}","{n} caracteres, sem contar os separadores, passam do limite de {limit} dígitos que esta ferramenta tentará processar.","{found} não é um dígito da base {base} (posição {pos}); o prefixo {prefix} definiu a base {base}.","{found} não é um dígito da base {base} (posição {pos}).","Nenhum dígito depois do prefixo {prefix}.","Um sinal sem dígitos depois.","Apenas separadores (sublinhados ou espaços) e nenhum dígito.","não cabe em {width} bits: precisa de {bits} sem sinal","não cabe em {width} bits: precisa de {bits} com sinal","— um leitor com sinal vê {value}","— um leitor sem sinal vê {value}","Escolha uma base","Uma base personalizada deve ser um número inteiro de 2 a 36; “{value}” não é.","Recusado","Não foi possível ler esse número","base {base}","negativo","um sinal de menos no zero não muda nada","escolha uma base inteira de 2 a 36; “{value}” não é","0 — o valor é zero","um valor negativo não tem forma em bytes sem sinal; veja o complemento de dois","{n} dígito","{n} dígitos","{n} bit na magnitude","{n} bits na magnitude","{n} bit","{n} bits","{n} byte","{n} bytes","Conversores de formato",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","ある進数で数値を入力してください。2 進数、8 進数、10 進数、16 進数、36 進数、および 2 から 36 までの任意の進数で、正確に読み取れます。任意の大きさの整数に対応し、浮動小数点も丸めもありません。","この端末で動作","オフラインで動作","数値","2進","8進","10進","16進","36進","任意","大文字","桁をグループ化","結果","上に数値を入力","解釈","コピーしました","コピー","別の進数","ビット長","バイト列(ビッグエンディアン)","2 の補数、64 ビット","2 の補数、32 ビット","仕組み","入力は 1 文字ずつ、つまり Unicode のコードポイント 1 つずつ読まれます。数字の値は、\u003ccode>0\u003c/code>–\u003ccode>9\u003c/code> が 0–9、\u003ccode>a\u003c/code>–\u003ccode>z\u003c/code> が 10–35 で、大文字小文字は区別しません。現在の値に基数を掛けて数字を加えていく(ホーナー法)処理を \u003ccode>BigInt\u003c/code> で行うため、桁が失われる大きさはありません。\u003ccode>BigInt\u003c/code> には任意の基数用のパーサーがないので、このループがあります。\u003ccode>0b\u003c/code>、\u003ccode>0o\u003c/code>、\u003ccode>0x\u003c/code> の接頭辞は、それぞれ 2 進、8 進、16 進を表します。選択中の進数と一致する場合は取り除かれます。選択中の進数に \u003ccode>b\u003c/code>、\u003ccode>o\u003c/code>、\u003ccode>x\u003c/code> という数字がない場合は、接頭辞が進数を決めます(10 進を選択中の \u003ccode>0xff\u003c/code> は 16 進として読まれます)。その場合は「解釈」の行に表示されます。その文字が選択中の進数の数字であれば、数字のままです。16 進では \u003ccode>0b1\u003c/code> は 177、36 進では \u003ccode>x\u003c/code> の値は 33 です。アンダースコアと空白は区切りとして無視され、先頭のマイナスは値を負にします(ゼロを除く)。その進数の数字でない文字があると解析を止め、その文字を示します。ASCII 以外ならコードポイントも示し、位置は文字数で数えます。入力欄の横の桁数は数字だけを数え(符号、接頭辞、区切りは数えません)、入力を読み取れない間はダッシュを表示します。10,000 桁を超える入力は、試みずに拒否します。","出力の各行は \u003ccode>BigInt.prototype.toString(radix)\u003c/code> で、その正確な逆変換です。「別の進数」は 2 から 36 までの任意の整数を受け付け、入力の進数とは独立しています。計算のどこにも \u003ccode>Number\u003c/code>、\u003ccode>parseInt\u003c/code>、浮動小数点は使っていないため、2\u003csup>64\u003c/sup>、2\u003csup>128\u003c/sup>、10,000 桁の 10 進数も最後の桁まで正確に出力されます。「桁をグループ化」は、2 進数は 4 桁、8 進数と 10 進数は 3 桁、16 進数は 2 桁ごとに空白を入れます。表示上のグループ化だけで、36 進数と「別の進数」には適用されません。「コピー」は、表示されている値をグループ化と大文字小文字も含めてそのままコピーし、後ろの注記は含めません。パーサーはその空白を読み戻せます。「大文字」も表示だけの設定です。","ビット長は、絶対値を 2 進数にしたときの長さで、ゼロにはありません。バイト列は、負でない値の符号なしビッグエンディアンのバイトで、1 バイト単位になるよう埋められます。幅 \u003cem>w\u003c/em> の 2 の補数は、−2\u003csup>w−1\u003c/sup> から 2\u003csup>w\u003c/sup>−1 までの値を、\u003cem>w\u003c/em>/4 桁の 16 進数のビットパターン \u003ccode>(v mod 2^w)\u003c/code> として示します。\u003cem>w\u003c/em> ビットのレジスターが保持する内容です。値が 2\u003csup>w−1\u003c/sup> 以上のときは、符号付きで読むと同じビットが負の数に見え、その行に表示されます。この範囲外では、値に必要なビット数が表示されます。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","進数変換 — 2 進、8 進、10 進、16 進、36 進までの任意の進数 — MDV","2 進、8 進、10 進、16 進、36 進までの任意の進数の間で、正確な BigInt 演算により数値を変換します。ビット長、バイト列、2 の補数にも対応。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","入力の進数","カスタム進数(2〜36)","接頭辞 {prefix} を除去","{letter} は {base} 進数の数字なので、{prefix} は数字として読みました","選択中の {base} 進数ではなく、接頭辞 {prefix} が進数を決定","区切りを除いた {n} 文字は、このツールが処理する上限の {limit} 桁を超えています。","{found} は {base} 進数の数字ではありません(位置 {pos})。接頭辞 {prefix} が {base} 進数を指定しました。","{found} は {base} 進数の数字ではありません(位置 {pos})。","接頭辞 {prefix} の後に数字がありません。","符号の後に数字がありません。","区切り(アンダースコアか空白)だけで、数字がありません。","{width} ビットに収まりません。符号なしでは {bits} ビット必要です","{width} ビットに収まりません。符号付きでは {bits} ビット必要です","— 符号付きで読むと {value}","— 符号なしで読むと {value}","進数を選んでください","カスタム進数は 2 から 36 までの整数でなければなりません。“{value}” は該当しません。","拒否しました","その数値を読み取れませんでした","{base} 進数","負","ゼロの前のマイナス記号は何も変えません","2 から 36 までの整数の進数を選んでください。“{value}” は該当しません","0 — 値はゼロです","負の値には符号なしバイト表現がありません。2 の補数を参照してください","{n} 桁","{n} 桁","絶対値で {n} ビット","絶対値で {n} ビット","{n} ビット","{n} ビット","{n} バイト","{n} バイト","形式変換",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","한 진법으로 숫자를 입력하세요. 2진수, 8진수, 10진수, 16진수, 36진수와 2~36 사이의 다른 진법으로 정확하게 읽을 수 있습니다. 크기에 제한 없는 정수이며 부동소수점도 반올림도 없습니다.","이 기기에서 실행","오프라인 작동","숫자","2진수","8진수","10진수","16진수","36진수","직접","대문자","숫자 묶기","결과","위에 숫자를 입력","읽은 방식","복사됨","복사","다른 진법","비트 길이","바이트(빅 엔디언)","2의 보수, 64비트","2의 보수, 32비트","작동 방식","입력은 한 글자씩, 즉 유니코드 코드 포인트 하나씩 읽습니다. 숫자의 값은 \u003ccode>0\u003c/code>–\u003ccode>9\u003c/code>가 0–9, \u003ccode>a\u003c/code>–\u003ccode>z\u003c/code>가 10–35이며 대소문자를 구분하지 않습니다. 현재 값에 진법을 곱하고 숫자를 더하는 방식(호너 방법)을 \u003ccode>BigInt\u003c/code>로 계산하므로 자릿수가 잘려 나가는 크기는 없습니다. \u003ccode>BigInt\u003c/code>에는 임의의 진법용 파서가 없어서 이 반복문이 있습니다. \u003ccode>0b\u003c/code>, \u003ccode>0o\u003c/code>, \u003ccode>0x\u003c/code> 접두어는 각각 2진, 8진, 16진을 뜻합니다. 선택한 진법과 같으면 버립니다. 선택한 진법에 \u003ccode>b\u003c/code>, \u003ccode>o\u003c/code>, \u003ccode>x\u003c/code>라는 숫자가 없으면 접두어가 진법을 정합니다(10진을 선택한 상태의 \u003ccode>0xff\u003c/code>는 16진으로 읽습니다). 이 경우 읽은 방식 행에 그렇게 표시됩니다. 그 글자가 선택한 진법의 숫자이면 숫자로 남습니다. 16진에서 \u003ccode>0b1\u003c/code>은 177이고, 36진에서 \u003ccode>x\u003c/code>의 값은 33입니다. 밑줄과 공백은 구분자로 무시하며, 맨 앞의 마이너스는 값을 음수로 만듭니다(0 제외). 그 진법의 숫자가 아닌 문자가 있으면 분석을 멈추고 그 문자를 알려 줍니다. ASCII가 아니면 코드 포인트도 알리고, 위치는 글자 수로 셉니다. 입력란 옆의 자릿수는 숫자만 세며(부호, 접두어, 구분자는 세지 않음) 입력을 읽을 수 없는 동안은 대시를 표시합니다. 10,000자리를 넘는 입력은 시도하지 않고 거부합니다.","출력의 각 행은 \u003ccode>BigInt.prototype.toString(radix)\u003c/code>이며, 정확한 역변환입니다. 다른 진법은 2~36 사이의 정수를 받으며 입력 진법과는 별개입니다. 계산 어디에도 \u003ccode>Number\u003c/code>, \u003ccode>parseInt\u003c/code>, 부동소수점이 없으므로 2\u003csup>64\u003c/sup>, 2\u003csup>128\u003c/sup>, 10,000자리 십진수도 마지막 자리까지 정확하게 나옵니다. “숫자 묶기”는 2진수는 4자리, 8진수와 10진수는 3자리, 16진수는 2자리마다 공백을 넣습니다. 표시용 묶기일 뿐이며 36진수와 다른 진법에는 적용되지 않습니다. 복사는 표시된 값을 묶기와 대소문자까지 그대로 복사하고 뒤의 설명은 포함하지 않으며, 파서는 그 공백을 다시 받아들입니다. 대문자도 표시 전용입니다.","비트 길이는 크기(절댓값)를 2진수로 나타낸 길이이며, 0에는 없습니다. 바이트는 음수가 아닌 값의 부호 없는 빅 엔디언 바이트이며 한 바이트 단위로 채웁니다. 너비 \u003cem>w\u003c/em>의 2의 보수는 −2\u003csup>w−1\u003c/sup>부터 2\u003csup>w\u003c/sup>−1까지의 값을 \u003cem>w\u003c/em>/4자리 16진수의 비트 패턴 \u003ccode>(v mod 2^w)\u003c/code>으로 보여 줍니다. \u003cem>w\u003c/em>비트 레지스터가 담는 값입니다. 값이 2\u003csup>w−1\u003c/sup> 이상이면 부호 있는 해석에서는 같은 비트가 음수로 보이며, 해당 행에 표시됩니다. 이 범위를 벗어나면 그 값에 필요한 비트 수를 표시합니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","진법 변환기 — 2진수, 8진수, 10진수, 16진수, 36진수까지 — MDV","2진수, 8진수, 10진수, 16진수, 36진수까지의 진법 사이에서 정확한 BigInt 연산으로 숫자를 변환합니다. 비트 길이, 바이트, 2의 보수. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","입력 진법","직접 입력한 진법, 2~36","접두어 {prefix} 제거됨","{letter}은(는) {base}진법의 숫자이므로 {prefix}을(를) 숫자로 읽음","선택한 {base}진법이 아니라 접두어 {prefix}이(가) 진법을 정함","구분자를 제외한 {n}자는 이 도구가 처리하는 상한인 {limit}자리를 넘습니다.","{found}은(는) {base}진법의 숫자가 아닙니다(위치 {pos}). 접두어 {prefix}이(가) {base}진법을 정했습니다.","{found}은(는) {base}진법의 숫자가 아닙니다(위치 {pos}).","접두어 {prefix} 뒤에 숫자가 없습니다.","부호 뒤에 숫자가 없습니다.","구분자(밑줄이나 공백)만 있고 숫자가 없습니다.","{width}비트에 들어가지 않음: 부호 없이 {bits}비트 필요","{width}비트에 들어가지 않음: 부호 있게 {bits}비트 필요","— 부호 있는 해석으로는 {value}","— 부호 없는 해석으로는 {value}","진법을 고르세요","직접 입력한 진법은 2~36 사이의 정수여야 합니다. “{value}”은(는) 아닙니다.","거부됨","이 숫자를 읽을 수 없습니다","{base}진법","음수","0 앞의 마이너스 기호는 아무것도 바꾸지 않음","2~36 사이의 정수 진법을 고르세요. “{value}”은(는) 아닙니다","0 — 값이 0입니다","음수에는 부호 없는 바이트 형태가 없습니다. 2의 보수를 참고하세요","{n}자리","{n}자리","크기에서 {n}비트","크기에서 {n}비트","{n}비트","{n}비트","{n}바이트","{n}바이트","형식 변환기",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","用某一进制输入一个数。可精确读出二进制、八进制、十进制、十六进制、36 进制,以及 2 到 36 之间的任意进制:任意大小的整数,不使用浮点数,不做舍入。","在此设备上运行","可离线使用","数字","二进制","八进制","十进制","十六进制","36 进制","自定义","大写","分组数字","结果","在上方输入数字","读作","已复制","复制","其他进制","位长度","字节(大端序)","补码,64 位","补码,32 位","工作原理","输入逐个字符读取,每次一个 Unicode 码点。\u003ccode>0\u003c/code>–\u003ccode>9\u003c/code> 的值为 0–9,\u003ccode>a\u003c/code>–\u003ccode>z\u003c/code> 的值为 10–35，不分大小写;当前值乘以进制再加上该数字(霍纳法则),全部在 \u003ccode>BigInt\u003c/code> 中完成,所以不存在位数会丢失的大小。\u003ccode>BigInt\u003c/code> 没有任意进制的解析器,所以才有这个循环。前缀 \u003ccode>0b\u003c/code>、\u003ccode>0o\u003c/code>、\u003ccode>0x\u003c/code> 分别代表 2、8、16 进制。与所选进制一致时,前缀会被去掉。所选进制没有数字 \u003ccode>b\u003c/code>、\u003ccode>o\u003c/code> 或 \u003ccode>x\u003c/code> 时,由前缀决定进制(选择十进制时 \u003ccode>0xff\u003c/code> 按十六进制读取),“读作”一行会注明。若该字母是所选进制的数字,则仍是数字:在十六进制中 \u003ccode>0b1\u003c/code> 是 177;在 36 进制中 \u003ccode>x\u003c/code> 的值是 33。下划线和空格是分隔符,会被忽略;开头的负号使值为负,零除外。不属于该进制的字符会中止解析并被指出,若不是普通 ASCII 还会给出码点,位置按字符数计算。输入框旁的位数只统计数字(不含符号、前缀和分隔符),输入无法读取时显示短横线。超过 10,000 位的输入会被拒绝,而不是去尝试。","每一行输出都是 \u003ccode>BigInt.prototype.toString(radix)\u003c/code>,即精确的逆运算。“其他进制”接受 2 到 36 之间的任意整数,与输入进制无关。运算中任何地方都没有 \u003ccode>Number\u003c/code>、\u003ccode>parseInt\u003c/code> 或浮点数,所以 2\u003csup>64\u003c/sup>、2\u003csup>128\u003c/sup> 和 10,000 位的十进制数都能精确到最后一位。“分组数字”在二进制中每 4 位、八进制或十进制中每 3 位、十六进制中每 2 位插入一个空格;这只是显示上的分组,36 进制和“其他进制”不分组。复制按所见内容复制,包含分组和大小写,不含后面的注释;解析器可以把这些空格读回去。大写同样只影响显示。","位长度是数值绝对值的二进制长度;零没有位长度。字节是非负数值的无符号大端字节,补齐到整数个字节。宽度为 \u003cem>w\u003c/em> 的补码,把 −2\u003csup>w−1\u003c/sup> 到 2\u003csup>w\u003c/sup>−1 的值显示为其位模式 \u003ccode>(v mod 2^w)\u003c/code>,用 \u003cem>w\u003c/em>/4 位十六进制表示,也就是 \u003cem>w\u003c/em> 位寄存器里存放的内容;当数值不小于 2\u003csup>w−1\u003c/sup> 时,按有符号读取,同样的位会是一个负数,该行会注明。超出该范围时,该行会说明这个数值需要多少位。不会上传任何内容:此文件中没有服务器。","“深色”和“语言”按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被保存。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","进制转换器 — 二进制、八进制、十进制、十六进制、最高 36 进制 — MDV","用精确的 BigInt 运算,在二进制、八进制、十进制、十六进制及最高 36 的任意进制之间转换数字。含位长度、字节、补码。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","输入进制","自定义进制,2 到 36","已去掉前缀 {prefix}","{letter} 是 {base} 进制的数字,所以 {prefix} 按数字读取","进制由前缀 {prefix} 决定,而非所选的 {base} 进制","除分隔符外的 {n} 个字符超过了本工具愿意处理的 {limit} 位上限。","{found} 不是 {base} 进制的数字(位置 {pos});前缀 {prefix} 设定了 {base} 进制。","{found} 不是 {base} 进制的数字(位置 {pos})。","前缀 {prefix} 之后没有数字。","符号之后没有数字。","只有分隔符(下划线或空格),没有数字。","放不进 {width} 位:无符号需要 {bits} 位","放不进 {width} 位:有符号需要 {bits} 位","— 按有符号读取为 {value}","— 按无符号读取为 {value}","请选择进制","自定义进制必须是 2 到 36 之间的整数;“{value}”不是。","已拒绝","无法读取该数字","{base} 进制","负数","零前的负号没有任何影响","请选择 2 到 36 之间的整数进制;“{value}”不是","0 — 数值为零","负数没有无符号字节形式;请看补码","{n} 位","{n} 位","绝对值中 {n} 位","绝对值中 {n} 位","{n} 位","{n} 位","{n} 字节","{n} 字节","格式转换",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2415,14 +2628,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var pm = /^0([box])/i.exec(raw.slice(i, i + 2));
     if (pm) {
       var pb = PREFIX_BASE[pm[1].toLowerCase()];
-      if (pb === selected) { prefix = pm[0]; note = pm[0] + " prefix dropped"; }
-      else if (digitValue(pm[1].charCodeAt(0)) < selected) note = pm[0] + " read as digits, since " + pm[1] + " is a base-" + selected + " digit";
-      else { prefix = pm[0]; base = pb; note = "base set by the " + pm[0] + " prefix, not the selected base " + selected; }
+      if (pb === selected) { prefix = pm[0]; note = tr("{prefix} prefix dropped", { prefix: pm[0] }); }
+      else if (digitValue(pm[1].charCodeAt(0)) < selected) note = tr("{prefix} read as digits, since {letter} is a base-{base} digit", { prefix: pm[0], letter: pm[1], base: selected });
+      else { prefix = pm[0]; base = pb; note = tr("base set by the {prefix} prefix, not the selected base {base}", { prefix: pm[0], base: selected }); }
       i += prefix.length;
     }
     var count = raw.slice(i).replace(/[_\s]/g, "").length;
     if (count > LIMIT)
-      throw { refused: true, msg: count.toLocaleString() + " characters besides separators is past the " + LIMIT.toLocaleString() + "-digit ceiling this tool will attempt." };
+      throw { refused: true, msg: tr("{n} characters besides separators is past the {limit}-digit ceiling this tool will attempt.", { n: count.toLocaleString(), limit: LIMIT.toLocaleString() }) };
     var B = BigInt(base), pos = i;
     for (var ch of raw.slice(i)) {
       var c = ch.codePointAt(0);
@@ -2430,12 +2643,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       if (isSep(c)) continue;
       var d = digitValue(c);
       if (d < 0 || d >= base)
-        throw { msg: "'" + ch + "'" + (c < 33 || c > 126 ? " (U+" + c.toString(16).toUpperCase().padStart(4, "0") + ")" : "") +
-          " is not a base-" + base + " digit (position " + pos + ")" + (base !== selected ? " — the " + prefix + " prefix set base " + base + "." : ".") };
+        {
+        var shown = "'" + ch + "'" + (c < 33 || c > 126 ? " (U+" + c.toString(16).toUpperCase().padStart(4, "0") + ")" : "");
+        throw { msg: base !== selected
+          ? tr("{found} is not a base-{base} digit (position {pos}) — the {prefix} prefix set base {base}.", { found: shown, base: base, pos: pos, prefix: prefix })
+          : tr("{found} is not a base-{base} digit (position {pos}).", { found: shown, base: base, pos: pos }) };
+      }
       v = v * B + DIG[d];
       digits++;
     }
-    if (!digits) throw { msg: prefix ? "No digits after the " + prefix + " prefix." : sign ? "A sign with no digits after it." : "Only separators — underscores or spaces — and no digits." };
+    if (!digits) throw { msg: prefix ? tr("No digits after the {prefix} prefix.", { prefix: prefix }) : sign ? tr("A sign with no digits after it.") : tr("Only separators — underscores or spaces — and no digits.") };
     return { value: neg ? -v : v, digits: digits, negative: neg, base: base, note: note };
   }
 
@@ -2455,13 +2672,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // Returns [value, note]: the value is what Copy copies, the note is shown after it.
   function twos(v, width) {
     var mod = 1n << BigInt(width), half = mod >> 1n;
-    if (v >= mod) return ["", "does not fit in " + width + " bits — needs " + bitLength(v) + " unsigned"];
-    if (v < -half) return ["", "does not fit in " + width + " bits — needs " + (bitLength(-v - 1n) + 1) + " signed"];
+    if (v >= mod) return ["", tr("does not fit in {width} bits — needs {bits} unsigned", { width: width, bits: bitLength(v) })];
+    if (v < -half) return ["", tr("does not fit in {width} bits — needs {bits} signed", { width: width, bits: bitLength(-v - 1n) + 1 })];
     var u = v < 0n ? v + mod : v, h = u.toString(16).padStart(width / 4, "0");
     if (upper.checked) h = h.toUpperCase();
     h = group(h, 2);
-    if (v >= half) return [h, " — a signed reader sees " + (u - mod).toString()];
-    if (v < 0n) return [h, " — an unsigned reader sees " + u.toString()];
+    if (v >= half) return [h, " " + tr("— a signed reader sees {value}", { value: (u - mod).toString() })];
+    if (v < 0n) return [h, " " + tr("— an unsigned reader sees {value}", { value: u.toString() })];
     return [h, ""];
   }
 
@@ -2491,34 +2708,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var text = input.value, base = mode === "custom" ? baseOf(customIn.value) : Number(mode), r;
     input.removeAttribute("aria-invalid");
     size.textContent = "—";
-    if (!text.trim()) { size.textContent = "0 digits"; state("empty"); return; }
+    if (!text.trim()) { size.textContent = trn(0, "{n} digit", "{n} digits"); state("empty"); return; }
     if (isNaN(base)) {
-      errtitle.textContent = "Pick a base";
-      errmsg.textContent = "A custom base must be a whole number from 2 to 36; “" + customIn.value + "” is not.";
+      errtitle.textContent = tr("Pick a base");
+      errmsg.textContent = tr("A custom base must be a whole number from 2 to 36; “{value}” is not.", { value: customIn.value });
       state("error"); return;
     }
     try { r = parseBig(text, base); }
     catch (e) {
       input.setAttribute("aria-invalid", "true");
-      errtitle.textContent = e.refused ? "Refused" : "Could not read that number";
+      errtitle.textContent = e.refused ? tr("Refused") : tr("Could not read that number");
       errmsg.textContent = e.msg || String(e);
       state("error"); return;
     }
-    var v = r.value, bits = bitLength(v), digits = r.digits.toLocaleString() + (r.digits === 1 ? " digit" : " digits");
+    var v = r.value, bits = bitLength(v), digits = trn(r.digits, "{n} digit", "{n} digits");
     size.textContent = digits;
-    set("k-kind", "base " + r.base + " · " + digits + (r.note ? " · " + r.note : "") +
-      (v < 0n ? " · negative" : r.negative ? " · a minus sign on zero changes nothing" : ""));
+    set("k-kind", tr("base {base}", { base: r.base }) + " · " + digits + (r.note ? " · " + r.note : "") +
+      (v < 0n ? " · " + tr("negative") : r.negative ? " · " + tr("a minus sign on zero changes nothing") : ""));
     [2, 8, 10, 16, 36].forEach(function (b) { set("k-" + b, show(v, b)); });
     var ob = baseOf(outIn.value);
-    if (isNaN(ob)) set("k-out", "", "pick a whole base from 2 to 36; “" + outIn.value + "” is not");
+    if (isNaN(ob)) set("k-out", "", tr("pick a whole base from 2 to 36; “{value}” is not", { value: outIn.value }));
     else set("k-out", show(v, ob));
-    set("k-bits", bits === 0 ? "0 — the value is zero" : bits.toLocaleString() + (bits === 1 ? " bit" : " bits") + (v < 0n ? " in the magnitude" : ""));
-    if (v < 0n) set("k-bytes", "", "no unsigned byte form for a negative value — see two's complement");
+    set("k-bits", bits === 0 ? tr("0 — the value is zero") : v < 0n ? trn(bits, "{n} bit in the magnitude", "{n} bits in the magnitude") : trn(bits, "{n} bit", "{n} bits"));
+    if (v < 0n) set("k-bytes", "", tr("no unsigned byte form for a negative value — see two's complement"));
     else {
       var h = v.toString(16);
       if (h.length % 2) h = "0" + h;
       if (upper.checked) h = h.toUpperCase();
-      set("k-bytes", chunk(h, 2), " · " + (h.length / 2).toLocaleString() + (h.length === 2 ? " byte" : " bytes"));
+      set("k-bytes", chunk(h, 2), " · " + trn(h.length / 2, "{n} byte", "{n} bytes"));
     }
     var t64 = twos(v, 64), t32 = twos(v, 32);
     set("k-tc64", t64[0], t64[1]);
@@ -2551,6 +2768,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   });
   input.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

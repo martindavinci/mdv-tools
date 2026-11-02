@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link is-here" href="./unit-converter.html" aria-current="page" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link is-here" href="./unit-converter.html" aria-current="page" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,46 +2353,46 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Unit converter</h1>
+      <h1 class="mdv-head-name" data-t="64">Unit converter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Convert one measurement, and read it in every unit of the family at once.</p>
+    <p class="mdv-head-line" data-t="79">Convert one measurement, and read it in every unit of the family at once.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-panel">
     <div class="mdv-row is-between">
       <div style="flex:1">
-        <label class="mdv-label" for="family">Family</label>
+        <label class="mdv-label" for="family" data-t="82">Family</label>
         <select class="mdv-select" id="family" style="width:100%"></select>
       </div>
     </div>
     <div class="mdv-cols" style="margin-top:var(--space-3)">
       <div>
-        <label class="mdv-label" for="value">Value</label>
+        <label class="mdv-label" for="value" data-t="83">Value</label>
         <div class="mdv-row" style="gap:var(--space-2)">
           <input class="mdv-input mdv-mono" id="value" type="text" inputmode="decimal" spellcheck="false" autocomplete="off" value="1" style="flex:1">
-          <select class="mdv-select" id="from" aria-label="From unit" style="flex:1"></select>
+          <select class="mdv-select" id="from" aria-label="From unit" data-t-attrs="aria-label" style="flex:1"></select>
         </div>
       </div>
       <div>
-        <label class="mdv-label" for="to">Into</label>
+        <label class="mdv-label" for="to" data-t="84">Into</label>
         <div class="mdv-row" style="gap:var(--space-2)">
-          <select class="mdv-select" id="to" aria-label="Into unit" style="flex:1"></select>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="swap" aria-label="Swap the two units">Swap</button>
+          <select class="mdv-select" id="to" aria-label="Into unit" data-t-attrs="aria-label" style="flex:1"></select>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="swap" aria-label="Swap the two units" data-t-attrs="aria-label" data-t="85">Swap</button>
         </div>
       </div>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>type a value above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="86">type a value above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Cannot convert that</span>
+      <span class="mdv-notice-title" data-t="87">Cannot convert that</span>
       <span id="errmsg"></span>
     </div>
 
@@ -2288,8 +2400,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-row is-between">
         <div class="mdv-readout"><span id="big"></span></div>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy</button>
+          <span class="mdv-badge is-accent" id="copied" hidden data-t="88">Copied</span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn" data-t="89">Copy</button>
         </span>
       </div>
       <p class="mdv-hint" id="said" hidden></p>
@@ -2300,46 +2412,47 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="90">How this works</summary>
     <div class="mdv-method-body">
-      <p>Every unit is held as an exact fraction of the family's base unit, and the arithmetic is done in
+      <p data-t="91">Every unit is held as an exact fraction of the family's base unit, and the arithmetic is done in
         whole numbers with <code>BigInt</code> rather than in floating point. That matters because the
         definitions themselves are exact: an inch is 25.4 mm by definition, a pound is 0.45359237 kg, a
         US gallon is 3.785411784 litres, an acre is 4046.8564224 m². So 5 miles is exactly 8.04672 km, not
         8.046719999999999 — the page prints a result as exact when it ends, and marks it
         <code>≈</code> when it genuinely does not, rounded to twelve significant figures. A value that runs
         very large or very small is written in scientific notation rather than a screen of zeros.</p>
-      <p>Temperature is the odd family: its scales have different zero points, so a reading is converted
+      <p data-t="92">Temperature is the odd family: its scales have different zero points, so a reading is converted
         with both a factor and an offset — °C to K adds 273.15, °F is five ninths of a degree with the
         offset that puts 32 °F at freezing. That also means a temperature <em>difference</em> does not
         convert the way a temperature does: 10 °C warmer is 18 °F warmer, not 50. Rankine is included
         because it is the absolute scale that matches Fahrenheit's degree size.</p>
-      <p>Two families carry a trap that is worth naming. Data sizes come in both the decimal units a drive
+      <p data-t="93">Two families carry a trap that is worth naming. Data sizes come in both the decimal units a drive
         maker prints (kB = 1000 B) and the binary ones an operating system counts in (KiB = 1024 B); both
         are here and the page never silently mixes them, which is the whole reason a "500 GB" disk shows as
         466 GiB. The year in the time family is 365 days exactly — a plain multiplier, not a calendar, and
         no use for counting real dates, which is what the date difference and age pages are for. US fluid
         measures are US customary throughout, with the UK gallon and pint listed separately, since they
         differ by about a fifth.</p>
-      <p>Everything is worked out in this tab. Nothing is uploaded and nothing you type is stored; the Dark
-        button keeps its own setting in this browser's local storage.</p>
+      <p data-t="94">Everything is worked out in this tab. Nothing is uploaded and nothing you type is stored; the Dark
+        and language buttons keep their settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Math &amp; Units">
-    <span class="mdv-tag">Also in Math &amp; Units</span>
-    <a href="./aspect-ratio-calculator.html">Aspect ratio</a>
-    <a href="./percentage-calculator.html">Percentage calculator</a>
-    <a href="./random-number-generator.html">Random number generator</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Math &amp; Units"}'>Also in Math &amp; Units</span>
+    <a href="./aspect-ratio-calculator.html" data-t="63">Aspect ratio</a>
+    <a href="./percentage-calculator.html" data-t="65">Percentage calculator</a>
+    <a href="./random-number-generator.html" data-t="66">Random number generator</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="95">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="96">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="97" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="98">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2350,6 +2463,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Unit Converter — length, mass, volume, area, speed, temperature, data — MDV","Convert between metric and imperial units with exact definitions and fraction arithmetic, and see the value in every unit of the family at once. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","From unit","Into unit","Swap the two units","“{head}…” is {n} characters; a value here takes up to {max}.","“{s}” has more than one slash.","“{s}” is not a fraction this page can read.","“{s}” is not a number. Write a decimal such as 12.5, or 1.5e3.","The exponent in “{s}” is past what this page converts; keep it between 1e-60 and 1e60.","Length","metre","kilometre","centimetre","millimetre","micrometre","nanometre","inch","foot","yard","mile","nautical mile","Mass","kilogram","gram","milligram","tonne","ounce","pound","stone","short ton","long ton","Volume","litre","millilitre","cubic metre","cubic centimetre","US teaspoon","US tablespoon","US fluid ounce","US cup","US pint","US quart","US gallon","imperial pint","imperial gallon","Area","square metre","square centimetre","square kilometre","hectare","square inch","square foot","square yard","acre","square mile","Speed","metre per second","kilometre per hour","mile per hour","foot per second","knot","Temperature","kelvin","degree Celsius","degree Fahrenheit","degree Rankine","Time","second","millisecond","microsecond","minute","hour","day","week","year of 365 days","Data","byte","bit","kilobyte","megabyte","gigabyte","terabyte","kibibyte","mebibyte","gibibyte","tebibyte","Pressure","pascal","hectopascal","kilopascal","bar","millibar","standard atmosphere","pound per square inch","millimetre of mercury","inch of mercury","Energy","joule","kilojoule","calorie","kilocalorie","watt hour","kilowatt hour","British thermal unit","electronvolt","Both sides are the same unit, so the value is unchanged.","Scales with different zero points: this converts a reading, not a difference. A rise of 10 °C is a rise of 18 °F.","Decimal on one side, binary on the other: kB counts 1000 bytes, KiB counts 1024. That gap is why a drive's size shrinks when the system reports it.","The year here is a flat 365 days. For real dates, with leap years, use the date difference page.","The result does not end: it is rounded to twelve significant figures. The definitions themselves are exact — an inch is 25.4 mm — so most conversions do end.","Math & Units","2026-11-02"],"h":99,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Convierte una medida y léela a la vez en todas las unidades de su familia.","En este dispositivo","Funciona sin conexión","Familia","Valor","A","Invertir","escribe un valor arriba","No se puede convertir","Copiado","Copiar","Cómo funciona","Cada unidad se guarda como una fracción exacta de la unidad base de su familia, y la aritmética se hace con números enteros mediante \u003ccode>BigInt\u003c/code> en lugar de coma flotante. Importa porque las propias definiciones son exactas: una pulgada son 25,4 mm por definición, una libra son 0,45359237 kg, un galón estadounidense son 3,785411784 litros, un acre son 4046,8564224 m². Así, 5 millas son exactamente 8,04672 km, no 8,046719999999999: la página imprime un resultado como exacto cuando termina, y lo marca con \u003ccode>≈\u003c/code> cuando de verdad no termina, redondeado a doce cifras significativas. Un valor muy grande o muy pequeño se escribe en notación científica en lugar de una pantalla de ceros.","La temperatura es la familia especial: sus escalas tienen puntos cero distintos, así que una lectura se convierte con un factor y un desfase: de °C a K se suma 273,15, y °F es cinco novenos de grado con el desfase que sitúa 32 °F en la congelación. Eso también significa que una \u003cem>diferencia\u003c/em> de temperatura no se convierte como una temperatura: 10 °C más son 18 °F más, no 50. Rankine se incluye porque es la escala absoluta que coincide con el tamaño de grado de Fahrenheit.","Dos familias esconden una trampa que conviene nombrar. Los tamaños de datos vienen en las unidades decimales que imprime el fabricante de un disco (kB = 1000 B) y en las binarias en que cuenta un sistema operativo (KiB = 1024 B); ambas están aquí y la página nunca las mezcla en silencio, que es la razón de que un disco de «500 GB» aparezca como 466 GiB. El año de la familia de tiempo son exactamente 365 días: un multiplicador simple, no un calendario, y no sirve para contar fechas reales, para lo cual están las páginas de diferencia de fechas y de edad. Las medidas de líquidos de EE. UU. son las usuales estadounidenses en todo caso, con el galón y la pinta británicos aparte, porque difieren en una quinta parte aproximadamente.","Todo se calcula en esta pestaña. No se sube nada y nada de lo que escribes se guarda; los botones de modo oscuro e idioma guardan su ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Conversor de unidades — longitud, masa, volumen, área, velocidad, temperatura, datos — MDV","Convierte entre unidades métricas e imperiales con definiciones exactas y aritmética de fracciones, y ve el valor en todas las unidades de la familia a la vez. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Unidad de origen","Unidad de destino","Intercambiar las dos unidades","“{head}…” tiene {n} caracteres; aquí un valor admite hasta {max}.","“{s}” tiene más de una barra.","“{s}” no es una fracción que esta página pueda leer.","“{s}” no es un número. Escribe un decimal como 12,5 o 1,5e3.","El exponente de “{s}” excede lo que esta página convierte; mantenlo entre 1e-60 y 1e60.","Longitud","metro","kilómetro","centímetro","milímetro","micrómetro","nanómetro","pulgada","pie","yarda","milla","milla náutica","Masa","kilogramo","gramo","miligramo","tonelada","onza","libra","stone","tonelada corta","tonelada larga","Volumen","litro","mililitro","metro cúbico","centímetro cúbico","cucharadita EE. UU.","cucharada EE. UU.","onza líquida EE. UU.","taza EE. UU.","pinta EE. UU.","cuarto EE. UU.","galón EE. UU.","pinta imperial","galón imperial","Área","metro cuadrado","centímetro cuadrado","kilómetro cuadrado","hectárea","pulgada cuadrada","pie cuadrado","yarda cuadrada","acre","milla cuadrada","Velocidad","metro por segundo","kilómetro por hora","milla por hora","pie por segundo","nudo","Temperatura","kelvin","grado Celsius","grado Fahrenheit","grado Rankine","Tiempo","segundo","milisegundo","microsegundo","minuto","hora","día","semana","año de 365 días","Datos","byte","bit","kilobyte","megabyte","gigabyte","terabyte","kibibyte","mebibyte","gibibyte","tebibyte","Presión","pascal","hectopascal","kilopascal","bar","milibar","atmósfera estándar","libra por pulgada cuadrada","milímetro de mercurio","pulgada de mercurio","Energía","julio","kilojulio","caloría","kilocaloría","vatio hora","kilovatio hora","unidad térmica británica","electronvoltio","Ambos lados son la misma unidad, así que el valor no cambia.","Escalas con puntos cero distintos: esto convierte una lectura, no una diferencia. Un aumento de 10 °C es un aumento de 18 °F.","Decimal de un lado y binario del otro: kB cuenta 1000 bytes, KiB cuenta 1024. Esa diferencia es la razón de que el tamaño de un disco parezca menor cuando lo informa el sistema.","Aquí el año son exactamente 365 días. Para fechas reales, con años bisiestos, usa la página de diferencia de fechas.","El resultado no termina: está redondeado a doce cifras significativas. Las propias definiciones son exactas (una pulgada son 25,4 mm), así que la mayoría de las conversiones sí terminan.","Matemáticas y unidades",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Convertissez une mesure et lisez-la d’un coup dans toutes les unités de sa famille.","Sur cet appareil","Fonctionne hors ligne","Famille","Valeur","Vers","Inverser","saisissez une valeur ci-dessus","Conversion impossible","Copié","Copier","Comment ça marche","Chaque unité est conservée comme une fraction exacte de l’unité de base de sa famille, et l’arithmétique se fait en nombres entiers avec \u003ccode>BigInt\u003c/code> plutôt qu’en virgule flottante. C’est important parce que les définitions elles-mêmes sont exactes : un pouce vaut 25,4 mm par définition, une livre 0,45359237 kg, un gallon américain 3,785411784 litres, un acre 4046,8564224 m². Ainsi 5 miles font exactement 8,04672 km, et non 8,046719999999999 : la page affiche un résultat comme exact quand il se termine, et le marque \u003ccode>≈\u003c/code> quand il ne se termine vraiment pas, arrondi à douze chiffres significatifs. Une valeur très grande ou très petite est écrite en notation scientifique plutôt qu’en un écran de zéros.","La température est la famille à part : ses échelles ont des zéros différents, donc une lecture se convertit avec un facteur et un décalage : de °C en K on ajoute 273,15, et °F vaut cinq neuvièmes de degré avec le décalage qui place 32 °F à la congélation. Cela signifie aussi qu’une \u003cem>différence\u003c/em> de température ne se convertit pas comme une température : 10 °C de plus font 18 °F de plus, pas 50. Rankine est inclus parce que c’est l’échelle absolue qui correspond à la taille de degré de Fahrenheit.","Deux familles cachent un piège qu’il vaut la peine de nommer. Les tailles de données existent à la fois en unités décimales, celles qu’imprime un fabricant de disques (kB = 1000 o), et en unités binaires, celles que compte un système d’exploitation (KiB = 1024 o) ; les deux sont ici et la page ne les mélange jamais en silence, ce qui est toute la raison pour laquelle un disque de « 500 Go » s’affiche comme 466 GiB. L’année de la famille temps vaut exactement 365 jours : un simple multiplicateur, pas un calendrier, et inutile pour compter de vraies dates, ce à quoi servent les pages de différence de dates et d’âge. Les mesures de liquides américaines sont des unités usuelles américaines partout, le gallon et la pinte britanniques étant listés à part, car ils diffèrent d’environ un cinquième.","Tout est calculé dans cet onglet. Rien n’est envoyé et rien de ce que vous saisissez n’est stocké ; les boutons Sombre et Langue conservent leur réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Convertisseur d’unités — longueur, masse, volume, surface, vitesse, température, données — MDV","Convertissez entre unités métriques et impériales avec des définitions exactes et une arithmétique de fractions, et voyez la valeur dans toutes les unités de la famille à la fois. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Unité de départ","Unité d’arrivée","Échanger les deux unités","« {head}… » compte {n} caractères ; une valeur accepte ici jusqu’à {max}.","« {s} » contient plus d’une barre oblique.","« {s} » n’est pas une fraction que cette page sait lire.","« {s} » n’est pas un nombre. Écrivez un décimal comme 12,5 ou 1,5e3.","L’exposant de « {s} » dépasse ce que cette page convertit ; restez entre 1e-60 et 1e60.","Longueur","mètre","kilomètre","centimètre","millimètre","micromètre","nanomètre","pouce","pied","yard","mile","mille marin","Masse","kilogramme","gramme","milligramme","tonne","once","livre","stone","tonne courte","tonne longue","Volume","litre","millilitre","mètre cube","centimètre cube","cuillère à café US","cuillère à soupe US","once liquide US","tasse US","pinte US","quart US","gallon US","pinte impériale","gallon impérial","Surface","mètre carré","centimètre carré","kilomètre carré","hectare","pouce carré","pied carré","yard carré","acre","mile carré","Vitesse","mètre par seconde","kilomètre par heure","mile par heure","pied par seconde","nœud","Température","kelvin","degré Celsius","degré Fahrenheit","degré Rankine","Temps","seconde","milliseconde","microseconde","minute","heure","jour","semaine","année de 365 jours","Données","octet","bit","kilooctet","mégaoctet","gigaoctet","téraoctet","kibioctet","mébioctet","gibioctet","tébioctet","Pression","pascal","hectopascal","kilopascal","bar","millibar","atmosphère normale","livre par pouce carré","millimètre de mercure","pouce de mercure","Énergie","joule","kilojoule","calorie","kilocalorie","wattheure","kilowattheure","unité thermique britannique","électronvolt","Les deux côtés sont la même unité, la valeur reste donc inchangée.","Échelles à zéros différents : ceci convertit une lecture, pas une différence. Une hausse de 10 °C est une hausse de 18 °F.","Décimal d’un côté, binaire de l’autre : kB compte 1000 octets, KiB en compte 1024. Cet écart explique pourquoi la taille d’un disque semble diminuer quand le système la rapporte.","L’année vaut ici exactement 365 jours. Pour de vraies dates, avec années bissextiles, utilisez la page de différence de dates.","Le résultat ne se termine pas : il est arrondi à douze chiffres significatifs. Les définitions elles-mêmes sont exactes (un pouce vaut 25,4 mm), donc la plupart des conversions se terminent.","Maths et unités",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Rechne eine Messgröße um und lies sie gleichzeitig in allen Einheiten der Familie ab.","Läuft auf diesem Gerät","Funktioniert offline","Kategorie","Wert","In","Tauschen","oben einen Wert eingeben","Nicht umrechenbar","Kopiert","Kopieren","So funktioniert es","Jede Einheit wird als exakter Bruch der Basiseinheit ihrer Kategorie gehalten, und gerechnet wird mit ganzen Zahlen per \u003ccode>BigInt\u003c/code> statt mit Gleitkomma. Das ist wichtig, weil die Definitionen selbst exakt sind: Ein Zoll sind per Definition 25,4 mm, ein Pfund 0,45359237 kg, eine US-Gallone 3,785411784 Liter, ein Acre 4046,8564224 m². So sind 5 Meilen genau 8,04672 km, nicht 8,046719999999999: Die Seite gibt ein Ergebnis als exakt aus, wenn es endet, und markiert es mit \u003ccode>≈\u003c/code>, wenn es wirklich nicht endet, auf zwölf signifikante Stellen gerundet. Ein sehr großer oder sehr kleiner Wert wird in wissenschaftlicher Notation geschrieben statt als Bildschirm voller Nullen.","Die Temperatur ist die Ausnahme: Ihre Skalen haben verschiedene Nullpunkte, daher wird ein Messwert mit Faktor und Versatz umgerechnet: Von °C nach K kommen 273,15 dazu, °F ist fünf Neuntel eines Grads mit dem Versatz, der 32 °F auf den Gefrierpunkt legt. Das heißt auch, dass eine Temperatur\u003cem>differenz\u003c/em> nicht wie eine Temperatur umgerechnet wird: 10 °C wärmer sind 18 °F wärmer, nicht 50. Rankine ist dabei, weil es die absolute Skala mit der Gradgröße von Fahrenheit ist.","Zwei Kategorien haben eine Falle, die man benennen sollte. Datengrößen gibt es sowohl in den dezimalen Einheiten, die ein Festplattenhersteller aufdruckt (kB = 1000 B), als auch in den binären, in denen ein Betriebssystem zählt (KiB = 1024 B); beide sind hier, und die Seite mischt sie nie stillschweigend, und genau deshalb erscheint eine „500-GB“-Platte als 466 GiB. Das Jahr in der Zeitkategorie sind genau 365 Tage: ein einfacher Multiplikator, kein Kalender, und ungeeignet, echte Daten zu zählen, wofür die Seiten Datumsdifferenz und Alter da sind. Flüssigkeitsmaße der USA sind durchgehend US-amerikanische übliche Einheiten, wobei die britische Gallone und Pinte gesondert aufgeführt sind, weil sie sich um etwa ein Fünftel unterscheiden.","Alles wird in diesem Tab berechnet. Nichts wird hochgeladen und nichts, was du eintippst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Einheitenumrechner — Länge, Masse, Volumen, Fläche, Geschwindigkeit, Temperatur, Daten — MDV","Rechne zwischen metrischen und imperialen Einheiten mit exakten Definitionen und Bruchrechnung um und sieh den Wert in allen Einheiten der Kategorie auf einmal. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Ausgangseinheit","Zieleinheit","Die beiden Einheiten tauschen","„{head}…“ hat {n} Zeichen; ein Wert darf hier bis zu {max} haben.","„{s}“ enthält mehr als einen Schrägstrich.","„{s}“ ist kein Bruch, den diese Seite lesen kann.","„{s}“ ist keine Zahl. Schreibe eine Dezimalzahl wie 12,5 oder 1,5e3.","Der Exponent in „{s}“ liegt außerhalb dessen, was diese Seite umrechnet; bleibe zwischen 1e-60 und 1e60.","Länge","Meter","Kilometer","Zentimeter","Millimeter","Mikrometer","Nanometer","Zoll","Fuß","Yard","Meile","Seemeile","Masse","Kilogramm","Gramm","Milligramm","Tonne","Unze","Pfund","Stone","Short Ton","Long Ton","Volumen","Liter","Milliliter","Kubikmeter","Kubikzentimeter","US-Teelöffel","US-Esslöffel","US-Flüssigunze","US-Tasse","US-Pint","US-Quart","US-Gallone","Imperial Pint","Imperial Gallone","Fläche","Quadratmeter","Quadratzentimeter","Quadratkilometer","Hektar","Quadratzoll","Quadratfuß","Quadratyard","Acre","Quadratmeile","Geschwindigkeit","Meter pro Sekunde","Kilometer pro Stunde","Meile pro Stunde","Fuß pro Sekunde","Knoten","Temperatur","Kelvin","Grad Celsius","Grad Fahrenheit","Grad Rankine","Zeit","Sekunde","Millisekunde","Mikrosekunde","Minute","Stunde","Tag","Woche","Jahr mit 365 Tagen","Daten","Byte","Bit","Kilobyte","Megabyte","Gigabyte","Terabyte","Kibibyte","Mebibyte","Gibibyte","Tebibyte","Druck","Pascal","Hektopascal","Kilopascal","Bar","Millibar","Standardatmosphäre","Pfund pro Quadratzoll","Millimeter Quecksilbersäule","Zoll Quecksilbersäule","Energie","Joule","Kilojoule","Kalorie","Kilokalorie","Wattstunde","Kilowattstunde","British Thermal Unit","Elektronenvolt","Beide Seiten sind dieselbe Einheit, daher bleibt der Wert unverändert.","Skalen mit verschiedenen Nullpunkten: Das rechnet einen Messwert um, keine Differenz. Ein Anstieg um 10 °C ist ein Anstieg um 18 °F.","Dezimal auf der einen Seite, binär auf der anderen: kB zählt 1000 Byte, KiB zählt 1024. Diese Lücke ist der Grund, warum die Größe einer Festplatte schrumpft, wenn das System sie meldet.","Das Jahr hat hier genau 365 Tage. Für echte Daten mit Schaltjahren nutze die Seite Datumsdifferenz.","Das Ergebnis endet nicht: Es ist auf zwölf signifikante Stellen gerundet. Die Definitionen selbst sind exakt (ein Zoll sind 25,4 mm), die meisten Umrechnungen enden also.","Mathe und Einheiten",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Converti una misura e leggila subito in tutte le unità della sua famiglia.","Su questo dispositivo","Funziona offline","Famiglia","Valore","In","Inverti","scrivi un valore qui sopra","Impossibile convertire","Copiato","Copia","Come funziona","Ogni unità è tenuta come frazione esatta dell’unità base della sua famiglia, e l’aritmetica si fa con numeri interi tramite \u003ccode>BigInt\u003c/code> invece che in virgola mobile. Conta perché le definizioni stesse sono esatte: un pollice è 25,4 mm per definizione, una libbra è 0,45359237 kg, un gallone USA è 3,785411784 litri, un acro è 4046,8564224 m². Così 5 miglia sono esattamente 8,04672 km, non 8,046719999999999: la pagina stampa un risultato come esatto quando termina, e lo segna con \u003ccode>≈\u003c/code> quando davvero non termina, arrotondato a dodici cifre significative. Un valore molto grande o molto piccolo si scrive in notazione scientifica invece che in una schermata di zeri.","La temperatura è la famiglia particolare: le sue scale hanno zeri diversi, quindi una lettura si converte con un fattore e uno scostamento: da °C a K si aggiunge 273,15, e °F è cinque nononi di grado con lo scostamento che porta 32 °F al congelamento. Questo significa anche che una \u003cem>differenza\u003c/em> di temperatura non si converte come una temperatura: 10 °C in più sono 18 °F in più, non 50. Rankine è incluso perché è la scala assoluta che ha il grado di Fahrenheit.","Due famiglie nascondono una trappola che vale la pena nominare. Le dimensioni dei dati esistono sia nelle unità decimali che stampa il produttore di un disco (kB = 1000 B) sia in quelle binarie in cui conta un sistema operativo (KiB = 1024 B); entrambe sono qui e la pagina non le mescola mai in silenzio, che è il motivo per cui un disco da «500 GB» appare come 466 GiB. L’anno nella famiglia del tempo è esattamente 365 giorni: un semplice moltiplicatore, non un calendario, e inutile per contare date reali, cosa per cui servono le pagine di differenza tra date e di età. Le misure dei liquidi USA sono sempre quelle usuali statunitensi, con gallone e pinta britannici elencati a parte, perché differiscono di circa un quinto.","Tutto viene calcolato in questa scheda. Non viene caricato nulla e nulla di ciò che scrivi viene salvato; i pulsanti Scuro e Lingua conservano la loro impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Convertitore di unità — lunghezza, massa, volume, area, velocità, temperatura, dati — MDV","Converti tra unità metriche e imperiali con definizioni esatte e aritmetica di frazioni, e vedi il valore in tutte le unità della famiglia insieme. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Unità di partenza","Unità di arrivo","Scambia le due unità","“{head}…” ha {n} caratteri; qui un valore ne accetta fino a {max}.","“{s}” ha più di una barra.","“{s}” non è una frazione che questa pagina sappia leggere.","“{s}” non è un numero. Scrivi un decimale come 12,5 o 1,5e3.","L’esponente di “{s}” supera ciò che questa pagina converte; resta tra 1e-60 e 1e60.","Lunghezza","metro","chilometro","centimetro","millimetro","micrometro","nanometro","pollice","piede","iarda","miglio","miglio nautico","Massa","chilogrammo","grammo","milligrammo","tonnellata","oncia","libbra","stone","tonnellata corta","tonnellata lunga","Volume","litro","millilitro","metro cubo","centimetro cubo","cucchiaino USA","cucchiaio USA","oncia liquida USA","tazza USA","pinta USA","quarto USA","gallone USA","pinta imperiale","gallone imperiale","Area","metro quadrato","centimetro quadrato","chilometro quadrato","ettaro","pollice quadrato","piede quadrato","iarda quadrata","acro","miglio quadrato","Velocità","metro al secondo","chilometro orario","miglio orario","piede al secondo","nodo","Temperatura","kelvin","grado Celsius","grado Fahrenheit","grado Rankine","Tempo","secondo","millisecondo","microsecondo","minuto","ora","giorno","settimana","anno di 365 giorni","Dati","byte","bit","kilobyte","megabyte","gigabyte","terabyte","kibibyte","mebibyte","gibibyte","tebibyte","Pressione","pascal","ettopascal","chilopascal","bar","millibar","atmosfera standard","libbra per pollice quadrato","millimetro di mercurio","pollice di mercurio","Energia","joule","chilojoule","caloria","chilocaloria","wattora","chilowattora","unità termica britannica","elettronvolt","Entrambi i lati sono la stessa unità, quindi il valore resta invariato.","Scale con zeri diversi: questo converte una lettura, non una differenza. Un aumento di 10 °C è un aumento di 18 °F.","Decimale da una parte, binario dall’altra: kB conta 1000 byte, KiB ne conta 1024. Quel divario è il motivo per cui la dimensione di un disco sembra ridursi quando la riporta il sistema.","L’anno qui è esattamente di 365 giorni. Per date reali, con anni bisestili, usa la pagina di differenza tra date.","Il risultato non termina: è arrotondato a dodici cifre significative. Le definizioni stesse sono esatte (un pollice è 25,4 mm), quindi la maggior parte delle conversioni termina.","Matematica e unità",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Converta uma medida e leia-a de uma vez em todas as unidades da família.","Neste dispositivo","Funciona offline","Família","Valor","Para","Inverter","digite um valor acima","Não é possível converter","Copiado","Copiar","Como funciona","Cada unidade é guardada como uma fração exata da unidade base da sua família, e a aritmética é feita com números inteiros usando \u003ccode>BigInt\u003c/code> em vez de ponto flutuante. Isso importa porque as próprias definições são exatas: uma polegada tem 25,4 mm por definição, uma libra tem 0,45359237 kg, um galão americano tem 3,785411784 litros, um acre tem 4046,8564224 m². Assim, 5 milhas são exatamente 8,04672 km, não 8,046719999999999: a página imprime um resultado como exato quando ele termina, e o marca com \u003ccode>≈\u003c/code> quando de fato não termina, arredondado para doze algarismos significativos. Um valor muito grande ou muito pequeno é escrito em notação científica em vez de uma tela de zeros.","A temperatura é a família diferente: suas escalas têm pontos zero diferentes, então uma leitura é convertida com um fator e um deslocamento: de °C para K soma-se 273,15, e °F é cinco nonos de grau com o deslocamento que põe 32 °F no congelamento. Isso também significa que uma \u003cem>diferença\u003c/em> de temperatura não se converte como uma temperatura: 10 °C a mais são 18 °F a mais, não 50. Rankine está incluída porque é a escala absoluta com o tamanho de grau de Fahrenheit.","Duas famílias escondem uma armadilha que vale nomear. Os tamanhos de dados existem tanto nas unidades decimais que o fabricante de um disco imprime (kB = 1000 B) quanto nas binárias em que um sistema operacional conta (KiB = 1024 B); as duas estão aqui e a página nunca as mistura em silêncio, que é toda a razão de um disco de «500 GB» aparecer como 466 GiB. O ano da família de tempo tem exatamente 365 dias: um multiplicador simples, não um calendário, e inútil para contar datas reais, para o que servem as páginas de diferença de datas e de idade. As medidas de líquidos dos EUA são as usuais americanas em todos os casos, com o galão e a pinta do Reino Unido listados à parte, pois diferem em cerca de um quinto.","Tudo é calculado nesta aba. Nada é enviado e nada do que você digita é armazenado; os botões Escuro e Idioma guardam sua configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Conversor de unidades — comprimento, massa, volume, área, velocidade, temperatura, dados — MDV","Converta entre unidades métricas e imperiais com definições exatas e aritmética de frações, e veja o valor em todas as unidades da família de uma vez. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Unidade de origem","Unidade de destino","Trocar as duas unidades","“{head}…” tem {n} caracteres; aqui um valor aceita até {max}.","“{s}” tem mais de uma barra.","“{s}” não é uma fração que esta página consiga ler.","“{s}” não é um número. Escreva um decimal como 12,5 ou 1,5e3.","O expoente em “{s}” excede o que esta página converte; mantenha-o entre 1e-60 e 1e60.","Comprimento","metro","quilômetro","centímetro","milímetro","micrômetro","nanômetro","polegada","pé","jarda","milha","milha náutica","Massa","quilograma","grama","miligrama","tonelada","onça","libra","stone","tonelada curta","tonelada longa","Volume","litro","mililitro","metro cúbico","centímetro cúbico","colher de chá (EUA)","colher de sopa (EUA)","onça líquida (EUA)","xícara (EUA)","pint (EUA)","quarto (EUA)","galão (EUA)","pint imperial","galão imperial","Área","metro quadrado","centímetro quadrado","quilômetro quadrado","hectare","polegada quadrada","pé quadrado","jarda quadrada","acre","milha quadrada","Velocidade","metro por segundo","quilômetro por hora","milha por hora","pé por segundo","nó","Temperatura","kelvin","grau Celsius","grau Fahrenheit","grau Rankine","Tempo","segundo","milissegundo","microssegundo","minuto","hora","dia","semana","ano de 365 dias","Dados","byte","bit","quilobyte","megabyte","gigabyte","terabyte","kibibyte","mebibyte","gibibyte","tebibyte","Pressão","pascal","hectopascal","quilopascal","bar","milibar","atmosfera padrão","libra por polegada quadrada","milímetro de mercúrio","polegada de mercúrio","Energia","joule","quilojoule","caloria","quilocaloria","watt-hora","quilowatt-hora","unidade térmica britânica","elétron-volt","Os dois lados são a mesma unidade, então o valor não muda.","Escalas com pontos zero diferentes: isto converte uma leitura, não uma diferença. Um aumento de 10 °C é um aumento de 18 °F.","Decimal de um lado, binário do outro: kB conta 1000 bytes, KiB conta 1024. Essa diferença é o motivo de o tamanho de um disco parecer menor quando o sistema o informa.","O ano aqui tem exatamente 365 dias. Para datas reais, com anos bissextos, use a página de diferença de datas.","O resultado não termina: está arredondado para doze algarismos significativos. As próprias definições são exatas (uma polegada tem 25,4 mm), então a maioria das conversões termina.","Matemática e unidades",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","1 つの測定値を変換し、同じ種類のすべての単位で一度に確認できます。","この端末で動作","オフラインで動作","種類","値","変換先","入替","上に値を入力","変換できません","コピーしました","コピー","仕組み","各単位は、その種類の基準単位の正確な分数として保持され、計算は浮動小数点ではなく \u003ccode>BigInt\u003c/code> による整数で行われます。定義そのものが正確だからです。1 インチは定義上 25.4 mm、1 ポンドは 0.45359237 kg、1 米ガロンは 3.785411784 リットル、1 エーカーは 4046.8564224 m² です。そのため 5 マイルはちょうど 8.04672 km であり、8.046719999999999 ではありません。ページは、結果が割り切れる場合は正確な値として表示し、本当に割り切れない場合は有効数字 12 桁に丸めて \u003ccode>≈\u003c/code> を付けます。非常に大きい値や小さい値は、ゼロが画面いっぱいに並ぶ代わりに指数表記で書かれます。","温度は特殊な種類です。目盛りごとにゼロ点が違うため、測定値は係数とオフセットの両方で変換されます。°C から K へは 273.15 を足し、°F は 1 度の 9 分の 5 に、32 °F が凝固点になるオフセットを加えたものです。つまり、温度の\u003cem>差\u003c/em>は温度と同じようには変換できません。10 °C 高いことは 18 °F 高いことであり、50 ではありません。ランキン度を含めているのは、華氏と同じ目盛り幅の絶対温度だからです。","注意すべき落とし穴が 2 つの種類にあります。データ量には、ドライブメーカーが表記する十進単位(kB = 1000 B)と、オペレーティングシステムが数える二進単位(KiB = 1024 B)の両方があります。どちらもここにあり、ページが黙って混ぜることはありません。「500 GB」のディスクが 466 GiB と表示されるのは、まさにこのためです。時間の種類の 1 年はちょうど 365 日です。これは単純な倍率であってカレンダーではなく、実際の日付を数えるのには使えません。それには日付の差分や年齢のページを使ってください。米国の液量は一貫して米国慣用単位で、英国のガロンとパイントは約 5 分の 1 異なるため別に載せています。","すべてこのタブの中で計算されます。何もアップロードされず、入力した内容も保存されません。ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保持します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","単位変換 — 長さ、質量、体積、面積、速度、温度、データ — MDV","正確な定義と分数演算でメートル法とヤード・ポンド法の単位を変換し、同じ種類のすべての単位での値を一度に表示します。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","変換元の単位","変換先の単位","2 つの単位を入れ替える","「{head}…」は {n} 文字です。値は {max} 文字まで入力できます。","「{s}」にスラッシュが複数あります。","「{s}」はこのページで読み取れる分数ではありません。","「{s}」は数値ではありません。12.5 や 1.5e3 のような小数で入力してください。","「{s}」の指数は、このページが変換できる範囲を超えています。1e-60 から 1e60 の間にしてください。","長さ","メートル","キロメートル","センチメートル","ミリメートル","マイクロメートル","ナノメートル","インチ","フィート","ヤード","マイル","海里","質量","キログラム","グラム","ミリグラム","トン","オンス","ポンド","ストーン","米トン","英トン","体積","リットル","ミリリットル","立方メートル","立方センチメートル","米国ティースプーン","米国テーブルスプーン","米国液量オンス","米国カップ","米国パイント","米国クォート","米国ガロン","英パイント","英ガロン","面積","平方メートル","平方センチメートル","平方キロメートル","ヘクタール","平方インチ","平方フィート","平方ヤード","エーカー","平方マイル","速度","メートル毎秒","キロメートル毎時","マイル毎時","フィート毎秒","ノット","温度","ケルビン","セルシウス度","華氏度","ランキン度","時間","秒","ミリ秒","マイクロ秒","分","時間","日","週","365 日の年","データ","バイト","ビット","キロバイト","メガバイト","ギガバイト","テラバイト","キビバイト","メビバイト","ギビバイト","テビバイト","圧力","パスカル","ヘクトパスカル","キロパスカル","バール","ミリバール","標準大気圧","重量ポンド毎平方インチ","水銀柱ミリメートル","水銀柱インチ","エネルギー","ジュール","キロジュール","カロリー","キロカロリー","ワット時","キロワット時","英熱量","電子ボルト","両側が同じ単位なので、値は変わりません。","ゼロ点の異なる目盛りです。ここで変換するのは測定値であり、差ではありません。10 °C の上昇は 18 °F の上昇です。","片側は十進、もう片側は二進です。kB は 1000 バイト、KiB は 1024 バイトで数えます。この差が、システムが報告するとドライブの容量が小さく見える理由です。","ここでの 1 年はちょうど 365 日です。うるう年を含む実際の日付には、日付の差分ページを使ってください。","結果は割り切れないため、有効数字 12 桁に丸めています。定義そのものは正確(1 インチは 25.4 mm)なので、ほとんどの変換は割り切れます。","数学と単位",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","측정값 하나를 변환하고 같은 종류의 모든 단위로 한꺼번에 확인하세요.","이 기기에서 실행","오프라인 작동","종류","값","대상","교환","위에 값을 입력","변환할 수 없음","복사됨","복사","작동 방식","각 단위는 해당 종류의 기준 단위에 대한 정확한 분수로 보관되며, 계산은 부동소수점 대신 \u003ccode>BigInt\u003c/code>를 이용한 정수로 합니다. 정의 자체가 정확하기 때문에 중요합니다. 1인치는 정의상 25.4 mm, 1파운드는 0.45359237 kg, 1미국 갤런은 3.785411784리터, 1에이커는 4046.8564224 m²입니다. 그래서 5마일은 8.046719999999999가 아니라 정확히 8.04672 km입니다. 페이지는 결과가 딱 떨어지면 정확한 값으로 출력하고, 정말로 끝나지 않으면 유효숫자 12자리로 반올림해 \u003ccode>≈\u003c/code>를 붙입니다. 아주 크거나 작은 값은 0이 화면 가득 이어지는 대신 과학적 표기법으로 씁니다.","온도는 특수한 종류입니다. 눈금마다 영점이 달라서 측정값은 계수와 오프셋 둘 다로 변환합니다. °C에서 K로는 273.15를 더하고, °F는 1도의 9분의 5에 32 °F를 어는점에 맞추는 오프셋을 더한 값입니다. 따라서 온도 \u003cem>차이\u003c/em>는 온도처럼 변환되지 않습니다. 10 °C 높은 것은 18 °F 높은 것이지 50이 아닙니다. 랭킨은 화씨와 눈금 간격이 같은 절대 온도 눈금이라서 포함했습니다.","이름을 붙여 둘 만한 함정이 두 종류에 있습니다. 데이터 크기에는 드라이브 제조사가 표기하는 십진 단위(kB = 1000 B)와 운영체제가 세는 이진 단위(KiB = 1024 B)가 모두 있으며, 둘 다 여기에 있고 페이지는 이를 조용히 섞지 않습니다. “500 GB” 디스크가 466 GiB로 보이는 이유가 바로 이것입니다. 시간 종류의 1년은 정확히 365일입니다. 달력이 아니라 단순한 배수이므로 실제 날짜를 세는 데는 쓸 수 없고, 그럴 때는 날짜 차이와 나이 페이지를 사용하세요. 미국의 액량은 전부 미국 관용 단위이며, 영국 갤런과 파인트는 약 5분의 1 차이가 나므로 따로 나열했습니다.","모든 계산은 이 탭 안에서 이루어집니다. 아무것도 업로드되지 않으며 입력한 내용도 저장되지 않습니다. 다크와 언어 버튼은 설정을 이 브라우저의 로컬 스토리지에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","단위 변환기 — 길이, 질량, 부피, 면적, 속도, 온도, 데이터 — MDV","정확한 정의와 분수 연산으로 미터법과 야드파운드법 단위를 변환하고, 같은 종류의 모든 단위로 한꺼번에 값을 확인합니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","원본 단위","대상 단위","두 단위 서로 바꾸기","“{head}…”은(는) {n}자입니다. 값은 최대 {max}자까지 입력할 수 있습니다.","“{s}”에 슬래시가 둘 이상 있습니다.","“{s}”은(는) 이 페이지에서 읽을 수 있는 분수가 아닙니다.","“{s}”은(는) 숫자가 아닙니다. 12.5 또는 1.5e3 같은 소수로 입력하세요.","“{s}”의 지수가 이 페이지에서 변환할 수 있는 범위를 벗어났습니다. 1e-60에서 1e60 사이로 하세요.","길이","미터","킬로미터","센티미터","밀리미터","마이크로미터","나노미터","인치","피트","야드","마일","해리","질량","킬로그램","그램","밀리그램","톤","온스","파운드","스톤","미국 톤","영국 톤","부피","리터","밀리리터","세제곱미터","세제곱센티미터","미국 티스푼","미국 테이블스푼","미국 액량 온스","미국 컵","미국 파인트","미국 쿼트","미국 갤런","영국 파인트","영국 갤런","면적","제곱미터","제곱센티미터","제곱킬로미터","헥타르","제곱인치","제곱피트","제곱야드","에이커","제곱마일","속도","초속 미터","시속 킬로미터","시속 마일","초속 피트","노트","온도","켈빈","섭씨 도","화씨 도","랭킨 도","시간","초","밀리초","마이크로초","분","시간","일","주","365일 기준 연","데이터","바이트","비트","킬로바이트","메가바이트","기가바이트","테라바이트","키비바이트","메비바이트","기비바이트","테비바이트","압력","파스칼","헥토파스칼","킬로파스칼","바","밀리바","표준 대기압","제곱인치당 파운드","수은주 밀리미터","수은주 인치","에너지","줄","킬로줄","칼로리","킬로칼로리","와트시","킬로와트시","영국 열량 단위","전자볼트","양쪽이 같은 단위이므로 값은 그대로입니다.","영점이 다른 눈금입니다. 여기서는 측정값을 변환하며 차이를 변환하지 않습니다. 10 °C 상승은 18 °F 상승입니다.","한쪽은 십진, 다른 쪽은 이진입니다. kB는 1000바이트, KiB는 1024바이트로 셉니다. 이 차이 때문에 시스템이 보고하는 드라이브 용량이 줄어든 것처럼 보입니다.","여기서 1년은 정확히 365일입니다. 윤년을 포함한 실제 날짜에는 날짜 차이 페이지를 사용하세요.","결과가 끝나지 않아 유효숫자 12자리로 반올림했습니다. 정의 자체는 정확하므로(1인치는 25.4 mm) 대부분의 변환은 딱 떨어집니다.","수학과 단위",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","换算一个测量值,并同时查看它在同类所有单位中的数值。","在此设备上运行","可离线使用","类别","数值","换算为","互换","在上面输入数值","无法转换","已复制","复制","工作原理","每个单位都以其所属类别基本单位的精确分数保存,运算用 \u003ccode>BigInt\u003c/code> 整数完成,而不是浮点数。这很重要,因为定义本身就是精确的:1 英寸按定义是 25.4 mm,1 磅是 0.45359237 kg,1 美制加仑是 3.785411784 升,1 英亩是 4046.8564224 m²。所以 5 英里恰好是 8.04672 km，而不是 8.046719999999999:结果能除尽时页面按精确值输出,真的除不尽时则舍入到十二位有效数字并标上 \u003ccode>≈\u003c/code>。很大或很小的数值会用科学计数法书写,而不是一屏的零。","温度是特殊的一类:各温标的零点不同,所以读数要用系数和偏移量一起换算:°C 到 K 加 273.15,°F 是九分之五度再加上让 32 °F 对应冰点的偏移量。这也意味着温度\u003cem>差\u003c/em>不能像温度那样换算:升高 10 °C 就是升高 18 °F，而不是 50。之所以包含兰氏度,是因为它是与华氏度刻度大小一致的绝对温标。","有两类单位藏着一个值得点明的陷阱。数据大小既有硬盘厂商标注的十进制单位(kB = 1000 B),也有操作系统使用的二进制单位(KiB = 1024 B);两者都在这里,页面绝不会悄悄混用,这正是“500 GB”的硬盘显示为 466 GiB 的全部原因。时间类中的一年恰好是 365 天:只是一个简单的倍数,不是日历,不能用来计算真实日期,那是日期差和年龄页面的用途。美制液体计量一律采用美国惯用单位,英制加仑和品脱另行列出,因为它们相差约五分之一。","所有运算都在此标签页内完成。不会上传任何内容,你输入的内容也不会被保存;深色和语言按钮会把各自的设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","单位换算器 — 长度、质量、体积、面积、速度、温度、数据 — MDV","用精确定义和分数运算在公制与英制单位之间换算,并同时显示该值在同类所有单位中的结果。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","源单位","目标单位","互换两个单位","“{head}…”有 {n} 个字符;此处的数值最多 {max} 个字符。","“{s}”含有多个斜杠。","“{s}”不是本页能读取的分数。","“{s}”不是数字。请输入如 12.5 或 1.5e3 的小数。","“{s}”的指数超出本页可换算的范围;请保持在 1e-60 到 1e60 之间。","长度","米","千米","厘米","毫米","微米","纳米","英寸","英尺","码","英里","海里","质量","千克","克","毫克","吨","盎司","磅","英石","短吨","长吨","体积","升","毫升","立方米","立方厘米","美制茶匙","美制汤匙","美制液量盎司","美制杯","美制品脱","美制夸脱","美制加仑","英制品脱","英制加仑","面积","平方米","平方厘米","平方千米","公顷","平方英寸","平方英尺","平方码","英亩","平方英里","速度","米每秒","千米每小时","英里每小时","英尺每秒","节","温度","开尔文","摄氏度","华氏度","兰金度","时间","秒","毫秒","微秒","分钟","小时","天","周","365 天的年","数据","字节","比特","千字节","兆字节","吉字节","太字节","KiB 字节","MiB 字节","GiB 字节","TiB 字节","压力","帕斯卡","百帕","千帕","巴","毫巴","标准大气压","磅每平方英寸","毫米汞柱","英寸汞柱","能量","焦耳","千焦","卡路里","千卡","瓦时","千瓦时","英热单位","电子伏特","两边是同一个单位,所以数值不变。","零点不同的温标:这里换算的是读数,不是温差。升高 10 °C 就是升高 18 °F。","一边是十进制,另一边是二进制:kB 按 1000 字节计,KiB 按 1024 字节计。这个差异就是系统报告的硬盘容量会变小的原因。","这里的一年恰好是 365 天。需要考虑闰年的真实日期,请使用日期差页面。","结果除不尽:已舍入到十二位有效数字。定义本身是精确的(1 英寸为 25.4 mm),所以大多数换算都能除尽。","数学与单位",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2379,20 +2592,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function readNumber(raw) {
     var s = String(raw).trim().replace(/[\s'’_]/g, "").replace(/−/g, "-");
     if (!s) return null;
-    if (s.length > MAXLEN) throw "“" + s.slice(0, 12) + "…” is " + s.length + " characters; a value here takes up to " + MAXLEN + ".";
+    if (s.length > MAXLEN) throw tr("“{head}…” is {n} characters; a value here takes up to {max}.", { head: s.slice(0, 12), n: s.length, max: MAXLEN });
     if (s.indexOf("/") > 0) {
       var parts = s.split("/");
-      if (parts.length !== 2) throw "“" + s + "” has more than one slash.";
+      if (parts.length !== 2) throw tr("“{s}” has more than one slash.", { s: s });
       var top = readNumber(parts[0]), bottom = readNumber(parts[1]);
-      if (!top || !bottom || bottom.n === 0n) throw "“" + s + "” is not a fraction this page can read.";
+      if (!top || !bottom || bottom.n === 0n) throw tr("“{s}” is not a fraction this page can read.", { s: s });
       return div(top, bottom);
     }
     var m = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(s.replace(",", "."));
-    if (!m || !(m[2] + (m[3] || ""))) throw "“" + String(raw).trim() + "” is not a number. Write a decimal such as 12.5, or 1.5e3.";
+    if (!m || !(m[2] + (m[3] || ""))) throw tr("“{s}” is not a number. Write a decimal such as 12.5, or 1.5e3.", { s: String(raw).trim() });
     var digits = (m[2] + (m[3] || "")).replace(/^0+(?=\d)/, "");
     var value = frac(BigInt((m[1] === "-" ? "-" : "") + (digits || "0")), 10n ** BigInt((m[3] || "").length));
     var exp = Number(m[4] || 0);
-    if (exp > 60 || exp < -60) throw "The exponent in “" + String(raw).trim() + "” is past what this page converts; keep it between 1e-60 and 1e60.";
+    if (exp > 60 || exp < -60) throw tr("The exponent in “{s}” is past what this page converts; keep it between 1e-60 and 1e60.", { s: String(raw).trim() });
     if (exp > 0) value = mul(value, frac(10n ** BigInt(exp), 1n));
     if (exp < 0) value = div(value, frac(10n ** BigInt(-exp), 1n));
     return value;
@@ -2449,49 +2662,49 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   // factor: how many base units one of this unit is. offset: added after, for temperature scales.
   var FAMILIES = {
-    length: { name: "Length", base: "metre", units: [
-      ["m", "metre", "1"], ["km", "kilometre", "1000"], ["cm", "centimetre", "0.01"], ["mm", "millimetre", "0.001"],
-      ["µm", "micrometre", "0.000001"], ["nm", "nanometre", "0.000000001"],
-      ["in", "inch", "0.0254"], ["ft", "foot", "0.3048"], ["yd", "yard", "0.9144"], ["mi", "mile", "1609.344"],
-      ["nmi", "nautical mile", "1852"]] },
-    mass: { name: "Mass", base: "kilogram", units: [
-      ["kg", "kilogram", "1"], ["g", "gram", "0.001"], ["mg", "milligram", "0.000001"], ["t", "tonne", "1000"],
-      ["oz", "ounce", "0.028349523125"], ["lb", "pound", "0.45359237"], ["st", "stone", "6.35029318"],
-      ["ton (US)", "short ton", "907.18474"], ["ton (UK)", "long ton", "1016.0469088"]] },
-    volume: { name: "Volume", base: "litre", units: [
-      ["l", "litre", "1"], ["ml", "millilitre", "0.001"], ["m³", "cubic metre", "1000"], ["cm³", "cubic centimetre", "0.001"],
-      ["tsp (US)", "US teaspoon", "0.00492892159375"], ["tbsp (US)", "US tablespoon", "0.01478676478125"],
-      ["fl oz (US)", "US fluid ounce", "0.0295735295625"], ["cup (US)", "US cup", "0.2365882365"],
-      ["pt (US)", "US pint", "0.473176473"], ["qt (US)", "US quart", "0.946352946"], ["gal (US)", "US gallon", "3.785411784"],
-      ["pt (UK)", "imperial pint", "0.56826125"], ["gal (UK)", "imperial gallon", "4.54609"]] },
-    area: { name: "Area", base: "square metre", units: [
-      ["m²", "square metre", "1"], ["cm²", "square centimetre", "0.0001"], ["km²", "square kilometre", "1000000"],
-      ["ha", "hectare", "10000"], ["in²", "square inch", "0.00064516"], ["ft²", "square foot", "0.09290304"],
-      ["yd²", "square yard", "0.83612736"], ["acre", "acre", "4046.8564224"], ["mi²", "square mile", "2589988.110336"]] },
-    speed: { name: "Speed", base: "metre per second", units: [
-      ["m/s", "metre per second", "1"], ["km/h", "kilometre per hour", "5/18"], ["mph", "mile per hour", "0.44704"],
-      ["ft/s", "foot per second", "0.3048"], ["kn", "knot", "463/900"]] },
-    temperature: { name: "Temperature", base: "kelvin", units: [
-      ["°C", "degree Celsius", "1", "273.15"], ["°F", "degree Fahrenheit", "5/9", "45967/180"],
-      ["K", "kelvin", "1", "0"], ["°R", "degree Rankine", "5/9", "0"]] },
-    time: { name: "Time", base: "second", units: [
-      ["s", "second", "1"], ["ms", "millisecond", "0.001"], ["µs", "microsecond", "0.000001"],
-      ["min", "minute", "60"], ["h", "hour", "3600"], ["d", "day", "86400"], ["wk", "week", "604800"],
-      ["yr (365 d)", "year of 365 days", "31536000"]] },
-    data: { name: "Data", base: "byte", units: [
-      ["B", "byte", "1"], ["bit", "bit", "1/8"], ["kB", "kilobyte", "1000"], ["MB", "megabyte", "1000000"],
-      ["GB", "gigabyte", "1000000000"], ["TB", "terabyte", "1000000000000"],
-      ["KiB", "kibibyte", "1024"], ["MiB", "mebibyte", "1048576"], ["GiB", "gibibyte", "1073741824"],
-      ["TiB", "tebibyte", "1099511627776"]] },
-    pressure: { name: "Pressure", base: "pascal", units: [
-      ["Pa", "pascal", "1"], ["hPa", "hectopascal", "100"], ["kPa", "kilopascal", "1000"],
-      ["bar", "bar", "100000"], ["mbar", "millibar", "100"], ["atm", "standard atmosphere", "101325"],
-      ["psi", "pound per square inch", "4.4482216152605/0.00064516"], ["mmHg", "millimetre of mercury", "101325/760"],
-      ["inHg", "inch of mercury", "2573655/760"]] },
-    energy: { name: "Energy", base: "joule", units: [
-      ["J", "joule", "1"], ["kJ", "kilojoule", "1000"], ["cal", "calorie", "4.184"], ["kcal", "kilocalorie", "4184"],
-      ["Wh", "watt hour", "3600"], ["kWh", "kilowatt hour", "3600000"], ["BTU", "British thermal unit", "1055.05585262"],
-      ["eV", "electronvolt", "1.602176634e-19"]] }
+    length: { name: trk("Length"), base: trk("metre"), units: [
+      ["m", trk("metre"), "1"], ["km", trk("kilometre"), "1000"], ["cm", trk("centimetre"), "0.01"], ["mm", trk("millimetre"), "0.001"],
+      ["µm", trk("micrometre"), "0.000001"], ["nm", trk("nanometre"), "0.000000001"],
+      ["in", trk("inch"), "0.0254"], ["ft", trk("foot"), "0.3048"], ["yd", trk("yard"), "0.9144"], ["mi", trk("mile"), "1609.344"],
+      ["nmi", trk("nautical mile"), "1852"]] },
+    mass: { name: trk("Mass"), base: trk("kilogram"), units: [
+      ["kg", trk("kilogram"), "1"], ["g", trk("gram"), "0.001"], ["mg", trk("milligram"), "0.000001"], ["t", trk("tonne"), "1000"],
+      ["oz", trk("ounce"), "0.028349523125"], ["lb", trk("pound"), "0.45359237"], ["st", trk("stone"), "6.35029318"],
+      ["ton (US)", trk("short ton"), "907.18474"], ["ton (UK)", trk("long ton"), "1016.0469088"]] },
+    volume: { name: trk("Volume"), base: trk("litre"), units: [
+      ["l", trk("litre"), "1"], ["ml", trk("millilitre"), "0.001"], ["m³", trk("cubic metre"), "1000"], ["cm³", trk("cubic centimetre"), "0.001"],
+      ["tsp (US)", trk("US teaspoon"), "0.00492892159375"], ["tbsp (US)", trk("US tablespoon"), "0.01478676478125"],
+      ["fl oz (US)", trk("US fluid ounce"), "0.0295735295625"], ["cup (US)", trk("US cup"), "0.2365882365"],
+      ["pt (US)", trk("US pint"), "0.473176473"], ["qt (US)", trk("US quart"), "0.946352946"], ["gal (US)", trk("US gallon"), "3.785411784"],
+      ["pt (UK)", trk("imperial pint"), "0.56826125"], ["gal (UK)", trk("imperial gallon"), "4.54609"]] },
+    area: { name: trk("Area"), base: trk("square metre"), units: [
+      ["m²", trk("square metre"), "1"], ["cm²", trk("square centimetre"), "0.0001"], ["km²", trk("square kilometre"), "1000000"],
+      ["ha", trk("hectare"), "10000"], ["in²", trk("square inch"), "0.00064516"], ["ft²", trk("square foot"), "0.09290304"],
+      ["yd²", trk("square yard"), "0.83612736"], ["acre", trk("acre"), "4046.8564224"], ["mi²", trk("square mile"), "2589988.110336"]] },
+    speed: { name: trk("Speed"), base: trk("metre per second"), units: [
+      ["m/s", trk("metre per second"), "1"], ["km/h", trk("kilometre per hour"), "5/18"], ["mph", trk("mile per hour"), "0.44704"],
+      ["ft/s", trk("foot per second"), "0.3048"], ["kn", trk("knot"), "463/900"]] },
+    temperature: { name: trk("Temperature"), base: trk("kelvin"), units: [
+      ["°C", trk("degree Celsius"), "1", "273.15"], ["°F", trk("degree Fahrenheit"), "5/9", "45967/180"],
+      ["K", trk("kelvin"), "1", "0"], ["°R", trk("degree Rankine"), "5/9", "0"]] },
+    time: { name: trk("Time"), base: trk("second"), units: [
+      ["s", trk("second"), "1"], ["ms", trk("millisecond"), "0.001"], ["µs", trk("microsecond"), "0.000001"],
+      ["min", trk("minute"), "60"], ["h", trk("hour"), "3600"], ["d", trk("day"), "86400"], ["wk", trk("week"), "604800"],
+      ["yr (365 d)", trk("year of 365 days"), "31536000"]] },
+    data: { name: trk("Data"), base: trk("byte"), units: [
+      ["B", trk("byte"), "1"], ["bit", trk("bit"), "1/8"], ["kB", trk("kilobyte"), "1000"], ["MB", trk("megabyte"), "1000000"],
+      ["GB", trk("gigabyte"), "1000000000"], ["TB", trk("terabyte"), "1000000000000"],
+      ["KiB", trk("kibibyte"), "1024"], ["MiB", trk("mebibyte"), "1048576"], ["GiB", trk("gibibyte"), "1073741824"],
+      ["TiB", trk("tebibyte"), "1099511627776"]] },
+    pressure: { name: trk("Pressure"), base: trk("pascal"), units: [
+      ["Pa", trk("pascal"), "1"], ["hPa", trk("hectopascal"), "100"], ["kPa", trk("kilopascal"), "1000"],
+      ["bar", trk("bar"), "100000"], ["mbar", trk("millibar"), "100"], ["atm", trk("standard atmosphere"), "101325"],
+      ["psi", trk("pound per square inch"), "4.4482216152605/0.00064516"], ["mmHg", trk("millimetre of mercury"), "101325/760"],
+      ["inHg", trk("inch of mercury"), "2573655/760"]] },
+    energy: { name: trk("Energy"), base: trk("joule"), units: [
+      ["J", trk("joule"), "1"], ["kJ", trk("kilojoule"), "1000"], ["cal", trk("calorie"), "4.184"], ["kcal", trk("kilocalorie"), "4184"],
+      ["Wh", trk("watt hour"), "3600"], ["kWh", trk("kilowatt hour"), "3600000"], ["BTU", trk("British thermal unit"), "1055.05585262"],
+      ["eV", trk("electronvolt"), "1.602176634e-19"]] }
   };
   var DEFAULTS = { length: ["m", "ft"], mass: ["kg", "lb"], volume: ["l", "gal (US)"], area: ["m²", "ft²"],
     speed: ["km/h", "mph"], temperature: ["°C", "°F"], time: ["h", "min"], data: ["GB", "GiB"],
@@ -2528,13 +2741,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   function fillFamilies() {
-    Object.keys(FAMILIES).forEach(function (key) { option(familySel, key, FAMILIES[key].name); });
+    Object.keys(FAMILIES).forEach(function (key) { option(familySel, key, tr(FAMILIES[key].name)); });
   }
   function fillUnits(key) {
     units = unitsOf(key);
     [fromSel, toSel].forEach(function (sel) {
       sel.textContent = "";
-      units.forEach(function (u) { option(sel, u.symbol, u.symbol + " — " + u.name); });
+      units.forEach(function (u) { option(sel, u.symbol, u.symbol + " — " + tr(u.name)); });
     });
     fromSel.value = DEFAULTS[key][0];
     toSel.value = DEFAULTS[key][1];
@@ -2557,7 +2770,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     all.textContent = "";
     units.forEach(function (u) {
       var dt = document.createElement("dt");
-      dt.textContent = u.name;          // the name, not the symbol: the label style uppercases, and MM would be two units
+      dt.textContent = tr(u.name);          // the name, not the symbol: the label style uppercases, and MM would be two units
       var dd = document.createElement("dd");
       dd.textContent = label(convert(v, from, u)) + " " + u.symbol;
       if (u.symbol === to.symbol) dd.className = "mdv-strong";
@@ -2565,11 +2778,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
 
     var notes = [];
-    if (from.symbol === to.symbol) notes.push("Both sides are the same unit, so the value is unchanged.");
-    if (familySel.value === "temperature") notes.push("Scales with different zero points: this converts a reading, not a difference. A rise of 10 °C is a rise of 18 °F.");
-    if (familySel.value === "data" && /iB$/.test(from.symbol) !== /iB$/.test(to.symbol)) notes.push("Decimal on one side, binary on the other: kB counts 1000 bytes, KiB counts 1024. That gap is why a drive's size shrinks when the system reports it.");
-    if (familySel.value === "time" && (from.symbol.indexOf("yr") === 0 || to.symbol.indexOf("yr") === 0)) notes.push("The year here is a flat 365 days. For real dates, with leap years, use the date difference page.");
-    if (label(out).charAt(0) === "≈") notes.push("The result does not end: it is rounded to twelve significant figures. The definitions themselves are exact — an inch is 25.4 mm — so most conversions do end.");
+    if (from.symbol === to.symbol) notes.push(tr("Both sides are the same unit, so the value is unchanged."));
+    if (familySel.value === "temperature") notes.push(tr("Scales with different zero points: this converts a reading, not a difference. A rise of 10 °C is a rise of 18 °F."));
+    if (familySel.value === "data" && /iB$/.test(from.symbol) !== /iB$/.test(to.symbol)) notes.push(tr("Decimal on one side, binary on the other: kB counts 1000 bytes, KiB counts 1024. That gap is why a drive's size shrinks when the system reports it."));
+    if (familySel.value === "time" && (from.symbol.indexOf("yr") === 0 || to.symbol.indexOf("yr") === 0)) notes.push(tr("The year here is a flat 365 days. For real dates, with leap years, use the date difference page."));
+    if (label(out).charAt(0) === "≈") notes.push(tr("The result does not end: it is rounded to twelve significant figures. The definitions themselves are exact — an inch is 25.4 mm — so most conversions do end."));
     said.textContent = notes.join(" ");
     said.hidden = !notes.length;
     state("ok");
@@ -2598,6 +2811,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   familySel.value = "length";
   fillUnits("length");
   value.focus({ preventScroll: true });
+  onLang(function () {
+    var key = familySel.value;
+    familySel.textContent = "";
+    fillFamilies();
+    familySel.value = key;
+    var from = fromSel.value, to = toSel.value;   // the options are rebuilt in the new language; the choice stays
+    fillUnits(key);
+    fromSel.value = from;
+    toSel.value = to;
+    run();
+  });
   run();
 })();
 </script>

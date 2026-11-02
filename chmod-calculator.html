@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link is-here" href="./chmod-calculator.html" aria-current="page" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link is-here" href="./chmod-calculator.html" aria-current="page" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,65 +2353,65 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Chmod calculator</h1>
+      <h1 class="mdv-head-name" data-t="35">Chmod calculator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Tick the bits or type the number, and read what the mode actually allows.</p>
+    <p class="mdv-head-line" data-t="79">Tick the bits or type the number, and read what the mode actually allows.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-panel">
     <div class="mdv-row is-between">
       <div>
-        <label class="mdv-label" for="octal">Mode</label>
+        <label class="mdv-label" for="octal" data-t="82">Mode</label>
         <input class="mdv-input mdv-mono" id="octal" type="text" inputmode="numeric" spellcheck="false" autocomplete="off" value="644" style="width:7em">
       </div>
       <div class="mdv-btn-row">
-        <button class="mdv-btn is-sm is-quiet" type="button" data-set="644">644 file</button>
-        <button class="mdv-btn is-sm is-quiet" type="button" data-set="755">755 script</button>
-        <button class="mdv-btn is-sm is-quiet" type="button" data-set="600">600 private</button>
+        <button class="mdv-btn is-sm is-quiet" type="button" data-set="644">644 <span data-t="83">file</span></button>
+        <button class="mdv-btn is-sm is-quiet" type="button" data-set="755">755 <span data-t="84">script</span></button>
+        <button class="mdv-btn is-sm is-quiet" type="button" data-set="600">600 <span data-t="85">private</span></button>
         <button class="mdv-btn is-sm is-quiet" type="button" data-set="1777">1777 /tmp</button>
       </div>
     </div>
 
     <table class="mdv-table" id="grid" style="margin-top:var(--space-3)">
       <thead>
-        <tr><th scope="col">Who</th><th scope="col">Read</th><th scope="col">Write</th><th scope="col">Execute</th><th scope="col">Special</th></tr>
+        <tr><th scope="col" data-t="86">Who</th><th scope="col" data-t="87">Read</th><th scope="col" data-t="88">Write</th><th scope="col" data-t="89">Execute</th><th scope="col" data-t="90">Special</th></tr>
       </thead>
       <tbody>
         <tr>
-          <th scope="row">Owner</th>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="256" aria-label="Owner read"> <span class="mdv-mono">4</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="128" aria-label="Owner write"> <span class="mdv-mono">2</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="64" aria-label="Owner execute"> <span class="mdv-mono">1</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="2048" aria-label="Setuid"> <span class="mdv-mono">setuid</span></label></td>
+          <th scope="row" data-t="91">Owner</th>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="256" aria-label="Owner read" data-t-attrs="aria-label"> <span class="mdv-mono">4</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="128" aria-label="Owner write" data-t-attrs="aria-label"> <span class="mdv-mono">2</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="64" aria-label="Owner execute" data-t-attrs="aria-label"> <span class="mdv-mono">1</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="2048" aria-label="Setuid" data-t-attrs="aria-label"> <span class="mdv-mono">setuid</span></label></td>
         </tr>
         <tr>
-          <th scope="row">Group</th>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="32" aria-label="Group read"> <span class="mdv-mono">4</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="16" aria-label="Group write"> <span class="mdv-mono">2</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="8" aria-label="Group execute"> <span class="mdv-mono">1</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="1024" aria-label="Setgid"> <span class="mdv-mono">setgid</span></label></td>
+          <th scope="row" data-t="92">Group</th>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="32" aria-label="Group read" data-t-attrs="aria-label"> <span class="mdv-mono">4</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="16" aria-label="Group write" data-t-attrs="aria-label"> <span class="mdv-mono">2</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="8" aria-label="Group execute" data-t-attrs="aria-label"> <span class="mdv-mono">1</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="1024" aria-label="Setgid" data-t-attrs="aria-label"> <span class="mdv-mono">setgid</span></label></td>
         </tr>
         <tr>
-          <th scope="row">Others</th>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="4" aria-label="Others read"> <span class="mdv-mono">4</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="2" aria-label="Others write"> <span class="mdv-mono">2</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="1" aria-label="Others execute"> <span class="mdv-mono">1</span></label></td>
-          <td><label class="mdv-check"><input type="checkbox" data-bit="512" aria-label="Sticky bit"> <span class="mdv-mono">sticky</span></label></td>
+          <th scope="row" data-t="93">Others</th>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="4" aria-label="Others read" data-t-attrs="aria-label"> <span class="mdv-mono">4</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="2" aria-label="Others write" data-t-attrs="aria-label"> <span class="mdv-mono">2</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="1" aria-label="Others execute" data-t-attrs="aria-label"> <span class="mdv-mono">1</span></label></td>
+          <td><label class="mdv-check"><input type="checkbox" data-bit="512" aria-label="Sticky bit" data-t-attrs="aria-label"> <span class="mdv-mono">sticky</span></label></td>
         </tr>
       </tbody>
     </table>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>tick a box or type a mode above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="94">tick a box or type a mode above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Not a mode</span>
+      <span class="mdv-notice-title" data-t="95">Not a mode</span>
       <span id="errmsg"></span>
     </div>
 
@@ -2307,8 +2419,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-row is-between">
         <div class="mdv-readout"><span id="big"></span></div>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy chmod</button>
+          <span class="mdv-badge is-accent" id="copied" hidden><span data-t="96">Copied</span></span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn"><span data-t="97">Copy chmod</span></button>
         </span>
       </div>
       <div class="mdv-notice is-warn" id="warn" hidden>
@@ -2317,27 +2429,27 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       </div>
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Symbolic</dt><dd id="k-sym"></dd>
-          <dt>As a file</dt><dd id="k-file"></dd>
-          <dt>As a directory</dt><dd id="k-dir"></dd>
+          <dt data-t="98">Symbolic</dt><dd id="k-sym"></dd>
+          <dt data-t="99">As a file</dt><dd id="k-file"></dd>
+          <dt data-t="100">As a directory</dt><dd id="k-dir"></dd>
           <dt>chmod</dt><dd id="k-cmd"></dd>
-          <dt>Owner</dt><dd id="k-owner"></dd>
-          <dt>Group</dt><dd id="k-group"></dd>
-          <dt>Others</dt><dd id="k-others"></dd>
+          <dt data-t="91">Owner</dt><dd id="k-owner"></dd>
+          <dt data-t="92">Group</dt><dd id="k-group"></dd>
+          <dt data-t="93">Others</dt><dd id="k-others"></dd>
         </dl>
       </div>
     </div>
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="101">How this works</summary>
     <div class="mdv-method-body">
-      <p>A mode is twelve bits written as four octal digits. The last three digits are owner, group and
+      <p data-t="102">A mode is twelve bits written as four octal digits. The last three digits are owner, group and
         others, each holding read 4, write 2 and execute 1 added together, which is why 6 is read and write
         and 7 is everything. The digit in front carries the three special bits: setuid 4, setgid 2 and the
         sticky bit 1. <code>chmod 644</code> and <code>chmod 0644</code> mean the same thing; a number with
         a digit above 7 is not octal and is refused rather than guessed at.</p>
-      <p>What the bits do depends on what they are set on. On a file, execute means the kernel may run it;
+      <p data-t="103">What the bits do depends on what they are set on. On a file, execute means the kernel may run it;
         on a directory it means you may enter it and reach what is inside, so a directory with read but no
         execute lists names you cannot open. Setuid on an executable file runs it as the file's owner —
         the classic hole, which is why the page marks it. Setuid on a directory does nothing on Linux.
@@ -2346,30 +2458,31 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         another's files even when everyone may write there; on a file it is ignored by current kernels.
         When a special bit is set on a class that has no execute bit, the symbolic string shows the capital
         letter — <code>S</code> or <code>T</code> — and that is what <code>ls</code> prints.</p>
-      <p>The page states modes; it does not reason about your system. A real result also depends on the
+      <p data-t="104">The page states modes; it does not reason about your system. A real result also depends on the
         owner and group of the file, the mount options, the umask that was in force when it was created,
         and on any ACL or SELinux label, none of which a page can see. The symbolic <code>chmod</code> line
         is the <code>u=…,g=…,o=…</code> form, which sets exactly these bits rather than adding to what is
         already there.</p>
-      <p>Nothing is uploaded and nothing you tick is stored; the Dark button keeps its setting in this
+      <p data-t="105">Nothing is uploaded and nothing you tick is stored; the Dark and language buttons keep their settings in this
         browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Developer">
-    <span class="mdv-tag">Also in Developer</span>
-    <a href="./cron-generator.html">Cron expression</a>
-    <a href="./json-diff.html">JSON diff</a>
-    <a href="./json-formatter.html">JSON formatter</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Developer"}'>Also in Developer</span>
+    <a href="./cron-generator.html" data-t="36">Cron expression</a>
+    <a href="./json-diff.html" data-t="38">JSON diff</a>
+    <a href="./json-formatter.html" data-t="39">JSON formatter</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="106">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="107">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="108" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="109">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2380,6 +2493,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Chmod Calculator — octal, symbolic and what each bit allows — MDV","Tick the permission bits or type an octal mode and read the chmod number, the rwx string, the ls listing and what it allows, for a file and for a directory. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Owner read","Owner write","Owner execute","Setuid","Group read","Group write","Group execute","Setgid","Others read","Others write","Others execute","Sticky bit","read","write","execute","nothing","A mode is at most four digits — special bits, owner, group, others — and “{t}” has {n}.","“{t}” has a digit above 7, so it is not octal. Each digit adds read 4, write 2 and execute 1, so the highest is 7.","That is the rwx string, which this page prints rather than reads. Type the number instead — the boxes below give the same result.","“{t}” is not an octal mode. Type up to four digits, 0 to 7, such as 644 or 1777.","Anyone on the machine may write to this file.","Setuid runs the file as its owner, whoever starts it. Set it only on a program you trust completely, and never together with world-write.","Setuid without owner execute does nothing; ls shows the capital S.","Setgid without group execute shows the capital S; on a directory it still makes new entries inherit the group.","The sticky bit without others execute shows the capital T.","The owner has no permissions here, which is legal and almost always a mistake — the owner can still chmod it back.","Worth a second look","Worth knowing","Developer","2026-11-02"],"h":110,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Marca los bits o escribe el número y lee lo que el modo permite realmente.","En este dispositivo","Funciona sin conexión","Modo","archivo","script","privado","Quién","Leer","Escribir","Ejecutar","Especial","Propietario","Grupo","Otros","marca una casilla o escribe un modo arriba","No es un modo","Copiado","Copiar chmod","Simbólico","Como archivo","Como directorio","Cómo funciona","Un modo son doce bits escritos como cuatro dígitos octales. Los tres últimos dígitos son propietario, grupo y otros, y cada uno suma lectura 4, escritura 2 y ejecución 1, por eso 6 es lectura y escritura y 7 es todo. El dígito anterior lleva los tres bits especiales: setuid 4, setgid 2 y el bit sticky 1. \u003ccode>chmod 644\u003c/code> y \u003ccode>chmod 0644\u003c/code> significan lo mismo; un número con un dígito superior a 7 no es octal y se rechaza en lugar de adivinar.","Lo que hacen los bits depende de sobre qué se aplican. En un archivo, ejecutar significa que el kernel puede ejecutarlo; en un directorio significa que puedes entrar en él y llegar a lo que contiene, así que un directorio con lectura pero sin ejecución lista nombres que no puedes abrir. Setuid en un archivo ejecutable lo ejecuta como el propietario del archivo, el clásico agujero, por lo que la página lo marca. Setuid en un directorio no hace nada en Linux. Setgid en un directorio hace que las entradas nuevas hereden el grupo del directorio, que es el motivo habitual para activarlo. El bit sticky en un directorio compartido como \u003ccode>/tmp\u003c/code> impide que un usuario borre los archivos de otro aunque todos puedan escribir allí; en un archivo, los kernels actuales lo ignoran. Cuando un bit especial está activado en una clase sin bit de ejecución, la cadena simbólica muestra la letra mayúscula, \u003ccode>S\u003c/code> o \u003ccode>T\u003c/code>, y eso es lo que imprime \u003ccode>ls\u003c/code>.","La página expresa modos; no razona sobre tu sistema. Un resultado real también depende del propietario y el grupo del archivo, de las opciones de montaje, de la umask vigente cuando se creó y de cualquier ACL o etiqueta de SELinux, nada de lo cual puede ver una página. La línea \u003ccode>chmod\u003c/code> simbólica usa la forma \u003ccode>u=…,g=…,o=…\u003c/code>, que fija exactamente estos bits en lugar de añadirlos a los que ya existen.","No se sube nada y nada de lo que marques se guarda; los botones de modo oscuro e idioma guardan su ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Calculadora de chmod: octal, simbólico y qué permite cada bit — MDV","Marca los bits de permiso o escribe un modo octal y lee el número de chmod, la cadena rwx, el listado de ls y lo que permite, para un archivo y para un directorio. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Propietario: lectura","Propietario: escritura","Propietario: ejecución","Setuid","Grupo: lectura","Grupo: escritura","Grupo: ejecución","Setgid","Otros: lectura","Otros: escritura","Otros: ejecución","Bit sticky","lectura","escritura","ejecución","nada","Un modo tiene como máximo cuatro dígitos (bits especiales, propietario, grupo, otros) y «{t}» tiene {n}.","«{t}» tiene un dígito superior a 7, así que no es octal. Cada dígito suma lectura 4, escritura 2 y ejecución 1, por lo que el máximo es 7.","Eso es la cadena rwx, que esta página imprime pero no lee. Escribe el número en su lugar: las casillas de abajo dan el mismo resultado.","«{t}» no es un modo octal. Escribe hasta cuatro dígitos, de 0 a 7, como 644 o 1777.","Cualquiera en la máquina puede escribir en este archivo.","Setuid ejecuta el archivo como su propietario, quienquiera que lo inicie. Actívalo solo en un programa en el que confíes por completo, y nunca junto con escritura para todos.","Setuid sin ejecución del propietario no hace nada; ls muestra la S mayúscula.","Setgid sin ejecución del grupo muestra la S mayúscula; en un directorio sigue haciendo que las entradas nuevas hereden el grupo.","El bit sticky sin ejecución para otros muestra la T mayúscula.","El propietario no tiene permisos aquí, algo legal y casi siempre un error: el propietario aún puede volver a cambiarlo con chmod.","Conviene revisarlo","Conviene saberlo","Desarrollo",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Cochez les bits ou saisissez le nombre, et lisez ce que le mode autorise réellement.","Sur cet appareil","Fonctionne hors ligne","Mode","fichier","script","privé","Qui","Lecture","Écriture","Exécution","Spécial","Propriétaire","Groupe","Autres","cochez une case ou saisissez un mode ci-dessus","Pas un mode","Copié","Copier chmod","Symbolique","Comme fichier","Comme répertoire","Comment ça marche","Un mode est composé de douze bits écrits en quatre chiffres octaux. Les trois derniers chiffres sont le propriétaire, le groupe et les autres, chacun additionnant lecture 4, écriture 2 et exécution 1, d’où le fait que 6 soit lecture et écriture et que 7 soit tout. Le chiffre de tête porte les trois bits spéciaux : setuid 4, setgid 2 et le bit sticky 1. \u003ccode>chmod 644\u003c/code> et \u003ccode>chmod 0644\u003c/code> signifient la même chose ; un nombre contenant un chiffre supérieur à 7 n’est pas octal et est refusé plutôt que deviné.","Ce que font les bits dépend de ce sur quoi ils sont posés. Sur un fichier, l’exécution signifie que le noyau peut le lancer ; sur un répertoire, elle signifie que vous pouvez y entrer et atteindre son contenu : un répertoire avec lecture mais sans exécution liste des noms que vous ne pouvez pas ouvrir. Setuid sur un fichier exécutable le lance en tant que propriétaire du fichier — la faille classique, d’où le marquage par la page. Setuid sur un répertoire ne fait rien sous Linux. Setgid sur un répertoire fait hériter les nouvelles entrées du groupe du répertoire, ce qui est la raison habituelle de le poser. Le bit sticky sur un répertoire partagé comme \u003ccode>/tmp\u003c/code> empêche un utilisateur de supprimer les fichiers d’un autre, même quand tout le monde peut y écrire ; sur un fichier, les noyaux actuels l’ignorent. Lorsqu’un bit spécial est posé sur une classe sans bit d’exécution, la chaîne symbolique affiche la lettre majuscule — \u003ccode>S\u003c/code> ou \u003ccode>T\u003c/code> — et c’est ce qu’imprime \u003ccode>ls\u003c/code>.","La page énonce des modes ; elle ne raisonne pas sur votre système. Un résultat réel dépend aussi du propriétaire et du groupe du fichier, des options de montage, du umask en vigueur à sa création et de toute ACL ou étiquette SELinux, ce qu’une page ne peut pas voir. La ligne \u003ccode>chmod\u003c/code> symbolique utilise la forme \u003ccode>u=…,g=…,o=…\u003c/code>, qui fixe exactement ces bits au lieu de s’ajouter à ceux déjà présents.","Rien n’est envoyé et rien de ce que vous cochez n’est stocké ; les boutons Sombre et Langue conservent leur réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Calculateur chmod : octal, symbolique et ce que permet chaque bit — MDV","Cochez les bits de permission ou saisissez un mode octal et lisez le nombre chmod, la chaîne rwx, l’affichage de ls et ce qu’il autorise, pour un fichier et pour un répertoire. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Propriétaire : lecture","Propriétaire : écriture","Propriétaire : exécution","Setuid","Groupe : lecture","Groupe : écriture","Groupe : exécution","Setgid","Autres : lecture","Autres : écriture","Autres : exécution","Bit sticky","lecture","écriture","exécution","rien","Un mode compte au plus quatre chiffres (bits spéciaux, propriétaire, groupe, autres) et « {t} » en a {n}.","« {t} » contient un chiffre supérieur à 7 : ce n’est donc pas de l’octal. Chaque chiffre additionne lecture 4, écriture 2 et exécution 1, donc le maximum est 7.","Il s’agit de la chaîne rwx, que cette page affiche mais ne lit pas. Saisissez plutôt le nombre : les cases ci-dessous donnent le même résultat.","« {t} » n’est pas un mode octal. Saisissez jusqu’à quatre chiffres, de 0 à 7, comme 644 ou 1777.","Toute personne sur la machine peut écrire dans ce fichier.","Setuid exécute le fichier en tant que son propriétaire, quel que soit celui qui le lance. Ne le posez que sur un programme en lequel vous avez pleinement confiance, et jamais avec l’écriture pour tous.","Setuid sans exécution du propriétaire ne fait rien ; ls affiche le S majuscule.","Setgid sans exécution du groupe affiche le S majuscule ; sur un répertoire, il fait quand même hériter les nouvelles entrées du groupe.","Le bit sticky sans exécution pour les autres affiche le T majuscule.","Le propriétaire n’a aucune permission ici, ce qui est légal et presque toujours une erreur : il peut encore rétablir les droits avec chmod.","À revoir de près","À savoir","Développement",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Hake die Bits an oder tippe die Zahl und lies, was der Modus tatsächlich erlaubt.","Läuft auf diesem Gerät","Funktioniert offline","Modus","Datei","Skript","privat","Wer","Lesen","Schreiben","Ausführen","Spezial","Eigentümer","Gruppe","Andere","oben ein Kästchen anhaken oder einen Modus eingeben","Kein Modus","Kopiert","chmod kopieren","Symbolisch","Als Datei","Als Verzeichnis","So funktioniert es","Ein Modus besteht aus zwölf Bits, geschrieben als vier Oktalziffern. Die letzten drei Ziffern sind Eigentümer, Gruppe und Andere; jede addiert Lesen 4, Schreiben 2 und Ausführen 1, weshalb 6 Lesen und Schreiben und 7 alles bedeutet. Die vorangestellte Ziffer trägt die drei Spezialbits: setuid 4, setgid 2 und das Sticky-Bit 1. \u003ccode>chmod 644\u003c/code> und \u003ccode>chmod 0644\u003c/code> bedeuten dasselbe; eine Zahl mit einer Ziffer über 7 ist nicht oktal und wird abgelehnt, statt geraten zu werden.","Was die Bits bewirken, hängt davon ab, worauf sie gesetzt sind. Bei einer Datei bedeutet Ausführen, dass der Kernel sie starten darf; bei einem Verzeichnis bedeutet es, dass du es betreten und an seinen Inhalt kommen kannst, ein Verzeichnis mit Lesen, aber ohne Ausführen listet also Namen auf, die du nicht öffnen kannst. Setuid bei einer ausführbaren Datei startet sie als Eigentümer der Datei — die klassische Lücke, weshalb die Seite es markiert. Setuid bei einem Verzeichnis bewirkt unter Linux nichts. Setgid bei einem Verzeichnis lässt neue Einträge die Gruppe des Verzeichnisses erben, was der übliche Grund ist, es zu setzen. Das Sticky-Bit bei einem gemeinsamen Verzeichnis wie \u003ccode>/tmp\u003c/code> verhindert, dass ein Benutzer die Dateien eines anderen löscht, auch wenn alle dort schreiben dürfen; bei einer Datei ignorieren aktuelle Kernel es. Ist ein Spezialbit bei einer Klasse ohne Ausführungsbit gesetzt, zeigt die symbolische Zeichenkette den Großbuchstaben — \u003ccode>S\u003c/code> oder \u003ccode>T\u003c/code> — und genau das gibt \u003ccode>ls\u003c/code> aus.","Die Seite nennt Modi; sie urteilt nicht über dein System. Ein tatsächliches Ergebnis hängt auch von Eigentümer und Gruppe der Datei, den Mount-Optionen, der beim Anlegen gültigen umask und von ACLs oder SELinux-Labels ab, von denen eine Seite nichts sehen kann. Die symbolische \u003ccode>chmod\u003c/code>-Zeile hat die Form \u003ccode>u=…,g=…,o=…\u003c/code>, die genau diese Bits setzt, statt zu den vorhandenen hinzuzufügen.","Nichts wird hochgeladen, und nichts, was du anhakst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Chmod-Rechner: oktal, symbolisch und was jedes Bit erlaubt — MDV","Hake die Berechtigungsbits an oder tippe einen Oktalmodus und lies die chmod-Zahl, die rwx-Zeichenkette, die ls-Ausgabe und das, was erlaubt ist, für eine Datei und ein Verzeichnis ab. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Eigentümer: Lesen","Eigentümer: Schreiben","Eigentümer: Ausführen","Setuid","Gruppe: Lesen","Gruppe: Schreiben","Gruppe: Ausführen","Setgid","Andere: Lesen","Andere: Schreiben","Andere: Ausführen","Sticky-Bit","Lesen","Schreiben","Ausführen","nichts","Ein Modus hat höchstens vier Ziffern (Spezialbits, Eigentümer, Gruppe, Andere), und „{t}“ hat {n}.","„{t}“ hat eine Ziffer über 7 und ist daher nicht oktal. Jede Ziffer addiert Lesen 4, Schreiben 2 und Ausführen 1, der Höchstwert ist also 7.","Das ist die rwx-Zeichenkette, die diese Seite ausgibt, aber nicht einliest. Tippe stattdessen die Zahl; die Kästchen unten liefern dasselbe Ergebnis.","„{t}“ ist kein Oktalmodus. Tippe bis zu vier Ziffern von 0 bis 7, etwa 644 oder 1777.","Jeder auf dem Rechner darf in diese Datei schreiben.","Setuid führt die Datei als ihr Eigentümer aus, egal wer sie startet. Setze es nur bei einem Programm, dem du vollständig vertraust, und nie zusammen mit Schreibrecht für alle.","Setuid ohne Ausführen für den Eigentümer bewirkt nichts; ls zeigt das große S.","Setgid ohne Ausführen für die Gruppe zeigt das große S; bei einem Verzeichnis erben neue Einträge trotzdem die Gruppe.","Das Sticky-Bit ohne Ausführen für Andere zeigt das große T.","Der Eigentümer hat hier keine Rechte, was erlaubt und fast immer ein Fehler ist: Er kann es mit chmod weiterhin zurückändern.","Genauer hinschauen","Gut zu wissen","Entwicklung",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Spunta i bit o digita il numero e leggi che cosa consente davvero la modalità.","Su questo dispositivo","Funziona offline","Modalità","file","script","privato","Chi","Lettura","Scrittura","Esecuzione","Speciale","Proprietario","Gruppo","Altri","spunta una casella o digita una modalità qui sopra","Non è una modalità","Copiato","Copia chmod","Simbolico","Come file","Come directory","Come funziona","Una modalità è composta da dodici bit scritti come quattro cifre ottali. Le ultime tre cifre sono proprietario, gruppo e altri, e ciascuna somma lettura 4, scrittura 2 ed esecuzione 1, per cui 6 è lettura e scrittura e 7 è tutto. La cifra davanti porta i tre bit speciali: setuid 4, setgid 2 e lo sticky bit 1. \u003ccode>chmod 644\u003c/code> e \u003ccode>chmod 0644\u003c/code> significano la stessa cosa; un numero con una cifra superiore a 7 non è ottale e viene rifiutato anziché indovinato.","Ciò che fanno i bit dipende da ciò su cui sono impostati. Su un file, l’esecuzione significa che il kernel può avviarlo; su una directory significa che puoi entrarvi e raggiungere ciò che contiene, quindi una directory con lettura ma senza esecuzione elenca nomi che non puoi aprire. Setuid su un file eseguibile lo avvia come proprietario del file — la classica falla, ed è per questo che la pagina lo segnala. Setuid su una directory non fa nulla su Linux. Setgid su una directory fa ereditare alle nuove voci il gruppo della directory, che è il motivo abituale per impostarlo. Lo sticky bit su una directory condivisa come \u003ccode>/tmp\u003c/code> impedisce a un utente di cancellare i file di un altro anche quando tutti possono scrivervi; su un file i kernel attuali lo ignorano. Quando un bit speciale è impostato su una classe senza bit di esecuzione, la stringa simbolica mostra la lettera maiuscola — \u003ccode>S\u003c/code> o \u003ccode>T\u003c/code> — ed è ciò che stampa \u003ccode>ls\u003c/code>.","La pagina indica le modalità; non ragiona sul tuo sistema. Un risultato reale dipende anche da proprietario e gruppo del file, dalle opzioni di mount, dalla umask in vigore alla creazione e da eventuali ACL o etichette SELinux, nulla di cui una pagina possa avere visibilità. La riga \u003ccode>chmod\u003c/code> simbolica usa la forma \u003ccode>u=…,g=…,o=…\u003c/code>, che imposta esattamente questi bit anziché aggiungerli a quelli già presenti.","Non viene caricato nulla e nulla di ciò che spunti viene salvato; i pulsanti Scuro e Lingua conservano la loro impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Calcolatore chmod: ottale, simbolico e cosa consente ogni bit — MDV","Spunta i bit dei permessi o digita una modalità ottale e leggi il numero chmod, la stringa rwx, l’elenco di ls e ciò che consente, per un file e per una directory. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Proprietario: lettura","Proprietario: scrittura","Proprietario: esecuzione","Setuid","Gruppo: lettura","Gruppo: scrittura","Gruppo: esecuzione","Setgid","Altri: lettura","Altri: scrittura","Altri: esecuzione","Sticky bit","lettura","scrittura","esecuzione","nulla","Una modalità ha al massimo quattro cifre (bit speciali, proprietario, gruppo, altri) e «{t}» ne ha {n}.","«{t}» ha una cifra superiore a 7, quindi non è ottale. Ogni cifra somma lettura 4, scrittura 2 ed esecuzione 1, quindi il massimo è 7.","Questa è la stringa rwx, che la pagina stampa ma non legge. Digita invece il numero: le caselle qui sotto danno lo stesso risultato.","«{t}» non è una modalità ottale. Digita fino a quattro cifre, da 0 a 7, come 644 o 1777.","Chiunque sulla macchina può scrivere in questo file.","Setuid esegue il file come il suo proprietario, chiunque lo avvii. Impostalo solo su un programma di cui ti fidi completamente, e mai insieme alla scrittura per tutti.","Setuid senza esecuzione del proprietario non fa nulla; ls mostra la S maiuscola.","Setgid senza esecuzione del gruppo mostra la S maiuscola; su una directory fa comunque ereditare il gruppo alle nuove voci.","Lo sticky bit senza esecuzione per gli altri mostra la T maiuscola.","Il proprietario qui non ha alcun permesso, cosa lecita e quasi sempre un errore: il proprietario può comunque rimetterlo a posto con chmod.","Da ricontrollare","Da sapere","Sviluppo",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Marque os bits ou digite o número e leia o que o modo realmente permite.","Neste dispositivo","Funciona offline","Modo","arquivo","script","privado","Quem","Leitura","Escrita","Execução","Especial","Proprietário","Grupo","Outros","marque uma caixa ou digite um modo acima","Não é um modo","Copiado","Copiar chmod","Simbólico","Como arquivo","Como diretório","Como funciona","Um modo são doze bits escritos como quatro dígitos octais. Os três últimos dígitos são proprietário, grupo e outros, e cada um soma leitura 4, escrita 2 e execução 1, por isso 6 é leitura e escrita e 7 é tudo. O dígito da frente carrega os três bits especiais: setuid 4, setgid 2 e o sticky bit 1. \u003ccode>chmod 644\u003c/code> e \u003ccode>chmod 0644\u003c/code> significam a mesma coisa; um número com um dígito acima de 7 não é octal e é recusado em vez de adivinhado.","O que os bits fazem depende de onde estão definidos. Em um arquivo, execução significa que o kernel pode executá-lo; em um diretório, significa que você pode entrar nele e alcançar o que há dentro, então um diretório com leitura mas sem execução lista nomes que você não consegue abrir. Setuid em um arquivo executável o executa como o proprietário do arquivo — a falha clássica, por isso a página o marca. Setuid em um diretório não faz nada no Linux. Setgid em um diretório faz as novas entradas herdarem o grupo do diretório, que é o motivo habitual para defini-lo. O sticky bit em um diretório compartilhado como \u003ccode>/tmp\u003c/code> impede que um usuário apague os arquivos de outro mesmo quando todos podem escrever ali; em um arquivo, os kernels atuais o ignoram. Quando um bit especial está definido em uma classe sem bit de execução, a string simbólica mostra a letra maiúscula — \u003ccode>S\u003c/code> ou \u003ccode>T\u003c/code> — e é isso que o \u003ccode>ls\u003c/code> imprime.","A página declara modos; ela não raciocina sobre o seu sistema. Um resultado real também depende do proprietário e do grupo do arquivo, das opções de montagem, da umask em vigor quando ele foi criado e de qualquer ACL ou rótulo SELinux, nada disso visível a uma página. A linha \u003ccode>chmod\u003c/code> simbólica usa a forma \u003ccode>u=…,g=…,o=…\u003c/code>, que define exatamente esses bits em vez de acrescentá-los aos que já existem.","Nada é enviado e nada do que você marca é armazenado; os botões Escuro e Idioma guardam sua configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Calculadora de chmod: octal, simbólico e o que cada bit permite — MDV","Marque os bits de permissão ou digite um modo octal e leia o número do chmod, a string rwx, a listagem do ls e o que ele permite, para um arquivo e para um diretório. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Proprietário: leitura","Proprietário: escrita","Proprietário: execução","Setuid","Grupo: leitura","Grupo: escrita","Grupo: execução","Setgid","Outros: leitura","Outros: escrita","Outros: execução","Sticky bit","leitura","escrita","execução","nada","Um modo tem no máximo quatro dígitos (bits especiais, proprietário, grupo, outros) e “{t}” tem {n}.","“{t}” tem um dígito acima de 7, então não é octal. Cada dígito soma leitura 4, escrita 2 e execução 1, portanto o máximo é 7.","Isso é a string rwx, que esta página imprime mas não lê. Digite o número: as caixas abaixo dão o mesmo resultado.","“{t}” não é um modo octal. Digite até quatro dígitos, de 0 a 7, como 644 ou 1777.","Qualquer pessoa na máquina pode escrever neste arquivo.","Setuid executa o arquivo como seu proprietário, não importa quem o inicie. Defina-o apenas em um programa em que você confia plenamente, e nunca junto com escrita para todos.","Setuid sem execução do proprietário não faz nada; o ls mostra o S maiúsculo.","Setgid sem execução do grupo mostra o S maiúsculo; em um diretório ainda faz as novas entradas herdarem o grupo.","O sticky bit sem execução para outros mostra o T maiúsculo.","O proprietário não tem permissões aqui, o que é válido e quase sempre um engano: o proprietário ainda pode reverter com chmod.","Vale uma segunda olhada","Bom saber","Desenvolvimento",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","ビットにチェックを入れるか数値を入力すると、そのモードが実際に何を許可するかが分かります。","この端末で動作","オフラインで動作","モード","ファイル","スクリプト","非公開","対象","読み取り","書き込み","実行","特殊","所有者","グループ","その他","上でボックスにチェックするかモードを入力","モードではありません","コピーしました","chmod をコピー","シンボリック","ファイルの場合","ディレクトリの場合","仕組み","モードは 12 ビットで、8 進数の 4 桁で表します。下 3 桁は所有者、グループ、その他で、それぞれ読み取り 4、書き込み 2、実行 1 を足したものです。6 が読み取りと書き込み、7 がすべてなのはそのためです。先頭の桁には 3 つの特殊ビット(setuid 4、setgid 2、スティッキービット 1)が入ります。\u003ccode>chmod 644\u003c/code> と \u003ccode>chmod 0644\u003c/code> は同じ意味です。7 を超える桁を含む数値は 8 進数ではないため、推測せずに拒否します。","ビットが何をするかは、設定された対象によって変わります。ファイルでは、実行はカーネルがそれを実行してよいことを意味します。ディレクトリでは、そこに入って中身にたどり着けることを意味するため、読み取りだけで実行がないディレクトリでは、開けない名前が一覧表示されます。実行可能ファイルの setuid は、ファイルの所有者として実行します。これは昔からある脆弱性の典型なので、このページでは印を付けます。Linux ではディレクトリの setuid は何もしません。ディレクトリの setgid は、新しいエントリがそのディレクトリのグループを継承するようにし、これが設定する一般的な理由です。\u003ccode>/tmp\u003c/code> のような共有ディレクトリのスティッキービットは、全員が書き込める場合でも、他のユーザーのファイルを削除できないようにします。ファイルでは、現在のカーネルは無視します。実行ビットのないクラスに特殊ビットが設定されている場合、シンボリック表記では大文字の \u003ccode>S\u003c/code> または \u003ccode>T\u003c/code> が表示され、\u003ccode>ls\u003c/code> もそのように出力します。","このページはモードを表すだけで、お使いのシステムについて推論はしません。実際の結果は、ファイルの所有者とグループ、マウントオプション、作成時に有効だった umask、ACL や SELinux ラベルにも左右されますが、ページにはそれらが見えません。シンボリックな \u003ccode>chmod\u003c/code> の行は \u003ccode>u=…,g=…,o=…\u003c/code> の形式で、すでにある設定に追加するのではなく、これらのビットを正確に設定します。","何もアップロードされず、チェックした内容も保存されません。ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保持します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","chmod 計算機: 8 進数、シンボリック表記、各ビットの意味 — MDV","権限ビットにチェックを入れるか 8 進数のモードを入力すると、chmod の数値、rwx 文字列、ls の表示、そして何が許可されるかが、ファイルとディレクトリの両方で分かります。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","所有者の読み取り","所有者の書き込み","所有者の実行","Setuid","グループの読み取り","グループの書き込み","グループの実行","Setgid","その他の読み取り","その他の書き込み","その他の実行","スティッキービット","読み取り","書き込み","実行","なし","モードは最大 4 桁(特殊ビット、所有者、グループ、その他)ですが、「{t}」は {n} 桁です。","「{t}」には 7 を超える桁があるため、8 進数ではありません。各桁は読み取り 4、書き込み 2、実行 1 の合計なので、最大は 7 です。","これは rwx 文字列で、このページは表示するだけで読み取りません。代わりに数値を入力してください。下のボックスでも同じ結果になります。","「{t}」は 8 進数のモードではありません。644 や 1777 のように、0〜7 の数字を最大 4 桁で入力してください。","このマシン上の誰でもこのファイルに書き込めます。","setuid は、誰が起動してもファイルを所有者として実行します。完全に信頼できるプログラムにだけ設定し、全員に書き込みを許可する設定とは決して併用しないでください。","所有者の実行ビットがない setuid は何もしません。ls では大文字の S で表示されます。","グループの実行ビットがない setgid は大文字の S で表示されます。ディレクトリでは、新しいエントリがグループを継承することに変わりはありません。","その他の実行ビットがないスティッキービットは大文字の T で表示されます。","所有者の権限がありません。これは有効な設定ですが、ほとんどの場合は間違いです。所有者は chmod で元に戻せます。","よく確認してください","知っておくこと","開発",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","비트를 체크하거나 숫자를 입력하면 그 모드가 실제로 무엇을 허용하는지 볼 수 있습니다.","이 기기에서 실행","오프라인 작동","모드","파일","스크립트","비공개","대상","읽기","쓰기","실행","특수","소유자","그룹","기타","위에서 체크하거나 모드를 입력","모드가 아닙니다","복사됨","chmod 복사","기호식","파일일 때","디렉터리일 때","작동 방식","모드는 12비트이며 8진수 네 자리로 씁니다. 마지막 세 자리는 소유자, 그룹, 기타이고, 각각 읽기 4, 쓰기 2, 실행 1을 더한 값입니다. 그래서 6은 읽기와 쓰기, 7은 전부입니다. 맨 앞자리는 세 가지 특수 비트인 setuid 4, setgid 2, 스티키 비트 1을 담습니다. \u003ccode>chmod 644\u003c/code>와 \u003ccode>chmod 0644\u003c/code>는 같은 뜻입니다. 7보다 큰 숫자가 들어간 수는 8진수가 아니므로 추측하지 않고 거부합니다.","비트가 하는 일은 어디에 설정되었는지에 따라 달라집니다. 파일에서 실행은 커널이 그것을 실행해도 된다는 뜻이고, 디렉터리에서는 그 안에 들어가 내용에 접근할 수 있다는 뜻이므로, 읽기만 있고 실행이 없는 디렉터리는 열 수 없는 이름만 나열합니다. 실행 파일의 setuid는 파일 소유자 권한으로 실행하며, 고전적인 보안 구멍이라 이 페이지가 표시합니다. 디렉터리의 setuid는 Linux에서 아무 일도 하지 않습니다. 디렉터리의 setgid는 새 항목이 디렉터리의 그룹을 상속하게 하며, 이것이 보통 설정하는 이유입니다. \u003ccode>/tmp\u003c/code> 같은 공유 디렉터리의 스티키 비트는 모두가 쓸 수 있어도 한 사용자가 다른 사용자의 파일을 삭제하지 못하게 합니다. 파일에서는 현재 커널이 무시합니다. 실행 비트가 없는 클래스에 특수 비트가 설정되면 기호 문자열에는 대문자 \u003ccode>S\u003c/code> 또는 \u003ccode>T\u003c/code>가 표시되고, \u003ccode>ls\u003c/code>도 그렇게 출력합니다.","이 페이지는 모드를 보여 줄 뿐 사용자의 시스템을 추론하지 않습니다. 실제 결과는 파일의 소유자와 그룹, 마운트 옵션, 파일이 만들어질 때 적용된 umask, 그리고 ACL이나 SELinux 레이블에도 좌우되지만, 페이지는 이것들을 볼 수 없습니다. 기호식 \u003ccode>chmod\u003c/code> 줄은 \u003ccode>u=…,g=…,o=…\u003c/code> 형태로, 이미 있는 설정에 더하는 것이 아니라 정확히 이 비트들만 설정합니다.","아무것도 업로드되지 않고 체크한 내용도 저장되지 않으며, 다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","chmod 계산기: 8진수, 기호식, 각 비트가 허용하는 것 — MDV","권한 비트를 체크하거나 8진수 모드를 입력하면 chmod 숫자, rwx 문자열, ls 출력, 허용되는 동작을 파일과 디렉터리 각각에 대해 볼 수 있습니다. 내 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","소유자 읽기","소유자 쓰기","소유자 실행","Setuid","그룹 읽기","그룹 쓰기","그룹 실행","Setgid","기타 읽기","기타 쓰기","기타 실행","스티키 비트","읽기","쓰기","실행","없음","모드는 최대 네 자리(특수 비트, 소유자, 그룹, 기타)인데 “{t}”은(는) {n}자리입니다.","“{t}”에는 7보다 큰 숫자가 있어 8진수가 아닙니다. 각 자리는 읽기 4, 쓰기 2, 실행 1을 더한 값이므로 최대는 7입니다.","이것은 rwx 문자열이며, 이 페이지는 출력만 하고 읽지는 않습니다. 대신 숫자를 입력하세요. 아래 체크박스로도 같은 결과를 얻을 수 있습니다.","“{t}”은(는) 8진수 모드가 아닙니다. 644나 1777처럼 0~7 숫자를 최대 네 자리까지 입력하세요.","이 컴퓨터의 누구나 이 파일에 쓸 수 있습니다.","setuid는 누가 시작하든 파일을 소유자 권한으로 실행합니다. 완전히 신뢰하는 프로그램에만 설정하고, 모두에게 쓰기를 허용하는 설정과는 절대 함께 쓰지 마세요.","소유자 실행 없이 setuid는 아무 일도 하지 않으며, ls는 대문자 S로 표시합니다.","그룹 실행 없이 setgid는 대문자 S로 표시되며, 디렉터리에서는 여전히 새 항목이 그룹을 상속하게 합니다.","기타 실행 없이 스티키 비트는 대문자 T로 표시됩니다.","소유자에게 권한이 없습니다. 허용되는 설정이지만 거의 항상 실수이며, 소유자는 chmod로 되돌릴 수 있습니다.","다시 확인해 보세요","알아 두세요","개발",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","勾选各个位或输入数字,即可读出该模式实际允许的操作。","在此设备上运行","可离线使用","模式","文件","脚本","私有","对象","读","写","执行","特殊","所有者","用户组","其他人","勾选上方的复选框或输入模式","不是有效模式","已复制","复制 chmod","符号形式","作为文件","作为目录","工作原理","模式由 12 位组成,写成四位八进制数字。后三位依次是所有者、用户组和其他人,每位由读 4、写 2、执行 1 相加而成,所以 6 是读和写,7 是全部权限。最前面的一位表示三个特殊位:setuid 4、setgid 2 和 sticky 位 1。\u003ccode>chmod 644\u003c/code> 与 \u003ccode>chmod 0644\u003c/code> 含义相同;含有大于 7 的数字的数不是八进制,会被拒绝而不是被猜测。","这些位的作用取决于它们设置在什么对象上。对文件来说,执行表示内核可以运行它;对目录来说,表示你可以进入它并访问其中的内容,所以有读权限而无执行权限的目录会列出你打不开的名称。可执行文件上的 setuid 会以文件所有者的身份运行它,这是经典的安全漏洞,所以本页会标出。目录上的 setuid 在 Linux 上没有作用。目录上的 setgid 会让新建条目继承该目录的用户组,这通常就是设置它的原因。像 \u003ccode>/tmp\u003c/code> 这样的共享目录上的 sticky 位,即使人人都能写入,也能阻止一个用户删除他人的文件;在文件上,当前的内核会忽略它。当特殊位设在没有执行位的类别上时,符号字符串会显示大写字母 \u003ccode>S\u003c/code> 或 \u003ccode>T\u003c/code>,\u003ccode>ls\u003c/code> 的输出也是如此。","本页只陈述模式,不推断你的系统。实际结果还取决于文件的所有者和用户组、挂载选项、创建文件时生效的 umask，以及任何 ACL 或 SELinux 标签,这些页面都看不到。符号形式的 \u003ccode>chmod\u003c/code> 行采用 \u003ccode>u=…,g=…,o=…\u003c/code> 的写法,它会精确设置这些位,而不是在现有权限上叠加。","不会上传任何内容,你勾选的内容也不会被存储;深色和语言按钮会把各自的设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","chmod 计算器:八进制、符号形式及每一位的含义 — MDV","勾选权限位或输入八进制模式,即可读出 chmod 数字、rwx 字符串、ls 列表,以及对文件和目录各自允许的操作。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","所有者读","所有者写","所有者执行","Setuid","用户组读","用户组写","用户组执行","Setgid","其他人读","其他人写","其他人执行","Sticky 位","读","写","执行","无","模式最多四位(特殊位、所有者、用户组、其他人),而“{t}”有 {n} 位。","“{t}”含有大于 7 的数字,因此不是八进制。每一位由读 4、写 2、执行 1 相加而成,所以最大是 7。","这是 rwx 字符串,本页只输出、不读取。请改为输入数字,下方的复选框也能得到相同的结果。","“{t}”不是八进制模式。请输入最多四位 0 到 7 的数字,例如 644 或 1777。","本机上的任何人都可以写入此文件。","setuid 会让文件以其所有者的身份运行,无论由谁启动。只对你完全信任的程序设置它,并且绝不要与所有人可写同时使用。","没有所有者执行位的 setuid 不起作用;ls 显示为大写 S。","没有用户组执行位的 setgid 显示为大写 S;在目录上,它仍会让新建条目继承该用户组。","没有其他人执行位的 sticky 位显示为大写 T。","所有者在这里没有任何权限,这是合法的,但几乎总是个错误:所有者仍可以用 chmod 改回来。","值得再看一眼","须知","开发",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2405,10 +2618,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   function words(bits) {
     var out = [];
-    if (bits & 4) out.push("read");
-    if (bits & 2) out.push("write");
-    if (bits & 1) out.push("execute");
-    return out.length ? out.join(", ") : "nothing";
+    if (bits & 4) out.push(tr("read"));
+    if (bits & 2) out.push(tr("write"));
+    if (bits & 1) out.push(tr("execute"));
+    return out.length ? out.join(", ") : tr("nothing");
   }
   function symbolicCommand(mode) {
     function part(letter, bits) {
@@ -2423,10 +2636,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var t = String(text).trim();
     if (t === "") return null;
     if (!/^[0-7]{1,4}$/.test(t)) {
-      if (/^[0-7]+$/.test(t)) return { error: "A mode is at most four digits — special bits, owner, group, others — and “" + t + "” has " + t.length + "." };
-      if (/^[0-9]+$/.test(t)) return { error: "“" + t + "” has a digit above 7, so it is not octal. Each digit adds read 4, write 2 and execute 1, so the highest is 7." };
-      if (/^[rwxsStT-]{9,10}$/.test(t)) return { error: "That is the rwx string, which this page prints rather than reads. Type the number instead — the boxes below give the same result." };
-      return { error: "“" + t + "” is not an octal mode. Type up to four digits, 0 to 7, such as 644 or 1777." };
+      if (/^[0-7]+$/.test(t)) return { error: trk("A mode is at most four digits — special bits, owner, group, others — and “{t}” has {n}."), vars: { t: t, n: t.length } };
+      if (/^[0-9]+$/.test(t)) return { error: trk("“{t}” has a digit above 7, so it is not octal. Each digit adds read 4, write 2 and execute 1, so the highest is 7."), vars: { t: t } };
+      if (/^[rwxsStT-]{9,10}$/.test(t)) return { error: trk("That is the rwx string, which this page prints rather than reads. Type the number instead — the boxes below give the same result.") };
+      return { error: trk("“{t}” is not an octal mode. Type up to four digits, 0 to 7, such as 644 or 1777."), vars: { t: t } };
     }
     return { mode: parseInt(t, 8) };
   }
@@ -2459,14 +2672,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     $("k-others").textContent = words(mode & 7) + (mode & STICKY ? ", sticky" : "");
 
     var notes = [];
-    if ((mode & 2) && (mode & SETUID) === 0) notes.push("Anyone on the machine may write to this file.");
-    if (mode & SETUID) notes.push("Setuid runs the file as its owner, whoever starts it. Set it only on a program you trust completely, and never together with world-write.");
-    if ((mode & SETUID) && (mode & 64) === 0) notes.push("Setuid without owner execute does nothing; ls shows the capital S.");
-    if ((mode & SETGID) && (mode & 8) === 0) notes.push("Setgid without group execute shows the capital S; on a directory it still makes new entries inherit the group.");
-    if ((mode & STICKY) && (mode & 1) === 0) notes.push("The sticky bit without others execute shows the capital T.");
-    if (((mode >> 6) & 7) === 0 && mode) notes.push("The owner has no permissions here, which is legal and almost always a mistake — the owner can still chmod it back.");
+    if ((mode & 2) && (mode & SETUID) === 0) notes.push(tr("Anyone on the machine may write to this file."));
+    if (mode & SETUID) notes.push(tr("Setuid runs the file as its owner, whoever starts it. Set it only on a program you trust completely, and never together with world-write."));
+    if ((mode & SETUID) && (mode & 64) === 0) notes.push(tr("Setuid without owner execute does nothing; ls shows the capital S."));
+    if ((mode & SETGID) && (mode & 8) === 0) notes.push(tr("Setgid without group execute shows the capital S; on a directory it still makes new entries inherit the group."));
+    if ((mode & STICKY) && (mode & 1) === 0) notes.push(tr("The sticky bit without others execute shows the capital T."));
+    if (((mode >> 6) & 7) === 0 && mode) notes.push(tr("The owner has no permissions here, which is legal and almost always a mistake — the owner can still chmod it back."));
     warnmsg.textContent = notes.join(" ");
-    warntitle.textContent = (mode & 2) || (mode & SETUID) ? "Worth a second look" : "Worth knowing";
+    warntitle.textContent = (mode & 2) || (mode & SETUID) ? tr("Worth a second look") : tr("Worth knowing");
     warn.hidden = !notes.length;
     state("ok");
   }
@@ -2474,7 +2687,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function fromField() {
     var got = readMode(octal.value);
     if (got === null) { state("empty"); return; }
-    if (got.error) { errmsg.textContent = got.error; state("error"); return; }
+    if (got.error) { errmsg.textContent = tr(got.error, got.vars); state("error"); return; }
     mode = got.mode;
     paint();
   }
@@ -2500,6 +2713,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   octal.focus({ preventScroll: true });
+  onLang(fromField);
   fromField();
 })();
 </script>

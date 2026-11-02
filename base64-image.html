@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link is-here" href="./base64-image.html" aria-current="page" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link is-here" href="./base64-image.html" aria-current="page" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,33 +2353,33 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Image to data URI</h1>
+      <h1 class="mdv-head-name" data-t="18">Image to data URI</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Drop an image and get the base64 line to paste into CSS or HTML. The file never leaves the device.</p>
+    <p class="mdv-head-line" data-t="79">Drop an image and get the base64 line to paste into CSS or HTML. The file never leaves the device.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
-  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose an image to encode">
+  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose an image to encode" data-t-attrs="aria-label">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
-    <span class="mdv-tag">Drop a PNG, JPEG, GIF, WebP, AVIF, ICO or SVG — up to 4 MB</span>
+    <span class="mdv-tag" data-t="82">Drop a PNG, JPEG, GIF, WebP, AVIF, ICO or SVG — up to 4 MB</span>
     <input type="file" id="file" accept="image/png,image/jpeg,image/gif,image/webp,image/avif,image/x-icon,image/vnd.microsoft.icon,image/svg+xml" class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <div class="mdv-row is-between">
-    <div class="mdv-seg" role="group" aria-label="Output shape">
+    <div class="mdv-seg" role="group" aria-label="Output shape" data-t-attrs="aria-label">
       <button type="button" data-shape="uri" class="is-on" aria-pressed="true">Data URI</button>
       <button type="button" data-shape="css" aria-pressed="false">CSS</button>
       <button type="button" data-shape="html" aria-pressed="false">HTML</button>
     </div>
-    <label class="mdv-check" id="minWrap" hidden><input type="checkbox" id="minify"> Shrink the SVG source first</label>
+    <label class="mdv-check" id="minWrap" hidden><input type="checkbox" id="minify"> <span data-t="83">Shrink the SVG source first</span></label>
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>drop an image above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="84">drop an image above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Cannot encode that</span>
@@ -2277,63 +2389,64 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <div id="ok" hidden>
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>File</dt><dd id="k-file"></dd>
-          <dt>Encoded</dt><dd id="k-size"></dd>
-          <dt id="t-note">Worth knowing</dt><dd id="k-note"></dd>
+          <dt data-t="85">File</dt><dd id="k-file"></dd>
+          <dt data-t="86">Encoded</dt><dd id="k-size"></dd>
+          <dt id="t-note" data-t="87">Worth knowing</dt><dd id="k-note"></dd>
         </dl>
       </div>
       <div class="mdv-row is-between">
         <span class="mdv-label" id="outLabel">Data URI</span>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy</button>
+          <span class="mdv-badge is-accent" id="copied" hidden><span data-t="88">Copied</span></span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn"><span data-t="89">Copy</span></button>
         </span>
       </div>
       <pre class="mdv-out" id="out"></pre>
-      <div class="mdv-row"><img id="preview" alt="The image you dropped" style="max-width:160px;max-height:120px;border:1px solid var(--border-hair)"></div>
+      <div class="mdv-row"><img id="preview" alt="The image you dropped" data-t-attrs="alt" style="max-width:160px;max-height:120px;border:1px solid var(--border-hair)"></div>
     </div>
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="90">How this works</summary>
     <div class="mdv-method-body">
-      <p>The file is read with <code>FileReader</code> inside this page and its bytes are written out in
+      <p data-t="91">The file is read with <code>FileReader</code> inside this page and its bytes are written out in
         base64, the encoding that turns three bytes into four characters of plain text. That is where the
         cost comes from: a data URI is about a third larger than the file it carries, before any compression
         the server adds. The type in front of the comma — <code>data:image/png;base64,</code> — is the
         browser's own reading of the file, not the extension on its name, so a PNG saved as
         <code>.jpg</code> still says PNG here.</p>
-      <p>SVG is handled differently, because it does not need base64 at all. An SVG is text, so the page
+      <p data-t="92">SVG is handled differently, because it does not need base64 at all. An SVG is text, so the page
         percent-encodes it instead, which is both smaller than base64 and still readable in the stylesheet.
         <strong>Shrink the SVG source first</strong> drops XML comments, the <code>&lt;?xml?&gt;</code>
         declaration and repeated whitespace before encoding — it never touches the drawing itself, so the
         image is unchanged. If the SVG carries a script, it is left in place: this page does not edit your
         file, and a data: URI in <code>img</code> or CSS cannot run it anyway.</p>
-      <p>Data URIs are worth it for small, unchanging images — an icon, a texture, a one-pixel gradient
+      <p data-t="93">Data URIs are worth it for small, unchanging images — an icon, a texture, a one-pixel gradient
         stop. They are a bad deal for anything big: the bytes are copied into every file that mentions them,
         they cannot be cached separately, and a stylesheet that carries a photograph blocks the page until
         it has finished loading. The page prints the encoded size so that trade is visible, and warns past
         about 10 kB. Files above 4 MB are refused, because the text would be larger than most editors like
         to hold.</p>
-      <p>Nothing is uploaded: the file is read in this tab and the page makes no network requests. Nothing
-        you drop is stored; the Dark button keeps its own setting in this browser's local storage.</p>
+      <p data-t="94">Nothing is uploaded: the file is read in this tab and the page makes no network requests. Nothing
+        you drop is stored; the Dark and language buttons keep their own settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Encoding &amp; Crypto">
-    <span class="mdv-tag">Also in Encoding &amp; Crypto</span>
-    <a href="./jwt-decoder.html">JWT decoder</a>
-    <a href="./password-generator.html">Password generator</a>
-    <a href="./qr-code-generator.html">QR code generator</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Encoding &amp; Crypto"}'>Also in Encoding &amp; Crypto</span>
+    <a href="./jwt-decoder.html" data-t="22">JWT decoder</a>
+    <a href="./password-generator.html" data-t="23">Password generator</a>
+    <a href="./qr-code-generator.html" data-t="24">QR code generator</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="95">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="96">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="97" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="98">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2344,6 +2457,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Image to Data URI — base64 for CSS and HTML, on your device — MDV","Turn a PNG, JPEG, GIF, WebP, AVIF, ICO or SVG into a data URI ready for CSS or HTML, with the size it adds. The image never leaves the device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Choose an image to encode","Output shape","The image you dropped","Too large","{name} is {size}. This page encodes up to {limit} — past that a data URI is the wrong tool, and the text would be {text}.","Not an image this page reads","{name} is {type}. Drop a PNG, JPEG, GIF, WebP, AVIF, ICO or SVG.","That file","Could not read that","The browser stopped reading {name} — it may have been moved or is not readable.","The browser returned something that is not a data URI for {name}.","image","{size} of text (percent-encoded, not base64)","{size} of text (base64, about a third larger)","source shrunk from {from} to {to}","Past about 10 kB a data URI usually costs more than it saves: the bytes are copied into every file that mentions them and cannot be cached on their own. A plain file reference is better here.","Small enough to be worth inlining: one fewer request, and it can never 404.","This SVG contains a script. It is left exactly as it was; a data: URI in img or CSS cannot run it, but an inline \u003csvg> in your page can.","A photograph this size belongs in its own file, not in a stylesheet.","Encoding & Crypto","2026-11-02"],"h":99,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Suelta una imagen y obtén la línea en base64 para pegar en CSS o HTML. El archivo nunca sale del dispositivo.","En este dispositivo","Funciona sin conexión","Suelta un PNG, JPEG, GIF, WebP, AVIF, ICO o SVG — hasta 4 MB","Reducir primero el código SVG","suelta una imagen arriba","Archivo","Codificado","Conviene saber","Copiado","Copiar","Cómo funciona","El archivo se lee con \u003ccode>FileReader\u003c/code> dentro de esta página y sus bytes se escriben en base64, la codificación que convierte tres bytes en cuatro caracteres de texto plano. De ahí viene el coste: un data URI es aproximadamente un tercio mayor que el archivo que contiene, antes de cualquier compresión que añada el servidor. El tipo antes de la coma — \u003ccode>data:image/png;base64,\u003c/code> — es la lectura que hace el propio navegador del archivo, no la extensión de su nombre, así que un PNG guardado como \u003ccode>.jpg\u003c/code> sigue diciendo PNG aquí.","SVG se trata de otra forma, porque no necesita base64 en absoluto. Un SVG es texto, así que la página lo codifica con porcentajes, lo que es más pequeño que base64 y sigue siendo legible en la hoja de estilos. \u003cstrong>Reducir primero el código SVG\u003c/strong> elimina los comentarios XML, la declaración \u003ccode>&lt;?xml?&gt;\u003c/code> y los espacios repetidos antes de codificar; nunca toca el dibujo en sí, así que la imagen no cambia. Si el SVG lleva un script, se deja donde está: esta página no edita tu archivo, y un data: URI en \u003ccode>img\u003c/code> o en CSS no puede ejecutarlo de todos modos.","Los data URI compensan en imágenes pequeñas e inmutables: un icono, una textura, una parada de degradado de un píxel. Son un mal negocio para cualquier cosa grande: los bytes se copian en cada archivo que los menciona, no se pueden guardar en caché por separado, y una hoja de estilos que lleva una fotografía bloquea la página hasta que termina de cargarse. La página muestra el tamaño codificado para que ese equilibrio sea visible, y avisa a partir de unos 10 kB. Los archivos de más de 4 MB se rechazan, porque el texto sería más grande de lo que la mayoría de los editores soportan.","No se sube nada: el archivo se lee en esta pestaña y la página no hace ninguna petición de red. Nada de lo que sueltas se guarda; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Imagen a data URI — base64 para CSS y HTML, en tu dispositivo — MDV","Convierte un PNG, JPEG, GIF, WebP, AVIF, ICO o SVG en un data URI listo para CSS o HTML, con el tamaño que añade. La imagen nunca sale del dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elige una imagen para codificar","Forma de salida","La imagen que soltaste","Demasiado grande","{name} ocupa {size}. Esta página codifica hasta {limit}; por encima, un data URI es la herramienta equivocada, y el texto sería de {text}.","No es una imagen que esta página lea","{name} es {type}. Suelta un PNG, JPEG, GIF, WebP, AVIF, ICO o SVG.","Ese archivo","No se pudo leer","El navegador dejó de leer {name}: puede que se haya movido o que no sea legible.","El navegador devolvió algo que no es un data URI para {name}.","imagen","{size} de texto (codificado con porcentajes, no base64)","{size} de texto (base64, aproximadamente un tercio más grande)","código reducido de {from} a {to}","A partir de unos 10 kB, un data URI suele costar más de lo que ahorra: los bytes se copian en cada archivo que los menciona y no se pueden guardar en caché por sí solos. Aquí es mejor una referencia a un archivo normal.","Lo bastante pequeño para que valga la pena incrustarlo: una petición menos, y nunca puede dar un 404.","Este SVG contiene un script. Se deja exactamente como estaba; un data: URI en img o en CSS no puede ejecutarlo, pero un \u003csvg> en línea en tu página sí.","Una fotografía de este tamaño merece su propio archivo, no una hoja de estilos.","Codificación y criptografía",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Déposez une image et obtenez la ligne base64 à coller dans du CSS ou du HTML. Le fichier ne quitte jamais l’appareil.","Sur cet appareil","Fonctionne hors ligne","Déposez un PNG, JPEG, GIF, WebP, AVIF, ICO ou SVG — jusqu’à 4 Mo","Réduire d’abord la source SVG","déposez une image ci-dessus","Fichier","Encodé","À savoir","Copié","Copier","Comment ça marche","Le fichier est lu avec \u003ccode>FileReader\u003c/code> dans cette page et ses octets sont écrits en base64, l’encodage qui transforme trois octets en quatre caractères de texte brut. C’est de là que vient le coût : un data URI est environ un tiers plus gros que le fichier qu’il contient, avant toute compression ajoutée par le serveur. Le type devant la virgule — \u003ccode>data:image/png;base64,\u003c/code> — est la lecture que le navigateur fait lui-même du fichier, et non l’extension de son nom : un PNG enregistré en \u003ccode>.jpg\u003c/code> indique donc toujours PNG ici.","Le SVG est traité différemment, car il n’a pas du tout besoin de base64. Un SVG est du texte : la page l’encode donc en pourcentage, ce qui est à la fois plus petit que le base64 et encore lisible dans la feuille de style. \u003cstrong>Réduire d’abord la source SVG\u003c/strong> supprime les commentaires XML, la déclaration \u003ccode>&lt;?xml?&gt;\u003c/code> et les espaces répétés avant l’encodage — sans jamais toucher au dessin lui-même, l’image reste donc inchangée. Si le SVG contient un script, il est laissé en place : cette page ne modifie pas votre fichier, et un data: URI dans \u003ccode>img\u003c/code> ou en CSS ne peut de toute façon pas l’exécuter.","Les data URI valent la peine pour les petites images qui ne changent pas — une icône, une texture, un point de dégradé d’un pixel. C’est un mauvais calcul pour tout ce qui est gros : les octets sont copiés dans chaque fichier qui les mentionne, ils ne peuvent pas être mis en cache séparément, et une feuille de style qui porte une photographie bloque la page jusqu’à la fin de son chargement. La page affiche la taille encodée pour que ce compromis soit visible, et avertit au-delà d’environ 10 ko. Les fichiers de plus de 4 Mo sont refusés, car le texte serait plus gros que ce que la plupart des éditeurs acceptent de contenir.","Rien n’est envoyé : le fichier est lu dans cet onglet et la page ne fait aucune requête réseau. Rien de ce que vous déposez n’est conservé ; les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Image vers data URI — base64 pour CSS et HTML, sur votre appareil — MDV","Transformez un PNG, JPEG, GIF, WebP, AVIF, ICO ou SVG en data URI prêt pour CSS ou HTML, avec la taille qu’il ajoute. L’image ne quitte jamais l’appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisissez une image à encoder","Format de sortie","L’image que vous avez déposée","Trop volumineux","{name} fait {size}. Cette page encode jusqu’à {limit} — au-delà, un data URI n’est pas le bon outil, et le texte ferait {text}.","Ce n’est pas une image que cette page lit","{name} est de type {type}. Déposez un PNG, JPEG, GIF, WebP, AVIF, ICO ou SVG.","Ce fichier","Lecture impossible","Le navigateur a cessé de lire {name} — il a peut-être été déplacé ou n’est pas lisible.","Le navigateur a renvoyé pour {name} quelque chose qui n’est pas un data URI.","image","{size} de texte (encodé en pourcentage, pas en base64)","{size} de texte (base64, environ un tiers de plus)","source réduite de {from} à {to}","Au-delà d’environ 10 ko, un data URI coûte en général plus qu’il ne rapporte : les octets sont copiés dans chaque fichier qui les mentionne et ne peuvent pas être mis en cache seuls. Une simple référence à un fichier vaut mieux ici.","Assez petit pour valoir la peine d’être intégré : une requête de moins, et il ne peut jamais renvoyer une 404.","Ce SVG contient un script. Il est laissé tel quel ; un data: URI dans img ou en CSS ne peut pas l’exécuter, mais un \u003csvg> en ligne dans votre page le peut.","Une photographie de cette taille mérite son propre fichier, pas une feuille de style.","Encodage et cryptographie",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Ziehe ein Bild herein und erhalte die Base64-Zeile zum Einfügen in CSS oder HTML. Die Datei verlässt das Gerät nie.","Läuft auf diesem Gerät","Funktioniert offline","PNG, JPEG, GIF, WebP, AVIF, ICO oder SVG ablegen — bis 4 MB","SVG-Quelltext zuerst verkleinern","Bild oben ablegen","Datei","Kodiert","Gut zu wissen","Kopiert","Kopieren","So funktioniert es","Die Datei wird in dieser Seite mit \u003ccode>FileReader\u003c/code> gelesen und ihre Bytes werden in Base64 geschrieben, der Kodierung, die drei Bytes in vier Zeichen Klartext verwandelt. Daher kommen die Kosten: Ein Data-URI ist etwa ein Drittel größer als die Datei, die er trägt, noch vor jeder Kompression, die der Server hinzufügt. Der Typ vor dem Komma — \u003ccode>data:image/png;base64,\u003c/code> — ist die eigene Einschätzung des Browsers zur Datei und nicht die Endung ihres Namens; ein als \u003ccode>.jpg\u003c/code> gespeichertes PNG zeigt hier also trotzdem PNG.","SVG wird anders behandelt, weil es Base64 gar nicht braucht. Ein SVG ist Text, daher kodiert die Seite es prozentweise, was kleiner als Base64 und im Stylesheet noch lesbar ist. \u003cstrong>SVG-Quelltext zuerst verkleinern\u003c/strong> entfernt vor dem Kodieren XML-Kommentare, die \u003ccode>&lt;?xml?&gt;\u003c/code>-Deklaration und wiederholten Leerraum — die Zeichnung selbst wird nie angetastet, das Bild bleibt also unverändert. Enthält das SVG ein Skript, bleibt es an Ort und Stelle: Diese Seite bearbeitet deine Datei nicht, und ein data:-URI in \u003ccode>img\u003c/code> oder CSS kann es ohnehin nicht ausführen.","Data-URIs lohnen sich für kleine, unveränderliche Bilder — ein Icon, eine Textur, ein Ein-Pixel-Verlaufspunkt. Für alles Große sind sie ein schlechter Tausch: Die Bytes werden in jede Datei kopiert, die sie erwähnt, sie lassen sich nicht einzeln zwischenspeichern, und ein Stylesheet mit einem Foto blockiert die Seite, bis es fertig geladen ist. Die Seite gibt die kodierte Größe aus, damit dieser Tausch sichtbar ist, und warnt ab etwa 10 kB. Dateien über 4 MB werden abgelehnt, weil der Text größer wäre, als die meisten Editoren halten mögen.","Nichts wird hochgeladen: Die Datei wird in diesem Tab gelesen, und die Seite stellt keine Netzwerkanfragen. Nichts, was du ablegst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Bild zu Data-URI — Base64 für CSS und HTML, auf deinem Gerät — MDV","Wandle ein PNG, JPEG, GIF, WebP, AVIF, ICO oder SVG in einen Data-URI für CSS oder HTML um, samt der Größe, die er hinzufügt. Das Bild verlässt das Gerät nie.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Bild zum Kodieren auswählen","Ausgabeformat","Das abgelegte Bild","Zu groß","{name} ist {size} groß. Diese Seite kodiert bis {limit} — darüber ist ein Data-URI das falsche Werkzeug, und der Text wäre {text} groß.","Kein Bild, das diese Seite liest","{name} ist {type}. Lege ein PNG, JPEG, GIF, WebP, AVIF, ICO oder SVG ab.","Diese Datei","Nicht lesbar","Der Browser hat das Lesen von {name} abgebrochen — die Datei wurde vielleicht verschoben oder ist nicht lesbar.","Der Browser hat für {name} etwas zurückgegeben, das kein Data-URI ist.","Bild","{size} Text (prozentkodiert, nicht Base64)","{size} Text (Base64, etwa ein Drittel größer)","Quelltext von {from} auf {to} verkleinert","Ab etwa 10 kB kostet ein Data-URI meist mehr, als er spart: Die Bytes werden in jede Datei kopiert, die sie erwähnt, und lassen sich nicht für sich zwischenspeichern. Ein normaler Dateiverweis ist hier besser.","Klein genug, um eingebettet zu werden: eine Anfrage weniger, und es kann nie zu einem 404 kommen.","Dieses SVG enthält ein Skript. Es bleibt genau so, wie es war; ein data:-URI in img oder CSS kann es nicht ausführen, ein eingebettetes \u003csvg> in deiner Seite aber schon.","Ein Foto dieser Größe gehört in eine eigene Datei, nicht in ein Stylesheet.","Kodierung und Krypto",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Trascina un’immagine e ottieni la riga base64 da incollare in CSS o HTML. Il file non lascia mai il dispositivo.","Su questo dispositivo","Funziona offline","Trascina un PNG, JPEG, GIF, WebP, AVIF, ICO o SVG — fino a 4 MB","Riduci prima il sorgente SVG","trascina un’immagine qui sopra","File","Codificato","Da sapere","Copiato","Copia","Come funziona","Il file viene letto con \u003ccode>FileReader\u003c/code> all’interno di questa pagina e i suoi byte vengono scritti in base64, la codifica che trasforma tre byte in quattro caratteri di testo semplice. Da qui viene il costo: un data URI è circa un terzo più grande del file che contiene, prima di qualsiasi compressione aggiunta dal server. Il tipo davanti alla virgola — \u003ccode>data:image/png;base64,\u003c/code> — è la lettura che il browser fa del file, non l’estensione del suo nome, quindi un PNG salvato come \u003ccode>.jpg\u003c/code> qui indica comunque PNG.","SVG viene trattato in modo diverso, perché non ha affatto bisogno di base64. Un SVG è testo, quindi la pagina lo codifica in percent-encoding, che è più piccolo di base64 e ancora leggibile nel foglio di stile. \u003cstrong>Riduci prima il sorgente SVG\u003c/strong> elimina i commenti XML, la dichiarazione \u003ccode>&lt;?xml?&gt;\u003c/code> e gli spazi ripetuti prima di codificare: non tocca mai il disegno in sé, quindi l’immagine resta invariata. Se l’SVG contiene uno script, viene lasciato dov’è: questa pagina non modifica il tuo file, e un data: URI in \u003ccode>img\u003c/code> o in CSS non può comunque eseguirlo.","I data URI valgono la pena per immagini piccole e immutabili — un’icona, una texture, un punto di gradiente da un pixel. Sono un cattivo affare per qualsiasi cosa grande: i byte vengono copiati in ogni file che li cita, non si possono mettere in cache separatamente, e un foglio di stile che trasporta una fotografia blocca la pagina finché non ha finito di caricarsi. La pagina mostra la dimensione codificata perché questo compromesso sia visibile, e avvisa oltre circa 10 kB. I file sopra 4 MB vengono rifiutati, perché il testo sarebbe più grande di quanto la maggior parte degli editor riesca a gestire.","Non viene caricato nulla: il file viene letto in questa scheda e la pagina non fa alcuna richiesta di rete. Nulla di ciò che trascini viene salvato; i pulsanti Scuro e Lingua conservano la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Immagine in data URI — base64 per CSS e HTML, sul tuo dispositivo — MDV","Trasforma un PNG, JPEG, GIF, WebP, AVIF, ICO o SVG in un data URI pronto per CSS o HTML, con la dimensione che aggiunge. L’immagine non lascia mai il dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli un’immagine da codificare","Formato di output","L’immagine che hai trascinato","Troppo grande","{name} è {size}. Questa pagina codifica fino a {limit}: oltre, un data URI è lo strumento sbagliato, e il testo sarebbe {text}.","Non è un’immagine che questa pagina legge","{name} è {type}. Trascina un PNG, JPEG, GIF, WebP, AVIF, ICO o SVG.","Quel file","Impossibile leggere","Il browser ha smesso di leggere {name}: potrebbe essere stato spostato o non essere leggibile.","Il browser ha restituito per {name} qualcosa che non è un data URI.","immagine","{size} di testo (percent-encoded, non base64)","{size} di testo (base64, circa un terzo più grande)","sorgente ridotto da {from} a {to}","Oltre circa 10 kB un data URI di solito costa più di quanto fa risparmiare: i byte vengono copiati in ogni file che li cita e non possono essere messi in cache da soli. Qui è meglio un normale riferimento a un file.","Abbastanza piccolo da valere la pena di incorporarlo: una richiesta in meno, e non può mai dare un 404.","Questo SVG contiene uno script. Viene lasciato esattamente com’era; un data: URI in img o in CSS non può eseguirlo, ma un \u003csvg> inline nella tua pagina sì.","Una fotografia di queste dimensioni merita un file a sé, non un foglio di stile.","Codifica e crittografia",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Solte uma imagem e receba a linha base64 para colar em CSS ou HTML. O arquivo nunca sai do dispositivo.","Neste dispositivo","Funciona offline","Solte um PNG, JPEG, GIF, WebP, AVIF, ICO ou SVG — até 4 MB","Reduzir primeiro o código SVG","solte uma imagem acima","Arquivo","Codificado","Vale saber","Copiado","Copiar","Como funciona","O arquivo é lido com \u003ccode>FileReader\u003c/code> dentro desta página e seus bytes são escritos em base64, a codificação que transforma três bytes em quatro caracteres de texto simples. É daí que vem o custo: um data URI é cerca de um terço maior que o arquivo que carrega, antes de qualquer compressão adicionada pelo servidor. O tipo antes da vírgula — \u003ccode>data:image/png;base64,\u003c/code> — é a leitura que o próprio navegador faz do arquivo, não a extensão do nome, então um PNG salvo como \u003ccode>.jpg\u003c/code> continua indicando PNG aqui.","O SVG é tratado de outra forma, porque não precisa de base64 de jeito nenhum. Um SVG é texto, então a página o codifica com percent-encoding, que é menor que base64 e ainda legível na folha de estilo. \u003cstrong>Reduzir primeiro o código SVG\u003c/strong> remove comentários XML, a declaração \u003ccode>&lt;?xml?&gt;\u003c/code> e espaços repetidos antes de codificar; nunca toca no desenho em si, então a imagem não muda. Se o SVG contém um script, ele é mantido onde está: esta página não edita seu arquivo, e um data: URI em \u003ccode>img\u003c/code> ou em CSS não consegue executá-lo de qualquer forma.","Data URIs valem a pena para imagens pequenas e imutáveis — um ícone, uma textura, uma parada de gradiente de um pixel. São um mau negócio para qualquer coisa grande: os bytes são copiados em todo arquivo que os menciona, não podem ser colocados em cache separadamente, e uma folha de estilo que carrega uma fotografia bloqueia a página até terminar de carregar. A página mostra o tamanho codificado para que essa troca fique visível, e avisa acima de cerca de 10 kB. Arquivos acima de 4 MB são recusados, porque o texto seria maior do que a maioria dos editores suporta.","Nada é enviado: o arquivo é lido nesta aba e a página não faz nenhuma requisição de rede. Nada do que você solta é armazenado; os botões Escuro e Idioma guardam sua própria configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Imagem para data URI — base64 para CSS e HTML, no seu dispositivo — MDV","Transforme um PNG, JPEG, GIF, WebP, AVIF, ICO ou SVG em um data URI pronto para CSS ou HTML, com o tamanho que ele adiciona. A imagem nunca sai do dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolha uma imagem para codificar","Formato de saída","A imagem que você soltou","Grande demais","{name} tem {size}. Esta página codifica até {limit}; acima disso, um data URI é a ferramenta errada, e o texto teria {text}.","Não é uma imagem que esta página lê","{name} é {type}. Solte um PNG, JPEG, GIF, WebP, AVIF, ICO ou SVG.","Esse arquivo","Não foi possível ler","O navegador parou de ler {name}; ele pode ter sido movido ou não ser legível.","O navegador devolveu para {name} algo que não é um data URI.","imagem","{size} de texto (percent-encoding, não base64)","{size} de texto (base64, cerca de um terço maior)","código reduzido de {from} para {to}","Acima de cerca de 10 kB, um data URI geralmente custa mais do que economiza: os bytes são copiados em todo arquivo que os menciona e não podem ser colocados em cache sozinhos. Aqui, uma referência a um arquivo comum é melhor.","Pequeno o bastante para valer a pena incorporar: uma requisição a menos, e nunca pode dar 404.","Este SVG contém um script. Ele é mantido exatamente como estava; um data: URI em img ou em CSS não consegue executá-lo, mas um \u003csvg> inline na sua página consegue.","Uma fotografia deste tamanho merece seu próprio arquivo, não uma folha de estilo.","Codificação e criptografia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","画像をドロップすると、CSS や HTML に貼り付けられる base64 の行が得られます。ファイルが端末の外に出ることはありません。","この端末で動作","オフラインで動作","PNG、JPEG、GIF、WebP、AVIF、ICO、SVG をドロップ — 最大 4 MB","先に SVG ソースを縮小","上に画像をドロップ","ファイル","エンコード後","補足","コピーしました","コピー","仕組み","ファイルはこのページの中で \u003ccode>FileReader\u003c/code> によって読み込まれ、そのバイト列が base64 で書き出されます。base64 は 3 バイトを 4 文字のプレーンテキストにする符号化で、コストはここから生じます。data URI は、サーバーが加える圧縮の前で、運ぶファイルより約 3 分の 1 大きくなります。カンマの前の種類(\u003ccode>data:image/png;base64,\u003c/code>)は、ファイル名の拡張子ではなくブラウザー自身がファイルを読んで判断したものなので、\u003ccode>.jpg\u003c/code> として保存された PNG もここでは PNG と表示されます。","SVG は base64 をまったく必要としないため、扱いが異なります。SVG はテキストなので、ページはパーセントエンコードを使います。これは base64 より小さく、スタイルシートの中でも読めます。\u003cstrong>先に SVG ソースを縮小\u003c/strong>は、エンコード前に XML コメント、\u003ccode>&lt;?xml?&gt;\u003c/code> 宣言、重複した空白を取り除きます。描画そのものには一切手を加えないので、画像は変わりません。SVG にスクリプトが含まれていてもそのまま残されます。このページはファイルを編集せず、\u003ccode>img\u003c/code> や CSS の中の data: URI ではどのみち実行できないためです。","data URI が向いているのは、アイコン、テクスチャ、1 ピクセルのグラデーションの区切りのような、小さくて変わらない画像です。大きなものには割に合いません。バイト列はそれを参照するすべてのファイルにコピーされ、個別にキャッシュできず、写真を含むスタイルシートは読み込みが終わるまでページを止めてしまいます。ページはこのトレードオフが分かるようにエンコード後のサイズを表示し、約 10 kB を超えると警告します。4 MB を超えるファイルは、テキストがほとんどのエディターの扱える大きさを超えるため拒否されます。","何もアップロードされません。ファイルはこのタブの中で読み込まれ、ページはネットワークリクエストを一切行いません。ドロップした内容も保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","画像を data URI に変換 — CSS と HTML 用の base64、端末内で処理 — MDV","PNG、JPEG、GIF、WebP、AVIF、ICO、SVG を CSS や HTML でそのまま使える data URI に変換し、増えるサイズも表示します。画像が端末の外に出ることはありません。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","エンコードする画像を選択","出力形式","ドロップした画像","大きすぎます","{name} は {size} です。このページがエンコードできるのは {limit} までです。それを超えると data URI は不向きで、テキストは {text} になります。","このページが読めない画像です","{name} は {type} です。PNG、JPEG、GIF、WebP、AVIF、ICO、SVG のいずれかをドロップしてください。","そのファイル","読み込めませんでした","ブラウザーが {name} の読み込みを中止しました。移動されたか、読み取れない可能性があります。","ブラウザーが {name} について data URI ではないものを返しました。","画像","テキスト {size}(パーセントエンコード、base64 ではありません)","テキスト {size}(base64、約 3 分の 1 大きくなります)","ソースを {from} から {to} に縮小","約 10 kB を超えると、data URI は節約できる以上のコストがかかるのが普通です。バイト列はそれを参照するすべてのファイルにコピーされ、単独ではキャッシュできません。ここでは通常のファイル参照のほうが適しています。","インライン化する価値のある小ささです。リクエストが 1 つ減り、404 になることもありません。","この SVG にはスクリプトが含まれています。そのまま残されます。img や CSS の中の data: URI では実行できませんが、ページ内にインラインの \u003csvg> として置くと実行されます。","このサイズの写真は、スタイルシートではなく独立したファイルにするべきです。","エンコードと暗号",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","이미지를 끌어다 놓으면 CSS나 HTML에 붙여넣을 base64 줄을 얻습니다. 파일은 기기를 벗어나지 않습니다.","이 기기에서 실행","오프라인 작동","PNG, JPEG, GIF, WebP, AVIF, ICO 또는 SVG를 끌어다 놓기 — 최대 4MB","먼저 SVG 소스 축소","위에 이미지 놓기","파일","인코딩됨","참고","복사됨","복사","작동 방식","파일은 이 페이지 안에서 \u003ccode>FileReader\u003c/code>로 읽히고, 그 바이트가 base64로 기록됩니다. base64는 3바이트를 일반 텍스트 4글자로 바꾸는 인코딩이며, 비용은 여기서 생깁니다. data URI는 서버가 더하는 압축 이전 기준으로 담고 있는 파일보다 약 3분의 1 큽니다. 쉼표 앞의 유형(\u003ccode>data:image/png;base64,\u003c/code>)은 파일 이름의 확장자가 아니라 브라우저가 파일을 직접 읽어 판단한 것이므로, \u003ccode>.jpg\u003c/code>로 저장된 PNG도 여기서는 PNG로 표시됩니다.","SVG는 base64가 전혀 필요 없으므로 다르게 처리합니다. SVG는 텍스트이므로 페이지는 퍼센트 인코딩을 사용하며, 이는 base64보다 작고 스타일시트에서도 읽을 수 있습니다. \u003cstrong>먼저 SVG 소스 축소\u003c/strong>는 인코딩 전에 XML 주석, \u003ccode>&lt;?xml?&gt;\u003c/code> 선언, 반복된 공백을 없앱니다. 그림 자체는 건드리지 않으므로 이미지는 달라지지 않습니다. SVG에 스크립트가 있어도 그대로 둡니다. 이 페이지는 파일을 편집하지 않으며, \u003ccode>img\u003c/code>나 CSS 안의 data: URI로는 어차피 실행할 수 없기 때문입니다.","data URI는 아이콘, 텍스처, 1픽셀 그라데이션 정지점처럼 작고 바뀌지 않는 이미지에 알맞습니다. 큰 것에는 손해입니다. 바이트가 그것을 언급하는 모든 파일에 복사되고, 따로 캐시할 수 없으며, 사진을 담은 스타일시트는 로딩이 끝날 때까지 페이지를 막습니다. 페이지는 이 득실이 보이도록 인코딩된 크기를 표시하고, 약 10kB를 넘으면 경고합니다. 4MB를 넘는 파일은 텍스트가 대부분의 편집기가 감당하는 크기를 넘기 때문에 거부합니다.","아무것도 업로드되지 않습니다. 파일은 이 탭 안에서 읽히며 페이지는 네트워크 요청을 하지 않습니다. 끌어다 놓은 내용도 저장되지 않습니다. 다크 및 언어 버튼은 각자의 설정을 이 브라우저의 로컬 스토리지에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","이미지를 data URI로 — CSS와 HTML용 base64, 기기에서 처리 — MDV","PNG, JPEG, GIF, WebP, AVIF, ICO 또는 SVG를 CSS나 HTML에 바로 쓸 수 있는 data URI로 바꾸고, 늘어나는 크기도 보여 줍니다. 이미지는 기기를 벗어나지 않습니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","인코딩할 이미지 선택","출력 형식","끌어다 놓은 이미지","너무 큽니다","{name}은(는) {size}입니다. 이 페이지는 {limit}까지 인코딩하며, 그 이상은 data URI가 맞지 않고 텍스트가 {text}가 됩니다.","이 페이지가 읽을 수 없는 이미지","{name}은(는) {type}입니다. PNG, JPEG, GIF, WebP, AVIF, ICO 또는 SVG를 끌어다 놓으세요.","해당 파일","읽을 수 없습니다","브라우저가 {name} 읽기를 중단했습니다. 파일이 옮겨졌거나 읽을 수 없는 상태일 수 있습니다.","브라우저가 {name}에 대해 data URI가 아닌 것을 반환했습니다.","이미지","텍스트 {size} (퍼센트 인코딩, base64 아님)","텍스트 {size} (base64, 약 3분의 1 더 큼)","소스를 {from}에서 {to}(으)로 축소","약 10kB를 넘으면 data URI는 보통 절약하는 것보다 비용이 더 큽니다. 바이트가 그것을 언급하는 모든 파일에 복사되고 단독으로 캐시할 수 없습니다. 이 경우에는 일반 파일 참조가 낫습니다.","인라인으로 넣을 만큼 작습니다. 요청이 하나 줄고 404가 날 일도 없습니다.","이 SVG에는 스크립트가 들어 있습니다. 그대로 둡니다. img나 CSS의 data: URI로는 실행되지 않지만, 페이지 안의 인라인 \u003csvg>로는 실행될 수 있습니다.","이 정도 크기의 사진은 스타일시트가 아니라 별도 파일에 두는 것이 좋습니다.","인코딩과 암호화",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","拖入图片,即可得到可粘贴到 CSS 或 HTML 的 base64 行。文件不会离开设备。","在此设备上运行","可离线使用","拖入 PNG、JPEG、GIF、WebP、AVIF、ICO 或 SVG — 最大 4 MB","先压缩 SVG 源码","在上方拖入图片","文件","编码后","须知","已复制","复制","工作原理","文件在本页内通过 \u003ccode>FileReader\u003c/code> 读取,其字节以 base64 写出;这种编码把三个字节变成四个纯文本字符,开销就来源于此:在服务器进一步压缩之前,data URI 比它所承载的文件大约大三分之一。逗号前的类型(\u003ccode>data:image/png;base64,\u003c/code>)是浏览器自己对文件的判断,而不是文件名的扩展名,所以保存为 \u003ccode>.jpg\u003c/code> 的 PNG 在这里仍会显示为 PNG。","SVG 的处理方式不同,因为它根本不需要 base64。SVG 是文本,所以页面改用百分号编码,它比 base64 更小,在样式表中也仍可阅读。\u003cstrong>先压缩 SVG 源码\u003c/strong>会在编码前去掉 XML 注释、\u003ccode>&lt;?xml?&gt;\u003c/code> 声明和重复的空白——绝不触及图形本身,因此图像不会改变。如果 SVG 含有脚本,会原样保留:本页不会编辑你的文件,而且 \u003ccode>img\u003c/code> 或 CSS 中的 data: URI 本来也无法运行它。","data URI 适合小而不变的图像,比如图标、纹理、一像素的渐变节点。对于大的内容则很不划算:字节会被复制到每个引用它们的文件中,无法单独缓存,而包含照片的样式表会在加载完成前阻塞页面。页面会显示编码后的大小,让这种取舍一目了然,并在超过约 10 kB 时给出警告。超过 4 MB 的文件会被拒绝,因为文本会大到多数编辑器难以容纳。","不会上传任何内容:文件在此标签页内读取,页面不发出任何网络请求。你拖入的内容也不会被保存;深色和语言按钮会把各自的设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","图片转 data URI — 适用于 CSS 和 HTML 的 base64，在设备上处理 — MDV","将 PNG、JPEG、GIF、WebP、AVIF、ICO 或 SVG 转为可直接用于 CSS 或 HTML 的 data URI，并显示增加的大小。图片不会离开设备。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择要编码的图片","输出格式","你拖入的图片","文件过大","{name} 大小为 {size}。本页最多编码 {limit};超过后 data URI 就不合适了,文本会达到 {text}。","不是本页能读取的图片","{name} 是 {type}。请拖入 PNG、JPEG、GIF、WebP、AVIF、ICO 或 SVG。","该文件","无法读取","浏览器停止读取 {name}——它可能已被移动,或无法读取。","浏览器为 {name} 返回了不是 data URI 的内容。","图片","{size} 文本(百分号编码,非 base64)","{size} 文本(base64，约大三分之一)","源码已从 {from} 压缩到 {to}","超过约 10 kB 后,data URI 通常得不偿失:字节会被复制到每个引用它们的文件中,且无法单独缓存。此处用普通的文件引用更好。","体积足够小,值得内联:少一次请求,而且绝不会出现 404。","此 SVG 含有脚本,已原样保留;img 或 CSS 中的 data: URI 无法运行它,但页面中的内联 \u003csvg> 可以。","这种大小的照片应当放在独立文件中,而不是样式表里。","编码与加密",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2383,7 +2596,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var $ = function (id) { return document.getElementById(id); };
   var drop = $("drop"), file = $("file"), empty = $("empty"), err = $("err"), errtitle = $("errtitle"), errmsg = $("errmsg");
   var ok = $("ok"), out = $("out"), preview = $("preview"), copied = $("copied"), minWrap = $("minWrap"), minify = $("minify");
-  var shape = "uri", current = null;
+  var shape = "uri", current = null, shownBad = null;
 
   function state(which) {
     empty.hidden = which !== "empty";
@@ -2391,21 +2604,23 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     ok.hidden = which !== "ok";
     if (which !== "ok") { copied.hidden = true; minWrap.hidden = true; }
   }
-  function bad(title, message) { errtitle.textContent = title; errmsg.textContent = message; state("error"); }
+  // title and message are keys: kept, so a language change can say them again
+  function bad(title, message, vars) { shownBad = { title: title, message: message, vars: vars }; errtitle.textContent = tr(title); errmsg.textContent = tr(message, vars); state("error"); }
 
   function take(files) {
     if (!files || !files.length) return;
     var f = files[0];
     if (f.size > MAX_BYTES) {
-      bad("Too large", f.name + " is " + bytes(f.size) + ". This page encodes up to " + bytes(MAX_BYTES) + " — past that a data URI is the wrong tool, and the text would be " + bytes(Math.ceil(f.size * 4 / 3)) + ".");
+      bad(trk("Too large"), trk("{name} is {size}. This page encodes up to {limit} — past that a data URI is the wrong tool, and the text would be {text}."),
+        { name: f.name, size: bytes(f.size), limit: bytes(MAX_BYTES), text: bytes(Math.ceil(f.size * 4 / 3)) });
       return;
     }
     if (f.type && !TYPES[f.type]) {
-      bad("Not an image this page reads", (f.name || "That file") + " is " + f.type + ". Drop a PNG, JPEG, GIF, WebP, AVIF, ICO or SVG.");
+      bad(trk("Not an image this page reads"), trk("{name} is {type}. Drop a PNG, JPEG, GIF, WebP, AVIF, ICO or SVG."), { name: f.name || tr("That file"), type: f.type });
       return;
     }
     var reader = new FileReader();
-    reader.onerror = function () { bad("Could not read that", "The browser stopped reading " + f.name + " — it may have been moved or is not readable."); };
+    reader.onerror = function () { bad(trk("Could not read that"), trk("The browser stopped reading {name} — it may have been moved or is not readable."), { name: f.name }); };
     if (f.type === "image/svg+xml") {
       reader.onload = function () { render(f, { svg: String(reader.result) }); };
       reader.readAsText(f);
@@ -2421,6 +2636,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   function paint() {
+    shownBad = null;
     if (!current) { state("empty"); return; }
     var f = current.file, got = current.got, uri, source = null;
     if (got.svg) {
@@ -2430,19 +2646,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     } else {
       uri = got.dataUri;
     }
-    if (!uri || uri.indexOf("data:") !== 0) { bad("Could not read that", "The browser returned something that is not a data URI for " + f.name + "."); return; }
+    if (!uri || uri.indexOf("data:") !== 0) { bad(trk("Could not read that"), trk("The browser returned something that is not a data URI for {name}."), { name: f.name }); return; }
 
     minWrap.hidden = !got.svg;
-    var kind = TYPES[f.type] || (got.svg ? "SVG" : "image");
+    var kind = TYPES[f.type] || (got.svg ? "SVG" : tr("image"));
     $("k-file").textContent = f.name + " · " + kind + " · " + bytes(f.size);
-    $("k-size").textContent = bytes(uri.length) + " of text" + (got.svg ? " (percent-encoded, not base64)" : " (base64, about a third larger)") +
-      (source && source.length !== got.svg.length ? " · source shrunk from " + bytes(got.svg.length) + " to " + bytes(source.length) : "");
+    $("k-size").textContent = (got.svg ? tr("{size} of text (percent-encoded, not base64)", { size: bytes(uri.length) }) : tr("{size} of text (base64, about a third larger)", { size: bytes(uri.length) })) +
+      (source && source.length !== got.svg.length ? " · " + tr("source shrunk from {from} to {to}", { from: bytes(got.svg.length), to: bytes(source.length) }) : "");
 
     var notes = [];
-    if (uri.length > BIG) notes.push("Past about 10 kB a data URI usually costs more than it saves: the bytes are copied into every file that mentions them and cannot be cached on their own. A plain file reference is better here.");
-    else notes.push("Small enough to be worth inlining: one fewer request, and it can never 404.");
-    if (got.svg && /<script|javascript:/i.test(got.svg)) notes.push("This SVG contains a script. It is left exactly as it was; a data: URI in img or CSS cannot run it, but an inline <svg> in your page can.");
-    if (f.type === "image/jpeg" && f.size > 100 * 1024) notes.push("A photograph this size belongs in its own file, not in a stylesheet.");
+    if (uri.length > BIG) notes.push(tr("Past about 10 kB a data URI usually costs more than it saves: the bytes are copied into every file that mentions them and cannot be cached on their own. A plain file reference is better here."));
+    else notes.push(tr("Small enough to be worth inlining: one fewer request, and it can never 404."));
+    if (got.svg && /<script|javascript:/i.test(got.svg)) notes.push(tr("This SVG contains a script. It is left exactly as it was; a data: URI in img or CSS cannot run it, but an inline <svg> in your page can."));
+    if (f.type === "image/jpeg" && f.size > 100 * 1024) notes.push(tr("A photograph this size belongs in its own file, not in a stylesheet."));
     $("k-note").textContent = notes.join(" ");
 
     out.textContent = shapeOf(uri, shape, f.name);
@@ -2481,6 +2697,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     setTimeout(function () { copied.hidden = true; }, 1200);
   }
 
+  // redraw the words from what is kept: the file is not read again
+  onLang(function () {
+    if (shownBad) bad(shownBad.title, shownBad.message, shownBad.vars);
+    else if (current) paint();
+  });
   drop.focus({ preventScroll: true });
   state("empty");
 })();

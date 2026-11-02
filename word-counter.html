@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link is-here" href="./word-counter.html" aria-current="page" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link is-here" href="./word-counter.html" aria-current="page" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,20 +2353,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Word counter</h1>
+      <h1 class="mdv-head-name" data-t="14">Word counter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Type or paste text. The counts follow every keystroke: words, characters,
+    <p class="mdv-head-line" data-t="79">Type or paste text. The counts follow every keystroke: words, characters,
       bytes, sentences, paragraphs, and how long the text takes to read or to say aloud.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <label class="mdv-label" style="margin:0" for="in">Input</label>
+      <label class="mdv-label" style="margin:0" for="in" data-t="82">Input</label>
       <span class="mdv-hint mdv-mono" style="margin:0" id="size">0 characters</span>
     </div>
     <textarea class="mdv-textarea" id="in" spellcheck="false" autocomplete="off"
@@ -2263,51 +2375,51 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <div class="mdv-row is-between">
     <div class="mdv-row">
-      <label class="mdv-label" style="margin:0" for="wpm">Reading speed</label>
+      <label class="mdv-label" style="margin:0" for="wpm" data-t="83">Reading speed</label>
       <input class="mdv-input" id="wpm" type="number" inputmode="numeric" min="1" max="2000" step="1"
         value="238" style="width:9ch" aria-describedby="wpm-hint">
-      <span class="mdv-hint mdv-mono" style="margin:0">words per minute</span>
+      <span class="mdv-hint mdv-mono" style="margin:0" data-t="84">words per minute</span>
     </div>
-    <span class="mdv-hint" style="margin:0" id="wpm-hint">238 wpm is the adult average for silent
-      reading. Speaking time is fixed at 150 wpm.</span>
+    <span class="mdv-hint" style="margin:0" id="wpm-hint"><span data-t="85">238 wpm is the adult average for silent
+      reading. Speaking time is fixed at 150 wpm.</span></span>
   </div>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <span class="mdv-label" style="margin:0">Counts</span>
+      <span class="mdv-label" style="margin:0" data-t="86">Counts</span>
       <div class="mdv-btn-row">
-        <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-        <button class="mdv-btn is-sm is-quiet" id="copy" type="button">Copy</button>
+        <span class="mdv-badge is-accent" id="copied" hidden><span data-t="87">Copied</span></span>
+        <button class="mdv-btn is-sm is-quiet" id="copy" type="button"><span data-t="88">Copy</span></button>
       </div>
     </div>
 
-    <div class="mdv-empty" id="empty"><span>type or paste text above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="89">type or paste text above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Refused</span>
+      <span class="mdv-notice-title" data-t="90">Refused</span>
       <span id="errmsg" class="mdv-mono"></span>
     </div>
 
     <div id="res" hidden>
       <div class="mdv-stack">
-        <div class="mdv-readout"><span id="words">0</span><span class="mdv-unit">words</span></div>
+        <div class="mdv-readout"><span id="words">0</span><span class="mdv-unit" data-t="91">words</span></div>
         <dl class="mdv-kv">
-          <dt id="chars-label">Characters</dt><dd id="chars">0</dd>
-          <dt>Without spaces</dt><dd id="nospace">0</dd>
-          <dt>UTF-8 bytes</dt><dd id="bytes">0</dd>
-          <dt>Sentences</dt><dd id="sentences">0</dd>
-          <dt>Paragraphs</dt><dd id="paragraphs">0</dd>
-          <dt>Lines</dt><dd id="lines">0</dd>
-          <dt>Reading time</dt><dd id="read">—</dd>
-          <dt>Speaking time</dt><dd id="speak">—</dd>
+          <dt id="chars-label"><span data-t="92">Characters</span></dt><dd id="chars">0</dd>
+          <dt data-t="93">Without spaces</dt><dd id="nospace">0</dd>
+          <dt data-t="94">UTF-8 bytes</dt><dd id="bytes">0</dd>
+          <dt data-t="95">Sentences</dt><dd id="sentences">0</dd>
+          <dt data-t="96">Paragraphs</dt><dd id="paragraphs">0</dd>
+          <dt data-t="97">Lines</dt><dd id="lines">0</dd>
+          <dt data-t="98">Reading time</dt><dd id="read">—</dd>
+          <dt data-t="99">Speaking time</dt><dd id="speak">—</dd>
         </dl>
         <div class="mdv-stack is-tight">
-          <span class="mdv-label" style="margin:0">Most frequent words</span>
+          <span class="mdv-label" style="margin:0" data-t="100">Most frequent words</span>
           <table class="mdv-table">
-            <thead><tr><th>Word</th><th>Count</th></tr></thead>
+            <thead><tr><th data-t="101">Word</th><th data-t="102">Count</th></tr></thead>
             <tbody id="freq"></tbody>
           </table>
-          <p class="mdv-hint" style="margin:0">Lowercased, two or more characters, top ten. There is
+          <p class="mdv-hint" style="margin:0" data-t="103">Lowercased, two or more characters, top ten. There is
             no stopword list, so "the" usually wins.</p>
         </div>
       </div>
@@ -2315,9 +2427,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="104">How this works</summary>
     <div class="mdv-method-body">
-      <p>A word is a run of Unicode letters, digits or combining marks, with apostrophes allowed inside
+      <p data-t="105">A word is a run of Unicode letters, digits or combining marks, with apostrophes allowed inside
         the run: the regex <code>[\p{L}\p{N}\p{M}]+(?:['’][\p{L}\p{N}\p{M}]+)*</code> with the
         <code>u</code> flag. So <code>don't</code> and <code>l'aria</code> are one word each,
         <code>well-known</code> is two, and <code>1492</code> counts. Scripts written without spaces
@@ -2326,7 +2438,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         flag or a family emoji counts once; if the browser lacks it the row is relabelled "Code points"
         and counts those instead. "Without spaces" first removes every <code>\s</code> character.
         Bytes are the length of the <code>TextEncoder</code> output, which is UTF-8.</p>
-      <p>A sentence ends at <code>.</code>, <code>!</code> or <code>?</code>, optionally followed by a
+      <p data-t="106">A sentence ends at <code>.</code>, <code>!</code> or <code>?</code>, optionally followed by a
         closing quote or bracket, when whitespace or the end of the text comes next; a final run of words
         with no terminator counts as one more. Abbreviations such as <code>Dr.</code> or
         <code>e.g.</code> therefore overcount, and <code>...</code> counts once. A paragraph is a run of
@@ -2335,29 +2447,30 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         you set — 238 wpm is the adult mean for silent reading in Brysbaert's 2019 meta-analysis — and
         speaking time uses 150 wpm, an ordinary presenter's pace. Both are rounded to the second and
         both are estimates for an average reader, not a measurement of you.</p>
-      <p>The frequency table lowercases each word with <code>toLowerCase</code>, drops words shorter
+      <p data-t="107">The frequency table lowercases each word with <code>toLowerCase</code>, drops words shorter
         than two characters, and lists the ten most common, ties broken alphabetically. There is no
         stopword list, so articles and prepositions rank first. Input above 2,000,000 characters is
         refused rather than attempted, so the tab never hangs. Nothing is uploaded: there is no server
         in this file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="108">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Text &amp; Writing">
-    <span class="mdv-tag">Also in Text &amp; Writing</span>
-    <a href="./case-converter.html">Case converter</a>
-    <a href="./find-and-replace.html">Find and replace</a>
-    <a href="./lorem-ipsum.html">Lorem ipsum</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Text &amp; Writing"}'>Also in Text &amp; Writing</span>
+    <a href="./case-converter.html" data-t="5">Case converter</a>
+    <a href="./find-and-replace.html" data-t="9">Find and replace</a>
+    <a href="./lorem-ipsum.html" data-t="8">Lorem ipsum</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="109">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="110">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="111" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="112">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2368,6 +2481,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Word Counter — words, characters, reading time — MDV","Paste text and read live counts: words, characters, UTF-8 bytes, sentences, paragraphs, lines, reading and speaking time. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Code points","{s} s","{m} min {s} s","{h} h {m} min","{n} characters","{n} characters is past the {limit}-character ceiling this tool will attempt.","Text & Writing","2026-11-02"],"h":113,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Escribe o pega texto. Los recuentos siguen cada pulsación: palabras, caracteres, bytes, oraciones, párrafos y cuánto se tarda en leer el texto o en decirlo en voz alta.","En este dispositivo","Funciona sin conexión","Entrada","Velocidad de lectura","palabras por minuto","238 ppm es la media de un adulto en lectura silenciosa. El tiempo de habla está fijado en 150 ppm.","Recuentos","Copiado","Copiar","escribe o pega texto arriba","Rechazado","palabras","Caracteres","Sin espacios","Bytes UTF-8","Oraciones","Párrafos","Líneas","Tiempo de lectura","Tiempo de habla","Palabras más frecuentes","Palabra","Veces","En minúsculas, de dos o más caracteres, las diez primeras. No hay lista de palabras vacías, así que “the” suele ganar.","Cómo funciona","Una palabra es una secuencia de letras Unicode, dígitos o marcas combinantes, con apóstrofos permitidos dentro de la secuencia: la expresión regular \u003ccode>[\\p{L}\\p{N}\\p{M}]+(?:['’][\\p{L}\\p{N}\\p{M}]+)*\u003c/code> con la bandera \u003ccode>u\u003c/code>. Así, \u003ccode>don't\u003c/code> y \u003ccode>l'aria\u003c/code> son una palabra cada una, \u003ccode>well-known\u003c/code> son dos y \u003ccode>1492\u003c/code> cuenta. Las escrituras sin espacios (chino, japonés, tailandés) salen como una palabra por cada tramo continuo, lo que las subcuenta; esta herramienta no las segmenta. Los caracteres son grafemas de \u003ccode>Intl.Segmenter\u003c/code>, de modo que una bandera o un emoji de familia cuenta una vez; si el navegador no lo tiene, la fila se renombra a “Puntos de código” y cuenta esos en su lugar. “Sin espacios” primero elimina cada carácter \u003ccode>\\s\u003c/code>. Los bytes son la longitud de la salida de \u003ccode>TextEncoder\u003c/code>, que es UTF-8.","Una oración termina en \u003ccode>.\u003c/code>, \u003ccode>!\u003c/code> o \u003ccode>?\u003c/code>, seguidos opcionalmente de una comilla o paréntesis de cierre, cuando lo que viene después es un espacio en blanco o el final del texto; una última tanda de palabras sin terminador cuenta como una más. Por eso abreviaturas como \u003ccode>Dr.\u003c/code> o \u003ccode>e.g.\u003c/code> cuentan de más, y \u003ccode>...\u003c/code> cuenta una vez. Un párrafo es un tramo de texto entre líneas en blanco. Las líneas se separan en \u003ccode>\\n\u003c/code> tras normalizar \u003ccode>\\r\\n\u003c/code>, y un salto de línea final no añade una. El tiempo de lectura es el número de palabras dividido por la velocidad que fijes (238 ppm es la media de un adulto en lectura silenciosa según el metaanálisis de Brysbaert de 2019), y el tiempo de habla usa 150 ppm, el ritmo de un presentador normal. Ambos se redondean al segundo y ambos son estimaciones para un lector medio, no una medición de ti.","La tabla de frecuencias pasa cada palabra a minúsculas con \u003ccode>toLowerCase\u003c/code>, descarta las palabras de menos de dos caracteres y muestra las diez más comunes, con los empates resueltos alfabéticamente. No hay lista de palabras vacías, así que los artículos y las preposiciones salen primero. La entrada de más de 2.000.000 de caracteres se rechaza en lugar de intentarla, para que la pestaña nunca se cuelgue. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Contador de palabras — palabras, caracteres, tiempo de lectura — MDV","Pega texto y lee los recuentos en vivo: palabras, caracteres, bytes UTF-8, oraciones, párrafos, líneas, tiempo de lectura y de habla. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Puntos de código","{s} s","{m} min {s} s","{h} h {m} min","{n} caracteres","{n} caracteres superan el límite de {limit} caracteres que esta herramienta intentará procesar.","Texto y escritura",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Saisissez ou collez du texte. Les comptes suivent chaque frappe : mots, caractères, octets, phrases, paragraphes, et le temps qu’il faut pour lire le texte ou le dire à voix haute.","Sur cet appareil","Fonctionne hors ligne","Entrée","Vitesse de lecture","mots par minute","238 mpm est la moyenne d’un adulte en lecture silencieuse. Le temps de parole est fixé à 150 mpm.","Comptes","Copié","Copier","saisissez ou collez du texte ci-dessus","Refusé","mots","Caractères","Sans espaces","Octets UTF-8","Phrases","Paragraphes","Lignes","Temps de lecture","Temps de parole","Mots les plus fréquents","Mot","Nombre","En minuscules, deux caractères ou plus, les dix premiers. Il n’y a pas de liste de mots vides, donc « the » gagne en général.","Comment ça marche","Un mot est une suite de lettres Unicode, de chiffres ou de signes combinants, avec des apostrophes autorisées à l’intérieur : l’expression régulière \u003ccode>[\\p{L}\\p{N}\\p{M}]+(?:['’][\\p{L}\\p{N}\\p{M}]+)*\u003c/code> avec l’indicateur \u003ccode>u\u003c/code>. Ainsi \u003ccode>don't\u003c/code> et \u003ccode>l'aria\u003c/code> font un mot chacun, \u003ccode>well-known\u003c/code> en fait deux, et \u003ccode>1492\u003c/code> compte. Les écritures sans espaces (chinois, japonais, thaï) ressortent à raison d’un mot par suite ininterrompue, ce qui les sous-compte ; cet outil ne les segmente pas. Les caractères sont des graphèmes issus de \u003ccode>Intl.Segmenter\u003c/code> : un drapeau ou un emoji de famille compte une fois ; si le navigateur ne l’a pas, la ligne est renommée « Points de code » et compte ceux-ci à la place. « Sans espaces » supprime d’abord chaque caractère \u003ccode>\\s\u003c/code>. Les octets sont la longueur de la sortie de \u003ccode>TextEncoder\u003c/code>, c’est-à-dire de l’UTF-8.","Une phrase se termine à \u003ccode>.\u003c/code>, \u003ccode>!\u003c/code> ou \u003ccode>?\u003c/code>, éventuellement suivi d’un guillemet ou d’une parenthèse fermante, quand vient ensuite une espace ou la fin du texte ; une dernière suite de mots sans terminateur compte pour une de plus. Des abréviations comme \u003ccode>Dr.\u003c/code> ou \u003ccode>e.g.\u003c/code> font donc compter en trop, et \u003ccode>...\u003c/code> compte une fois. Un paragraphe est une suite de texte entre des lignes vides. Les lignes sont séparées à \u003ccode>\\n\u003c/code> après normalisation de \u003ccode>\\r\\n\u003c/code>, et un saut de ligne final n’en ajoute pas. Le temps de lecture est le nombre de mots divisé par la vitesse que vous réglez (238 mpm est la moyenne d’un adulte en lecture silencieuse dans la méta-analyse de Brysbaert de 2019), et le temps de parole utilise 150 mpm, le rythme d’un présentateur ordinaire. Les deux sont arrondis à la seconde et les deux sont des estimations pour un lecteur moyen, pas une mesure de vous.","Le tableau des fréquences met chaque mot en minuscules avec \u003ccode>toLowerCase\u003c/code>, écarte les mots de moins de deux caractères et liste les dix plus courants, les égalités étant départagées par ordre alphabétique. Il n’y a pas de liste de mots vides, donc les articles et les prépositions arrivent en tête. Une entrée de plus de 2 000 000 de caractères est refusée plutôt que tentée, pour que l’onglet ne se fige jamais. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Compteur de mots — mots, caractères, temps de lecture — MDV","Collez du texte et lisez les comptes en direct : mots, caractères, octets UTF-8, phrases, paragraphes, lignes, temps de lecture et de parole. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Points de code","{s} s","{m} min {s} s","{h} h {m} min","{n} caractères","{n} caractères dépassent la limite de {limit} caractères que cet outil acceptera de traiter.","Texte et écriture",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Tippe oder füge Text ein. Die Zählungen folgen jedem Tastendruck: Wörter, Zeichen, Bytes, Sätze, Absätze und wie lange man zum Lesen oder Vorlesen des Textes braucht.","Läuft auf diesem Gerät","Funktioniert offline","Eingabe","Lesetempo","Wörter pro Minute","238 WPM ist der Durchschnitt Erwachsener beim stillen Lesen. Die Sprechzeit ist fest auf 150 WPM gesetzt.","Zählungen","Kopiert","Kopieren","Text oben eingeben oder einfügen","Abgelehnt","Wörter","Zeichen","Ohne Leerzeichen","UTF-8-Bytes","Sätze","Absätze","Zeilen","Lesezeit","Sprechzeit","Häufigste Wörter","Wort","Anzahl","Kleingeschrieben, zwei oder mehr Zeichen, die ersten zehn. Es gibt keine Stoppwortliste, daher gewinnt meist „the“.","So funktioniert es","Ein Wort ist eine Folge aus Unicode-Buchstaben, Ziffern oder kombinierenden Zeichen, wobei Apostrophe innerhalb der Folge erlaubt sind: der reguläre Ausdruck \u003ccode>[\\p{L}\\p{N}\\p{M}]+(?:['’][\\p{L}\\p{N}\\p{M}]+)*\u003c/code> mit dem Flag \u003ccode>u\u003c/code>. So sind \u003ccode>don't\u003c/code> und \u003ccode>l'aria\u003c/code> je ein Wort, \u003ccode>well-known\u003c/code> sind zwei, und \u003ccode>1492\u003c/code> zählt mit. Schriften ohne Leerzeichen (Chinesisch, Japanisch, Thai) ergeben ein Wort pro ununterbrochener Folge und werden damit zu niedrig gezählt; dieses Werkzeug segmentiert sie nicht. Zeichen sind Grapheme aus \u003ccode>Intl.Segmenter\u003c/code>, sodass eine Flagge oder ein Familien-Emoji einmal zählt; fehlt das im Browser, wird die Zeile in „Codepunkte“ umbenannt und zählt stattdessen diese. „Ohne Leerzeichen“ entfernt zuerst jedes \u003ccode>\\s\u003c/code>-Zeichen. Bytes sind die Länge der Ausgabe von \u003ccode>TextEncoder\u003c/code>, also UTF-8.","Ein Satz endet bei \u003ccode>.\u003c/code>, \u003ccode>!\u003c/code> oder \u003ccode>?\u003c/code>, optional gefolgt von einem schließenden Anführungszeichen oder einer Klammer, wenn danach Leerraum oder das Textende kommt; eine letzte Wortfolge ohne Abschlusszeichen zählt als ein weiterer Satz. Abkürzungen wie \u003ccode>Dr.\u003c/code> oder \u003ccode>e.g.\u003c/code> zählen daher zu viel, und \u003ccode>...\u003c/code> zählt einmal. Ein Absatz ist eine Textfolge zwischen Leerzeilen. Zeilen werden bei \u003ccode>\\n\u003c/code> getrennt, nachdem \u003ccode>\\r\\n\u003c/code> normalisiert wurde, und ein abschließender Zeilenumbruch fügt keine hinzu. Die Lesezeit ist die Wortzahl geteilt durch das eingestellte Tempo (238 WPM ist der Durchschnitt Erwachsener beim stillen Lesen in Brysbaerts Metaanalyse von 2019), und die Sprechzeit verwendet 150 WPM, das Tempo eines gewöhnlichen Vortragenden. Beide werden auf die Sekunde gerundet, und beide sind Schätzungen für einen durchschnittlichen Leser, keine Messung von dir.","Die Häufigkeitstabelle setzt jedes Wort mit \u003ccode>toLowerCase\u003c/code> in Kleinbuchstaben, verwirft Wörter mit weniger als zwei Zeichen und listet die zehn häufigsten auf, bei Gleichstand alphabetisch. Es gibt keine Stoppwortliste, daher stehen Artikel und Präpositionen vorn. Eingaben über 2.000.000 Zeichen werden abgelehnt, statt es zu versuchen, damit der Tab nie hängt. Nichts wird hochgeladen: In dieser Datei gibt es keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Wortzähler — Wörter, Zeichen, Lesezeit — MDV","Füge Text ein und lies die Zählungen live ab: Wörter, Zeichen, UTF-8-Bytes, Sätze, Absätze, Zeilen, Lese- und Sprechzeit. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Codepunkte","{s} s","{m} Min. {s} s","{h} Std. {m} Min.","{n} Zeichen","{n} Zeichen überschreiten die Grenze von {limit} Zeichen, die dieses Werkzeug zu verarbeiten versucht.","Text und Schreiben",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Scrivi o incolla del testo. I conteggi seguono ogni tasto: parole, caratteri, byte, frasi, paragrafi e quanto tempo serve per leggere il testo o dirlo ad alta voce.","Su questo dispositivo","Funziona offline","Input","Velocità di lettura","parole al minuto","238 ppm è la media di un adulto nella lettura silenziosa. Il tempo di parlato è fissato a 150 ppm.","Conteggi","Copiato","Copia","scrivi o incolla del testo qui sopra","Rifiutato","parole","Caratteri","Senza spazi","Byte UTF-8","Frasi","Paragrafi","Righe","Tempo di lettura","Tempo di parlato","Parole più frequenti","Parola","Conteggio","In minuscolo, due o più caratteri, i primi dieci. Non c’è un elenco di stopword, quindi di solito vince “the”.","Come funziona","Una parola è una sequenza di lettere Unicode, cifre o segni combinanti, con apostrofi ammessi all’interno della sequenza: l’espressione regolare \u003ccode>[\\p{L}\\p{N}\\p{M}]+(?:['’][\\p{L}\\p{N}\\p{M}]+)*\u003c/code> con il flag \u003ccode>u\u003c/code>. Quindi \u003ccode>don't\u003c/code> e \u003ccode>l'aria\u003c/code> sono una parola ciascuna, \u003ccode>well-known\u003c/code> sono due e \u003ccode>1492\u003c/code> conta. Le scritture senza spazi (cinese, giapponese, thai) escono come una parola per ogni tratto ininterrotto, il che le sottostima; questo strumento non le segmenta. I caratteri sono grafemi di \u003ccode>Intl.Segmenter\u003c/code>, quindi una bandiera o un’emoji di famiglia conta una volta; se il browser non lo ha, la riga viene rinominata “Punti di codice” e conta quelli. “Senza spazi” rimuove prima ogni carattere \u003ccode>\\s\u003c/code>. I byte sono la lunghezza dell’output di \u003ccode>TextEncoder\u003c/code>, cioè UTF-8.","Una frase termina a \u003ccode>.\u003c/code>, \u003ccode>!\u003c/code> o \u003ccode>?\u003c/code>, seguiti facoltativamente da una virgoletta o parentesi di chiusura, quando subito dopo viene uno spazio o la fine del testo; un’ultima serie di parole senza terminatore ne conta una in più. Abbreviazioni come \u003ccode>Dr.\u003c/code> o \u003ccode>e.g.\u003c/code> quindi sovrastimano, e \u003ccode>...\u003c/code> conta una volta. Un paragrafo è una serie di testo tra righe vuote. Le righe sono divise a \u003ccode>\\n\u003c/code> dopo aver normalizzato \u003ccode>\\r\\n\u003c/code>, e un a capo finale non ne aggiunge una. Il tempo di lettura è il numero di parole diviso per la velocità impostata (238 ppm è la media di un adulto nella lettura silenziosa nella meta-analisi di Brysbaert del 2019), e il tempo di parlato usa 150 ppm, il ritmo di un relatore ordinario. Entrambi sono arrotondati al secondo ed entrambi sono stime per un lettore medio, non una misura di te.","La tabella delle frequenze porta ogni parola in minuscolo con \u003ccode>toLowerCase\u003c/code>, scarta le parole più corte di due caratteri ed elenca le dieci più comuni, con i pareggi risolti in ordine alfabetico. Non c’è un elenco di stopword, quindi articoli e preposizioni vengono per primi. Un input oltre 2.000.000 di caratteri viene rifiutato invece di essere tentato, così la scheda non si blocca mai. Non viene caricato nulla: in questo file non c’è un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Conta parole — parole, caratteri, tempo di lettura — MDV","Incolla il testo e leggi i conteggi in tempo reale: parole, caratteri, byte UTF-8, frasi, paragrafi, righe, tempo di lettura e di parlato. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Punti di codice","{s} s","{m} min {s} s","{h} h {m} min","{n} caratteri","{n} caratteri superano il limite di {limit} caratteri che questo strumento tenterà di elaborare.","Testo e scrittura",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Digite ou cole um texto. As contagens acompanham cada tecla: palavras, caracteres, bytes, frases, parágrafos e quanto tempo o texto leva para ser lido ou dito em voz alta.","Neste dispositivo","Funciona offline","Entrada","Velocidade de leitura","palavras por minuto","238 ppm é a média de um adulto na leitura silenciosa. O tempo de fala é fixo em 150 ppm.","Contagens","Copiado","Copiar","digite ou cole o texto acima","Recusado","palavras","Caracteres","Sem espaços","Bytes UTF-8","Frases","Parágrafos","Linhas","Tempo de leitura","Tempo de fala","Palavras mais frequentes","Palavra","Contagem","Em minúsculas, dois ou mais caracteres, as dez primeiras. Não há lista de stopwords, então “the” costuma vencer.","Como funciona","Uma palavra é uma sequência de letras Unicode, dígitos ou marcas combinantes, com apóstrofos permitidos dentro da sequência: a expressão regular \u003ccode>[\\p{L}\\p{N}\\p{M}]+(?:['’][\\p{L}\\p{N}\\p{M}]+)*\u003c/code> com a flag \u003ccode>u\u003c/code>. Assim, \u003ccode>don't\u003c/code> e \u003ccode>l'aria\u003c/code> são uma palavra cada, \u003ccode>well-known\u003c/code> são duas, e \u003ccode>1492\u003c/code> conta. Escritas sem espaços (chinês, japonês, tailandês) saem como uma palavra por trecho ininterrupto, o que as subconta; esta ferramenta não as segmenta. Os caracteres são grafemas do \u003ccode>Intl.Segmenter\u003c/code>, então uma bandeira ou um emoji de família conta uma vez; se o navegador não tiver esse recurso, a linha é renomeada para “Pontos de código” e conta esses. “Sem espaços” primeiro remove todo caractere \u003ccode>\\s\u003c/code>. Bytes são o tamanho da saída do \u003ccode>TextEncoder\u003c/code>, que é UTF-8.","Uma frase termina em \u003ccode>.\u003c/code>, \u003ccode>!\u003c/code> ou \u003ccode>?\u003c/code>, opcionalmente seguidos de aspas ou parêntese de fechamento, quando o que vem depois é um espaço em branco ou o fim do texto; uma última sequência de palavras sem terminador conta como mais uma. Abreviações como \u003ccode>Dr.\u003c/code> ou \u003ccode>e.g.\u003c/code> portanto contam a mais, e \u003ccode>...\u003c/code> conta uma vez. Um parágrafo é um trecho de texto entre linhas em branco. As linhas são separadas em \u003ccode>\\n\u003c/code> depois que \u003ccode>\\r\\n\u003c/code> é normalizado, e uma quebra de linha final não acrescenta uma. O tempo de leitura é o número de palavras dividido pela velocidade que você define (238 ppm é a média de um adulto na leitura silenciosa na metanálise de Brysbaert de 2019), e o tempo de fala usa 150 ppm, o ritmo de um apresentador comum. Ambos são arredondados ao segundo e ambos são estimativas para um leitor médio, não uma medição de você.","A tabela de frequência converte cada palavra para minúsculas com \u003ccode>toLowerCase\u003c/code>, descarta palavras com menos de dois caracteres e lista as dez mais comuns, com empates desfeitos em ordem alfabética. Não há lista de stopwords, então artigos e preposições ficam em primeiro. Entrada acima de 2.000.000 de caracteres é recusada em vez de tentada, para que a aba nunca trave. Nada é enviado: não há servidor neste arquivo.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Contador de palavras — palavras, caracteres, tempo de leitura — MDV","Cole um texto e veja as contagens ao vivo: palavras, caracteres, bytes UTF-8, frases, parágrafos, linhas, tempo de leitura e de fala. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Pontos de código","{s} s","{m} min {s} s","{h} h {m} min","{n} caracteres","{n} caracteres passam do limite de {limit} caracteres que esta ferramenta tentará processar.","Texto e escrita",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","テキストを入力または貼り付けてください。キー入力のたびに、単語数、文字数、バイト数、文の数、段落数、そして読む時間と話す時間が更新されます。","この端末で動作","オフラインで動作","入力","読む速さ","語/分","238 語/分は、成人が黙読するときの平均です。話す時間は 150 語/分で固定です。","集計","コピーしました","コピー","上にテキストを入力または貼り付け","拒否しました","語","文字数","空白なし","UTF-8 バイト","文","段落","行","読む時間","話す時間","よく使われる単語","単語","回数","小文字化、2 文字以上、上位 10 件。ストップワードのリストはないので、通常は “the” が一位になります。","仕組み","単語とは、Unicode の文字・数字・結合文字の連続で、その中にアポストロフィーを含められるものです。フラグ \u003ccode>u\u003c/code> 付きの正規表現 \u003ccode>[\\p{L}\\p{N}\\p{M}]+(?:['’][\\p{L}\\p{N}\\p{M}]+)*\u003c/code> がそれに当たります。したがって \u003ccode>don't\u003c/code> と \u003ccode>l'aria\u003c/code> はそれぞれ 1 語、\u003ccode>well-known\u003c/code> は 2 語、\u003ccode>1492\u003c/code> も数えられます。スペースなしで書く文字体系(中国語、日本語、タイ語)は途切れのない連続ごとに 1 語として扱われるため、実際より少なく数えられます。このツールはそれらを分割しません。文字は \u003ccode>Intl.Segmenter\u003c/code> による書記素で数えるため、国旗や家族の絵文字は 1 つと数えます。ブラウザーに備わっていない場合は、この行は「コードポイント」に名前が変わり、代わりにそれを数えます。「空白なし」は、まずすべての \u003ccode>\\s\u003c/code> 文字を取り除きます。バイト数は \u003ccode>TextEncoder\u003c/code> の出力(UTF-8)の長さです。","文は \u003ccode>.\u003c/code>、\u003ccode>!\u003c/code>、\u003ccode>?\u003c/code> で終わります。その後ろに閉じ引用符や閉じ括弧が付いていてもよく、さらに空白かテキストの終わりが続く場合です。終端記号のない最後の単語の連続は、もう 1 文として数えます。そのため \u003ccode>Dr.\u003c/code> や \u003ccode>e.g.\u003c/code> のような略語は多く数えられ、\u003ccode>...\u003c/code> は 1 回と数えます。段落は、空行で区切られたテキストのまとまりです。行は \u003ccode>\\r\\n\u003c/code> を正規化した後に \u003ccode>\\n\u003c/code> で分割し、末尾の改行は行数に加えません。読む時間は、単語数を設定した速さで割ったものです(238 語/分は、Brysbaert の 2019 年のメタ分析における成人の黙読の平均値です)。話す時間は、一般的な発表者のペースである 150 語/分を使います。どちらも秒単位に丸められ、平均的な読み手に対する推定であり、あなた自身の測定ではありません。","頻度表は、各単語を \u003ccode>toLowerCase\u003c/code> で小文字にし、2 文字未満の単語を除き、最も多い 10 語を、同数の場合はアルファベット順で並べます。ストップワードのリストはないため、冠詞や前置詞が上位に来ます。2,000,000 文字を超える入力は、試みずに拒否するので、タブが固まることはありません。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","文字数カウンター — 単語、文字、読む時間 — MDV","テキストを貼り付けると、単語、文字、UTF-8 バイト、文、段落、行、読む時間と話す時間をリアルタイムで確認できます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","コードポイント","{s} 秒","{m} 分 {s} 秒","{h} 時間 {m} 分","{n} 文字","{n} 文字は、このツールが処理する上限の {limit} 文字を超えています。","テキストと文章",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","텍스트를 입력하거나 붙여넣으세요. 키를 누를 때마다 단어, 문자, 바이트, 문장, 단락 수와 읽거나 소리 내어 말하는 데 걸리는 시간이 갱신됩니다.","이 기기에서 실행","오프라인 작동","입력","읽기 속도","단어/분","238 단어/분은 성인의 묵독 평균입니다. 말하기 시간은 150 단어/분으로 고정되어 있습니다.","집계","복사됨","복사","위에 텍스트를 입력하거나 붙여넣으세요","거부됨","단어","문자","공백 제외","UTF-8 바이트","문장","단락","줄","읽는 시간","말하는 시간","자주 쓰인 단어","단어","횟수","소문자로 바꾼 두 글자 이상의 단어 중 상위 10개입니다. 불용어 목록이 없으므로 보통 “the”가 1위입니다.","작동 방식","단어는 유니코드 글자, 숫자, 결합 문자의 연속이며 그 안에 아포스트로피를 허용합니다. 플래그 \u003ccode>u\u003c/code>를 붙인 정규식 \u003ccode>[\\p{L}\\p{N}\\p{M}]+(?:['’][\\p{L}\\p{N}\\p{M}]+)*\u003c/code>가 그것입니다. 따라서 \u003ccode>don't\u003c/code>와 \u003ccode>l'aria\u003c/code>는 각각 한 단어이고, \u003ccode>well-known\u003c/code>은 두 단어이며, \u003ccode>1492\u003c/code>도 셉니다. 띄어쓰기 없이 쓰는 문자(중국어, 일본어, 태국어)는 끊기지 않은 구간마다 한 단어로 나오므로 실제보다 적게 세어지며, 이 도구는 그것을 분할하지 않습니다. 문자는 \u003ccode>Intl.Segmenter\u003c/code>의 자소 묶음이므로 국기나 가족 이모지는 한 번만 셉니다. 브라우저에 없으면 이 행의 이름이 “코드 포인트”로 바뀌고 대신 그것을 셉니다. “공백 제외”는 먼저 모든 \u003ccode>\\s\u003c/code> 문자를 제거합니다. 바이트는 UTF-8인 \u003ccode>TextEncoder\u003c/code> 출력의 길이입니다.","문장은 \u003ccode>.\u003c/code>, \u003ccode>!\u003c/code>, \u003ccode>?\u003c/code>에서 끝나며, 뒤에 닫는 따옴표나 괄호가 올 수 있고, 그다음에 공백이나 텍스트의 끝이 올 때입니다. 종결 기호가 없는 마지막 단어 묶음은 한 문장으로 더 셉니다. 따라서 \u003ccode>Dr.\u003c/code>나 \u003ccode>e.g.\u003c/code> 같은 약어는 많게 세어지고, \u003ccode>...\u003c/code>는 한 번으로 셉니다. 단락은 빈 줄 사이의 텍스트 묶음입니다. 줄은 \u003ccode>\\r\\n\u003c/code>을 정규화한 뒤 \u003ccode>\\n\u003c/code>에서 나누며, 끝의 줄바꿈은 줄을 더하지 않습니다. 읽는 시간은 단어 수를 설정한 속도로 나눈 값입니다(238 단어/분은 Brysbaert의 2019년 메타분석에서 성인 묵독의 평균입니다). 말하는 시간은 일반적인 발표자의 속도인 150 단어/분을 씁니다. 둘 다 초 단위로 반올림되며, 평균적인 독자에 대한 추정이지 당신에 대한 측정이 아닙니다.","빈도표는 각 단어를 \u003ccode>toLowerCase\u003c/code>로 소문자로 바꾸고, 두 글자 미만의 단어를 버리고, 가장 많이 나온 열 개를 나열하며 동률이면 알파벳순으로 정렬합니다. 불용어 목록이 없으므로 관사와 전치사가 상위에 옵니다. 2,000,000자를 넘는 입력은 시도하지 않고 거부하므로 탭이 멈추는 일이 없습니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크와 언어 버튼은 설정을 이 브라우저의 로컬 스토리지에 저장합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","단어 수 세기 — 단어, 문자, 읽는 시간 — MDV","텍스트를 붙여넣으면 단어, 문자, UTF-8 바이트, 문장, 단락, 줄, 읽는 시간과 말하는 시간을 실시간으로 볼 수 있습니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","코드 포인트","{s}초","{m}분 {s}초","{h}시간 {m}분","{n}자","{n}자는 이 도구가 처리하는 한도인 {limit}자를 넘습니다.","텍스트와 글쓰기",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","输入或粘贴文本。计数随每次按键更新:单词、字符、字节、句子、段落,以及阅读或朗读这段文本所需的时间。","在此设备上运行","可离线使用","输入","阅读速度","词/分钟","每分钟 238 词是成年人默读的平均速度。朗读时间固定按每分钟 150 词计算。","统计","已复制","复制","请在上方输入或粘贴文本","已拒绝","词","字符","不含空格","UTF-8 字节","句子","段落","行数","阅读时间","朗读时间","高频词","词","次数","已转为小写,仅含两个及以上字符,取前十名。没有停用词表,所以通常是 “the” 排第一。","工作原理","单词是由 Unicode 字母、数字或组合符号构成的连续片段,片段内部允许出现撇号:即带 \u003ccode>u\u003c/code> 标志的正则表达式 \u003ccode>[\\p{L}\\p{N}\\p{M}]+(?:['’][\\p{L}\\p{N}\\p{M}]+)*\u003c/code>。因此 \u003ccode>don't\u003c/code> 和 \u003ccode>l'aria\u003c/code> 各算一个单词,\u003ccode>well-known\u003c/code> 算两个,\u003ccode>1492\u003c/code> 也会计入。不使用空格书写的文字(中文、日文、泰文)每一段不间断的连续文字算一个单词,因此会被少算;本工具不对它们分词。字符按 \u003ccode>Intl.Segmenter\u003c/code> 的字素计数,所以一面旗帜或一个家庭表情符号只算一个;如果浏览器没有它,这一行会改称“码点”,改为统计码点。“不含空格”会先删除所有 \u003ccode>\\s\u003c/code> 字符。字节数是 \u003ccode>TextEncoder\u003c/code> 输出(即 UTF-8)的长度。","句子在 \u003ccode>.\u003c/code>、\u003ccode>!\u003c/code> 或 \u003ccode>?\u003c/code> 处结束,其后可紧跟右引号或右括号,且接下来是空白或文本末尾;末尾没有结束标点的最后一段文字会多算一句。因此 \u003ccode>Dr.\u003c/code> 或 \u003ccode>e.g.\u003c/code> 这样的缩写会造成多算,\u003ccode>...\u003c/code> 只算一次。段落是空行之间的一段文本。行在 \u003ccode>\\r\\n\u003c/code> 规范化之后按 \u003ccode>\\n\u003c/code> 拆分,末尾的换行不会多算一行。阅读时间是单词数除以你设定的速度(每分钟 238 词是 Brysbaert 2019 年元分析中成年人默读的平均值),朗读时间按每分钟 150 词计算,这是普通演讲者的语速。两者都四舍五入到秒,并且都是对普通读者的估计,不是对你本人的测量。","频率表用 \u003ccode>toLowerCase\u003c/code> 把每个单词转为小写,丢弃短于两个字符的单词,并列出最常见的十个,并列时按字母顺序排列。没有停用词表,所以冠词和介词排在最前。超过 2,000,000 个字符的输入会被直接拒绝而不去尝试,因此标签页不会卡死。不会上传任何内容:此文件中没有服务器。","“深色”和“语言”按钮会把各自的设置保存在此浏览器的本地存储中。你输入或拖入页面的任何内容都不会被保存。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","字数统计 — 单词、字符、阅读时间 — MDV","粘贴文本即可实时查看统计:单词、字符、UTF-8 字节、句子、段落、行数、阅读和朗读时间。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","码点","{s} 秒","{m} 分 {s} 秒","{h} 小时 {m} 分","{n} 个字符","{n} 个字符超出了本工具会尝试处理的 {limit} 个字符上限。","文本与写作",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2386,12 +2599,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     cell[k] = document.getElementById(k);
   });
   var full = "";
+  var shown = null;   // what is on screen: { c } for a result, { n } for a refusal; kept so a language change only redraws the words
 
   var WORD = /[\p{L}\p{N}\p{M}]+(?:['’][\p{L}\p{N}\p{M}]+)*/gu;
   var SENTENCE_END = /[.!?]+["'”’)\]]*(?=\s|$)/g;
   var segmenter = typeof Intl !== "undefined" && typeof Intl.Segmenter === "function"
     ? new Intl.Segmenter(undefined, { granularity: "grapheme" }) : null;
-  if (!segmenter) document.getElementById("chars-label").textContent = "Code points";
+  var charsLabel = document.getElementById("chars-label");
+  if (!segmenter) charsLabel.textContent = tr("Code points");
 
   function graphemes(s) {
     if (!segmenter) return Array.from(s).length;
@@ -2422,12 +2637,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     return rows.slice(0, limit);
   }
 
-  function clock(words, wpm) {
-    var secs = Math.round(words / wpm * 60);
+  function seconds(words, wpm) { return Math.round(words / wpm * 60); }
+
+  // English units for the text Copy gives you; clockText() is the same time worded for the page
+  function clock(secs) {
     if (secs < 60) return secs + " s";
     var m = Math.floor(secs / 60), s = secs % 60;
     if (m < 60) return m + " min " + s + " s";
     return Math.floor(m / 60) + " h " + (m % 60) + " min";
+  }
+  function clockText(secs) {
+    if (secs < 60) return tr("{s} s", { s: secs });
+    var m = Math.floor(secs / 60), s = secs % 60;
+    if (m < 60) return tr("{m} min {s} s", { m: m, s: s });
+    return tr("{h} h {m} min", { h: Math.floor(m / 60), m: m % 60 });
   }
 
   function count(text, wpm) {
@@ -2441,8 +2664,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       sentences: sentences(trimmed),
       paragraphs: trimmed ? trimmed.split(/\n\s*\n/).length : 0,
       lines: norm.split("\n").length - (norm.endsWith("\n") ? 1 : 0),
-      read: clock(words.length, wpm),
-      speak: clock(words.length, SPEAK_WPM),
+      read: seconds(words.length, wpm),
+      speak: seconds(words.length, SPEAK_WPM),
       top: topWords(words, 10)
     };
   }
@@ -2459,9 +2682,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       cell[k].textContent = c[k].toLocaleString();
       lines.push(k + "\t" + c[k]);
     });
-    cell.read.textContent = c.read;
-    cell.speak.textContent = c.speak;
-    lines.push("reading time\t" + c.read, "speaking time\t" + c.speak);
+    cell.read.textContent = clockText(c.read);
+    cell.speak.textContent = clockText(c.speak);
+    lines.push("reading time\t" + clock(c.read), "speaking time\t" + clock(c.speak));
     freq.textContent = "";
     if (!c.top.length) {
       var tr0 = document.createElement("tr");
@@ -2481,17 +2704,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   function run() {
     var text = input.value;
-    size.textContent = text.length.toLocaleString() + " characters";
-    if (!text.trim()) { state("empty"); full = ""; return; }
+    size.textContent = tr("{n} characters", { n: text.length.toLocaleString() });
+    if (!text.trim()) { state("empty"); full = ""; shown = null; return; }
     if (text.length > LIMIT) {
-      errmsg.textContent = text.length.toLocaleString() + " characters is past the " +
-        LIMIT.toLocaleString() + "-character ceiling this tool will attempt.";
+      shown = { n: text.length };
+      errmsg.textContent = tr("{n} characters is past the {limit}-character ceiling this tool will attempt.",
+        { n: text.length.toLocaleString(), limit: LIMIT.toLocaleString() });
       state("error"); full = ""; return;
     }
     var wpm = parseInt(wpmBox.value, 10);
     if (!(wpm >= 1)) wpm = DEFAULT_WPM;
-    full = render(count(text, wpm));
+    shown = { c: count(text, wpm) };
+    full = render(shown.c);
     state("result");
+  }
+
+  // a language change redraws the words from the kept result; nothing is counted again
+  function words() {
+    size.textContent = tr("{n} characters", { n: input.value.length.toLocaleString() });
+    if (!segmenter) charsLabel.textContent = tr("Code points");
+    if (!shown) return;
+    if (shown.c) full = render(shown.c);
+    else errmsg.textContent = tr("{n} characters is past the {limit}-character ceiling this tool will attempt.",
+      { n: shown.n.toLocaleString(), limit: LIMIT.toLocaleString() });
   }
 
   input.addEventListener("input", run);
@@ -2505,6 +2740,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   });
   input.focus({ preventScroll: true });
+  onLang(words);
   run();
 })();
 </script>

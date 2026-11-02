@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link is-here" href="./team-generator.html" aria-current="page" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link is-here" href="./team-generator.html" aria-current="page" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,23 +2353,23 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Team generator</h1>
+      <h1 class="mdv-head-name" data-t="77">Team generator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Paste the names and split them into random teams of even size.</p>
+    <p class="mdv-head-line" data-t="79">Paste the names and split them into random teams of even size.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <label class="mdv-label" style="margin:0" for="list">Names</label>
+      <label class="mdv-label" style="margin:0" for="list" data-t="82">Names</label>
       <span class="mdv-hint mdv-mono" style="margin:0" id="size"></span>
     </div>
     <textarea class="mdv-textarea" id="list" spellcheck="false" autocomplete="off" style="min-height:130px"
-      placeholder="One name per line.">Leonardo
+      placeholder="One name per line." data-t-attrs="placeholder">Leonardo
 Salaì
 Melzi
 Verrocchio
@@ -2271,20 +2383,20 @@ Pollaiuolo</textarea>
 
   <div class="mdv-row is-between">
     <div class="mdv-row" style="gap:var(--space-2)">
-      <div class="mdv-seg" role="group" aria-label="Split by">
-        <button type="button" data-by="teams" class="is-on" aria-pressed="true">Number of teams</button>
-        <button type="button" data-by="size" aria-pressed="false">People per team</button>
+      <div class="mdv-seg" role="group" aria-label="Split by" data-t-attrs="aria-label">
+        <button type="button" data-by="teams" class="is-on" aria-pressed="true" data-t="83">Number of teams</button>
+        <button type="button" data-by="size" aria-pressed="false" data-t="84">People per team</button>
       </div>
-      <input class="mdv-input mdv-mono is-num" id="n" type="number" min="1" max="1000" step="1" value="2" style="width:6em" aria-label="How many">
+      <input class="mdv-input mdv-mono is-num" id="n" type="number" min="1" max="1000" step="1" value="2" style="width:6em" aria-label="How many" data-t-attrs="aria-label">
     </div>
-    <button class="mdv-btn is-primary" type="button" id="make">Make teams</button>
+    <button class="mdv-btn is-primary" type="button" id="make"><span data-t="85">Make teams</span></button>
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>paste names and press make teams</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="86">paste names and press make teams</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Cannot split that</span>
+      <span class="mdv-notice-title" data-t="87">Cannot split that</span>
       <span id="errmsg"></span>
     </div>
 
@@ -2292,8 +2404,8 @@ Pollaiuolo</textarea>
       <div class="mdv-row is-between">
         <div class="mdv-readout"><span id="big"></span></div>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy</button>
+          <span class="mdv-badge is-accent" id="copied" hidden><span data-t="88">Copied</span></span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn"><span data-t="89">Copy</span></button>
         </span>
       </div>
       <div class="mdv-panel is-flush">
@@ -2304,40 +2416,41 @@ Pollaiuolo</textarea>
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="90">How this works</summary>
     <div class="mdv-method-body">
-      <p>The names are shuffled with a Fisher–Yates pass whose every swap is drawn from
+      <p data-t="91">The names are shuffled with a Fisher–Yates pass whose every swap is drawn from
         <code>crypto.getRandomValues</code>, discarding draws that would lean towards the top of the list —
         so every order of the names is equally likely, and where someone sits in your paste has no bearing
         on where they end up. The shuffled names are then dealt out one at a time, round the teams like
         cards, which is why no team is ever more than one person larger than another.</p>
-      <p><strong>Number of teams</strong> splits everyone into that many. <strong>People per team</strong>
+      <p data-t="92"><strong>Number of teams</strong> splits everyone into that many. <strong>People per team</strong>
         works out how many teams that takes and then evens them out, rather than leaving a short team at
         the end: ten people in teams of four becomes four, three and three, not four, four and two. The page
         says when it had to do that, and why. Pressing the button again reshuffles from scratch; it does not
         nudge the last split.</p>
-      <p>It knows nothing about the people, so it cannot balance skill, keep friends apart or seat a captain
+      <p data-t="93">It knows nothing about the people, so it cannot balance skill, keep friends apart or seat a captain
         in each team — a truly random split sometimes puts the three strongest together, and that is what
         random means. If balance matters, make the teams here and swap by hand. A name written twice is
-        treated as two people, and the page points it out. Nothing is sent or stored; the Dark button keeps
-        its own setting in this browser's local storage. Up to 5,000 names.</p>
+        treated as two people, and the page points it out. Nothing is sent or stored; the Dark and language buttons keep
+        their own settings in this browser's local storage. Up to 5,000 names.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Productivity">
-    <span class="mdv-tag">Also in Productivity</span>
-    <a href="./dice-roller.html">Dice roller</a>
-    <a href="./coin-flip.html">Flip a coin</a>
-    <a href="./random-picker.html">Random picker</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Productivity"}'>Also in Productivity</span>
+    <a href="./dice-roller.html" data-t="75">Dice roller</a>
+    <a href="./coin-flip.html" data-t="74">Flip a coin</a>
+    <a href="./random-picker.html" data-t="76">Random picker</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="94">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="95">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="96" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-22</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="97">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2348,6 +2461,106 @@ Pollaiuolo</textarea>
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Random Team Generator — split a list into fair, even groups — MDV","Paste names and split them into random teams, by number of teams or people per team, with sizes that never differ by more than one. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","One name per line.","Split by","How many","Line {line} is {len} characters; a name here is at most {max}.","That is {n} names; this page splits up to {max}.","Team {n} · {size}","{lo} or {hi}","Ask for at least one team.","A team needs at least one person.","One name makes one team of one; add the others.","Teams of {n} from {names} names is one team with everyone in it. Ask for fewer per team.","{people} people do not split into teams of exactly {n}, so the page made {teams} teams and evened them out instead of leaving one short.","{names} and others are on the list more than once and were placed as separate people.","{names} is on the list more than once and was placed as separate people.","{names} are on the list more than once and were placed as separate people.","How many teams","How many people per team","{n} name","{n} names","{n} team of {size}","{n} teams of {size}","{teams} teams from {names} names would leave {n} team empty. Ask for {names} or fewer.","{teams} teams from {names} names would leave {n} teams empty. Ask for {names} or fewer.","Productivity","2026-11-02"],"h":98,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Pega los nombres y repártelos en equipos aleatorios de tamaño parejo.","En este dispositivo","Funciona sin conexión","Nombres","Número de equipos","Personas por equipo","Crear equipos","pega nombres y pulsa crear equipos","No se puede repartir","Copiado","Copiar","Cómo funciona","Los nombres se barajan con una pasada de Fisher–Yates en la que cada intercambio se toma de \u003ccode>crypto.getRandomValues\u003c/code>, descartando los valores que favorecerían la parte alta de la lista, de modo que cada orden de los nombres es igual de probable y el lugar que ocupa alguien en lo que pegaste no influye en dónde acaba. Después los nombres barajados se reparten de uno en uno entre los equipos, como cartas, por lo que ningún equipo tiene nunca más de una persona de diferencia respecto a otro.","\u003cstrong>Número de equipos\u003c/strong> reparte a todos en ese número de equipos. \u003cstrong>Personas por equipo\u003c/strong> calcula cuántos equipos hacen falta y luego los equilibra, en lugar de dejar un equipo corto al final: diez personas en equipos de cuatro quedan en cuatro, tres y tres, no en cuatro, cuatro y dos. La página avisa cuando ha tenido que hacerlo, y por qué. Al pulsar el botón de nuevo se baraja desde cero; no se retoca el último reparto.","No sabe nada de las personas, así que no puede equilibrar el nivel, separar a amigos ni poner un capitán en cada equipo: un reparto realmente aleatorio a veces junta a los tres más fuertes, y eso es lo que significa aleatorio. Si el equilibrio importa, haz los equipos aquí e intercambia a mano. Un nombre escrito dos veces se trata como dos personas, y la página lo señala. No se envía ni se guarda nada; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador. Hasta 5.000 nombres.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Generador de equipos aleatorios — divide una lista en grupos justos y parejos — MDV","Pega nombres y repártelos en equipos aleatorios, por número de equipos o por personas por equipo, con tamaños que nunca difieren en más de uno. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Un nombre por línea.","Repartir por","Cuántos","La línea {line} tiene {len} caracteres; aquí un nombre admite como máximo {max}.","Son {n} nombres; esta página reparte hasta {max}.","Equipo {n} · {size}","{lo} o {hi}","Pide al menos un equipo.","Un equipo necesita al menos una persona.","Un nombre forma un equipo de uno; añade los demás.","Equipos de {n} con {names} nombres es un solo equipo con todos dentro. Pide menos por equipo.","{people} personas no se reparten en equipos de exactamente {n}, así que la página hizo {teams} equipos y los equilibró en lugar de dejar uno corto.","{names} y otros están en la lista más de una vez y se colocaron como personas distintas.","{names} está en la lista más de una vez y se colocó como personas distintas.","{names} están en la lista más de una vez y se colocaron como personas distintas.","Cuántos equipos","Cuántas personas por equipo","{n} nombre","{n} nombres","{n} equipo de {size}","{n} equipos de {size}","{teams} equipos con {names} nombres dejarían {n} equipo vacío. Pide {names} o menos.","{teams} equipos con {names} nombres dejarían {n} equipos vacíos. Pide {names} o menos.","Productividad",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Collez les noms et répartissez-les en équipes aléatoires de taille égale.","Sur cet appareil","Fonctionne hors ligne","Noms","Nombre d’équipes","Personnes par équipe","Créer les équipes","collez des noms et appuyez sur créer les équipes","Répartition impossible","Copié","Copier","Comment ça marche","Les noms sont mélangés par un passage de Fisher–Yates dont chaque échange est tiré de \u003ccode>crypto.getRandomValues\u003c/code>, en écartant les tirages qui favoriseraient le haut de la liste — chaque ordre des noms est donc équiprobable, et la place d’une personne dans votre texte collé n’influe pas sur l’équipe où elle finit. Les noms mélangés sont ensuite distribués un par un entre les équipes, comme des cartes, ce qui explique qu’aucune équipe ne compte jamais plus d’une personne de plus qu’une autre.","\u003cstrong>Nombre d’équipes\u003c/strong> répartit tout le monde en autant d’équipes. \u003cstrong>Personnes par équipe\u003c/strong> calcule combien d’équipes il faut puis les équilibre, au lieu de laisser une équipe incomplète à la fin : dix personnes en équipes de quatre donnent quatre, trois et trois, et non quatre, quatre et deux. La page indique quand elle a dû le faire, et pourquoi. Appuyer de nouveau sur le bouton remélange tout depuis le début ; la dernière répartition n’est pas retouchée.","Elle ne sait rien des personnes : elle ne peut donc pas équilibrer les niveaux, séparer des amis ni placer un capitaine dans chaque équipe — une répartition vraiment aléatoire réunit parfois les trois plus forts, et c’est ce que veut dire aléatoire. Si l’équilibre compte, faites les équipes ici et échangez à la main. Un nom écrit deux fois est traité comme deux personnes, et la page le signale. Rien n’est envoyé ni conservé ; les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur. Jusqu’à 5 000 noms.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Générateur d’équipes aléatoires — répartit une liste en groupes équitables et égaux — MDV","Collez des noms et répartissez-les en équipes aléatoires, par nombre d’équipes ou par personnes par équipe, avec des tailles qui ne diffèrent jamais de plus d’un. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Un nom par ligne.","Répartir par","Combien","La ligne {line} fait {len} caractères ; un nom fait ici au plus {max}.","Cela fait {n} noms ; cette page en répartit jusqu’à {max}.","Équipe {n} · {size}","{lo} ou {hi}","Demandez au moins une équipe.","Une équipe doit compter au moins une personne.","Un seul nom donne une équipe d’une personne ; ajoutez les autres.","Des équipes de {n} avec {names} noms, c’est une seule équipe avec tout le monde. Demandez moins par équipe.","{people} personnes ne se répartissent pas en équipes d’exactement {n} : la page a donc fait {teams} équipes et les a équilibrées au lieu d’en laisser une incomplète.","{names} et d’autres figurent plus d’une fois dans la liste et ont été placés comme des personnes distinctes.","{names} figure plus d’une fois dans la liste et a été placé comme des personnes distinctes.","{names} figurent plus d’une fois dans la liste et ont été placés comme des personnes distinctes.","Combien d’équipes","Combien de personnes par équipe","{n} nom","{n} noms","{n} équipe de {size}","{n} équipes de {size}","{teams} équipes avec {names} noms laisseraient {n} équipe vide. Demandez {names} ou moins.","{teams} équipes avec {names} noms laisseraient {n} équipes vides. Demandez {names} ou moins.","Productivité",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Füge die Namen ein und teile sie in zufällige Teams gleicher Größe auf.","Läuft auf diesem Gerät","Funktioniert offline","Namen","Anzahl Teams","Personen pro Team","Teams bilden","Namen einfügen und auf Teams bilden drücken","Aufteilung nicht möglich","Kopiert","Kopieren","So funktioniert es","Die Namen werden mit einem Fisher–Yates-Durchlauf gemischt, bei dem jeder Tausch aus \u003ccode>crypto.getRandomValues\u003c/code> gezogen wird; Ziehungen, die den Anfang der Liste begünstigen würden, werden verworfen — jede Reihenfolge der Namen ist also gleich wahrscheinlich, und wo jemand in deiner Einfügung steht, hat keinen Einfluss darauf, wo er landet. Die gemischten Namen werden dann einzeln wie Karten reihum auf die Teams verteilt, weshalb kein Team je mehr als eine Person größer ist als ein anderes.","\u003cstrong>Anzahl Teams\u003c/strong> teilt alle auf so viele Teams auf. \u003cstrong>Personen pro Team\u003c/strong> berechnet, wie viele Teams dafür nötig sind, und gleicht sie dann aus, statt am Ende ein zu kleines Team zu lassen: Zehn Personen in Teams zu vier werden vier, drei und drei, nicht vier, vier und zwei. Die Seite sagt, wann sie das tun musste und warum. Erneutes Drücken des Knopfes mischt von vorn; die letzte Aufteilung wird nicht nachjustiert.","Sie weiß nichts über die Leute und kann daher weder Spielstärke ausgleichen noch Freunde trennen oder in jedes Team einen Kapitän setzen — eine wirklich zufällige Aufteilung bringt manchmal die drei Stärksten zusammen, und genau das bedeutet zufällig. Wenn Ausgewogenheit zählt, bilde die Teams hier und tausche von Hand. Ein zweimal geschriebener Name wird als zwei Personen behandelt, und die Seite weist darauf hin. Nichts wird gesendet oder gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers. Bis zu 5.000 Namen.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Zufälliger Teamgenerator — teilt eine Liste in faire, gleich große Gruppen — MDV","Füge Namen ein und teile sie in zufällige Teams auf, nach Anzahl der Teams oder Personen pro Team, mit Größen, die nie um mehr als eins abweichen. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Ein Name pro Zeile.","Aufteilen nach","Wie viele","Zeile {line} hat {len} Zeichen; ein Name darf hier höchstens {max} haben.","Das sind {n} Namen; diese Seite teilt bis zu {max} auf.","Team {n} · {size}","{lo} oder {hi}","Fordere mindestens ein Team an.","Ein Team braucht mindestens eine Person.","Ein Name ergibt ein Team aus einer Person; füge die anderen hinzu.","Teams zu {n} bei {names} Namen ergibt ein einziges Team mit allen darin. Fordere weniger pro Team an.","{people} Personen lassen sich nicht in Teams zu genau {n} aufteilen, daher hat die Seite {teams} Teams gebildet und sie ausgeglichen, statt eines zu klein zu lassen.","{names} und weitere stehen mehr als einmal auf der Liste und wurden als getrennte Personen eingeteilt.","{names} steht mehr als einmal auf der Liste und wurde als getrennte Personen eingeteilt.","{names} stehen mehr als einmal auf der Liste und wurden als getrennte Personen eingeteilt.","Wie viele Teams","Wie viele Personen pro Team","{n} Name","{n} Namen","{n} Team zu {size}","{n} Teams zu {size}","{teams} Teams aus {names} Namen ließen {n} Team leer. Fordere {names} oder weniger an.","{teams} Teams aus {names} Namen ließen {n} Teams leer. Fordere {names} oder weniger an.","Produktivität",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Incolla i nomi e dividili in squadre casuali di dimensioni uguali.","Su questo dispositivo","Funziona offline","Nomi","Numero di squadre","Persone per squadra","Crea squadre","incolla i nomi e premi crea squadre","Impossibile dividere","Copiato","Copia","Come funziona","I nomi vengono mescolati con un passaggio di Fisher–Yates in cui ogni scambio è estratto da \u003ccode>crypto.getRandomValues\u003c/code>, scartando le estrazioni che favorirebbero la parte alta dell’elenco: ogni ordine dei nomi è quindi ugualmente probabile, e la posizione di qualcuno in ciò che hai incollato non influisce su dove finisce. I nomi mescolati vengono poi distribuiti uno alla volta tra le squadre, come carte, ed è per questo che nessuna squadra ha mai più di una persona in più di un’altra.","\u003cstrong>Numero di squadre\u003c/strong> divide tutti in quel numero di squadre. \u003cstrong>Persone per squadra\u003c/strong> calcola quante squadre servono e poi le bilancia, invece di lasciare una squadra scarsa alla fine: dieci persone in squadre da quattro diventano quattro, tre e tre, non quattro, quattro e due. La pagina segnala quando ha dovuto farlo, e perché. Premere di nuovo il pulsante rimescola da zero; non ritocca l’ultima divisione.","Non sa nulla delle persone, quindi non può bilanciare il livello, tenere separati gli amici o mettere un capitano in ogni squadra: una divisione davvero casuale a volte mette insieme i tre più forti, ed è questo che significa casuale. Se il bilanciamento conta, crea le squadre qui e scambia a mano. Un nome scritto due volte viene trattato come due persone, e la pagina lo segnala. Non viene inviato né salvato nulla; i pulsanti Scuro e Lingua conservano la propria impostazione nell’archivio locale di questo browser. Fino a 5.000 nomi.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Generatore di squadre casuali — divide un elenco in gruppi equi e uniformi — MDV","Incolla i nomi e dividili in squadre casuali, per numero di squadre o persone per squadra, con dimensioni che non differiscono mai di più di uno. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Un nome per riga.","Dividi per","Quanti","La riga {line} è di {len} caratteri; un nome può averne al massimo {max}.","Sono {n} nomi; questa pagina ne divide fino a {max}.","Squadra {n} · {size}","{lo} o {hi}","Chiedi almeno una squadra.","Una squadra richiede almeno una persona.","Un nome forma una squadra da uno; aggiungi gli altri.","Squadre da {n} con {names} nomi è una sola squadra con tutti dentro. Chiedi meno per squadra.","{people} persone non si dividono in squadre da esattamente {n}, quindi la pagina ha creato {teams} squadre e le ha bilanciate invece di lasciarne una scarsa.","{names} e altri compaiono più di una volta nell’elenco e sono stati collocati come persone distinte.","{names} compare più di una volta nell’elenco ed è stato collocato come persone distinte.","{names} compaiono più di una volta nell’elenco e sono stati collocati come persone distinte.","Quante squadre","Quante persone per squadra","{n} nome","{n} nomi","{n} squadra da {size}","{n} squadre da {size}","{teams} squadre da {names} nomi lascerebbero {n} squadra vuota. Chiedi {names} o meno.","{teams} squadre da {names} nomi lascerebbero {n} squadre vuote. Chiedi {names} o meno.","Produttività",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Cole os nomes e divida-os em equipes aleatórias de tamanho equilibrado.","Neste dispositivo","Funciona offline","Nomes","Número de equipes","Pessoas por equipe","Criar equipes","cole nomes e pressione criar equipes","Não é possível dividir","Copiado","Copiar","Como funciona","Os nomes são embaralhados com uma passada de Fisher–Yates em que cada troca é sorteada de \u003ccode>crypto.getRandomValues\u003c/code>, descartando os sorteios que favoreceriam o topo da lista; assim, toda ordem dos nomes é igualmente provável, e a posição de alguém no que você colou não influencia onde a pessoa vai parar. Em seguida, os nomes embaralhados são distribuídos um a um entre as equipes, como cartas, e por isso nenhuma equipe tem mais de uma pessoa a mais que outra.","\u003cstrong>Número de equipes\u003c/strong> divide todos nesse número de equipes. \u003cstrong>Pessoas por equipe\u003c/strong> calcula quantas equipes são necessárias e depois as equilibra, em vez de deixar uma equipe menor no fim: dez pessoas em equipes de quatro viram quatro, três e três, não quatro, quatro e dois. A página avisa quando precisou fazer isso, e por quê. Pressionar o botão de novo embaralha do zero; ele não ajusta a última divisão.","Ela não sabe nada sobre as pessoas, então não consegue equilibrar habilidade, separar amigos nem colocar um capitão em cada equipe: uma divisão realmente aleatória às vezes junta os três mais fortes, e é isso que aleatório significa. Se o equilíbrio importa, monte as equipes aqui e troque à mão. Um nome escrito duas vezes é tratado como duas pessoas, e a página avisa. Nada é enviado nem armazenado; os botões Escuro e Idioma guardam sua própria configuração no armazenamento local deste navegador. Até 5.000 nomes.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Gerador de equipes aleatórias — divide uma lista em grupos justos e equilibrados — MDV","Cole nomes e divida-os em equipes aleatórias, por número de equipes ou pessoas por equipe, com tamanhos que nunca diferem em mais de um. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Um nome por linha.","Dividir por","Quantos","A linha {line} tem {len} caracteres; um nome aqui tem no máximo {max}.","São {n} nomes; esta página divide até {max}.","Equipe {n} · {size}","{lo} ou {hi}","Peça pelo menos uma equipe.","Uma equipe precisa de pelo menos uma pessoa.","Um nome forma uma equipe de um; adicione os outros.","Equipes de {n} com {names} nomes é uma única equipe com todos dentro. Peça menos por equipe.","{people} pessoas não se dividem em equipes de exatamente {n}, então a página criou {teams} equipes e as equilibrou em vez de deixar uma menor.","{names} e outros estão na lista mais de uma vez e foram colocados como pessoas separadas.","{names} está na lista mais de uma vez e foi colocado como pessoas separadas.","{names} estão na lista mais de uma vez e foram colocados como pessoas separadas.","Quantas equipes","Quantas pessoas por equipe","{n} nome","{n} nomes","{n} equipe de {size}","{n} equipes de {size}","{teams} equipes com {names} nomes deixariam {n} equipe vazia. Peça {names} ou menos.","{teams} equipes com {names} nomes deixariam {n} equipes vazias. Peça {names} ou menos.","Produtividade",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","名前を貼り付けて、人数が均等なランダムのチームに分けます。","この端末で動作","オフラインで動作","名前","チーム数","チームの人数","チームを作成","名前を貼り付けて「チームを作成」を押してください","分けられません","コピーしました","コピー","仕組み","名前は Fisher–Yates 法で並べ替えられ、すべての入れ替えは \u003ccode>crypto.getRandomValues\u003c/code> から引かれます。リストの先頭に偏る抽選は破棄されるので、名前のどの並びも同じ確率で起こり、貼り付けた中での位置は最終的な所属に影響しません。シャッフルした名前は、カードを配るように 1 人ずつチームに順に割り振られるため、チーム間の人数差が 1 人を超えることはありません。","\u003cstrong>チーム数\u003c/strong>は、全員をその数のチームに分けます。\u003cstrong>チームの人数\u003c/strong>は、必要なチーム数を求めてから、最後に少人数のチームを残すのではなく人数をならします。10 人を 4 人ずつに分ける場合は、4・4・2 ではなく 4・3・3 になります。そうした調整をしたときは、ページがその旨と理由を表示します。ボタンをもう一度押すと一からシャッフルし直し、前回の分け方を微調整することはありません。","ページは人々について何も知らないので、実力のバランス調整、友人同士を離すこと、各チームへの主将の配置はできません。本当にランダムな分け方では、最強の 3 人が同じチームになることもあり、それがランダムということです。バランスが大切なら、ここでチームを作って手で入れ替えてください。同じ名前が 2 回書かれていると 2 人として扱われ、ページがそれを知らせます。何も送信も保存もされません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。最大 5,000 名です。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","ランダムチーム分け — リストを公平で均等なグループに分割 — MDV","名前を貼り付けて、チーム数または1チームの人数を指定してランダムに分けます。人数の差は常に1人以内です。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","1 行に 1 つの名前。","分け方","数","{line} 行目は {len} 文字です。名前は最大 {max} 文字までです。","{n} 名あります。このページが分けられるのは {max} 名までです。","チーム {n} · {size}","{lo} または {hi}","チームは 1 つ以上にしてください。","1 チームには 1 人以上が必要です。","名前が 1 つだけでは 1 人のチームになります。ほかの名前を追加してください。","{names} 名を {n} 人ずつに分けると、全員が入った 1 チームになります。1 チームの人数を減らしてください。","{people} 人は ちょうど {n} 人ずつには分けられないため、ページは {teams} チームを作り、1 チームだけ少なくならないよう人数をならしました。","{names} ほかの名前がリストに複数回あり、別々の人として配置しました。","{names} がリストに複数回あり、別々の人として配置しました。","{names} がリストに複数回あり、別々の人として配置しました。","チーム数","1 チームの人数","{n} 名","{n} 名","{size} 人のチームが {n} つ","{size} 人のチームが {n} つ","{names} 名から {teams} チームを作ると、{n} チームが空になります。{names} 以下にしてください。","{names} 名から {teams} チームを作ると、{n} チームが空になります。{names} 以下にしてください。","生産性",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","이름을 붙여넣으면 인원이 고르게 나뉜 무작위 팀으로 나눕니다.","이 기기에서 실행","오프라인 작동","이름","팀 수","팀당 인원","팀 만들기","이름을 붙여넣고 팀 만들기를 누르세요","나눌 수 없습니다","복사됨","복사","작동 방식","이름은 Fisher–Yates 방식으로 섞이며, 모든 교환은 \u003ccode>crypto.getRandomValues\u003c/code>에서 뽑습니다. 목록 앞쪽으로 치우치는 값은 버리므로 이름의 모든 순서가 똑같은 확률로 나오고, 붙여넣은 목록에서의 위치는 어느 팀에 들어가는지에 영향을 주지 않습니다. 섞인 이름은 카드를 나누듯 한 명씩 팀에 차례로 배정되므로, 어느 팀도 다른 팀보다 한 명 넘게 많아지지 않습니다.","\u003cstrong>팀 수\u003c/strong>는 모든 사람을 그 수의 팀으로 나눕니다. \u003cstrong>팀당 인원\u003c/strong>은 필요한 팀 수를 계산한 뒤, 마지막에 인원이 모자란 팀을 남기지 않고 고르게 맞춥니다. 10명을 4명씩 나누면 4·4·2가 아니라 4·3·3이 됩니다. 이렇게 조정했을 때는 페이지가 그 사실과 이유를 알려 줍니다. 버튼을 다시 누르면 처음부터 다시 섞으며, 직전 분배를 살짝 바꾸는 것이 아닙니다.","페이지는 사람들에 대해 아무것도 모르므로 실력을 맞추거나, 친한 사람을 떼어 놓거나, 팀마다 주장을 앉힐 수 없습니다. 진정한 무작위 분배에서는 가장 강한 세 명이 한 팀이 되기도 하며, 그것이 무작위의 의미입니다. 균형이 중요하다면 여기서 팀을 만든 뒤 직접 바꾸세요. 두 번 적은 이름은 두 사람으로 취급하며 페이지가 알려 줍니다. 아무것도 전송되거나 저장되지 않습니다. 다크 및 언어 버튼은 각자의 설정을 이 브라우저의 로컬 스토리지에 보관합니다. 이름은 최대 5,000개입니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","무작위 팀 생성기 — 목록을 공정하고 고른 그룹으로 나누기 — MDV","이름을 붙여넣고 팀 수 또는 팀당 인원으로 무작위 팀을 나눕니다. 팀 간 인원 차이는 한 명을 넘지 않습니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","한 줄에 이름 하나.","나누는 기준","개수","{line}번째 줄은 {len}자입니다. 이름은 최대 {max}자까지 가능합니다.","이름이 {n}개입니다. 이 페이지는 최대 {max}개까지 나눕니다.","팀 {n} · {size}","{lo} 또는 {hi}","팀은 최소 하나를 요청하세요.","팀에는 최소 한 명이 필요합니다.","이름이 하나면 한 명짜리 팀 하나가 됩니다. 나머지 이름을 추가하세요.","{names}명을 {n}명씩 나누면 모두가 들어간 팀 하나가 됩니다. 팀당 인원을 줄이세요.","{people}명은 정확히 {n}명씩 나눌 수 없어서, 페이지가 {teams}개 팀을 만들고 한 팀이 모자라지 않도록 고르게 맞췄습니다.","{names} 외 여러 이름이 목록에 두 번 이상 있어 서로 다른 사람으로 배정했습니다.","{names}이(가) 목록에 두 번 이상 있어 서로 다른 사람으로 배정했습니다.","{names}이(가) 목록에 두 번 이상 있어 서로 다른 사람으로 배정했습니다.","팀 수","팀당 인원","이름 {n}개","이름 {n}개","{size}명 팀 {n}개","{size}명 팀 {n}개","이름 {names}개로 팀 {teams}개를 만들면 빈 팀이 {n}개 생깁니다. {names}개 이하로 요청하세요.","이름 {names}개로 팀 {teams}개를 만들면 빈 팀이 {n}개 생깁니다. {names}개 이하로 요청하세요.","생산성",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","粘贴姓名,随机分成人数均衡的小组。","在此设备上运行","可离线使用","姓名","组数","每组人数","生成分组","粘贴姓名后点击生成分组","无法分组","已复制","复制","工作原理","姓名通过 Fisher–Yates 洗牌打乱,每一次交换都取自 \u003ccode>crypto.getRandomValues\u003c/code>,并舍弃会偏向列表靠前位置的抽取值,因此姓名的每种排列概率相等,某人在你粘贴内容中的位置不会影响他最终分到哪里。打乱后的姓名再像发牌一样逐个轮流分给各组,所以任何一组都不会比另一组多出一人以上。","\u003cstrong>组数\u003c/strong>会把所有人分成该数量的组。\u003cstrong>每组人数\u003c/strong>会算出需要几组,然后把各组人数调均衡,而不是在最后留下一个人数偏少的组:十个人按每组四人分,结果是四、三、三,而不是四、四、二。页面会说明何时做了这样的调整以及原因。再次点击按钮会从头重新打乱,而不是微调上一次的分组。","它对这些人一无所知,所以无法平衡水平、把朋友分开,也无法给每组安排一名队长——真正随机的分组有时会把最强的三个人放在一起,这正是随机的含义。如果平衡很重要,请在这里分好组后再手动调换。重复写了两次的姓名会被当作两个人,页面会指出这一点。不会发送或保存任何内容;深色和语言按钮会把各自的设置保存在此浏览器的本地存储中。最多 5,000 个姓名。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","随机分组生成器 — 把名单分成公平均衡的小组 — MDV","粘贴姓名,按组数或每组人数随机分组,各组人数相差不超过一人。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","每行一个姓名。","分组依据","数量","第 {line} 行有 {len} 个字符;姓名最多 {max} 个字符。","共 {n} 个姓名;本页最多分 {max} 个。","第 {n} 组 · {size}","{lo} 或 {hi}","至少要分 1 组。","每组至少需要 1 人。","只有一个姓名只能组成 1 人的一组;请添加其他人。","{names} 个姓名按每组 {n} 人分,只会得到包含所有人的一组。请减少每组人数。","{people} 个人无法恰好按每组 {n} 人分,因此页面分成了 {teams} 组,并调均衡人数,而不是留下一个人数偏少的组。","{names} 等多个姓名在名单中出现不止一次,已作为不同的人分配。","{names} 在名单中出现不止一次,已作为不同的人分配。","{names} 在名单中出现不止一次,已作为不同的人分配。","组数","每组人数","{n} 个姓名","{n} 个姓名","{n} 组,每组 {size} 人","{n} 组,每组 {size} 人","{names} 个姓名分成 {teams} 组,会有 {n} 组为空。请将组数设为 {names} 或更少。","{names} 个姓名分成 {teams} 组,会有 {n} 组为空。请将组数设为 {names} 或更少。","效率",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2380,10 +2593,10 @@ Pollaiuolo</textarea>
     for (var i = 0; i < lines.length; i++) {
       var s = lines[i].trim();
       if (!s) continue;
-      if (s.length > MAX_LINE) return { error: "Line " + (i + 1) + " is " + s.length + " characters; a name here is at most " + MAX_LINE + "." };
+      if (s.length > MAX_LINE) return { error: trk("Line {line} is {len} characters; a name here is at most {max}."), vars: { line: i + 1, len: s.length, max: MAX_LINE } };
       names.push(s);
     }
-    if (names.length > MAX_NAMES) return { error: "That is " + names.length.toLocaleString() + " names; this page splits up to " + MAX_NAMES.toLocaleString() + "." };
+    if (names.length > MAX_NAMES) return { error: trk("That is {n} names; this page splits up to {max}."), vars: { n: names.length.toLocaleString(), max: MAX_NAMES.toLocaleString() } };
     return { names: names };
   }
   // Deal the shuffled names round the teams like cards: sizes never differ by more than one.
@@ -2406,40 +2619,25 @@ Pollaiuolo</textarea>
     ok.hidden = which !== "ok";
     if (which !== "ok") copied.hidden = true;
   }
-  function bad(message) { errmsg.textContent = message; state("error"); }
+  // what is on screen, kept so a language change redraws the words without dealing the teams again
+  var view = null;
+  function badFn(f) { view = { error: f }; draw(); }
+  function bad(key, vars) { badFn(function () { return tr(key, vars); }); }
   function count() {
     var got = readNames(list.value);
-    $("size").textContent = got.names ? got.names.length.toLocaleString() + (got.names.length === 1 ? " name" : " names") : "";
+    $("size").textContent = got.names ? trn(got.names.length, "{n} name", "{n} names") : "";
     return got;
   }
 
-  function make() {
-    var got = count();
-    if (got.error) { bad(got.error); return; }
-    var names = got.names;
-    if (!names.length) { state("empty"); return; }
-    var n = Math.floor(Number(nInput.value));
-    if (!isFinite(n) || n < 1) { bad(by === "teams" ? "Ask for at least one team." : "A team needs at least one person."); return; }
-    if (names.length < 2) { bad("One name makes one team of one; add the others."); return; }
-
-    var teamCount, notes = [];
-    if (by === "teams") {
-      if (n > names.length) { bad(n + " teams from " + names.length + " names would leave " + (n - names.length) + (n - names.length === 1 ? " team" : " teams") + " empty. Ask for " + names.length + " or fewer."); return; }
-      teamCount = n;
-    } else {
-      if (n >= names.length) { bad("Teams of " + n + " from " + names.length + " names is one team with everyone in it. Ask for fewer per team."); return; }
-      teamCount = Math.ceil(names.length / n);
-      if (names.length % n) notes.push(names.length + " people do not split into teams of exactly " + n + ", so the page made " + teamCount +
-        " teams and evened them out instead of leaving one short.");
-    }
-
-    var teams = deal(names, teamCount);
-    last = teams;
+  function draw() {
+    if (!view) { state("empty"); return; }
+    if (view.error) { errmsg.textContent = view.error(); state("error"); return; }
+    var teams = view.teams;
     var dl = $("teams");
     dl.textContent = "";
     teams.forEach(function (team, i) {
       var dt = document.createElement("dt");
-      dt.textContent = "Team " + (i + 1) + " · " + team.length;
+      dt.textContent = tr("Team {n} · {size}", { n: i + 1, size: team.length });
       var dd = document.createElement("dd");
       dd.textContent = team.join(", ");
       dl.appendChild(dt);
@@ -2447,7 +2645,43 @@ Pollaiuolo</textarea>
     });
     var sizes = teams.map(function (t) { return t.length; });
     var lo = Math.min.apply(null, sizes), hi = Math.max.apply(null, sizes);
-    $("big").textContent = teamCount + " teams of " + (lo === hi ? lo : lo + " or " + hi);
+    $("big").textContent = trn(teams.length, "{n} team of {size}", "{n} teams of {size}", { size: lo === hi ? lo : tr("{lo} or {hi}", { lo: lo, hi: hi }) });
+    var notes = view.notes.map(function (f) { return f(); });
+    said.textContent = notes.join(" ");
+    said.hidden = !notes.length;
+    state("ok");
+  }
+
+  function make() {
+    var got = count();
+    if (got.error) { bad(got.error, got.vars); return; }
+    var names = got.names;
+    if (!names.length) { view = null; draw(); return; }
+    var n = Math.floor(Number(nInput.value));
+    if (!isFinite(n) || n < 1) { bad(by === "teams" ? trk("Ask for at least one team.") : trk("A team needs at least one person.")); return; }
+    if (names.length < 2) { bad(trk("One name makes one team of one; add the others.")); return; }
+
+    var teamCount, notes = [];
+    if (by === "teams") {
+      if (n > names.length) {
+        badFn(function () {
+          return trn(n - names.length, "{teams} teams from {names} names would leave {n} team empty. Ask for {names} or fewer.",
+            "{teams} teams from {names} names would leave {n} teams empty. Ask for {names} or fewer.", { teams: n, names: names.length });
+        });
+        return;
+      }
+      teamCount = n;
+    } else {
+      if (n >= names.length) { bad(trk("Teams of {n} from {names} names is one team with everyone in it. Ask for fewer per team."), { n: n, names: names.length }); return; }
+      teamCount = Math.ceil(names.length / n);
+      if (names.length % n) notes.push(function () {
+        return tr("{people} people do not split into teams of exactly {n}, so the page made {teams} teams and evened them out instead of leaving one short.",
+          { people: names.length, n: n, teams: teamCount });
+      });
+    }
+
+    var teams = deal(names, teamCount);
+    last = teams;
 
     var lower = {}, twice = [];
     names.forEach(function (name) {
@@ -2455,11 +2689,14 @@ Pollaiuolo</textarea>
       if (lower[k] && twice.indexOf(lower[k]) < 0) twice.push(lower[k]);
       if (!lower[k]) lower[k] = name;
     });
-    if (twice.length) notes.push(twice.slice(0, 3).join(", ") + (twice.length > 3 ? " and others are" : twice.length === 1 ? " is" : " are") +
-      " on the list more than once and " + (twice.length === 1 ? "was" : "were") + " placed as separate people.");
-    said.textContent = notes.join(" ");
-    said.hidden = !notes.length;
-    state("ok");
+    if (twice.length) notes.push(function () {
+      var who = { names: twice.slice(0, 3).join(", ") };
+      return twice.length > 3 ? tr("{names} and others are on the list more than once and were placed as separate people.", who)
+        : twice.length === 1 ? tr("{names} is on the list more than once and was placed as separate people.", who)
+        : tr("{names} are on the list more than once and were placed as separate people.", who);
+    });
+    view = { teams: teams, notes: notes };
+    draw();
   }
 
   Array.prototype.forEach.call(document.querySelectorAll("[data-by]"), function (b) {
@@ -2469,9 +2706,10 @@ Pollaiuolo</textarea>
         x.setAttribute("aria-pressed", x === b ? "true" : "false");
       });
       by = b.getAttribute("data-by");
-      nInput.setAttribute("aria-label", by === "teams" ? "How many teams" : "How many people per team");
+      labelN();
     });
   });
+  function labelN() { nInput.setAttribute("aria-label", by === "teams" ? tr("How many teams") : tr("How many people per team")); }
   list.addEventListener("input", count);
   $("make").addEventListener("click", make);
   nInput.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); make(); } });
@@ -2486,6 +2724,7 @@ Pollaiuolo</textarea>
     setTimeout(function () { copied.hidden = true; }, 1200);
   }
 
+  onLang(function () { count(); labelN(); draw(); });
   count();
   $("make").focus({ preventScroll: true });
   state("empty");

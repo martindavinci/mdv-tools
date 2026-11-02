@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link is-here" href="./dice-roller.html" aria-current="page" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link is-here" href="./dice-roller.html" aria-current="page" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,18 +2353,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Dice roller</h1>
+      <h1 class="mdv-head-name" data-t="75">Dice roller</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Tap a die to throw it, tap again to add another, or write the roll in dice notation.</p>
+    <p class="mdv-head-line" data-t="79">Tap a die to throw it, tap again to add another, or write the roll in dice notation.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
-    <div class="mdv-btn-row" id="tray" role="group" aria-label="Add a die and roll">
+    <div class="mdv-btn-row" id="tray" role="group" aria-label="Add a die and roll" data-t-attrs="aria-label">
       <button class="mdv-btn is-sm is-quiet" type="button" data-die="4">d4</button>
       <button class="mdv-btn is-sm is-quiet" type="button" data-die="6">d6</button>
       <button class="mdv-btn is-sm is-quiet" type="button" data-die="8">d8</button>
@@ -2263,23 +2375,23 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     </div>
     <div class="mdv-row" style="gap:var(--space-2)">
       <input class="mdv-input mdv-mono" id="expr" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
-        value="1d20" aria-label="Dice notation" style="flex:1;min-width:10em">
-      <button class="mdv-btn is-primary" type="button" id="roll">Roll</button>
-      <button class="mdv-btn is-quiet" type="button" id="clear">Clear</button>
+        value="1d20" aria-label="Dice notation" data-t-attrs="aria-label" style="flex:1;min-width:10em">
+      <button class="mdv-btn is-primary" type="button" id="roll" data-t="82">Roll</button>
+      <button class="mdv-btn is-quiet" type="button" id="clear" data-t="83">Clear</button>
     </div>
-    <div class="mdv-btn-row" role="group" aria-label="Common rolls">
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="2d20kh1">Advantage</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="2d20kl1">Disadvantage</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="4d6dl1">Ability score</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="1d20+1d4">d20 plus d4</button>
+    <div class="mdv-btn-row" role="group" aria-label="Common rolls" data-t-attrs="aria-label">
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="2d20kh1" data-t="84">Advantage</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="2d20kl1" data-t="85">Disadvantage</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="4d6dl1" data-t="86">Ability score</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="1d20+1d4" data-t="87">d20 plus d4</button>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>tap a die or press roll</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="88">tap a die or press roll</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Cannot roll that</span>
+      <span class="mdv-notice-title" data-t="89">Cannot roll that</span>
       <span id="errmsg"></span>
     </div>
 
@@ -2291,55 +2403,56 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-dice" id="dice" aria-live="polite"></div>
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Rolled</dt><dd id="k-rolled"></dd>
-          <dt>Odds</dt><dd id="k-odds"></dd>
-          <dt>Earlier</dt><dd id="k-history"></dd>
+          <dt data-t="90">Rolled</dt><dd id="k-rolled"></dd>
+          <dt data-t="91">Odds</dt><dd id="k-odds"></dd>
+          <dt data-t="92">Earlier</dt><dd id="k-history"></dd>
         </dl>
       </div>
     </div>
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="93">How this works</summary>
     <div class="mdv-method-body">
-      <p>Every face comes from <code>crypto.getRandomValues</code>, the same source the browser uses for
+      <p data-t="94">Every face comes from <code>crypto.getRandomValues</code>, the same source the browser uses for
         keys, not from <code>Math.random</code>. A 32-bit draw that falls in the leftover tail past the
         last whole multiple of the die's size is thrown away and drawn again, so on a d20 each face has
         exactly one chance in twenty — no face is favoured by the arithmetic. That makes these dice fairer
         than most plastic ones, which is not saying much: a moulded die with a bubble in it can lean
         towards one face for years.</p>
-      <p>The notation is the one tables use. <code>3d6</code> is three six-sided dice added up;
+      <p data-t="95">The notation is the one tables use. <code>3d6</code> is three six-sided dice added up;
         <code>1d20+1d4+3</code> mixes dice and a flat bonus; <code>d%</code> is a d100.
         <code>kh</code> keeps the highest and <code>kl</code> the lowest, so <code>2d20kh1</code> is
         advantage and <code>2d20kl1</code> disadvantage; <code>dl</code> and <code>dh</code> drop instead
         of keep, so <code>4d6dl1</code> is the usual way to roll an ability score. Any die from d2 to
         d1000 works, up to a hundred dice at once. Dropped dice are still drawn, dashed, because a roll you
         cannot see is a roll you cannot check. A natural 20 or a natural 1 on a kept d20 is called out.</p>
-      <p>The odds are worked out exactly, not simulated: the page builds the full probability of every
+      <p data-t="96">The odds are worked out exactly, not simulated: the page builds the full probability of every
         total by adding the dice one at a time, and for keep and drop it walks every possible throw — up to
         two million of them, which covers everything a table usually rolls. Past that it gives the range
         and, where there is a formula, the average, and says it did not work out the rest. "Chance of this
         or higher" is the number to compare with a target: 11 or more on a d20 is 50%, and with advantage
         it rises to 75%.</p>
-      <p>Nothing is kept. The earlier rolls live in this tab and are gone when it closes; the page makes no
-        network requests, and the Dark button keeps its own setting in this browser's local storage.</p>
+      <p data-t="97">Nothing is kept. The earlier rolls live in this tab and are gone when it closes; the page makes no
+        network requests. The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Productivity">
-    <span class="mdv-tag">Also in Productivity</span>
-    <a href="./coin-flip.html">Flip a coin</a>
-    <a href="./random-picker.html">Random picker</a>
-    <a href="./spinner-wheel.html">Spin the wheel</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Productivity"}'>Also in Productivity</span>
+    <a href="./coin-flip.html" data-t="74">Flip a coin</a>
+    <a href="./random-picker.html" data-t="76">Random picker</a>
+    <a href="./spinner-wheel.html" data-t="78">Spin the wheel</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="98">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="99">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="100" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-22</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="101">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2350,6 +2463,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Dice Roller — d4 to d100, several at once, advantage and exact odds — MDV","Roll d4, d6, d8, d10, d12, d20 and d100, several at once, with dice notation, advantage and disadvantage, keep and drop, and the exact odds of what you rolled. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Add a die and roll","Dice notation","Common rolls","That is {n} characters; a roll here is at most {max}.","There is a space at position {pos} where a + or - should be.","Expected + or - at position {pos}, found “{ch}”.","“{text}” rolls no dice at all.","A d{sides} has no choice to make — dice here run from d2 to d{max}.","A d{sides} is past the d{max} this page rolls.","That is {n} dice; this page throws up to {max} at once.","“{text}” keeps {n} of {count} die; keep between 1 and {count}.","“{text}” keeps {n} of {count} dice; keep between 1 and {count}.","“{text}” drops {n} of {count} die, which leaves nothing to count.","“{text}” drops {n} of {count} dice, which leaves nothing to count.","A bonus of {value} is past what this page adds; keep flat numbers under 100,000.","“{ch}” at position {pos} is not dice notation. Write it like 2d20kh1+3 or 1d8+1d6.","There is nothing to roll.","under 0.1%","d{sides} dropped","d{sides} rolled {face}","d{sides} rolled {face}, dropped","a natural 20 and a natural 1","natural 20","natural 1","average {mean} · range {min} to {max} · {pct} chance of {total} or more","range {min} to {max} · average {mean} · too many combinations to work out the rest exactly","range {min} to {max} · too many combinations to work out the rest exactly","none yet","Add a d{sides} and roll","Productivity","2026-11-02"],"h":102,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Toca un dado para lanzarlo, vuelve a tocarlo para añadir otro, o escribe la tirada en notación de dados.","En este dispositivo","Funciona sin conexión","Tirar","Borrar","Ventaja","Desventaja","Atributo","d20 más d4","toca un dado o pulsa tirar","No se puede tirar eso","Resultado","Probabilidad","Anteriores","Cómo funciona","Cada cara sale de \u003ccode>crypto.getRandomValues\u003c/code>, la misma fuente que usa el navegador para las claves, no de \u003ccode>Math.random\u003c/code>. Un valor de 32 bits que cae en la cola sobrante tras el último múltiplo entero del tamaño del dado se descarta y se vuelve a sacar, así que en un d20 cada cara tiene exactamente una probabilidad entre veinte: la aritmética no favorece a ninguna cara. Eso hace estos dados más justos que la mayoría de los de plástico, lo cual no es mucho decir: un dado moldeado con una burbuja puede inclinarse hacia una cara durante años.","La notación es la que se usa en las mesas de juego. \u003ccode>3d6\u003c/code> son tres dados de seis caras sumados; \u003ccode>1d20+1d4+3\u003c/code> mezcla dados y una bonificación fija; \u003ccode>d%\u003c/code> es un d100. \u003ccode>kh\u003c/code> conserva los más altos y \u003ccode>kl\u003c/code> los más bajos, así que \u003ccode>2d20kh1\u003c/code> es ventaja y \u003ccode>2d20kl1\u003c/code> desventaja; \u003ccode>dl\u003c/code> y \u003ccode>dh\u003c/code> descartan en lugar de conservar, así que \u003ccode>4d6dl1\u003c/code> es la forma habitual de tirar un atributo. Funciona cualquier dado de d2 a d1000, hasta cien dados a la vez. Los dados descartados también se tiran, con trazo discontinuo, porque una tirada que no puedes ver es una tirada que no puedes comprobar. Un 20 natural o un 1 natural en un d20 conservado se destaca.","Las probabilidades se calculan de forma exacta, no se simulan: la página construye la probabilidad completa de cada total sumando los dados de uno en uno, y para conservar y descartar recorre cada tirada posible, hasta dos millones de ellas, lo que cubre todo lo que una mesa suele tirar. Más allá da el rango y, donde hay una fórmula, el promedio, e indica que no calculó el resto. “Probabilidad de este resultado o más” es el número que conviene comparar con un objetivo: 11 o más en un d20 es el 50 %, y con ventaja sube al 75 %.","No se guarda nada. Las tiradas anteriores viven en esta pestaña y desaparecen al cerrarla; la página no hace ninguna petición de red. Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Lanzador de dados — de d4 a d100, varios a la vez, ventaja y probabilidades exactas — MDV","Tira d4, d6, d8, d10, d12, d20 y d100, varios a la vez, con notación de dados, ventaja y desventaja, conservar y descartar, y las probabilidades exactas de lo que sacaste. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Añadir un dado y tirar","Notación de dados","Tiradas habituales","Son {n} caracteres; una tirada aquí admite como máximo {max}.","Hay un espacio en la posición {pos} donde debería ir un + o un -.","Se esperaba + o - en la posición {pos}, pero se encontró “{ch}”.","“{text}” no tira ningún dado.","Un d{sides} no deja nada que elegir: aquí los dados van de d2 a d{max}.","Un d{sides} supera el d{max} que tira esta página.","Son {n} dados; esta página tira hasta {max} a la vez.","“{text}” conserva {n} de {count} dado; conserva entre 1 y {count}.","“{text}” conserva {n} de {count} dados; conserva entre 1 y {count}.","“{text}” descarta {n} de {count} dado, lo que no deja nada que contar.","“{text}” descarta {n} de {count} dados, lo que no deja nada que contar.","Una bonificación de {value} supera lo que esta página suma; mantén los números fijos por debajo de 100.000.","“{ch}” en la posición {pos} no es notación de dados. Escríbela como 2d20kh1+3 o 1d8+1d6.","No hay nada que tirar.","menos de 0,1 %","d{sides} descartado","d{sides} sacó {face}","d{sides} sacó {face}, descartado","un 20 natural y un 1 natural","20 natural","1 natural","promedio {mean} · rango {min} a {max} · {pct} de probabilidad de {total} o más","rango {min} a {max} · promedio {mean} · demasiadas combinaciones para calcular el resto con exactitud","rango {min} a {max} · demasiadas combinaciones para calcular el resto con exactitud","aún ninguna","Añadir un d{sides} y tirar","Productividad",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Touchez un dé pour le lancer, touchez-le encore pour en ajouter un autre, ou écrivez le jet en notation de dés.","Sur cet appareil","Fonctionne hors ligne","Lancer","Effacer","Avantage","Désavantage","Caractéristique","d20 plus d4","touchez un dé ou appuyez sur lancer","Ce jet est impossible","Jet","Probabilités","Précédents","Comment ça marche","Chaque face vient de \u003ccode>crypto.getRandomValues\u003c/code>, la même source que le navigateur utilise pour les clés, et non de \u003ccode>Math.random\u003c/code>. Un tirage de 32 bits qui tombe dans la queue restante après le dernier multiple entier de la taille du dé est écarté et retiré, si bien que sur un d20 chaque face a exactement une chance sur vingt : aucune face n’est favorisée par l’arithmétique. Ces dés sont donc plus équitables que la plupart des dés en plastique, ce qui n’est pas dire grand-chose : un dé moulé avec une bulle peut pencher vers une face pendant des années.","La notation est celle qu’on utilise autour d’une table. \u003ccode>3d6\u003c/code> est trois dés à six faces additionnés ; \u003ccode>1d20+1d4+3\u003c/code> mêle des dés et un bonus fixe ; \u003ccode>d%\u003c/code> est un d100. \u003ccode>kh\u003c/code> garde les plus hauts et \u003ccode>kl\u003c/code> les plus bas, donc \u003ccode>2d20kh1\u003c/code> est l’avantage et \u003ccode>2d20kl1\u003c/code> le désavantage ; \u003ccode>dl\u003c/code> et \u003ccode>dh\u003c/code> écartent au lieu de garder, donc \u003ccode>4d6dl1\u003c/code> est la façon habituelle de tirer une caractéristique. Tout dé de d2 à d1000 fonctionne, jusqu’à cent dés à la fois. Les dés écartés sont quand même tirés, en pointillés, car un jet qu’on ne voit pas est un jet qu’on ne peut pas vérifier. Un 20 naturel ou un 1 naturel sur un d20 gardé est signalé.","Les probabilités sont calculées exactement, non simulées : la page construit la probabilité complète de chaque total en ajoutant les dés un à un, et pour garder et écarter, elle parcourt tous les jets possibles, jusqu’à deux millions, ce qui couvre tout ce qu’une table lance d’ordinaire. Au-delà, elle donne la plage et, quand il existe une formule, la moyenne, et indique qu’elle n’a pas calculé le reste. « Chance de ce résultat ou plus » est le nombre à comparer à un objectif : 11 ou plus sur un d20, c’est 50 %, et avec avantage, 75 %.","Rien n’est conservé. Les jets précédents vivent dans cet onglet et disparaissent à sa fermeture ; la page ne fait aucune requête réseau. Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Lanceur de dés — du d4 au d100, plusieurs à la fois, avantage et probabilités exactes — MDV","Lancez des d4, d6, d8, d10, d12, d20 et d100, plusieurs à la fois, avec notation de dés, avantage et désavantage, garder et écarter, et les probabilités exactes de votre jet. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Ajouter un dé et lancer","Notation de dés","Jets courants","Cela fait {n} caractères ; un jet ici en admet {max} au plus.","Il y a une espace à la position {pos} où devrait figurer un + ou un -.","Attendu : + ou - à la position {pos}, trouvé « {ch} ».","« {text} » ne lance aucun dé.","Un d{sides} ne laisse aucun choix : ici les dés vont du d2 au d{max}.","Un d{sides} dépasse le d{max} que cette page lance.","Cela fait {n} dés ; cette page en lance jusqu’à {max} à la fois.","« {text} » garde {n} dé sur {count} ; gardez entre 1 et {count}.","« {text} » garde {n} dés sur {count} ; gardez entre 1 et {count}.","« {text} » écarte {n} dé sur {count}, ce qui ne laisse rien à compter.","« {text} » écarte {n} dés sur {count}, ce qui ne laisse rien à compter.","Un bonus de {value} dépasse ce que cette page additionne ; gardez les nombres fixes sous 100 000.","« {ch} » à la position {pos} n’est pas de la notation de dés. Écrivez par exemple 2d20kh1+3 ou 1d8+1d6.","Il n’y a rien à lancer.","moins de 0,1 %","d{sides} écarté","d{sides} : {face}","d{sides} : {face}, écarté","un 20 naturel et un 1 naturel","20 naturel","1 naturel","moyenne {mean} · plage {min} à {max} · {pct} de chances d’obtenir {total} ou plus","plage {min} à {max} · moyenne {mean} · trop de combinaisons pour calculer le reste exactement","plage {min} à {max} · trop de combinaisons pour calculer le reste exactement","aucun pour l’instant","Ajouter un d{sides} et lancer","Productivité",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Tippe auf einen Würfel, um ihn zu werfen, tippe erneut, um einen weiteren hinzuzufügen, oder schreibe den Wurf in Würfelnotation.","Läuft auf diesem Gerät","Funktioniert offline","Würfeln","Leeren","Vorteil","Nachteil","Attributswert","d20 plus d4","tippe auf einen Würfel oder drücke Würfeln","Das lässt sich nicht würfeln","Gewürfelt","Wahrscheinlichkeit","Zuvor","So funktioniert es","Jede Augenzahl stammt aus \u003ccode>crypto.getRandomValues\u003c/code>, derselben Quelle, die der Browser für Schlüssel nutzt, nicht aus \u003ccode>Math.random\u003c/code>. Eine 32-Bit-Ziehung, die in den Restbereich nach dem letzten ganzzahligen Vielfachen der Würfelgröße fällt, wird verworfen und neu gezogen, sodass bei einem W20 jede Seite genau eine Chance von zwanzig hat: Keine Seite wird durch die Arithmetik bevorzugt. Damit sind diese Würfel fairer als die meisten aus Plastik, was nicht viel heißt: Ein gegossener Würfel mit einer Luftblase kann jahrelang zu einer Seite neigen.","Die Notation ist die, die am Spieltisch üblich ist. \u003ccode>3d6\u003c/code> sind drei sechsseitige Würfel, addiert; \u003ccode>1d20+1d4+3\u003c/code> mischt Würfel und einen festen Bonus; \u003ccode>d%\u003c/code> ist ein W100. \u003ccode>kh\u003c/code> behält die höchsten und \u003ccode>kl\u003c/code> die niedrigsten, also ist \u003ccode>2d20kh1\u003c/code> Vorteil und \u003ccode>2d20kl1\u003c/code> Nachteil; \u003ccode>dl\u003c/code> und \u003ccode>dh\u003c/code> verwerfen statt zu behalten, also ist \u003ccode>4d6dl1\u003c/code> der übliche Weg, einen Attributswert zu würfeln. Jeder Würfel von d2 bis d1000 geht, bis zu hundert Würfel auf einmal. Verworfene Würfel werden trotzdem geworfen, gestrichelt dargestellt, denn ein Wurf, den man nicht sieht, ist ein Wurf, den man nicht prüfen kann. Eine natürliche 20 oder eine natürliche 1 auf einem behaltenen W20 wird hervorgehoben.","Die Wahrscheinlichkeiten werden exakt berechnet, nicht simuliert: Die Seite baut die vollständige Wahrscheinlichkeit jeder Summe auf, indem sie die Würfel einzeln hinzufügt, und beim Behalten und Verwerfen geht sie jeden möglichen Wurf durch, bis zu zwei Millionen, was alles abdeckt, was am Spieltisch üblicherweise gewürfelt wird. Darüber hinaus gibt sie die Spanne und, wo es eine Formel gibt, den Durchschnitt an und sagt, dass sie den Rest nicht berechnet hat. „Chance auf dieses Ergebnis oder mehr“ ist die Zahl, die man mit einem Zielwert vergleicht: 11 oder mehr auf einem W20 sind 50 %, und mit Vorteil steigt es auf 75 %.","Nichts wird gespeichert. Die früheren Würfe leben in diesem Tab und sind weg, wenn er geschlossen wird; die Seite stellt keine Netzwerkanfragen. Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Würfel — W4 bis W100, mehrere auf einmal, Vorteil und exakte Wahrscheinlichkeiten — MDV","Wirf W4, W6, W8, W10, W12, W20 und W100, mehrere auf einmal, mit Würfelnotation, Vorteil und Nachteil, Behalten und Verwerfen und den exakten Wahrscheinlichkeiten deines Wurfs. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Würfel hinzufügen und würfeln","Würfelnotation","Häufige Würfe","Das sind {n} Zeichen; ein Wurf darf hier höchstens {max} haben.","An Position {pos} steht ein Leerzeichen, wo ein + oder - stehen sollte.","An Position {pos} wurde + oder - erwartet, gefunden wurde „{ch}“.","„{text}“ würfelt keinen einzigen Würfel.","Ein W{sides} lässt keine Wahl: Hier gehen die Würfel von W2 bis W{max}.","Ein W{sides} liegt über dem W{max}, den diese Seite würfelt.","Das sind {n} Würfel; diese Seite wirft bis zu {max} auf einmal.","„{text}“ behält {n} von {count} Würfel; behalte zwischen 1 und {count}.","„{text}“ behält {n} von {count} Würfeln; behalte zwischen 1 und {count}.","„{text}“ verwirft {n} von {count} Würfel, sodass nichts zum Zählen übrig bleibt.","„{text}“ verwirft {n} von {count} Würfeln, sodass nichts zum Zählen übrig bleibt.","Ein Bonus von {value} liegt über dem, was diese Seite addiert; halte feste Zahlen unter 100.000.","„{ch}“ an Position {pos} ist keine Würfelnotation. Schreibe es etwa als 2d20kh1+3 oder 1d8+1d6.","Es gibt nichts zu würfeln.","unter 0,1 %","W{sides} verworfen","W{sides} zeigt {face}","W{sides} zeigt {face}, verworfen","eine natürliche 20 und eine natürliche 1","natürliche 20","natürliche 1","Durchschnitt {mean} · Spanne {min} bis {max} · {pct} Chance auf {total} oder mehr","Spanne {min} bis {max} · Durchschnitt {mean} · zu viele Kombinationen, um den Rest exakt zu berechnen","Spanne {min} bis {max} · zu viele Kombinationen, um den Rest exakt zu berechnen","noch keine","W{sides} hinzufügen und würfeln","Produktivität",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Tocca un dado per lanciarlo, toccalo di nuovo per aggiungerne un altro, oppure scrivi il tiro in notazione dei dadi.","Su questo dispositivo","Funziona offline","Lancia","Cancella","Vantaggio","Svantaggio","Punteggio","d20 più d4","tocca un dado o premi lancia","Impossibile tirare questo","Tirato","Probabilità","Precedenti","Come funziona","Ogni faccia viene da \u003ccode>crypto.getRandomValues\u003c/code>, la stessa fonte che il browser usa per le chiavi, non da \u003ccode>Math.random\u003c/code>. Un’estrazione a 32 bit che cade nella coda avanzata oltre l’ultimo multiplo intero della dimensione del dado viene scartata e rifatta, così su un d20 ogni faccia ha esattamente una probabilità su venti: nessuna faccia è favorita dall’aritmetica. Questo rende questi dadi più equi della maggior parte di quelli di plastica, il che non è molto: un dado stampato con una bolla può pendere verso una faccia per anni.","La notazione è quella usata ai tavoli di gioco. \u003ccode>3d6\u003c/code> sono tre dadi a sei facce sommati; \u003ccode>1d20+1d4+3\u003c/code> mescola dadi e un bonus fisso; \u003ccode>d%\u003c/code> è un d100. \u003ccode>kh\u003c/code> tiene i più alti e \u003ccode>kl\u003c/code> i più bassi, quindi \u003ccode>2d20kh1\u003c/code> è vantaggio e \u003ccode>2d20kl1\u003c/code> svantaggio; \u003ccode>dl\u003c/code> e \u003ccode>dh\u003c/code> scartano invece di tenere, quindi \u003ccode>4d6dl1\u003c/code> è il modo consueto di tirare un punteggio di caratteristica. Funziona qualsiasi dado da d2 a d1000, fino a cento dadi alla volta. I dadi scartati vengono comunque tirati, tratteggiati, perché un tiro che non vedi è un tiro che non puoi controllare. Un 20 naturale o un 1 naturale su un d20 tenuto viene segnalato.","Le probabilità sono calcolate in modo esatto, non simulate: la pagina costruisce la probabilità completa di ogni totale sommando i dadi uno alla volta, e per tenere e scartare percorre ogni tiro possibile, fino a due milioni, il che copre tutto ciò che di solito si tira a un tavolo. Oltre questo limite dà l’intervallo e, dove c’è una formula, la media, e dice di non aver calcolato il resto. “Probabilità di questo risultato o più” è il numero da confrontare con un obiettivo: 11 o più su un d20 è il 50%, e con vantaggio sale al 75%.","Non viene conservato nulla. I tiri precedenti vivono in questa scheda e spariscono quando la chiudi; la pagina non fa richieste di rete. I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Lancio di dadi — da d4 a d100, più dadi insieme, vantaggio e probabilità esatte — MDV","Lancia d4, d6, d8, d10, d12, d20 e d100, più dadi insieme, con notazione dei dadi, vantaggio e svantaggio, tieni e scarta, e le probabilità esatte di ciò che hai tirato. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Aggiungi un dado e tira","Notazione dei dadi","Tiri comuni","Sono {n} caratteri; un tiro qui ne ammette al massimo {max}.","C’è uno spazio alla posizione {pos} dove dovrebbe esserci un + o un -.","Atteso + o - alla posizione {pos}, trovato “{ch}”.","“{text}” non tira alcun dado.","Un d{sides} non lascia scelta: qui i dadi vanno da d2 a d{max}.","Un d{sides} supera il d{max} che questa pagina tira.","Sono {n} dadi; questa pagina ne tira fino a {max} alla volta.","“{text}” tiene {n} dado su {count}; tieni tra 1 e {count}.","“{text}” tiene {n} dadi su {count}; tieni tra 1 e {count}.","“{text}” scarta {n} dado su {count}, il che non lascia nulla da contare.","“{text}” scarta {n} dadi su {count}, il che non lascia nulla da contare.","Un bonus di {value} supera quello che questa pagina somma; tieni i numeri fissi sotto 100.000.","“{ch}” alla posizione {pos} non è notazione dei dadi. Scrivila come 2d20kh1+3 o 1d8+1d6.","Non c’è nulla da tirare.","meno dello 0,1%","d{sides} scartato","d{sides} ha dato {face}","d{sides} ha dato {face}, scartato","un 20 naturale e un 1 naturale","20 naturale","1 naturale","media {mean} · intervallo da {min} a {max} · {pct} di probabilità di fare {total} o più","intervallo da {min} a {max} · media {mean} · troppe combinazioni per calcolare il resto in modo esatto","intervallo da {min} a {max} · troppe combinazioni per calcolare il resto in modo esatto","ancora nessuno","Aggiungi un d{sides} e tira","Produttività",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Toque em um dado para lançá-lo, toque de novo para adicionar outro, ou escreva a rolagem em notação de dados.","Neste dispositivo","Funciona offline","Rolar","Limpar","Vantagem","Desvantagem","Atributo","d20 mais d4","toque em um dado ou clique em rolar","Não é possível rolar isso","Rolado","Probabilidade","Anteriores","Como funciona","Cada face vem de \u003ccode>crypto.getRandomValues\u003c/code>, a mesma fonte que o navegador usa para chaves, e não de \u003ccode>Math.random\u003c/code>. Um sorteio de 32 bits que cai na cauda restante depois do último múltiplo inteiro do tamanho do dado é descartado e sorteado de novo, então em um d20 cada face tem exatamente uma chance em vinte: nenhuma face é favorecida pela aritmética. Isso torna estes dados mais justos que a maioria dos de plástico, o que não é muito: um dado moldado com uma bolha pode pender para uma face por anos.","A notação é a que as mesas de jogo usam. \u003ccode>3d6\u003c/code> são três dados de seis faces somados; \u003ccode>1d20+1d4+3\u003c/code> mistura dados e um bônus fixo; \u003ccode>d%\u003c/code> é um d100. \u003ccode>kh\u003c/code> mantém os mais altos e \u003ccode>kl\u003c/code> os mais baixos, então \u003ccode>2d20kh1\u003c/code> é vantagem e \u003ccode>2d20kl1\u003c/code> desvantagem; \u003ccode>dl\u003c/code> e \u003ccode>dh\u003c/code> descartam em vez de manter, então \u003ccode>4d6dl1\u003c/code> é o jeito usual de rolar um atributo. Qualquer dado de d2 a d1000 funciona, até cem dados de uma vez. Dados descartados também são rolados, tracejados, porque uma rolagem que você não vê é uma rolagem que você não pode conferir. Um 20 natural ou um 1 natural em um d20 mantido é destacado.","As probabilidades são calculadas com exatidão, não simuladas: a página monta a probabilidade completa de cada total somando os dados um a um, e para manter e descartar percorre todas as rolagens possíveis, até dois milhões delas, o que cobre tudo que uma mesa costuma rolar. Acima disso, informa o intervalo e, onde há uma fórmula, a média, e avisa que não calculou o resto. “Chance deste resultado ou mais” é o número para comparar com uma meta: 11 ou mais em um d20 é 50%, e com vantagem sobe para 75%.","Nada é guardado. As rolagens anteriores vivem nesta aba e somem quando ela é fechada; a página não faz requisições de rede. Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Rolador de dados — de d4 a d100, vários de uma vez, vantagem e probabilidades exatas — MDV","Role d4, d6, d8, d10, d12, d20 e d100, vários de uma vez, com notação de dados, vantagem e desvantagem, manter e descartar, e as probabilidades exatas do que você rolou. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Adicionar um dado e rolar","Notação de dados","Rolagens comuns","São {n} caracteres; uma rolagem aqui admite no máximo {max}.","Há um espaço na posição {pos} onde deveria haver um + ou um -.","Esperado + ou - na posição {pos}, encontrado “{ch}”.","“{text}” não rola nenhum dado.","Um d{sides} não deixa escolha: aqui os dados vão de d2 a d{max}.","Um d{sides} passa do d{max} que esta página rola.","São {n} dados; esta página rola até {max} de uma vez.","“{text}” mantém {n} de {count} dado; mantenha entre 1 e {count}.","“{text}” mantém {n} de {count} dados; mantenha entre 1 e {count}.","“{text}” descarta {n} de {count} dado, o que não deixa nada para contar.","“{text}” descarta {n} de {count} dados, o que não deixa nada para contar.","Um bônus de {value} passa do que esta página soma; mantenha os números fixos abaixo de 100.000.","“{ch}” na posição {pos} não é notação de dados. Escreva como 2d20kh1+3 ou 1d8+1d6.","Não há nada para rolar.","menos de 0,1%","d{sides} descartado","d{sides} rolou {face}","d{sides} rolou {face}, descartado","um 20 natural e um 1 natural","20 natural","1 natural","média {mean} · intervalo de {min} a {max} · {pct} de chance de {total} ou mais","intervalo de {min} a {max} · média {mean} · combinações demais para calcular o resto com exatidão","intervalo de {min} a {max} · combinações demais para calcular o resto com exatidão","nenhuma ainda","Adicionar um d{sides} e rolar","Produtividade",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","ダイスをタップして振り、もう一度タップすると追加できます。ダイス記法で直接入力もできます。","この端末で動作","オフラインで動作","振る","クリア","有利","不利","能力値","d20 + d4","ダイスをタップするか「振る」を押す","この内容では振れません","出目","確率","以前","仕組み","どの目も \u003ccode>Math.random\u003c/code> ではなく、ブラウザーが鍵に使うのと同じ \u003ccode>crypto.getRandomValues\u003c/code> から得ています。ダイスの面数の整数倍の最後を超えた端の部分に当たった 32 ビットの乱数は捨てて引き直すため、d20 では各面がちょうど 20 分の 1 の確率になり、計算上有利な面はありません。そのため、このダイスはたいていのプラスチック製より公平ですが、それほど自慢できることではありません。気泡の入った成形ダイスは、何年も特定の面に偏ることがあります。","記法はテーブルトークで使われるものです。\u003ccode>3d6\u003c/code> は 6 面ダイス 3 個の合計、\u003ccode>1d20+1d4+3\u003c/code> はダイスと固定ボーナスの組み合わせ、\u003ccode>d%\u003c/code> は d100 です。\u003ccode>kh\u003c/code> は高い方を、\u003ccode>kl\u003c/code> は低い方を残すので、\u003ccode>2d20kh1\u003c/code> が有利、\u003ccode>2d20kl1\u003c/code> が不利になります。\u003ccode>dl\u003c/code> と \u003ccode>dh\u003c/code> は残すのではなく除外するので、\u003ccode>4d6dl1\u003c/code> が能力値を振る定番の方法です。d2 から d1000 までのどのダイスも使え、一度に最大 100 個まで振れます。除外されたダイスも実際に振られ、破線で表示されます。見えない出目は確かめようがないからです。残した d20 で出た自然な 20 や自然な 1 は強調表示されます。","確率は、シミュレーションではなく厳密に計算されます。ページはダイスを 1 個ずつ加えて各合計の確率をすべて求め、残す・除外する場合は、可能なすべての出目(最大 200 万通り)を調べます。これはテーブルで普通に振るものすべてをカバーします。それを超えると、範囲を示し、式がある場合は平均も示し、残りは計算していないと表示します。「この出目以上になる確率」は目標値と比べるための数字で、d20 で 11 以上は 50%、有利なら 75% に上がります。","何も保存されません。以前の出目はこのタブの中にだけあり、タブを閉じると消えます。ページはネットワークリクエストを行いません。ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","ダイスロール — d4 から d100、複数同時、有利・不利、正確な確率 — MDV","d4、d6、d8、d10、d12、d20、d100 を複数同時に振れます。ダイス記法、有利・不利、残す・除外する指定に対応し、出目の正確な確率も表示します。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","ダイスを追加して振る","ダイス記法","よく使う振り方","{n} 文字あります。ここでの振り方は最大 {max} 文字です。","{pos} 文字目に、+ か - があるべき場所に空白があります。","{pos} 文字目には + か - が必要ですが、“{ch}” が見つかりました。","“{text}” ではダイスが 1 個も振られません。","d{sides} では何も選べません。ここで使えるダイスは d2 から d{max} までです。","d{sides} は、このページで振れる d{max} を超えています。","ダイスが {n} 個あります。このページで一度に振れるのは最大 {max} 個です。","“{text}” は {count} 個のダイスのうち {n} 個を残します。残す数は 1 から {count} の間にしてください。","“{text}” は {count} 個のダイスのうち {n} 個を残します。残す数は 1 から {count} の間にしてください。","“{text}” は {count} 個のダイスのうち {n} 個を除外するため、数えるものが残りません。","“{text}” は {count} 個のダイスのうち {n} 個を除外するため、数えるものが残りません。","ボーナス {value} は、このページで加算できる範囲を超えています。固定値は 100,000 未満にしてください。","{pos} 文字目の “{ch}” はダイス記法ではありません。2d20kh1+3 や 1d8+1d6 のように書いてください。","振るものがありません。","0.1% 未満","d{sides} 除外","d{sides} の出目は {face}","d{sides} の出目は {face}(除外)","自然な 20 と自然な 1","自然な 20","自然な 1","平均 {mean} · 範囲 {min} ~ {max} · {total} 以上になる確率 {pct}","範囲 {min} ~ {max} · 平均 {mean} · 組み合わせが多すぎて残りを厳密に計算できません","範囲 {min} ~ {max} · 組み合わせが多すぎて残りを厳密に計算できません","まだありません","d{sides} を追加して振る","生産性",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","주사위를 누르면 굴리고, 다시 누르면 하나 더 추가됩니다. 주사위 표기법으로 직접 입력해도 됩니다.","이 기기에서 실행","오프라인 작동","굴리기","지우기","이점","불리","능력치","d20 + d4","주사위를 누르거나 굴리기를 누르세요","굴릴 수 없습니다","굴린 결과","확률","이전","작동 방식","모든 눈은 \u003ccode>Math.random\u003c/code>이 아니라 브라우저가 키에 쓰는 것과 같은 \u003ccode>crypto.getRandomValues\u003c/code>에서 나옵니다. 주사위 면 수의 마지막 정수 배수를 넘는 나머지 구간에 떨어진 32비트 값은 버리고 다시 뽑기 때문에, d20에서는 각 눈이 정확히 20분의 1 확률을 가지며 계산상 유리한 눈은 없습니다. 그래서 이 주사위는 대부분의 플라스틱 주사위보다 공정하지만, 크게 자랑할 일은 아닙니다. 기포가 든 성형 주사위는 몇 년이고 특정 눈 쪽으로 기울 수 있습니다.","표기법은 테이블 게임에서 쓰는 것입니다. \u003ccode>3d6\u003c/code>은 6면체 주사위 3개의 합, \u003ccode>1d20+1d4+3\u003c/code>은 주사위와 고정 보너스의 조합, \u003ccode>d%\u003c/code>는 d100입니다. \u003ccode>kh\u003c/code>는 높은 쪽을, \u003ccode>kl\u003c/code>은 낮은 쪽을 남기므로 \u003ccode>2d20kh1\u003c/code>은 이점, \u003ccode>2d20kl1\u003c/code>은 불리입니다. \u003ccode>dl\u003c/code>과 \u003ccode>dh\u003c/code>는 남기는 대신 버리므로 \u003ccode>4d6dl1\u003c/code>이 능력치를 굴리는 일반적인 방법입니다. d2부터 d1000까지 어떤 주사위든 되며, 한 번에 최대 100개까지 굴립니다. 버려진 주사위도 실제로 굴려 점선으로 표시합니다. 보이지 않는 결과는 확인할 수 없기 때문입니다. 남긴 d20에서 나온 자연 20이나 자연 1은 따로 표시됩니다.","확률은 시뮬레이션이 아니라 정확하게 계산합니다. 페이지는 주사위를 하나씩 더하며 모든 합의 확률을 구하고, 남기기와 버리기에서는 가능한 모든 결과(최대 200만 가지)를 하나씩 따져 봅니다. 테이블에서 보통 굴리는 것은 모두 여기에 들어갑니다. 이를 넘으면 범위와, 공식이 있는 경우 평균을 알려 주고 나머지는 계산하지 않았다고 표시합니다. “이 값 이상이 나올 확률”은 목표값과 비교할 숫자입니다. d20에서 11 이상은 50%이고, 이점이 있으면 75%로 올라갑니다.","아무것도 저장되지 않습니다. 이전 결과는 이 탭에만 있으며 탭을 닫으면 사라집니다. 페이지는 네트워크 요청을 하지 않습니다. 다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","주사위 굴리기 — d4부터 d100까지, 여러 개 동시에, 이점과 정확한 확률 — MDV","d4, d6, d8, d10, d12, d20, d100을 여러 개 동시에 굴립니다. 주사위 표기법, 이점과 불리, 남기기와 버리기를 지원하고 나온 결과의 정확한 확률을 보여 줍니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","주사위를 추가하고 굴리기","주사위 표기법","자주 쓰는 굴림","{n}자입니다. 여기서 굴림은 최대 {max}자까지입니다.","{pos}번째 위치에 + 또는 -가 와야 할 자리에 공백이 있습니다.","{pos}번째 위치에 + 또는 -가 와야 하는데 “{ch}”이(가) 있습니다.","“{text}”은(는) 주사위를 하나도 굴리지 않습니다.","d{sides}은(는) 고를 것이 없습니다. 여기서 주사위는 d2부터 d{max}까지입니다.","d{sides}은(는) 이 페이지가 굴리는 d{max}를 넘습니다.","주사위가 {n}개입니다. 이 페이지는 한 번에 최대 {max}개까지 굴립니다.","“{text}”은(는) 주사위 {count}개 중 {n}개를 남깁니다. 1에서 {count} 사이로 남기세요.","“{text}”은(는) 주사위 {count}개 중 {n}개를 남깁니다. 1에서 {count} 사이로 남기세요.","“{text}”은(는) 주사위 {count}개 중 {n}개를 버리므로 셀 것이 남지 않습니다.","“{text}”은(는) 주사위 {count}개 중 {n}개를 버리므로 셀 것이 남지 않습니다.","보너스 {value}은(는) 이 페이지가 더할 수 있는 범위를 넘습니다. 고정 숫자는 100,000 미만으로 하세요.","{pos}번째 위치의 “{ch}”은(는) 주사위 표기법이 아닙니다. 2d20kh1+3 또는 1d8+1d6처럼 쓰세요.","굴릴 것이 없습니다.","0.1% 미만","d{sides} 버림","d{sides} 결과 {face}","d{sides} 결과 {face}, 버림","자연 20과 자연 1","자연 20","자연 1","평균 {mean} · 범위 {min}~{max} · {total} 이상일 확률 {pct}","범위 {min}~{max} · 평균 {mean} · 조합이 너무 많아 나머지는 정확히 계산할 수 없습니다","범위 {min}~{max} · 조합이 너무 많아 나머지는 정확히 계산할 수 없습니다","아직 없음","d{sides}을(를) 추가하고 굴리기","생산성",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","点按骰子即可投掷,再点一次会再加一个,也可以直接写骰子记法。","在此设备上运行","可离线使用","投掷","清除","优势","劣势","属性值","d20 加 d4","点按骰子或按投掷","无法投掷","投掷结果","概率","此前","工作原理","每个点数都来自 \u003ccode>crypto.getRandomValues\u003c/code>(浏览器用于生成密钥的同一来源),而不是 \u003ccode>Math.random\u003c/code>。若 32 位随机数落在骰子面数最后一个整倍数之后的剩余部分,就会丢弃并重新抽取,因此 d20 的每一面恰好有二十分之一的机会,算术上不偏向任何一面。这让这些骰子比大多数塑料骰子更公平,不过这也算不上什么了不起的事:带气泡的模压骰子可能多年都偏向某一面。","记法就是桌游中常用的那一种。\u003ccode>3d6\u003c/code> 是三个六面骰相加;\u003ccode>1d20+1d4+3\u003c/code> 混合了骰子和固定加值;\u003ccode>d%\u003c/code> 是 d100。\u003ccode>kh\u003c/code> 保留最高的,\u003ccode>kl\u003c/code> 保留最低的,所以 \u003ccode>2d20kh1\u003c/code> 是优势,\u003ccode>2d20kl1\u003c/code> 是劣势;\u003ccode>dl\u003c/code> 和 \u003ccode>dh\u003c/code> 是舍弃而不是保留,所以 \u003ccode>4d6dl1\u003c/code> 是投属性值的常用方式。从 d2 到 d1000 的任何骰子都可以,一次最多一百个。被舍弃的骰子仍会投出,以虚线显示,因为看不到的投掷是无法检验的投掷。被保留的 d20 上的天然 20 或天然 1 会被特别标出。","概率是精确算出的,不是模拟的:页面逐个加入骰子,构建出每个总和的完整概率;对于保留与舍弃,则遍历每一种可能的投掷(最多两百万种),这涵盖了桌游中通常会投的所有情况。超出之后,它只给出范围,有公式时再给出平均值,并说明没有算出其余部分。“达到此结果或更高的概率”是用来与目标比较的数字:d20 上 11 或更高是 50%,有优势时升到 75%。","不保存任何内容。之前的投掷只存在于此标签页中,关闭后即消失;页面不发出任何网络请求。“深色”和“语言”按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被保存。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","掷骰子 — d4 到 d100，可同时投多个,含优势与精确概率 — MDV","投掷 d4、d6、d8、d10、d12、d20 和 d100，可同时投多个,支持骰子记法、优势与劣势、保留与舍弃,并给出所掷结果的精确概率。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","添加骰子并投掷","骰子记法","常用投掷","共 {n} 个字符;这里的一次投掷最多 {max} 个。","第 {pos} 个位置本应是 + 或 -,却是空格。","第 {pos} 个位置应为 + 或 -,却是“{ch}”。","“{text}”一个骰子也不投。","d{sides} 没有任何选择余地,这里的骰子范围是 d2 到 d{max}。","d{sides} 超过了本页可投的 d{max}。","共 {n} 个骰子;本页一次最多投 {max} 个。","“{text}”要在 {count} 个骰子中保留 {n} 个;请保留 1 到 {count} 个。","“{text}”要在 {count} 个骰子中保留 {n} 个;请保留 1 到 {count} 个。","“{text}”要在 {count} 个骰子中舍弃 {n} 个,这样就没有可计算的了。","“{text}”要在 {count} 个骰子中舍弃 {n} 个,这样就没有可计算的了。","加值 {value} 超出了本页可相加的范围;固定数字请保持在 100,000 以下。","第 {pos} 个位置的“{ch}”不是骰子记法。请写成 2d20kh1+3 或 1d8+1d6 这样。","没有可投掷的内容。","低于 0.1%","d{sides} 已舍弃","d{sides} 投出 {face}","d{sides} 投出 {face},已舍弃","天然 20 和天然 1","天然 20","天然 1","平均 {mean} · 范围 {min} 到 {max} · 达到 {total} 或更高的概率 {pct}","范围 {min} 到 {max} · 平均 {mean} · 组合过多,无法精确算出其余部分","范围 {min} 到 {max} · 组合过多,无法精确算出其余部分","暂无","添加 d{sides} 并投掷","效率",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2377,40 +2590,40 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     // spaces are fine around + and -; anywhere else they would glue "2d20 3" into a d203
     var s = text.toLowerCase().trim().replace(/\s*([+-])\s*/g, "$1");
     if (!s) return null;
-    if (s.length > MAX_LEN) return { error: "That is " + s.length + " characters; a roll here is at most " + MAX_LEN + "." };
+    if (s.length > MAX_LEN) return { error: trk("That is {n} characters; a roll here is at most {max}."), vars: { n: s.length, max: MAX_LEN } };
     var gap = /\s/.exec(s);
-    if (gap) return { error: "There is a space at position " + (gap.index + 1) + " where a + or - should be." };
+    if (gap) return { error: trk("There is a space at position {pos} where a + or - should be."), vars: { pos: gap.index + 1 } };
     var terms = [], i = 0, dice = 0;
     while (i < s.length) {
       var sign = 1;
       if (s[i] === "+" || s[i] === "-") { sign = s[i] === "-" ? -1 : 1; i++; }
-      else if (terms.length) return { error: "Expected + or - at position " + (i + 1) + ", found “" + s[i] + "”." };
+      else if (terms.length) return { error: trk("Expected + or - at position {pos}, found “{ch}”."), vars: { pos: i + 1, ch: s[i] } };
       var rest = s.slice(i);
       var m = /^(\d*)d(\d+|%)(?:(kh|kl|dh|dl|k)(\d+))?/.exec(rest);
       if (m) {
         var count = m[1] === "" ? 1 : Number(m[1]), sides = m[2] === "%" ? 100 : Number(m[2]);
-        if (count < 1) return { error: "“" + m[0] + "” rolls no dice at all." };
-        if (sides < 2) return { error: "A d" + sides + " has no choice to make — dice here run from d2 to d" + MAX_SIDES + "." };
-        if (sides > MAX_SIDES) return { error: "A d" + sides + " is past the d" + MAX_SIDES + " this page rolls." };
+        if (count < 1) return { error: trk("“{text}” rolls no dice at all."), vars: { text: m[0] } };
+        if (sides < 2) return { error: trk("A d{sides} has no choice to make — dice here run from d2 to d{max}."), vars: { sides: sides, max: MAX_SIDES } };
+        if (sides > MAX_SIDES) return { error: trk("A d{sides} is past the d{max} this page rolls."), vars: { sides: sides, max: MAX_SIDES } };
         dice += count;
-        if (dice > MAX_DICE) return { error: "That is " + dice + " dice; this page throws up to " + MAX_DICE + " at once." };
+        if (dice > MAX_DICE) return { error: trk("That is {n} dice; this page throws up to {max} at once."), vars: { n: dice, max: MAX_DICE } };
         var mode = m[3] === "k" ? "kh" : m[3] || null, n = m[4] === undefined ? 0 : Number(m[4]);
-        if (mode && (mode === "kh" || mode === "kl") && (n < 1 || n > count)) return { error: "“" + m[0] + "” keeps " + n + " of " + count + (count === 1 ? " die" : " dice") + "; keep between 1 and " + count + "." };
-        if (mode && (mode === "dh" || mode === "dl") && (n < 0 || n >= count)) return { error: "“" + m[0] + "” drops " + n + " of " + count + (count === 1 ? " die" : " dice") + ", which leaves nothing to count." };
+        if (mode && (mode === "kh" || mode === "kl") && (n < 1 || n > count)) return { error: count === 1 ? trk("“{text}” keeps {n} of {count} die; keep between 1 and {count}.") : trk("“{text}” keeps {n} of {count} dice; keep between 1 and {count}."), vars: { text: m[0], n: n, count: count } };
+        if (mode && (mode === "dh" || mode === "dl") && (n < 0 || n >= count)) return { error: count === 1 ? trk("“{text}” drops {n} of {count} die, which leaves nothing to count.") : trk("“{text}” drops {n} of {count} dice, which leaves nothing to count."), vars: { text: m[0], n: n, count: count } };
         terms.push({ kind: "dice", sign: sign, count: count, sides: sides, mode: mode, n: n, text: m[0] });
         i += m[0].length;
         continue;
       }
       m = /^\d+/.exec(rest);
       if (m) {
-        if (Number(m[0]) > 100000) return { error: "A bonus of " + m[0] + " is past what this page adds; keep flat numbers under 100,000." };
+        if (Number(m[0]) > 100000) return { error: trk("A bonus of {value} is past what this page adds; keep flat numbers under 100,000."), vars: { value: m[0] } };
         terms.push({ kind: "flat", sign: sign, value: Number(m[0]), text: m[0] });
         i += m[0].length;
         continue;
       }
-      return { error: "“" + (rest[0] || "") + "” at position " + (i + 1) + " is not dice notation. Write it like 2d20kh1+3 or 1d8+1d6." };
+      return { error: trk("“{ch}” at position {pos} is not dice notation. Write it like 2d20kh1+3 or 1d8+1d6."), vars: { ch: rest[0] || "", pos: i + 1 } };
     }
-    if (!terms.length) return { error: "There is nothing to roll." };
+    if (!terms.length) return { error: trk("There is nothing to roll.") };
     return { terms: terms };
   }
 
@@ -2523,22 +2736,33 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   var $ = function (id) { return document.getElementById(id); };
   var expr = $("expr"), empty = $("empty"), err = $("err"), errmsg = $("errmsg"), ok = $("ok"), dice = $("dice");
-  var history = [];
+  var history = [], last = null, lastErr = null, cur = "empty";
 
   function state(which) {
+    cur = which;
     empty.hidden = which !== "empty";
     err.hidden = which !== "error";
     ok.hidden = which !== "ok";
   }
-  function pct(p) { return p >= 0.9995 ? "100%" : p < 0.0005 && p > 0 ? "under 0.1%" : (p * 100).toFixed(p < 0.1 ? 1 : 0) + "%"; }
+  function pct(p) { return p >= 0.9995 ? "100%" : p < 0.0005 && p > 0 ? tr("under 0.1%") : (p * 100).toFixed(p < 0.1 ? 1 : 0) + "%"; }
   function avg(x) { return Math.round(x * 100) / 100; }
+  function showErr(parsed) { lastErr = parsed; errmsg.textContent = tr(parsed.error, parsed.vars); state("error"); }
 
+  // the last throw is kept so a language change redraws its words without throwing again
   function run() {
     var parsed = parse(expr.value);
     if (!parsed) { state("empty"); return; }
-    if (parsed.error) { errmsg.textContent = parsed.error; state("error"); return; }
+    if (parsed.error) { showErr(parsed); return; }
     var results = roll(parsed.terms);
     var total = results.reduce(function (s, r) { return s + r.value; }, 0);
+    last = { terms: parsed.terms, results: results, total: total, o: odds(parsed.terms, total), rg: range(parsed.terms) };
+    history.unshift(expr.value.replace(/\s+/g, "") + " → " + total);
+    history = history.slice(0, 6);
+    draw();
+  }
+
+  function draw() {
+    var results = last.results, total = last.total;
     $("total").textContent = total;
 
     dice.textContent = "";
@@ -2556,26 +2780,26 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         el.innerHTML = dieSvg(r.term.sides, face);
         var tag = document.createElement("span");
         tag.className = "mdv-tag";
-        tag.textContent = (r.term.sides === 100 ? "d100" : "d" + r.term.sides) + (r.kept[i] ? "" : " dropped");
+        tag.textContent = r.kept[i] ? "d" + r.term.sides : tr("d{sides} dropped", { sides: r.term.sides });
         el.appendChild(tag);
-        el.setAttribute("aria-label", "d" + r.term.sides + " rolled " + face + (r.kept[i] ? "" : ", dropped"));
+        el.setAttribute("aria-label", r.kept[i] ? tr("d{sides} rolled {face}", { sides: r.term.sides, face: face }) : tr("d{sides} rolled {face}, dropped", { sides: r.term.sides, face: face }));
         dice.appendChild(el);
         shown.push(r.kept[i] ? String(face) : "(" + face + ")");
       });
       parts.push((parts.length ? (r.term.sign < 0 ? "− " : "+ ") : r.term.sign < 0 ? "− " : "") + r.term.text + " [" + shown.join(", ") + "]");
     });
-    $("shout").textContent = high && low ? "a natural 20 and a natural 1" : high ? "natural 20" : low ? "natural 1" : "";
+    $("shout").textContent = high && low ? tr("a natural 20 and a natural 1") : high ? tr("natural 20") : low ? tr("natural 1") : "";
     $("shout").className = "mdv-tag" + (high ? " is-accent" : "");
     $("k-rolled").textContent = parts.join(" ") + " = " + total;
 
-    var o = odds(parsed.terms, total), rg = range(parsed.terms);
+    var o = last.o, rg = last.rg;
     $("k-odds").textContent = o
-      ? "average " + avg(o.mean) + " · range " + o.min + " to " + o.max + " · " + pct(o.atLeast) + " chance of " + total + " or more"
-      : "range " + rg.min + " to " + rg.max + (rg.mean !== null ? " · average " + avg(rg.mean) : "") + " · too many combinations to work out the rest exactly";
+      ? tr("average {mean} · range {min} to {max} · {pct} chance of {total} or more", { mean: avg(o.mean), min: o.min, max: o.max, pct: pct(o.atLeast), total: total })
+      : rg.mean !== null
+        ? tr("range {min} to {max} · average {mean} · too many combinations to work out the rest exactly", { min: rg.min, max: rg.max, mean: avg(rg.mean) })
+        : tr("range {min} to {max} · too many combinations to work out the rest exactly", { min: rg.min, max: rg.max });
 
-    history.unshift(expr.value.replace(/\s+/g, "") + " → " + total);
-    history = history.slice(0, 6);
-    $("k-history").textContent = history.slice(1).join(" · ") || "none yet";
+    $("k-history").textContent = history.slice(1).join(" · ") || tr("none yet");
     state("ok");
   }
 
@@ -2596,7 +2820,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   Array.prototype.forEach.call(document.querySelectorAll("[data-die]"), function (b) {
     var sides = Number(b.getAttribute("data-die"));
     b.innerHTML = dieSvg(sides).replace("<svg ", '<svg class="mdv-die-mark" ') + b.textContent;
-    b.setAttribute("aria-label", "Add a d" + sides + " and roll");
+    b.setAttribute("aria-label", tr("Add a d{sides} and roll", { sides: sides }));
     b.addEventListener("click", function () { addDie(sides); });
   });
   Array.prototype.forEach.call(document.querySelectorAll("[data-set]"), function (b) {
@@ -2608,12 +2832,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   expr.addEventListener("input", function () {
     var parsed = parse(expr.value);
     if (!parsed) state("empty");
-    else if (parsed.error) { errmsg.textContent = parsed.error; state("error"); }
+    else if (parsed.error) showErr(parsed);
     else if (!err.hidden) state(history.length ? "ok" : "empty");
   });
 
   expr.focus({ preventScroll: true });
   state("empty");
+  onLang(function () {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-die]"), function (b) {
+      b.setAttribute("aria-label", tr("Add a d{sides} and roll", { sides: Number(b.getAttribute("data-die")) }));
+    });
+    if (cur === "error" && lastErr) showErr(lastErr);
+    else if (cur === "ok" && last) draw();
+  });
 })();
 </script>
 </body>

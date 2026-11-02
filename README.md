@@ -11,10 +11,14 @@ how they work.
   no analytics, no fonts or scripts from anywhere else. The footer of every page counts the requests
   it has made, live, so you can check for yourself.
 - **Nothing is kept.** What you type or drop into a tool is gone when you close the tab. Pages
-  follow your device's light or dark setting; the one thing a page remembers is the mode you pick
-  with the Dark button.
+  follow your device's light or dark setting and your browser's language; the only things a page
+  remembers are the mode you pick with the Dark button and the language you pick with the flag.
 - **No account and no ads.**
 - **It works offline.** Every tool is a single HTML file with its styles and code inside it.
+- **Nine languages, in that one file.** English, Spanish, French, German, Italian, Brazilian
+  Portuguese, Japanese, Korean and Simplified Chinese. A saved page keeps all of them. The
+  translations are machine-made and not checked by native speakers, and the pages say so; English
+  is the reference.
 - **Every tool explains itself.** "How this works", at the bottom of each page, says what the tool
   does, what it rounds or approximates, and what it refuses to do.
 

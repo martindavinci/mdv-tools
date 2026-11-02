@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link is-here" href="./watermark.html" aria-current="page" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link is-here" href="./watermark.html" aria-current="page" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,24 +2353,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Watermark</h1>
+      <h1 class="mdv-head-name" data-t="57">Watermark</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Sign a picture with text or a logo, in a corner or tiled across it.</p>
+    <p class="mdv-head-line" data-t="79">Sign a picture with text or a logo, in a corner or tiled across it.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
-  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose the picture to sign">
+  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose the picture to sign" data-t-attrs="aria-label">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
-    <span class="mdv-tag">Drop a JPEG, PNG or WebP — up to 30 MB</span>
+    <span class="mdv-tag" data-t="82">Drop a JPEG, PNG or WebP — up to 30 MB</span>
     <input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/avif" class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>drop a picture above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="83">drop a picture above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Cannot sign that</span>
@@ -2267,59 +2379,59 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <div id="ok" hidden>
       <div class="mdv-row is-between">
-        <div class="mdv-seg" role="group" aria-label="What the mark is">
-          <button type="button" data-kind="text" class="is-on" aria-pressed="true">Text</button>
-          <button type="button" data-kind="logo" aria-pressed="false">Logo</button>
+        <div class="mdv-seg" role="group" aria-label="What the mark is" data-t-attrs="aria-label">
+          <button type="button" data-kind="text" class="is-on" aria-pressed="true" data-t="4">Text</button>
+          <button type="button" data-kind="logo" aria-pressed="false" data-t="84">Logo</button>
         </div>
         <div class="mdv-btn-row">
-          <button class="mdv-btn is-sm is-quiet" type="button" id="logoBtn" hidden>Choose a logo</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="logoBtn" hidden data-t="85">Choose a logo</button>
           <input type="file" id="logoFile" accept="image/png,image/webp,image/jpeg,image/svg+xml" class="mdv-sr" tabindex="-1" aria-hidden="true">
-          <label class="mdv-check"><input type="checkbox" id="tile"> Tile across</label>
+          <label class="mdv-check"><input type="checkbox" id="tile"> <span data-t="86">Tile across</span></label>
         </div>
       </div>
 
       <div id="textRow">
-        <label class="mdv-label" for="text">Mark</label>
+        <label class="mdv-label" for="text" data-t="87">Mark</label>
         <input class="mdv-input" id="text" type="text" spellcheck="false" autocomplete="off" value="© Martin DaVinci" style="width:100%">
       </div>
 
       <div class="mdv-cols">
         <div>
           <div class="mdv-row" style="gap:var(--space-2)">
-            <label class="mdv-tag" for="size">Size</label>
-            <input id="size" type="range" min="2" max="30" step="1" value="8" style="flex:1" aria-label="Size, per cent of the picture">
+            <label class="mdv-tag" for="size" data-t="88">Size</label>
+            <input id="size" type="range" min="2" max="30" step="1" value="8" style="flex:1" aria-label="Size, per cent of the picture" data-t-attrs="aria-label">
             <span class="mdv-mono" id="sizeOut">8%</span>
           </div>
           <div class="mdv-row" style="gap:var(--space-2)">
-            <label class="mdv-tag" for="opacity">Opacity</label>
-            <input id="opacity" type="range" min="5" max="100" step="5" value="45" style="flex:1" aria-label="Opacity">
+            <label class="mdv-tag" for="opacity" data-t="89">Opacity</label>
+            <input id="opacity" type="range" min="5" max="100" step="5" value="45" style="flex:1" aria-label="Opacity" data-t-attrs="aria-label">
             <span class="mdv-mono" id="opacityOut">45%</span>
           </div>
           <div class="mdv-row" style="gap:var(--space-2)">
-            <label class="mdv-tag" for="angle">Angle</label>
-            <input id="angle" type="range" min="-90" max="90" step="5" value="0" style="flex:1" aria-label="Angle in degrees">
+            <label class="mdv-tag" for="angle" data-t="90">Angle</label>
+            <input id="angle" type="range" min="-90" max="90" step="5" value="0" style="flex:1" aria-label="Angle in degrees" data-t-attrs="aria-label">
             <span class="mdv-mono" id="angleOut">0°</span>
           </div>
           <div class="mdv-row is-between" style="margin-top:var(--space-2)">
-            <span class="mdv-tag">Colour</span>
+            <span class="mdv-tag" data-t="91">Colour</span>
             <span class="mdv-row" style="gap:var(--space-2)">
-              <input id="colour" type="color" value="#ffffff" aria-label="Mark colour">
-              <label class="mdv-check"><input type="checkbox" id="shadowed" checked> Dark edge behind it</label>
+              <input id="colour" type="color" value="#ffffff" aria-label="Mark colour" data-t-attrs="aria-label">
+              <label class="mdv-check"><input type="checkbox" id="shadowed" checked> <span data-t="92">Dark edge behind it</span></label>
             </span>
           </div>
         </div>
         <div>
-          <span class="mdv-label">Where</span>
-          <div class="mdv-seg is-grid" role="group" aria-label="Position" id="spots">
-            <button type="button" data-spot="nw" aria-pressed="false">Top left</button>
-            <button type="button" data-spot="n" aria-pressed="false">Top</button>
-            <button type="button" data-spot="ne" aria-pressed="false">Top right</button>
-            <button type="button" data-spot="w" aria-pressed="false">Left</button>
-            <button type="button" data-spot="c" aria-pressed="false">Centre</button>
-            <button type="button" data-spot="e" aria-pressed="false">Right</button>
-            <button type="button" data-spot="sw" aria-pressed="false">Bottom left</button>
-            <button type="button" data-spot="s" aria-pressed="false">Bottom</button>
-            <button type="button" data-spot="se" class="is-on" aria-pressed="true">Bottom right</button>
+          <span class="mdv-label" data-t="93">Where</span>
+          <div class="mdv-seg is-grid" role="group" aria-label="Position" id="spots" data-t-attrs="aria-label">
+            <button type="button" data-spot="nw" aria-pressed="false" data-t="94">Top left</button>
+            <button type="button" data-spot="n" aria-pressed="false" data-t="95">Top</button>
+            <button type="button" data-spot="ne" aria-pressed="false" data-t="96">Top right</button>
+            <button type="button" data-spot="w" aria-pressed="false" data-t="97">Left</button>
+            <button type="button" data-spot="c" aria-pressed="false" data-t="98">Centre</button>
+            <button type="button" data-spot="e" aria-pressed="false" data-t="99">Right</button>
+            <button type="button" data-spot="sw" aria-pressed="false" data-t="100">Bottom left</button>
+            <button type="button" data-spot="s" aria-pressed="false" data-t="101">Bottom</button>
+            <button type="button" data-spot="se" class="is-on" aria-pressed="true" data-t="102">Bottom right</button>
           </div>
         </div>
       </div>
@@ -2329,20 +2441,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-row is-between">
         <p class="mdv-dot-note" id="note"></p>
         <div class="mdv-btn-row">
-          <div class="mdv-seg" role="group" aria-label="Output format">
+          <div class="mdv-seg" role="group" aria-label="Output format" data-t-attrs="aria-label">
             <button type="button" data-fmt="jpeg" class="is-on" aria-pressed="true">JPEG</button>
             <button type="button" data-fmt="png" aria-pressed="false">PNG</button>
             <button type="button" data-fmt="webp" aria-pressed="false">WebP</button>
           </div>
-          <button class="mdv-btn" type="button" id="save">Download</button>
+          <button class="mdv-btn" type="button" id="save" data-t="103">Download</button>
         </div>
       </div>
 
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Source</dt><dd id="k-src"></dd>
-          <dt>Mark</dt><dd id="k-mark"></dd>
-          <dt>Output</dt><dd id="k-out"></dd>
+          <dt data-t="104">Source</dt><dd id="k-src"></dd>
+          <dt data-t="87">Mark</dt><dd id="k-mark"></dd>
+          <dt data-t="105">Output</dt><dd id="k-out"></dd>
         </dl>
       </div>
       <p class="mdv-hint" id="said" hidden></p>
@@ -2350,43 +2462,44 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="106">How this works</summary>
     <div class="mdv-method-body">
-      <p>The picture is drawn on a canvas at its full size and the mark is painted over it, so what you
+      <p data-t="107">The picture is drawn on a canvas at its full size and the mark is painted over it, so what you
         download is one flat image: there is no layer, and the size and position you set are measured
         against the picture's own pixels rather than the preview on screen. Size is a percentage of the
         shorter side, which is why the mark looks the same on a small picture and a large one. Text is set
         in the same serif the page uses, with an optional dark edge behind it so that white lettering
         survives a pale background.</p>
-      <p><strong>Tile across</strong> repeats the mark over the whole picture at the angle you chose. That
+      <p data-t="108"><strong>Tile across</strong> repeats the mark over the whole picture at the angle you chose. That
         is the honest kind of watermark: a corner mark is trivially cropped off, while a tiled one has to be
         painted out. Neither is protection. A watermark says who made something and makes casual reuse
         awkward; it does not stop anyone determined, and nothing that stays visible ever could — the page
         would rather say so than sell you the idea.</p>
-      <p>A logo is drawn from its own file at the same percentage size, keeping its proportions and its
+      <p data-t="109">A logo is drawn from its own file at the same percentage size, keeping its proportions and its
         transparency. An SVG logo is drawn at the size it declares and scaled, so a logo with no width and
         height in it may come out small; a PNG with an alpha channel is the safe choice.</p>
-      <p>JPEG out re-compresses the whole picture; PNG keeps it exactly but is much larger for a
+      <p data-t="110">JPEG out re-compresses the whole picture; PNG keeps it exactly but is much larger for a
         photograph. Metadata does not survive the canvas, so the signed copy carries no EXIF or GPS. Both
         files are read in this tab, the page makes no network requests, and nothing you drop is stored; the
-        Dark button keeps its own setting in this browser's local storage.</p>
+        Dark and language buttons keep their own settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Image &amp; Media">
-    <span class="mdv-tag">Also in Image &amp; Media</span>
-    <a href="./circle-crop.html">Circle crop</a>
-    <a href="./exif-remover.html">EXIF viewer and remover</a>
-    <a href="./favicon-from-image.html">Favicon maker</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Image &amp; Media"}'>Also in Image &amp; Media</span>
+    <a href="./circle-crop.html" data-t="48">Circle crop</a>
+    <a href="./exif-remover.html" data-t="49">EXIF viewer and remover</a>
+    <a href="./favicon-from-image.html" data-t="50">Favicon maker</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="111">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="112">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="113" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="114">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2397,6 +2510,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Watermark an Image — text or logo, corner or tiled — MDV","Put a text or logo watermark on a picture: pick a corner or tile it across, set size and opacity, and download. The picture never leaves the device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Choose the picture to sign","What the mark is","Size, per cent of the picture","Opacity","Angle in degrees","Mark colour","Position","Output format","Could not read that","The browser stopped reading {name}.","Could not decode that","{name} did not decode as a picture.","That file did not decode as a picture.","Too large","{name} is {size}. This page signs up to {max}.","Not a picture","{name} is {type}. Drop a JPEG, PNG or WebP.","That file is {type}. Drop a JPEG, PNG or WebP.","nothing typed yet","no logo chosen yet","{mark} · {size}% of the shorter side · {opacity}% opaque","tiled","{w} × {h} px · written as {name}, {size}","Type something for the mark, and it will appear on the picture.","Choose a logo file: a PNG with transparency signs best.","A tiled mark has to be painted out rather than cropped off, which is the only reason a watermark slows anyone down. It is still not protection.","A mark in a corner is one crop away from gone. Tile it if that matters.","PNG will be several times larger than the JPEG you dropped, with nothing gained for a photograph.","The signed copy carries no EXIF or GPS: a canvas keeps none.","drag the sliders, then download","the mark is empty","top left","top","top right","left","centre","right","bottom left","bottom","bottom right","Logo too large","{name} is {size}.","Could not encode that","This browser did not produce a {format}. Try JPEG.","Image & Media","2026-11-02"],"h":115,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Firma una imagen con texto o un logo, en una esquina o repetido por toda ella.","En este dispositivo","Funciona sin conexión","Suelta un JPEG, PNG o WebP — hasta 30 MB","suelta una imagen arriba","Logo","Elegir un logo","Repetir por toda la imagen","Marca","Tamaño","Opacidad","Ángulo","Color","Borde oscuro detrás","Dónde","Arriba izq.","Arriba","Arriba der.","Izquierda","Centro","Derecha","Abajo izq.","Abajo","Abajo der.","Descargar","Origen","Salida","Cómo funciona","La imagen se dibuja en un canvas a su tamaño completo y la marca se pinta encima, así que lo que descargas es una sola imagen plana: no hay capas, y el tamaño y la posición que fijas se miden sobre los píxeles de la propia imagen y no sobre la vista previa en pantalla. El tamaño es un porcentaje del lado más corto, por eso la marca se ve igual en una imagen pequeña y en una grande. El texto usa la misma tipografía con serifa que la página, con un borde oscuro opcional detrás para que las letras blancas se vean sobre un fondo claro.","\u003cstrong>Repetir por toda la imagen\u003c/strong> repite la marca sobre toda la imagen con el ángulo que elijas. Es la clase honesta de marca de agua: una marca en una esquina se recorta sin esfuerzo, mientras que una repetida hay que taparla a pintura. Ninguna es una protección. Una marca de agua dice quién hizo algo y dificulta la reutilización casual; no detiene a nadie decidido, y nada que siga visible podría hacerlo: la página prefiere decirlo antes que venderte la idea.","Un logo se dibuja a partir de su propio archivo con el mismo tamaño en porcentaje, manteniendo sus proporciones y su transparencia. Un logo SVG se dibuja al tamaño que declara y se escala, así que un logo sin ancho ni alto declarados puede salir pequeño; un PNG con canal alfa es la opción segura.","Exportar a JPEG recomprime toda la imagen; PNG la conserva exacta pero pesa mucho más para una fotografía. Los metadatos no sobreviven al canvas, así que la copia firmada no lleva EXIF ni GPS. Los dos archivos se leen en esta pestaña, la página no hace peticiones de red y nada de lo que sueltas se guarda; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Marca de agua en una imagen — texto o logo, esquina o repetida — MDV","Pon una marca de agua de texto o logo en una imagen: elige una esquina o repítela por toda la imagen, ajusta tamaño y opacidad, y descarga. La imagen no sale del dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elegir la imagen que firmar","Qué es la marca","Tamaño, en porcentaje de la imagen","Opacidad","Ángulo en grados","Color de la marca","Posición","Formato de salida","No se pudo leer","El navegador dejó de leer {name}.","No se pudo decodificar","{name} no se decodificó como imagen.","Ese archivo no se decodificó como imagen.","Demasiado grande","{name} pesa {size}. Esta página firma hasta {max}.","No es una imagen","{name} es {type}. Suelta un JPEG, PNG o WebP.","Ese archivo es {type}. Suelta un JPEG, PNG o WebP.","todavía no has escrito nada","aún no has elegido un logo","{mark} · {size}% del lado más corto · {opacity}% de opacidad","repetida","{w} × {h} px · escrito como {name}, {size}","Escribe algo para la marca y aparecerá en la imagen.","Elige un archivo de logo: un PNG con transparencia es lo que mejor firma.","Una marca repetida hay que taparla a pintura en lugar de recortarla, y esa es la única razón por la que una marca de agua frena a alguien. Aun así, no es una protección.","Una marca en una esquina está a un recorte de desaparecer. Repítela por toda la imagen si eso importa.","PNG será varias veces más grande que el JPEG que soltaste, sin ganar nada en una fotografía.","La copia firmada no lleva EXIF ni GPS: un canvas no conserva ninguno.","mueve los controles y luego descarga","la marca está vacía","arriba a la izquierda","arriba","arriba a la derecha","a la izquierda","en el centro","a la derecha","abajo a la izquierda","abajo","abajo a la derecha","Logo demasiado grande","{name} pesa {size}.","No se pudo codificar","Este navegador no produjo un {format}. Prueba con JPEG.","Imagen y multimedia",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Signez une image avec du texte ou un logo, dans un coin ou en mosaïque sur toute sa surface.","Sur cet appareil","Fonctionne hors ligne","Déposez un JPEG, PNG ou WebP — jusqu’à 30 Mo","déposez une image ci-dessus","Logo","Choisir un logo","Répéter en mosaïque","Marque","Taille","Opacité","Angle","Couleur","Contour sombre derrière","Où","Haut gauche","Haut","Haut droite","Gauche","Centre","Droite","Bas gauche","Bas","Bas droite","Télécharger","Source","Sortie","Comment ça marche","L’image est dessinée sur un canvas à sa taille réelle et la marque est peinte par-dessus : ce que vous téléchargez est donc une seule image à plat, sans calque, et la taille et la position que vous réglez se mesurent sur les pixels de l’image elle-même, non sur l’aperçu à l’écran. La taille est un pourcentage du plus petit côté, ce qui explique que la marque ait le même aspect sur une petite image et sur une grande. Le texte est composé avec la même police à empattements que la page, avec un contour sombre facultatif derrière pour que des lettres blanches résistent à un fond clair.","\u003cstrong>Répéter en mosaïque\u003c/strong> répète la marque sur toute l’image selon l’angle choisi. C’est la forme honnête du filigrane : une marque dans un coin se rogne sans effort, alors qu’une marque en mosaïque doit être effacée à la main. Aucune des deux n’est une protection. Un filigrane dit qui a fait quelque chose et rend la réutilisation sans gêne plus pénible ; il n’arrête personne de déterminé, et rien de ce qui reste visible ne le pourrait : la page préfère le dire plutôt que de vous vendre l’idée.","Un logo est dessiné à partir de son propre fichier avec la même taille en pourcentage, en gardant ses proportions et sa transparence. Un logo SVG est dessiné à la taille qu’il déclare puis mis à l’échelle, si bien qu’un logo sans largeur ni hauteur peut sortir petit ; un PNG avec canal alpha est le choix sûr.","Sortir en JPEG recompresse toute l’image ; PNG la conserve exactement mais est bien plus lourd pour une photographie. Les métadonnées ne survivent pas au canvas : la copie signée ne porte donc ni EXIF ni GPS. Les deux fichiers sont lus dans cet onglet, la page ne fait aucune requête réseau et rien de ce que vous déposez n’est stocké ; les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Filigrane sur une image — texte ou logo, coin ou mosaïque — MDV","Posez un filigrane de texte ou de logo sur une image : choisissez un coin ou une mosaïque, réglez la taille et l’opacité, puis téléchargez. L’image ne quitte pas l’appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisir l’image à signer","Nature de la marque","Taille, en pourcentage de l’image","Opacité","Angle en degrés","Couleur de la marque","Position","Format de sortie","Lecture impossible","Le navigateur a cessé de lire {name}.","Décodage impossible","{name} n’a pas pu être décodé comme image.","Ce fichier n’a pas pu être décodé comme image.","Trop volumineux","{name} pèse {size}. Cette page signe jusqu’à {max}.","Ce n’est pas une image","{name} est {type}. Déposez un JPEG, PNG ou WebP.","Ce fichier est {type}. Déposez un JPEG, PNG ou WebP.","rien de saisi pour l’instant","aucun logo choisi pour l’instant","{mark} · {size} % du plus petit côté · {opacity} % opaque","en mosaïque","{w} × {h} px · écrit sous {name}, {size}","Saisissez quelque chose pour la marque et elle apparaîtra sur l’image.","Choisissez un fichier de logo : un PNG avec transparence signe le mieux.","Une marque en mosaïque doit être effacée à la main plutôt que rognée, ce qui est la seule raison pour laquelle un filigrane ralentit quelqu’un. Ce n’est toujours pas une protection.","Une marque dans un coin est à un recadrage de disparaître. Mettez-la en mosaïque si cela compte.","Le PNG sera plusieurs fois plus lourd que le JPEG déposé, sans rien gagner pour une photographie.","La copie signée ne porte ni EXIF ni GPS : un canvas n’en garde aucun.","déplacez les curseurs, puis téléchargez","la marque est vide","en haut à gauche","en haut","en haut à droite","à gauche","au centre","à droite","en bas à gauche","en bas","en bas à droite","Logo trop volumineux","{name} pèse {size}.","Encodage impossible","Ce navigateur n’a pas produit de {format}. Essayez JPEG.","Image et médias",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Signiere ein Bild mit Text oder Logo, in einer Ecke oder gekachelt über das ganze Bild.","Läuft auf diesem Gerät","Funktioniert offline","JPEG, PNG oder WebP hineinziehen — bis zu 30 MB","bild oben hineinziehen","Logo","Logo wählen","Über das Bild kacheln","Marke","Größe","Deckkraft","Winkel","Farbe","Dunkler Rand dahinter","Wo","Oben links","Oben","Oben rechts","Links","Mitte","Rechts","Unten links","Unten","Unten rechts","Herunterladen","Quelle","Ausgabe","So funktioniert es","Das Bild wird in voller Größe auf ein Canvas gezeichnet und die Marke darübergemalt, sodass du ein einziges flaches Bild herunterlädst: Es gibt keine Ebene, und Größe und Position, die du einstellst, werden an den Pixeln des Bilds selbst gemessen, nicht an der Vorschau auf dem Bildschirm. Die Größe ist ein Prozentsatz der kürzeren Seite, weshalb die Marke auf einem kleinen und einem großen Bild gleich aussieht. Text wird in derselben Serifenschrift gesetzt wie die Seite, mit einem optionalen dunklen Rand dahinter, damit weiße Schrift auf hellem Hintergrund bestehen kann.","\u003cstrong>Über das Bild kacheln\u003c/strong> wiederholt die Marke über das ganze Bild im gewählten Winkel. Das ist die ehrliche Art von Wasserzeichen: Eine Marke in der Ecke ist mühelos abgeschnitten, eine gekachelte muss übermalt werden. Keine von beiden ist ein Schutz. Ein Wasserzeichen sagt, wer etwas gemacht hat, und erschwert beiläufige Wiederverwendung; es hält keinen Entschlossenen auf, und nichts, was sichtbar bleibt, könnte das je: Die Seite sagt das lieber, als dir die Idee zu verkaufen.","Ein Logo wird aus seiner eigenen Datei in derselben prozentualen Größe gezeichnet, mit seinen Proportionen und seiner Transparenz. Ein SVG-Logo wird in der Größe gezeichnet, die es angibt, und skaliert; ein Logo ohne Breite und Höhe darin kann daher klein ausfallen. Ein PNG mit Alphakanal ist die sichere Wahl.","JPEG als Ausgabe komprimiert das ganze Bild neu; PNG behält es exakt, ist bei einem Foto aber viel größer. Metadaten überleben das Canvas nicht, die signierte Kopie enthält also kein EXIF und kein GPS. Beide Dateien werden in diesem Tab gelesen, die Seite stellt keine Netzwerkanfragen, und nichts, was du hineinziehst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Wasserzeichen auf ein Bild — Text oder Logo, Ecke oder gekachelt — MDV","Setze ein Text- oder Logo-Wasserzeichen auf ein Bild: wähle eine Ecke oder kachele es über das ganze Bild, stelle Größe und Deckkraft ein und lade es herunter. Das Bild verlässt das Gerät nie.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Zu signierendes Bild auswählen","Art der Marke","Größe, in Prozent des Bilds","Deckkraft","Winkel in Grad","Farbe der Marke","Position","Ausgabeformat","Nicht lesbar","Der Browser hat das Lesen von {name} abgebrochen.","Nicht dekodierbar","{name} ließ sich nicht als Bild dekodieren.","Diese Datei ließ sich nicht als Bild dekodieren.","Zu groß","{name} hat {size}. Diese Seite signiert bis zu {max}.","Kein Bild","{name} ist {type}. Zieh ein JPEG, PNG oder WebP hinein.","Diese Datei ist {type}. Zieh ein JPEG, PNG oder WebP hinein.","noch nichts eingegeben","noch kein Logo gewählt","{mark} · {size} % der kürzeren Seite · {opacity} % deckend","gekachelt","{w} × {h} px · geschrieben als {name}, {size}","Tippe etwas für die Marke ein, und sie erscheint auf dem Bild.","Wähle eine Logo-Datei: Ein PNG mit Transparenz signiert am besten.","Eine gekachelte Marke muss übermalt statt abgeschnitten werden, und nur deshalb bremst ein Wasserzeichen überhaupt jemanden. Ein Schutz ist es trotzdem nicht.","Eine Marke in der Ecke ist einen Zuschnitt vom Verschwinden entfernt. Kachele sie, wenn das wichtig ist.","PNG wird um ein Vielfaches größer als das abgelegte JPEG, ohne bei einem Foto etwas zu gewinnen.","Die signierte Kopie enthält kein EXIF und kein GPS: Ein Canvas behält keines.","Regler ziehen, dann herunterladen","die Marke ist leer","oben links","oben","oben rechts","links","Mitte","rechts","unten links","unten","unten rechts","Logo zu groß","{name} hat {size}.","Nicht kodierbar","Dieser Browser hat kein {format} erzeugt. Versuch es mit JPEG.","Bild und Medien",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Firma un’immagine con testo o logo, in un angolo o ripetuto su tutta la superficie.","Su questo dispositivo","Funziona offline","Trascina un JPEG, PNG o WebP — fino a 30 MB","trascina un’immagine qui sopra","Logo","Scegli un logo","Ripeti su tutta l’immagine","Marchio","Dimensione","Opacità","Angolo","Colore","Bordo scuro dietro","Dove","Alto sin.","Alto","Alto des.","Sinistra","Centro","Destra","Basso sin.","Basso","Basso des.","Scarica","Sorgente","Output","Come funziona","L’immagine viene disegnata su un canvas alla sua dimensione piena e il marchio viene dipinto sopra, quindi quello che scarichi è una sola immagine piatta: non c’è nessun livello, e la dimensione e la posizione che imposti si misurano sui pixel dell’immagine stessa e non sull’anteprima a schermo. La dimensione è una percentuale del lato più corto, per questo il marchio appare uguale su un’immagine piccola e su una grande. Il testo usa lo stesso carattere con grazie della pagina, con un bordo scuro facoltativo dietro perché le lettere bianche reggano su uno sfondo chiaro.","\u003cstrong>Ripeti su tutta l’immagine\u003c/strong> ripete il marchio su tutta l’immagine con l’angolo scelto. È il tipo onesto di filigrana: un marchio in un angolo si ritaglia senza fatica, mentre uno ripetuto va cancellato a mano. Nessuno dei due è una protezione. Una filigrana dice chi ha fatto qualcosa e rende scomodo il riuso casuale; non ferma chi è determinato, e nulla che resti visibile potrebbe farlo: la pagina preferisce dirlo piuttosto che venderti l’idea.","Un logo viene disegnato dal suo file con la stessa dimensione in percentuale, mantenendo proporzioni e trasparenza. Un logo SVG viene disegnato alla dimensione che dichiara e poi scalato, quindi un logo senza larghezza e altezza può risultare piccolo; un PNG con canale alfa è la scelta sicura.","L’output in JPEG ricomprime l’intera immagine; PNG la mantiene esatta ma è molto più grande per una fotografia. I metadati non sopravvivono al canvas, quindi la copia firmata non porta né EXIF né GPS. Entrambi i file vengono letti in questa scheda, la pagina non fa richieste di rete e nulla di ciò che trascini viene salvato; i pulsanti Scuro e Lingua conservano la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Filigrana su un’immagine — testo o logo, angolo o ripetuta — MDV","Metti una filigrana di testo o logo su un’immagine: scegli un angolo o ripetila su tutta l’immagine, imposta dimensione e opacità e scarica. L’immagine non lascia mai il dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli l’immagine da firmare","Che cos’è il marchio","Dimensione, in percentuale dell’immagine","Opacità","Angolo in gradi","Colore del marchio","Posizione","Formato di output","Impossibile leggere","Il browser ha smesso di leggere {name}.","Impossibile decodificare","{name} non è stato decodificato come immagine.","Quel file non è stato decodificato come immagine.","Troppo grande","{name} pesa {size}. Questa pagina firma fino a {max}.","Non è un’immagine","{name} è {type}. Trascina un JPEG, PNG o WebP.","Quel file è {type}. Trascina un JPEG, PNG o WebP.","non hai ancora scritto nulla","nessun logo scelto finora","{mark} · {size}% del lato più corto · {opacity}% opaco","ripetuta","{w} × {h} px · scritto come {name}, {size}","Scrivi qualcosa per il marchio e comparirà sull’immagine.","Scegli un file di logo: un PNG con trasparenza firma meglio.","Un marchio ripetuto va cancellato a mano invece di essere ritagliato, ed è l’unico motivo per cui una filigrana rallenta qualcuno. Non è comunque una protezione.","Un marchio in un angolo è a un ritaglio dallo sparire. Ripetilo su tutta l’immagine se è importante.","Il PNG sarà diverse volte più grande del JPEG che hai trascinato, senza guadagnare nulla per una fotografia.","La copia firmata non porta né EXIF né GPS: un canvas non ne conserva.","muovi i cursori, poi scarica","il marchio è vuoto","in alto a sinistra","in alto","in alto a destra","a sinistra","al centro","a destra","in basso a sinistra","in basso","in basso a destra","Logo troppo grande","{name} pesa {size}.","Impossibile codificare","Questo browser non ha prodotto un {format}. Prova con JPEG.","Immagini e media",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Assine uma imagem com texto ou logo, em um canto ou repetido por toda ela.","Neste dispositivo","Funciona offline","Solte um JPEG, PNG ou WebP — até 30 MB","solte uma imagem acima","Logo","Escolher um logo","Repetir por toda a imagem","Marca","Tamanho","Opacidade","Ângulo","Cor","Borda escura atrás","Onde","Sup. esq.","Superior","Sup. dir.","Esquerda","Centro","Direita","Inf. esq.","Inferior","Inf. dir.","Baixar","Origem","Saída","Como funciona","A imagem é desenhada em um canvas no tamanho total e a marca é pintada por cima, então o que você baixa é uma única imagem plana: não há camada, e o tamanho e a posição que você define são medidos nos pixels da própria imagem, e não na prévia na tela. O tamanho é uma porcentagem do lado mais curto, por isso a marca parece igual em uma imagem pequena e em uma grande. O texto usa a mesma fonte com serifa da página, com uma borda escura opcional atrás para que letras brancas se sustentem sobre um fundo claro.","\u003cstrong>Repetir por toda a imagem\u003c/strong> repete a marca sobre a imagem inteira no ângulo escolhido. É o tipo honesto de marca d’água: uma marca no canto é cortada sem esforço, enquanto uma repetida precisa ser apagada na mão. Nenhuma das duas é proteção. Uma marca d’água diz quem fez algo e dificulta o reuso casual; não detém ninguém determinado, e nada que continue visível poderia: a página prefere dizer isso a vender a ideia.","Um logo é desenhado a partir do próprio arquivo com o mesmo tamanho em porcentagem, mantendo suas proporções e sua transparência. Um logo SVG é desenhado no tamanho que declara e depois escalado, então um logo sem largura e altura pode sair pequeno; um PNG com canal alfa é a escolha segura.","Saída em JPEG recomprime a imagem inteira; PNG a mantém exata, mas é bem maior para uma fotografia. Os metadados não sobrevivem ao canvas, então a cópia assinada não leva EXIF nem GPS. Os dois arquivos são lidos nesta aba, a página não faz requisições de rede e nada do que você solta é armazenado; os botões Escuro e Idioma guardam a própria configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Marca d’água em uma imagem — texto ou logo, canto ou repetida — MDV","Coloque uma marca d’água de texto ou logo em uma imagem: escolha um canto ou repita por toda a imagem, ajuste tamanho e opacidade e baixe. A imagem nunca sai do dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolher a imagem a assinar","O que é a marca","Tamanho, em porcentagem da imagem","Opacidade","Ângulo em graus","Cor da marca","Posição","Formato de saída","Não foi possível ler","O navegador parou de ler {name}.","Não foi possível decodificar","{name} não foi decodificado como imagem.","Esse arquivo não foi decodificado como imagem.","Grande demais","{name} tem {size}. Esta página assina até {max}.","Não é uma imagem","{name} é {type}. Solte um JPEG, PNG ou WebP.","Esse arquivo é {type}. Solte um JPEG, PNG ou WebP.","nada digitado ainda","nenhum logo escolhido ainda","{mark} · {size}% do lado mais curto · {opacity}% opaco","repetida","{w} × {h} px · gravado como {name}, {size}","Digite algo para a marca e ela aparecerá na imagem.","Escolha um arquivo de logo: um PNG com transparência assina melhor.","Uma marca repetida precisa ser apagada na mão em vez de cortada, e essa é a única razão pela qual uma marca d’água atrasa alguém. Ainda assim, não é proteção.","Uma marca no canto está a um corte de sumir. Repita por toda a imagem se isso importar.","O PNG ficará várias vezes maior que o JPEG que você soltou, sem ganho algum para uma fotografia.","A cópia assinada não leva EXIF nem GPS: um canvas não mantém nenhum.","arraste os controles e depois baixe","a marca está vazia","canto superior esquerdo","parte superior","canto superior direito","à esquerda","no centro","à direita","canto inferior esquerdo","parte inferior","canto inferior direito","Logo grande demais","{name} tem {size}.","Não foi possível codificar","Este navegador não produziu um {format}. Tente JPEG.","Imagem e mídia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","画像にテキストやロゴで署名します。隅に1つ、または全面に並べて入れられます。","この端末で動作","オフラインで動作","JPEG・PNG・WebP をドロップ — 30 MB まで","上に画像をドロップ","ロゴ","ロゴを選択","全面に並べる","マーク","サイズ","不透明度","角度","色","背面に暗い縁取り","位置","左上","上","右上","左","中央","右","左下","下","右下","ダウンロード","元画像","出力","仕組み","画像はキャンバスに実寸で描画され、その上にマークが描かれます。そのため、ダウンロードするのはレイヤーのない 1 枚の平らな画像です。設定したサイズと位置は、画面上のプレビューではなく画像自身の画素を基準に測られます。サイズは短辺に対する割合なので、小さい画像でも大きい画像でもマークは同じ見た目になります。テキストはページと同じセリフ体で描画され、白い文字が明るい背景でも読めるように、背面に暗い縁取りを付けることもできます。","\u003cstrong>全面に並べる\u003c/strong>は、選んだ角度でマークを画像全体に繰り返します。これは正直な種類の透かしです。隅のマークは簡単に切り取られますが、全面に並べたマークは塗りつぶして消す必要があります。どちらも保護にはなりません。透かしは誰が作ったかを示し、気軽な再利用をしにくくしますが、本気の相手は止められず、見えたままのものには決して止められません。このページはそのアイデアを売り込むより、そう伝えることを選びます。","ロゴは自身のファイルから、同じ割合のサイズで描画され、縦横比と透明度は保たれます。SVG のロゴは宣言されたサイズで描画されてから拡縮されるため、幅と高さが含まれていないロゴは小さく出ることがあります。アルファチャンネル付きの PNG なら安心です。","JPEG で出力すると画像全体が再圧縮されます。PNG は正確に保持しますが、写真ではサイズがかなり大きくなります。メタデータはキャンバスを通ると残らないため、署名したコピーには EXIF も GPS も含まれません。2 つのファイルはどちらもこのタブ内で読み込まれ、ページはネットワーク通信を行わず、ドロップしたものは保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","画像に透かしを入れる — テキストまたはロゴ、隅または全面 — MDV","画像にテキストまたはロゴの透かしを入れます。隅を選ぶか全面に並べ、サイズと不透明度を調整してダウンロードできます。画像は端末の外に出ません。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","署名する画像を選択","マークの種類","サイズ(画像に対する割合)","不透明度","角度(度)","マークの色","位置","出力形式","読み込めませんでした","ブラウザーが {name} の読み込みを中止しました。","デコードできませんでした","{name} は画像としてデコードできませんでした。","そのファイルは画像としてデコードできませんでした。","大きすぎます","{name} は {size} あります。このページで署名できるのは {max} までです。","画像ではありません","{name} は {type} です。JPEG、PNG、WebP をドロップしてください。","そのファイルは {type} です。JPEG、PNG、WebP をドロップしてください。","まだ何も入力されていません","まだロゴが選択されていません","{mark} · 短辺の {size}% · 不透明度 {opacity}%","全面に並べる","{w} × {h} px · {name} として書き出し、{size}","マークにする文字を入力すると、画像に表示されます。","ロゴのファイルを選んでください。透明部分のある PNG が最適です。","全面に並べたマークは切り取れず塗りつぶして消す必要があり、透かしが誰かの手間を増やすのはそのためだけです。それでも保護にはなりません。","隅のマークは、切り取り一つで消えてしまいます。それが気になる場合は全面に並べてください。","PNG は、ドロップした JPEG の数倍のサイズになり、写真では得るものがありません。","署名したコピーには EXIF も GPS も含まれません。キャンバスはどちらも保持しません。","スライダーを動かしてからダウンロード","マークが空です","左上","上","右上","左","中央","右","左下","下","右下","ロゴが大きすぎます","{name} は {size} あります。","エンコードできませんでした","このブラウザーでは {format} を作成できませんでした。JPEG を試してください。","画像とメディア",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","이미지에 텍스트나 로고로 서명하세요. 모서리에 하나 넣거나 전체에 반복해 넣을 수 있습니다.","이 기기에서 실행","오프라인 작동","JPEG, PNG, WebP를 놓으세요 — 최대 30 MB","위에 이미지를 놓으세요","로고","로고 선택","전체에 반복","마크","크기","불투명도","각도","색상","뒤에 어두운 테두리","위치","왼쪽 위","위","오른쪽 위","왼쪽","가운데","오른쪽","왼쪽 아래","아래","오른쪽 아래","다운로드","원본","출력","작동 방식","이미지는 캔버스에 원래 크기로 그려지고 그 위에 마크가 그려집니다. 따라서 다운로드하는 것은 레이어가 없는 한 장의 평면 이미지입니다. 설정한 크기와 위치는 화면 미리보기가 아니라 이미지 자체의 픽셀을 기준으로 측정됩니다. 크기는 짧은 변에 대한 백분율이므로 작은 이미지에서도 큰 이미지에서도 마크가 똑같이 보입니다. 텍스트는 페이지와 같은 세리프체로 쓰이며, 흰 글자가 밝은 배경에서도 보이도록 뒤에 어두운 테두리를 넣을 수 있습니다.","\u003cstrong>전체에 반복\u003c/strong>은 고른 각도로 마크를 이미지 전체에 반복합니다. 이것이 정직한 종류의 워터마크입니다. 모서리의 마크는 쉽게 잘려 나가지만 전체에 반복한 마크는 덧칠해서 지워야 합니다. 어느 쪽도 보호는 아닙니다. 워터마크는 누가 만들었는지 알려 주고 가벼운 재사용을 불편하게 할 뿐, 작정한 사람을 막지 못하며 눈에 보이는 것은 어떤 것도 그럴 수 없습니다. 이 페이지는 그 아이디어를 파는 대신 그렇게 말하는 쪽을 택합니다.","로고는 자체 파일에서 같은 비율 크기로 그려지며 비율과 투명도가 유지됩니다. SVG 로고는 선언된 크기로 그린 뒤 확대·축소되므로, 너비와 높이가 들어 있지 않은 로고는 작게 나올 수 있습니다. 알파 채널이 있는 PNG가 안전한 선택입니다.","JPEG 출력은 이미지 전체를 다시 압축합니다. PNG는 정확히 보존하지만 사진에서는 훨씬 큽니다. 메타데이터는 캔버스를 거치면 남지 않으므로 서명한 사본에는 EXIF도 GPS도 없습니다. 두 파일 모두 이 탭에서 읽고, 페이지는 네트워크 요청을 하지 않으며, 놓은 내용은 저장되지 않습니다. 다크 모드와 언어 버튼은 각자의 설정을 이 브라우저의 로컬 저장소에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","이미지에 워터마크 넣기 — 텍스트 또는 로고, 모서리 또는 반복 — MDV","이미지에 텍스트나 로고 워터마크를 넣습니다. 모서리를 고르거나 전체에 반복하고, 크기와 불투명도를 조절한 뒤 다운로드하세요. 이미지는 기기를 벗어나지 않습니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","서명할 이미지 선택","마크 종류","크기(이미지 대비 비율)","불투명도","각도(도)","마크 색상","위치","출력 형식","읽을 수 없습니다","브라우저가 {name} 읽기를 중단했습니다.","디코딩할 수 없습니다","{name}을(를) 이미지로 디코딩하지 못했습니다.","그 파일을 이미지로 디코딩하지 못했습니다.","너무 큼","{name}은(는) {size}입니다. 이 페이지는 {max}까지 서명합니다.","이미지가 아닙니다","{name}은(는) {type}입니다. JPEG, PNG, WebP를 놓으세요.","그 파일은 {type}입니다. JPEG, PNG, WebP를 놓으세요.","아직 입력한 내용이 없습니다","아직 로고를 고르지 않았습니다","{mark} · 짧은 변의 {size}% · 불투명도 {opacity}%","전체 반복","{w} × {h} px · {name}(으)로 저장, {size}","마크로 쓸 내용을 입력하면 이미지에 나타납니다.","로고 파일을 고르세요. 투명도가 있는 PNG가 가장 잘 맞습니다.","전체에 반복한 마크는 잘라낼 수 없고 덧칠해서 지워야 하며, 워터마크가 누군가를 늦추는 이유는 그것뿐입니다. 그래도 보호는 아닙니다.","모서리의 마크는 자르기 한 번이면 사라집니다. 그게 중요하다면 전체에 반복하세요.","PNG는 놓은 JPEG보다 몇 배나 커지며, 사진에서는 얻는 것이 없습니다.","서명한 사본에는 EXIF도 GPS도 없습니다. 캔버스는 어느 쪽도 유지하지 않습니다.","슬라이더를 움직인 뒤 다운로드하세요","마크가 비어 있습니다","왼쪽 위","위","오른쪽 위","왼쪽","가운데","오른쪽","왼쪽 아래","아래","오른쪽 아래","로고가 너무 큼","{name}은(는) {size}입니다.","인코딩할 수 없습니다","이 브라우저에서 {format}을(를) 만들지 못했습니다. JPEG를 사용해 보세요.","이미지와 미디어",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文字","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","用文字或徽标为图片署名,放在一角,或平铺满整张图片。","在此设备上运行","可离线使用","拖入 JPEG、PNG 或 WebP — 最大 30 MB","将图片拖到上方","徽标","选择徽标","平铺","标记","大小","不透明度","角度","颜色","背后加深色描边","位置","左上","上","右上","左","居中","右","左下","下","右下","下载","来源","输出","工作原理","图片以原始大小绘制到画布上,标记画在它上面,所以你下载的是一张没有图层的平面图片:你设置的大小和位置是按图片自身的像素来衡量的,而不是屏幕上的预览。大小是短边的百分比,因此标记在小图和大图上看起来一样。文字使用与本页相同的衬线字体,可在后面加一圈深色描边,让白色文字在浅色背景上也能看清。","\u003cstrong>平铺\u003c/strong>会按所选角度把标记重复铺满整张图片。这是诚实的水印做法:角落里的标记很容易被裁掉,而平铺的标记必须被涂抹掉。两者都不是保护。水印说明是谁做的,让随手转用变得麻烦;它拦不住下定决心的人,任何仍然可见的东西也都做不到——本页宁愿如实说明,也不向你兜售这个想法。","徽标会从它自己的文件按同样的百分比大小绘制,保留比例和透明度。SVG 徽标按其声明的大小绘制后再缩放,所以没有写明宽高的徽标可能会偏小;带 alpha 通道的 PNG 最稳妥。","输出为 JPEG 会重新压缩整张图片;PNG 能精确保留,但对照片来说体积大得多。元数据无法通过画布保留,因此署名后的副本不含 EXIF 或 GPS。两个文件都在此标签页内读取,页面不发出任何网络请求,你拖入的内容也不会被保存;“深色”和“语言”按钮各自把设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","给图片加水印 — 文字或徽标,一角或平铺 — MDV","为图片加上文字或徽标水印:选择一个角落或平铺整张图片,调整大小和不透明度后下载。图片不会离开设备。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择要署名的图片","标记类型","大小,占图片的百分比","不透明度","角度(度)","标记颜色","位置","输出格式","无法读取","浏览器中断了对 {name} 的读取。","无法解码","{name} 无法解码为图片。","该文件无法解码为图片。","太大","{name} 为 {size}。本页最多可处理 {max}。","不是图片","{name} 是 {type}。请拖入 JPEG、PNG 或 WebP。","该文件是 {type}。请拖入 JPEG、PNG 或 WebP。","尚未输入任何内容","尚未选择徽标","{mark} · 短边的 {size}% · 不透明度 {opacity}%","平铺","{w} × {h} px · 已写为 {name},{size}","为标记输入一些内容,它就会出现在图片上。","请选择徽标文件:带透明度的 PNG 效果最好。","平铺的标记无法裁掉,只能涂抹去除,这是水印能拖慢别人的唯一原因。但它仍然不是保护。","角落里的标记裁剪一下就没了。如果这很重要,请改用平铺。","PNG 会比你拖入的 JPEG 大好几倍,对照片来说没有任何好处。","署名后的副本不含 EXIF 或 GPS:画布不会保留它们。","拖动滑块,然后下载","标记为空","左上","上","右上","左","居中","右","左下","下","右下","徽标太大","{name} 为 {size}。","无法编码","此浏览器无法生成 {format}。请试试 JPEG。","图像与媒体",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2431,15 +2644,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     err.hidden = which !== "error";
     ok.hidden = which !== "ok";
   }
-  function bad(title, message) { errtitle.textContent = title; errmsg.textContent = message; state("error"); }
+  // the failure is kept as keys and values so it can be worded again in another language
+  var lastBad = null, written = null;
+  function showBad() { errtitle.textContent = tr(lastBad.title); errmsg.textContent = tr(lastBad.message, lastBad.vars); }
+  function bad(title, message, vars) { lastBad = { title: title, message: message, vars: vars }; showBad(); state("error"); }
 
   function readImage(f, then) {
     var reader = new FileReader();
-    reader.onerror = function () { bad("Could not read that", "The browser stopped reading " + f.name + "."); };
+    reader.onerror = function () { bad(trk("Could not read that"), trk("The browser stopped reading {name}."), { name: f.name }); };
     reader.onload = function () {
       var img = new Image();
       img.onload = function () { then(img, String(reader.result)); };
-      img.onerror = function () { bad("Could not decode that", (f.name || "That file") + " did not decode as a picture."); };
+      img.onerror = function () { f.name ? bad(trk("Could not decode that"), trk("{name} did not decode as a picture."), { name: f.name }) : bad(trk("Could not decode that"), trk("That file did not decode as a picture.")); };
       img.src = String(reader.result);
     };
     reader.readAsDataURL(f);
@@ -2448,8 +2664,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function take(files) {
     if (!files || !files.length) return;
     var f = files[0];
-    if (f.size > MAX_BYTES) { bad("Too large", f.name + " is " + bytes(f.size) + ". This page signs up to " + bytes(MAX_BYTES) + "."); return; }
-    if (f.type && f.type.indexOf("image/") !== 0) { bad("Not a picture", (f.name || "That file") + " is " + f.type + ". Drop a JPEG, PNG or WebP."); return; }
+    if (f.size > MAX_BYTES) { bad(trk("Too large"), trk("{name} is {size}. This page signs up to {max}."), { name: f.name, size: bytes(f.size), max: bytes(MAX_BYTES) }); return; }
+    if (f.type && f.type.indexOf("image/") !== 0) {
+      if (f.name) bad(trk("Not a picture"), trk("{name} is {type}. Drop a JPEG, PNG or WebP."), { name: f.name, type: f.type });
+      else bad(trk("Not a picture"), trk("That file is {type}. Drop a JPEG, PNG or WebP."), { type: f.type });
+      return;
+    }
     readImage(f, function (img) {
       image = { w: img.naturalWidth, h: img.naturalHeight };
       current = { file: f, img: img };
@@ -2460,7 +2680,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   }
 
-  function paint() {
+  function paint() { written = null; draw(); }
+  function draw() {
     if (!image) return;
     var ctx = out.getContext("2d");
     ctx.clearRect(0, 0, image.w, image.h);
@@ -2491,22 +2712,23 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       ctx.restore();
     }
 
-    var markText = kind === "text" ? (text.trim() ? "“" + text.trim() + "”" : "nothing typed yet")
-      : (logo ? logo.name + " · " + logo.w + " × " + logo.h + " px" : "no logo chosen yet");
+    var markText = kind === "text" ? (text.trim() ? "“" + text.trim() + "”" : tr("nothing typed yet"))
+      : (logo ? logo.name + " · " + logo.w + " × " + logo.h + " px" : tr("no logo chosen yet"));
     $("k-src").textContent = current.file.name + " · " + image.w + " × " + image.h + " px · " + bytes(current.file.size);
-    $("k-mark").textContent = markText + " · " + size.value + "% of the shorter side · " + opacity.value + "% opaque" +
-      (Number(angle.value) ? " · " + angle.value + "°" : "") + (tile.checked ? " · tiled" : " · " + spotWords(spot));
-    $("k-out").textContent = image.w + " × " + image.h + " px · " + (fmt === "jpeg" ? "JPEG" : fmt.toUpperCase());
+    $("k-mark").textContent = tr("{mark} · {size}% of the shorter side · {opacity}% opaque", { mark: markText, size: size.value, opacity: opacity.value }) +
+      (Number(angle.value) ? " · " + angle.value + "°" : "") + (tile.checked ? " · " + tr("tiled") : " · " + spotWords(spot));
+    $("k-out").textContent = written ? tr("{w} × {h} px · written as {name}, {size}", { w: image.w, h: image.h, name: written.name, size: written.size }) :
+      image.w + " × " + image.h + " px · " + (fmt === "jpeg" ? "JPEG" : fmt.toUpperCase());
 
     var notes = [];
-    if (!hasMark) notes.push(kind === "text" ? "Type something for the mark, and it will appear on the picture." : "Choose a logo file: a PNG with transparency signs best.");
-    if (tile.checked) notes.push("A tiled mark has to be painted out rather than cropped off, which is the only reason a watermark slows anyone down. It is still not protection.");
-    else if (hasMark) notes.push("A mark in a corner is one crop away from gone. Tile it if that matters.");
-    if (fmt === "png" && current.file.type === "image/jpeg") notes.push("PNG will be several times larger than the JPEG you dropped, with nothing gained for a photograph.");
-    notes.push("The signed copy carries no EXIF or GPS: a canvas keeps none.");
+    if (!hasMark) notes.push(kind === "text" ? tr("Type something for the mark, and it will appear on the picture.") : tr("Choose a logo file: a PNG with transparency signs best."));
+    if (tile.checked) notes.push(tr("A tiled mark has to be painted out rather than cropped off, which is the only reason a watermark slows anyone down. It is still not protection."));
+    else if (hasMark) notes.push(tr("A mark in a corner is one crop away from gone. Tile it if that matters."));
+    if (fmt === "png" && current.file.type === "image/jpeg") notes.push(tr("PNG will be several times larger than the JPEG you dropped, with nothing gained for a photograph."));
+    notes.push(tr("The signed copy carries no EXIF or GPS: a canvas keeps none."));
     said.textContent = notes.join(" ");
     said.hidden = false;
-    note.textContent = hasMark ? "drag the sliders, then download" : "the mark is empty";
+    note.textContent = hasMark ? tr("drag the sliders, then download") : tr("the mark is empty");
     note.className = "mdv-dot-note" + (hasMark ? " is-ok" : " is-warn");
   }
 
@@ -2548,8 +2770,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     }
   }
   function spotWords(s) {
-    var words = { nw: "top left", n: "top", ne: "top right", w: "left", c: "centre", e: "right", sw: "bottom left", s: "bottom", se: "bottom right" };
-    return words[s];
+    var words = { nw: trk("top left"), n: trk("top"), ne: trk("top right"), w: trk("left"), c: trk("centre"), e: trk("right"),
+      sw: trk("bottom left"), s: trk("bottom"), se: trk("bottom right") };
+    return tr(words[s]);
   }
 
   [size, opacity, angle].forEach(function (slider) {
@@ -2597,7 +2820,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var f = $("logoFile").files && $("logoFile").files[0];
     $("logoFile").value = "";
     if (!f) return;
-    if (f.size > MAX_BYTES) { bad("Logo too large", f.name + " is " + bytes(f.size) + "."); return; }
+    if (f.size > MAX_BYTES) { bad(trk("Logo too large"), trk("{name} is {size}."), { name: f.name, size: bytes(f.size) }); return; }
     readImage(f, function (img) {
       logo = { img: img, name: f.name, w: img.naturalWidth || 300, h: img.naturalHeight || 150 };
       paint();
@@ -2606,7 +2829,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   $("save").addEventListener("click", function () {
     out.toBlob(function (blob) {
-      if (!blob) { bad("Could not encode that", "This browser did not produce a " + fmt.toUpperCase() + ". Try JPEG."); return; }
+      if (!blob) { bad(trk("Could not encode that"), trk("This browser did not produce a {format}. Try JPEG."), { format: fmt.toUpperCase() }); return; }
       var name = current.file.name.replace(/\.[a-z0-9]+$/i, "") + "-signed." + (fmt === "jpeg" ? "jpg" : fmt);
       var url = URL.createObjectURL(blob), a = document.createElement("a");
       a.href = url;
@@ -2615,7 +2838,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       a.click();
       document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-      $("k-out").textContent = image.w + " × " + image.h + " px · written as " + name + ", " + bytes(blob.size);
+      written = { name: name, size: bytes(blob.size) };
+      draw();
     }, "image/" + fmt, fmt === "png" ? undefined : 0.92);
   });
 
@@ -2626,6 +2850,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   ["dragleave", "drop"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove("is-over"); }); });
   drop.addEventListener("drop", function (e) { if (e.dataTransfer && e.dataTransfer.files) take(e.dataTransfer.files); });
 
+  onLang(function () {
+    if (lastBad && !err.hidden) showBad();
+    draw();
+  });
   drop.focus({ preventScroll: true });
   state("empty");
 })();

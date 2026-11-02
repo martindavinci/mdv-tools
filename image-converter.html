@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link is-here" href="./image-converter.html" aria-current="page" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link is-here" href="./image-converter.html" aria-current="page" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,24 +2353,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Image converter</h1>
+      <h1 class="mdv-head-name" data-t="53">Image converter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Change the format of a picture, and see what it costs before you keep it.</p>
+    <p class="mdv-head-line" data-t="79">Change the format of a picture, and see what it costs before you keep it.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
-  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose a picture to convert">
+  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose a picture to convert" data-t-attrs="aria-label">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
-    <span class="mdv-tag">Drop a PNG, JPEG, WebP, GIF, AVIF, BMP or SVG — up to 30 MB</span>
+    <span class="mdv-tag" data-t="82">Drop a PNG, JPEG, WebP, GIF, AVIF, BMP or SVG — up to 30 MB</span>
     <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/gif,image/avif,image/bmp,image/svg+xml" class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>drop a picture above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="83">drop a picture above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Cannot convert that</span>
@@ -2267,77 +2379,78 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <div id="ok" hidden>
       <div class="mdv-row is-between">
-        <div class="mdv-seg" role="group" aria-label="Convert to">
+        <div class="mdv-seg" role="group" aria-label="Convert to" data-t-attrs="aria-label">
           <button type="button" data-to="png" class="is-on" aria-pressed="true">PNG</button>
           <button type="button" data-to="jpeg" aria-pressed="false">JPEG</button>
           <button type="button" data-to="webp" aria-pressed="false">WebP</button>
         </div>
         <div class="mdv-row" style="gap:var(--space-2)" id="qualityRow" hidden>
-          <label class="mdv-tag" for="quality">Quality</label>
-          <input id="quality" type="range" min="30" max="100" step="5" value="85" style="width:150px" aria-label="Quality">
+          <label class="mdv-tag" for="quality" data-t="84">Quality</label>
+          <input id="quality" type="range" min="30" max="100" step="5" value="85" style="width:150px" aria-label="Quality" data-t-attrs="aria-label">
           <span class="mdv-mono" id="qualityOut">0.85</span>
         </div>
       </div>
 
       <div class="mdv-row is-between">
-        <label class="mdv-check"><input type="checkbox" id="flatten"> Put a colour behind transparency</label>
-        <input id="colour" type="color" value="#ffffff" aria-label="Colour behind transparency" disabled>
+        <label class="mdv-check"><input type="checkbox" id="flatten"> <span data-t="85">Put a colour behind transparency</span></label>
+        <input id="colour" type="color" value="#ffffff" aria-label="Colour behind transparency" data-t-attrs="aria-label" disabled>
       </div>
 
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Source</dt><dd id="k-src"></dd>
-          <dt>Result</dt><dd id="k-out"></dd>
-          <dt>Change</dt><dd id="k-change"></dd>
+          <dt data-t="86">Source</dt><dd id="k-src"></dd>
+          <dt data-t="87">Result</dt><dd id="k-out"></dd>
+          <dt data-t="88">Change</dt><dd id="k-change"></dd>
         </dl>
       </div>
 
       <div class="mdv-row is-between">
         <p class="mdv-dot-note" id="note"></p>
-        <button class="mdv-btn" type="button" id="save" disabled>Download</button>
+        <button class="mdv-btn" type="button" id="save" disabled><span data-t="89">Download</span></button>
       </div>
       <p class="mdv-hint" id="said" hidden></p>
     </div>
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="90">How this works</summary>
     <div class="mdv-method-body">
-      <p>The picture is decoded by the browser, drawn on a canvas at its full size, and encoded again in
+      <p data-t="91">The picture is decoded by the browser, drawn on a canvas at its full size, and encoded again in
         the format you choose. That means three formats out — PNG, JPEG and WebP — because those are the
         three every browser can write. It reads more than it writes: AVIF, BMP, GIF and SVG come in fine if
         this browser decodes them, and the page checks rather than assumes. <strong>AVIF and JPEG XL are
         not offered as outputs</strong>, and the honest reason is that no browser will encode them from a
         canvas: producing them needs a WebAssembly codec of a megabyte or more shipped with the page, which
         this site will not do for one button.</p>
-      <p>Going to JPEG throws away transparency, so any transparent area becomes the colour you pick — white
+      <p data-t="92">Going to JPEG throws away transparency, so any transparent area becomes the colour you pick — white
         unless you say otherwise — and the page says so before you download rather than after you notice.
         PNG is lossless: converting a JPEG to PNG cannot recover what JPEG already discarded, and the file
         usually grows several times over, which is why the size change is printed in both directions.
         Quality applies to JPEG and WebP only; PNG ignores it.</p>
-      <p>Two things do not survive the canvas: metadata and animation. EXIF, GPS and the colour profile are
+      <p data-t="93">Two things do not survive the canvas: metadata and animation. EXIF, GPS and the colour profile are
         gone from the result — usually what you want, and worth knowing when it is not — and an animated
         GIF or WebP arrives as its first frame alone. The page says which of those applied to your file.</p>
-      <p>Everything happens in this tab. The file is read with <code>FileReader</code>, the page makes no
-        network requests, and nothing you drop is stored; the Dark button keeps its own setting in this
+      <p data-t="94">Everything happens in this tab. The file is read with <code>FileReader</code>, the page makes no
+        network requests, and nothing you drop is stored; the Dark and language buttons keep their own settings in this
         browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Image &amp; Media">
-    <span class="mdv-tag">Also in Image &amp; Media</span>
-    <a href="./image-cropper.html">Image cropper</a>
-    <a href="./image-resizer.html">Image resize</a>
-    <a href="./pixelate-image.html">Redact an image</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Image &amp; Media"}'>Also in Image &amp; Media</span>
+    <a href="./image-cropper.html" data-t="52">Image cropper</a>
+    <a href="./image-resizer.html" data-t="54">Image resize</a>
+    <a href="./pixelate-image.html" data-t="55">Redact an image</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="95">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="96">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="97" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="98">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2348,6 +2461,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Image Converter — PNG, JPEG and WebP, on your device — MDV","Convert a picture between PNG, JPEG and WebP with the quality you choose, and see the size before you download. Reads AVIF and HEIC-free formats; the file never leaves the device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Choose a picture to convert","Convert to","Quality","Colour behind transparency","Too large","{name} is {size}. This page converts up to {max}.","Not a picture","{name} is {type}. Drop an image file.","That file","Could not read that","The browser stopped reading {name}.","This browser cannot decode that","{name} is {kind}, and this browser did not decode it. AVIF needs a recent browser; HEIC from an iPhone is not decoded by any of them, so export it as JPEG first.","This browser did not write that format","Nothing came back as {format} from the canvas. PNG always works; try that.","It returned {returned} instead of image/{to}, which means it cannot encode {format}. PNG always works.","{format} · {size} · written as {name}","{format} · {size}, lossless","{format} · {size}, quality {quality}","{pct}% larger than the original","{pct}% smaller than the original","JPEG has no transparency: anything transparent is now the colour you chose.","JPEG has no transparency: anything transparent is now white.","A JPEG turned into a PNG is usually several times larger and no better: PNG cannot restore what JPEG already threw away.","WebP is doing what it is good at here: the same picture, smaller.","If that file was animated, only its first frame has been converted.","The result carries no EXIF, GPS or colour profile: a canvas keeps none of them.","converted in this tab, nothing uploaded","Image & Media","2026-11-02"],"h":99,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Cambia el formato de una imagen y mira lo que cuesta antes de quedártela.","En este dispositivo","Funciona sin conexión","Suelta un PNG, JPEG, WebP, GIF, AVIF, BMP o SVG — hasta 30 MB","suelta una imagen arriba","Calidad","Poner un color detrás de la transparencia","Origen","Resultado","Cambio","Descargar","Cómo funciona","El navegador decodifica la imagen, la dibuja en un lienzo a su tamaño completo y la codifica de nuevo en el formato que elijas. Por eso hay tres formatos de salida — PNG, JPEG y WebP — porque son los tres que todos los navegadores saben escribir. Lee más de lo que escribe: AVIF, BMP, GIF y SVG entran sin problema si este navegador los decodifica, y la página lo comprueba en lugar de suponerlo. \u003cstrong>AVIF y JPEG XL no se ofrecen como salida\u003c/strong>, y la razón sincera es que ningún navegador los codificará desde un lienzo: producirlos exige un códec WebAssembly de un megabyte o más incluido en la página, algo que este sitio no hará por un solo botón.","Pasar a JPEG descarta la transparencia, así que cualquier zona transparente toma el color que elijas — blanco si no dices otra cosa — y la página lo avisa antes de que descargues, no después de que lo notes. PNG no pierde información: convertir un JPEG a PNG no puede recuperar lo que JPEG ya descartó, y el archivo suele crecer varias veces, por eso el cambio de tamaño se muestra en ambos sentidos. La calidad se aplica solo a JPEG y WebP; PNG la ignora.","Dos cosas no sobreviven al lienzo: los metadatos y la animación. EXIF, GPS y el perfil de color desaparecen del resultado — normalmente lo que quieres, y conviene saberlo cuando no lo es — y un GIF o WebP animado llega solo como su primer fotograma. La página indica cuáles de ellas se aplicaron a tu archivo.","Todo ocurre en esta pestaña. El archivo se lee con \u003ccode>FileReader\u003c/code>, la página no hace peticiones de red y nada de lo que sueltes se guarda; los botones de modo oscuro e idioma guardan cada uno su ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Conversor de imágenes — PNG, JPEG y WebP, en tu dispositivo — MDV","Convierte una imagen entre PNG, JPEG y WebP con la calidad que elijas y mira el tamaño antes de descargar. Lee AVIF y otros formatos que no son HEIC; el archivo nunca sale del dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elegir una imagen para convertir","Convertir a","Calidad","Color detrás de la transparencia","Demasiado grande","{name} pesa {size}. Esta página convierte hasta {max}.","No es una imagen","{name} es {type}. Suelta un archivo de imagen.","Ese archivo","No se pudo leer","El navegador dejó de leer {name}.","Este navegador no puede decodificarlo","{name} es {kind}, y este navegador no lo decodificó. AVIF necesita un navegador reciente; ninguno decodifica el HEIC de un iPhone, así que expórtalo antes como JPEG.","Este navegador no escribió ese formato","El lienzo no devolvió nada como {format}. PNG siempre funciona; prueba con ese.","Devolvió {returned} en lugar de image/{to}, lo que significa que no puede codificar {format}. PNG siempre funciona.","{format} · {size} · guardado como {name}","{format} · {size}, sin pérdida","{format} · {size}, calidad {quality}","{pct}% más grande que el original","{pct}% más pequeño que el original","JPEG no tiene transparencia: lo que era transparente ahora es del color que elegiste.","JPEG no tiene transparencia: lo que era transparente ahora es blanco.","Un JPEG convertido a PNG suele ser varias veces más grande y no mejor: PNG no puede restaurar lo que JPEG ya descartó.","WebP hace aquí lo que mejor sabe: la misma imagen, más pequeña.","Si ese archivo estaba animado, solo se ha convertido su primer fotograma.","El resultado no lleva EXIF, GPS ni perfil de color: un lienzo no conserva ninguno.","convertido en esta pestaña, nada se sube","Imagen y multimedia",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Changez le format d’une image et voyez ce que cela coûte avant de la garder.","Sur cet appareil","Fonctionne hors ligne","Déposez un PNG, JPEG, WebP, GIF, AVIF, BMP ou SVG — jusqu’à 30 Mo","déposez une image ci-dessus","Qualité","Mettre une couleur derrière la transparence","Source","Résultat","Écart","Télécharger","Comment ça marche","Le navigateur décode l’image, la dessine sur un canvas à sa taille réelle, puis la réencode dans le format choisi. D’où trois formats de sortie — PNG, JPEG et WebP — car ce sont les trois que tous les navigateurs savent écrire. Elle lit plus qu’elle n’écrit : AVIF, BMP, GIF et SVG passent sans problème si ce navigateur les décode, et la page le vérifie au lieu de le supposer. \u003cstrong>AVIF et JPEG XL ne sont pas proposés en sortie\u003c/strong>, et la vraie raison est qu’aucun navigateur ne les encode depuis un canvas : les produire exige un codec WebAssembly d’un mégaoctet ou plus livré avec la page, ce que ce site ne fera pas pour un seul bouton.","Passer en JPEG supprime la transparence : toute zone transparente prend donc la couleur choisie — blanc sauf indication contraire — et la page l’indique avant le téléchargement, pas après que vous l’avez remarqué. PNG est sans perte : convertir un JPEG en PNG ne peut pas récupérer ce que JPEG a déjà éliminé, et le fichier grossit en général plusieurs fois, d’où l’écart de taille affiché dans les deux sens. La qualité ne concerne que JPEG et WebP ; PNG l’ignore.","Deux choses ne survivent pas au canvas : les métadonnées et l’animation. EXIF, GPS et le profil colorimétrique disparaissent du résultat — souvent ce que l’on veut, et bon à savoir quand ce n’est pas le cas — et un GIF ou WebP animé n’arrive que sous la forme de sa première image. La page indique lesquelles de ces pertes s’appliquent à votre fichier.","Tout se passe dans cet onglet. Le fichier est lu avec \u003ccode>FileReader\u003c/code>, la page ne fait aucune requête réseau et rien de ce que vous déposez n’est stocké ; les boutons Sombre et Langue gardent chacun leur réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Convertisseur d’images — PNG, JPEG et WebP, sur votre appareil — MDV","Convertissez une image entre PNG, JPEG et WebP avec la qualité de votre choix et voyez la taille avant de télécharger. Lit AVIF et les formats autres que HEIC ; le fichier ne quitte jamais l’appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisir une image à convertir","Convertir en","Qualité","Couleur derrière la transparence","Trop volumineux","{name} pèse {size}. Cette page convertit jusqu’à {max}.","Ce n’est pas une image","{name} est {type}. Déposez un fichier image.","Ce fichier","Lecture impossible","Le navigateur a cessé de lire {name}.","Ce navigateur ne peut pas le décoder","{name} est {kind}, et ce navigateur ne l’a pas décodé. AVIF demande un navigateur récent ; aucun ne décode le HEIC d’un iPhone, exportez-le donc d’abord en JPEG.","Ce navigateur n’a pas écrit ce format","Le canvas n’a rien renvoyé en {format}. PNG fonctionne toujours ; essayez celui-là.","Il a renvoyé {returned} au lieu de image/{to}, ce qui signifie qu’il ne peut pas encoder {format}. PNG fonctionne toujours.","{format} · {size} · écrit sous {name}","{format} · {size}, sans perte","{format} · {size}, qualité {quality}","{pct} % plus gros que l’original","{pct} % plus petit que l’original","JPEG n’a pas de transparence : tout ce qui était transparent a maintenant la couleur choisie.","JPEG n’a pas de transparence : tout ce qui était transparent est maintenant blanc.","Un JPEG converti en PNG est en général plusieurs fois plus gros sans être meilleur : PNG ne peut pas restaurer ce que JPEG a déjà éliminé.","WebP fait ici ce qu’il sait faire : la même image, plus petite.","Si ce fichier était animé, seule sa première image a été convertie.","Le résultat ne contient ni EXIF, ni GPS, ni profil colorimétrique : un canvas n’en garde aucun.","converti dans cet onglet, rien n’est envoyé","Image et médias",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Ändere das Format eines Bildes und sieh, was es kostet, bevor du es behältst.","Läuft auf diesem Gerät","Funktioniert offline","PNG, JPEG, WebP, GIF, AVIF, BMP oder SVG ablegen — bis 30 MB","Bild oben ablegen","Qualität","Farbe hinter Transparenz setzen","Quelle","Ergebnis","Änderung","Herunterladen","So funktioniert es","Der Browser dekodiert das Bild, zeichnet es in voller Größe auf eine Canvas und kodiert es im gewählten Format neu. Deshalb gibt es drei Ausgabeformate — PNG, JPEG und WebP —, denn diese drei kann jeder Browser schreiben. Gelesen wird mehr, als geschrieben wird: AVIF, BMP, GIF und SVG kommen problemlos herein, wenn dieser Browser sie dekodiert, und die Seite prüft das, statt es anzunehmen. \u003cstrong>AVIF und JPEG XL werden nicht als Ausgabe angeboten\u003c/strong>, und der ehrliche Grund ist, dass kein Browser sie aus einer Canvas kodiert: Sie zu erzeugen bräuchte einen WebAssembly-Codec von einem Megabyte oder mehr, der mit der Seite ausgeliefert wird, und das tut diese Seite nicht für einen einzigen Button.","Der Wechsel zu JPEG verwirft die Transparenz, daher nimmt jeder transparente Bereich die gewählte Farbe an — Weiß, falls du nichts anderes sagst — und die Seite sagt das vor dem Download, nicht erst nachdem du es bemerkt hast. PNG ist verlustfrei: Ein JPEG in PNG umzuwandeln kann nicht zurückholen, was JPEG schon verworfen hat, und die Datei wird meist um ein Mehrfaches größer, weshalb die Größenänderung in beide Richtungen angezeigt wird. Die Qualität gilt nur für JPEG und WebP; PNG ignoriert sie.","Zwei Dinge überstehen die Canvas nicht: Metadaten und Animation. EXIF, GPS und das Farbprofil fehlen im Ergebnis — meist gewollt, und wissenswert, wenn nicht — und ein animiertes GIF oder WebP kommt nur als sein erstes Einzelbild an. Die Seite sagt, was davon auf deine Datei zutraf.","Alles geschieht in diesem Tab. Die Datei wird mit \u003ccode>FileReader\u003c/code> gelesen, die Seite stellt keine Netzwerkanfragen, und nichts, was du ablegst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten jeweils ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Bildkonverter — PNG, JPEG und WebP, auf deinem Gerät — MDV","Wandle ein Bild zwischen PNG, JPEG und WebP um, mit der Qualität deiner Wahl, und sieh die Größe vor dem Download. Liest AVIF und andere Formate außer HEIC; die Datei verlässt nie das Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Bild zum Umwandeln auswählen","Umwandeln in","Qualität","Farbe hinter Transparenz","Zu groß","{name} ist {size} groß. Diese Seite wandelt bis zu {max} um.","Kein Bild","{name} ist {type}. Lege eine Bilddatei ab.","Diese Datei","Konnte nicht gelesen werden","Der Browser hat das Lesen von {name} abgebrochen.","Dieser Browser kann das nicht dekodieren","{name} ist {kind}, und dieser Browser hat es nicht dekodiert. AVIF braucht einen aktuellen Browser; HEIC vom iPhone dekodiert keiner, exportiere es also zuerst als JPEG.","Dieser Browser hat das Format nicht geschrieben","Die Canvas hat nichts als {format} geliefert. PNG funktioniert immer; versuche es damit.","Er lieferte {returned} statt image/{to}, was bedeutet, dass er {format} nicht kodieren kann. PNG funktioniert immer.","{format} · {size} · geschrieben als {name}","{format} · {size}, verlustfrei","{format} · {size}, Qualität {quality}","{pct} % größer als das Original","{pct} % kleiner als das Original","JPEG kennt keine Transparenz: Alles Transparente hat jetzt die gewählte Farbe.","JPEG kennt keine Transparenz: Alles Transparente ist jetzt weiß.","Ein in PNG umgewandeltes JPEG ist meist um ein Mehrfaches größer und nicht besser: PNG kann nicht wiederherstellen, was JPEG schon verworfen hat.","WebP zeigt hier, was es kann: dasselbe Bild, kleiner.","Falls die Datei animiert war, wurde nur ihr erstes Einzelbild umgewandelt.","Das Ergebnis enthält kein EXIF, kein GPS und kein Farbprofil: Eine Canvas behält nichts davon.","in diesem Tab umgewandelt, nichts hochgeladen","Bild und Medien",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Cambia il formato di un’immagine e guarda quanto costa prima di tenerla.","Su questo dispositivo","Funziona offline","Trascina un PNG, JPEG, WebP, GIF, AVIF, BMP o SVG — fino a 30 MB","trascina un’immagine qui sopra","Qualità","Metti un colore dietro la trasparenza","Origine","Risultato","Variazione","Scarica","Come funziona","Il browser decodifica l’immagine, la disegna su un canvas alla sua dimensione piena e la codifica di nuovo nel formato scelto. Per questo i formati in uscita sono tre — PNG, JPEG e WebP — perché sono i tre che ogni browser sa scrivere. Legge più di quanto scrive: AVIF, BMP, GIF e SVG entrano senza problemi se questo browser li decodifica, e la pagina lo verifica invece di darlo per scontato. \u003cstrong>AVIF e JPEG XL non sono offerti in uscita\u003c/strong>, e la ragione onesta è che nessun browser li codifica da un canvas: produrli richiederebbe un codec WebAssembly di un megabyte o più distribuito con la pagina, cosa che questo sito non farà per un solo pulsante.","Passare a JPEG elimina la trasparenza, quindi ogni area trasparente prende il colore che scegli — bianco se non dici altro — e la pagina lo dice prima che tu scarichi, non dopo che te ne accorgi. PNG è senza perdita: convertire un JPEG in PNG non può recuperare ciò che JPEG ha già scartato, e il file di solito diventa diverse volte più grande, ed è per questo che la variazione di dimensione è mostrata in entrambe le direzioni. La qualità vale solo per JPEG e WebP; PNG la ignora.","Due cose non sopravvivono al canvas: i metadati e l’animazione. EXIF, GPS e il profilo colore spariscono dal risultato — di solito è ciò che vuoi, ed è utile saperlo quando non lo è — e una GIF o WebP animata arriva solo come primo fotogramma. La pagina dice quali di queste cose valgono per il tuo file.","Tutto avviene in questa scheda. Il file viene letto con \u003ccode>FileReader\u003c/code>, la pagina non fa richieste di rete e nulla di ciò che trascini viene salvato; i pulsanti Scuro e Lingua conservano ciascuno la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Convertitore di immagini — PNG, JPEG e WebP, sul tuo dispositivo — MDV","Converti un’immagine tra PNG, JPEG e WebP con la qualità che scegli e guarda la dimensione prima di scaricare. Legge AVIF e formati diversi da HEIC; il file non lascia mai il dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli un’immagine da convertire","Converti in","Qualità","Colore dietro la trasparenza","Troppo grande","{name} pesa {size}. Questa pagina converte fino a {max}.","Non è un’immagine","{name} è {type}. Trascina un file immagine.","Quel file","Impossibile leggerlo","Il browser ha smesso di leggere {name}.","Questo browser non riesce a decodificarlo","{name} è {kind}, e questo browser non l’ha decodificato. AVIF richiede un browser recente; nessuno decodifica l’HEIC di un iPhone, quindi esportalo prima come JPEG.","Questo browser non ha scritto quel formato","Il canvas non ha restituito nulla come {format}. PNG funziona sempre; prova con quello.","Ha restituito {returned} invece di image/{to}, il che significa che non può codificare {format}. PNG funziona sempre.","{format} · {size} · scritto come {name}","{format} · {size}, senza perdita","{format} · {size}, qualità {quality}","{pct}% più grande dell’originale","{pct}% più piccolo dell’originale","JPEG non ha trasparenza: ciò che era trasparente ora ha il colore che hai scelto.","JPEG non ha trasparenza: ciò che era trasparente ora è bianco.","Un JPEG trasformato in PNG di solito è diverse volte più grande e non migliore: PNG non può ripristinare ciò che JPEG ha già scartato.","WebP qui fa ciò che gli riesce meglio: la stessa immagine, più piccola.","Se quel file era animato, è stato convertito solo il suo primo fotogramma.","Il risultato non contiene EXIF, GPS né profilo colore: un canvas non ne conserva nessuno.","convertito in questa scheda, nulla viene caricato","Immagini e media",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Mude o formato de uma imagem e veja o que isso custa antes de ficar com ela.","Neste dispositivo","Funciona offline","Solte um PNG, JPEG, WebP, GIF, AVIF, BMP ou SVG — até 30 MB","solte uma imagem acima","Qualidade","Pôr uma cor atrás da transparência","Origem","Resultado","Variação","Baixar","Como funciona","O navegador decodifica a imagem, desenha em um canvas no tamanho original e a codifica de novo no formato escolhido. Por isso são três formatos de saída — PNG, JPEG e WebP — porque são os três que todo navegador sabe escrever. Ele lê mais do que escreve: AVIF, BMP, GIF e SVG entram sem problema se este navegador os decodifica, e a página confere em vez de presumir. \u003cstrong>AVIF e JPEG XL não são oferecidos como saída\u003c/strong>, e o motivo honesto é que nenhum navegador os codifica a partir de um canvas: produzi-los exigiria um codec WebAssembly de um megabyte ou mais enviado com a página, o que este site não fará por um único botão.","Converter para JPEG descarta a transparência, então qualquer área transparente vira a cor que você escolher — branco, se você não disser outra — e a página avisa antes do download, não depois de você perceber. PNG não tem perdas: converter um JPEG em PNG não recupera o que o JPEG já descartou, e o arquivo costuma crescer várias vezes, por isso a variação de tamanho é mostrada nos dois sentidos. A qualidade vale só para JPEG e WebP; PNG a ignora.","Duas coisas não sobrevivem ao canvas: metadados e animação. EXIF, GPS e o perfil de cor somem do resultado — geralmente o que você quer, e vale saber quando não é — e um GIF ou WebP animado chega só como o primeiro quadro. A página diz quais dessas coisas se aplicaram ao seu arquivo.","Tudo acontece nesta aba. O arquivo é lido com \u003ccode>FileReader\u003c/code>, a página não faz requisições de rede e nada do que você solta é armazenado; os botões Escuro e Idioma guardam cada um a sua configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Conversor de imagens — PNG, JPEG e WebP, no seu dispositivo — MDV","Converta uma imagem entre PNG, JPEG e WebP com a qualidade que escolher e veja o tamanho antes de baixar. Lê AVIF e formatos que não sejam HEIC; o arquivo nunca sai do dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolher uma imagem para converter","Converter para","Qualidade","Cor atrás da transparência","Grande demais","{name} tem {size}. Esta página converte até {max}.","Não é uma imagem","{name} é {type}. Solte um arquivo de imagem.","Esse arquivo","Não foi possível ler","O navegador parou de ler {name}.","Este navegador não consegue decodificar","{name} é {kind}, e este navegador não o decodificou. AVIF exige um navegador recente; nenhum decodifica o HEIC de um iPhone, então exporte-o antes como JPEG.","Este navegador não gravou esse formato","O canvas não devolveu nada como {format}. PNG sempre funciona; tente esse.","Devolveu {returned} em vez de image/{to}, o que significa que não consegue codificar {format}. PNG sempre funciona.","{format} · {size} · gravado como {name}","{format} · {size}, sem perdas","{format} · {size}, qualidade {quality}","{pct}% maior que o original","{pct}% menor que o original","JPEG não tem transparência: o que era transparente agora tem a cor que você escolheu.","JPEG não tem transparência: o que era transparente agora é branco.","Um JPEG convertido em PNG costuma ficar várias vezes maior e não melhor: PNG não restaura o que o JPEG já descartou.","O WebP faz aqui o que sabe fazer: a mesma imagem, menor.","Se esse arquivo era animado, só o primeiro quadro foi convertido.","O resultado não leva EXIF, GPS nem perfil de cor: um canvas não guarda nenhum deles.","convertido nesta aba, nada é enviado","Imagem e mídia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","画像の形式を変え、保存する前にその代償を確認できます。","この端末で動作","オフラインで動作","PNG、JPEG、WebP、GIF、AVIF、BMP、SVG をドロップ(30 MB まで)","上に画像をドロップ","品質","透明部分の背後に色を敷く","元","結果","変化","ダウンロード","仕組み","ブラウザーが画像をデコードし、キャンバスに原寸で描画して、選んだ形式で再びエンコードします。出力が PNG、JPEG、WebP の 3 形式なのは、すべてのブラウザーが書き出せるのがこの 3 つだからです。読み込めるものは書き出せるものより多く、AVIF、BMP、GIF、SVG は、このブラウザーがデコードできれば問題なく読み込めます。ページは思い込まずに実際に確認します。\u003cstrong>AVIF と JPEG XL は出力として提供しません\u003c/strong>。正直な理由は、どのブラウザーもキャンバスからそれらをエンコードできないことです。作るには 1 MB 以上の WebAssembly コーデックをページに同梱する必要があり、このサイトはボタン 1 つのためにそれをしません。","JPEG にすると透明が失われるため、透明な部分は選んだ色(指定がなければ白)になります。ページはダウンロードの前に、気づいた後ではなく前にそれを知らせます。PNG は可逆です。JPEG を PNG に変換しても、JPEG がすでに捨てた情報は戻らず、ファイルは通常数倍に大きくなります。そのためサイズの変化は増減の両方向で表示されます。品質は JPEG と WebP にのみ適用され、PNG では無視されます。","キャンバスを通ると失われるものが 2 つあります。メタデータとアニメーションです。EXIF、GPS、カラープロファイルは結果から消えます。多くの場合は望ましいことですが、そうでない場合のために知っておく価値があります。また、アニメーション GIF や WebP は最初のフレームだけになります。これらのうちどれがあなたのファイルに当てはまったかは、ページが表示します。","すべてこのタブの中で行われます。ファイルは \u003ccode>FileReader\u003c/code> で読み込まれ、ページはネットワークリクエストを一切行わず、ドロップしたものは何も保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","画像コンバーター — PNG、JPEG、WebP をお使いの端末で — MDV","画像を PNG、JPEG、WebP の間で、選んだ品質で変換し、ダウンロード前にサイズを確認できます。AVIF と、HEIC 以外の形式を読み込みます。ファイルが端末の外に出ることはありません。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","変換する画像を選択","変換先","品質","透明部分の背後の色","大きすぎます","{name} は {size} です。このページが変換できるのは {max} までです。","画像ではありません","{name} は {type} です。画像ファイルをドロップしてください。","そのファイル","読み込めませんでした","ブラウザーが {name} の読み込みを中止しました。","このブラウザーではデコードできません","{name} は {kind} ですが、このブラウザーはデコードしませんでした。AVIF には新しいブラウザーが必要です。iPhone の HEIC はどのブラウザーもデコードしないため、先に JPEG として書き出してください。","このブラウザーはその形式を書き出せませんでした","キャンバスから {format} としては何も返りませんでした。PNG は常に使えるので、そちらをお試しください。","image/{to} ではなく {returned} が返りました。つまり、このブラウザーは {format} をエンコードできません。PNG は常に使えます。","{format} · {size} · {name} として書き出し","{format} · {size}、可逆","{format} · {size}、品質 {quality}","元より {pct}% 大きい","元より {pct}% 小さい","JPEG には透明がありません。透明だった部分は、選んだ色になりました。","JPEG には透明がありません。透明だった部分は白になりました。","JPEG から変換した PNG は、通常は数倍に大きくなるだけで画質は良くなりません。JPEG がすでに捨てた情報を PNG は復元できないためです。","WebP の得意なことがここで働いています。同じ画像が、より小さくなります。","そのファイルがアニメーションだった場合、変換されたのは最初のフレームだけです。","結果には EXIF、GPS、カラープロファイルが含まれません。キャンバスはそれらを保持しないためです。","このタブ内で変換しました。何もアップロードされません","画像とメディア",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","이미지의 형식을 바꾸고, 보관하기 전에 비용을 확인하세요.","이 기기에서 실행","오프라인 작동","PNG, JPEG, WebP, GIF, AVIF, BMP, SVG를 놓으세요 — 최대 30 MB","위에 이미지를 놓으세요","품질","투명 영역 뒤에 색 깔기","원본","결과","변화","다운로드","작동 방식","브라우저가 이미지를 디코딩해 원래 크기대로 캔버스에 그린 다음, 선택한 형식으로 다시 인코딩합니다. 출력이 PNG, JPEG, WebP 세 가지인 것은 모든 브라우저가 쓸 수 있는 형식이 이 세 가지이기 때문입니다. 읽을 수 있는 형식은 쓸 수 있는 형식보다 많습니다. AVIF, BMP, GIF, SVG는 이 브라우저가 디코딩할 수 있으면 문제없이 들어오며, 페이지는 가정하지 않고 직접 확인합니다. \u003cstrong>AVIF와 JPEG XL은 출력으로 제공하지 않습니다\u003c/strong>. 솔직한 이유는 어떤 브라우저도 캔버스에서 이를 인코딩하지 못하기 때문입니다. 만들려면 1 MB 이상의 WebAssembly 코덱을 페이지와 함께 보내야 하는데, 이 사이트는 버튼 하나를 위해 그렇게 하지 않습니다.","JPEG로 바꾸면 투명도가 사라지므로 투명한 영역은 선택한 색(따로 지정하지 않으면 흰색)이 되며, 페이지는 알아차린 뒤가 아니라 다운로드하기 전에 이를 알려 줍니다. PNG는 무손실입니다. JPEG를 PNG로 바꿔도 JPEG가 이미 버린 정보는 되살릴 수 없고 파일은 보통 몇 배로 커지므로, 크기 변화를 양방향으로 표시합니다. 품질은 JPEG와 WebP에만 적용되며 PNG는 무시합니다.","캔버스를 거치면 두 가지가 남지 않습니다. 메타데이터와 애니메이션입니다. EXIF, GPS, 색 프로필은 결과에서 사라지며, 대개 원하는 일이지만 그렇지 않을 때를 위해 알아 둘 만합니다. 애니메이션 GIF나 WebP는 첫 프레임만 남습니다. 이 중 어느 것이 파일에 해당했는지는 페이지가 알려 줍니다.","모든 작업은 이 탭 안에서 이루어집니다. 파일은 \u003ccode>FileReader\u003c/code>로 읽으며, 페이지는 네트워크 요청을 하지 않고, 끌어다 놓은 내용은 저장되지 않습니다. 다크와 언어 버튼은 각자의 설정을 이 브라우저의 로컬 저장소에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","이미지 변환기 — PNG, JPEG, WebP, 내 기기에서 — MDV","선택한 품질로 이미지를 PNG, JPEG, WebP 사이에서 변환하고 다운로드 전에 크기를 확인하세요. AVIF와 HEIC 이외의 형식을 읽으며, 파일은 기기를 벗어나지 않습니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","변환할 이미지 선택","변환 형식","품질","투명 영역 뒤의 색","너무 큼","{name}의 크기는 {size}입니다. 이 페이지는 {max}까지 변환합니다.","이미지가 아님","{name}은(는) {type}입니다. 이미지 파일을 놓으세요.","그 파일","읽을 수 없음","브라우저가 {name} 읽기를 중단했습니다.","이 브라우저에서 디코딩할 수 없음","{name}은(는) {kind}인데 이 브라우저가 디코딩하지 못했습니다. AVIF는 최신 브라우저가 필요하며, iPhone의 HEIC는 어떤 브라우저도 디코딩하지 못하므로 먼저 JPEG로 내보내세요.","이 브라우저가 해당 형식을 쓰지 못함","캔버스가 {format}로 아무것도 돌려주지 않았습니다. PNG는 항상 되니 그것을 시도해 보세요.","image/{to} 대신 {returned}이(가) 반환되었습니다. 이 브라우저는 {format}을(를) 인코딩할 수 없다는 뜻입니다. PNG는 항상 됩니다.","{format} · {size} · {name}(으)로 저장됨","{format} · {size}, 무손실","{format} · {size}, 품질 {quality}","원본보다 {pct}% 큼","원본보다 {pct}% 작음","JPEG에는 투명도가 없습니다. 투명했던 부분은 이제 선택한 색입니다.","JPEG에는 투명도가 없습니다. 투명했던 부분은 이제 흰색입니다.","JPEG에서 바꾼 PNG는 보통 몇 배 커질 뿐 더 좋아지지 않습니다. PNG는 JPEG가 이미 버린 정보를 복원할 수 없습니다.","WebP가 잘하는 일을 여기서 하고 있습니다. 같은 이미지가 더 작아졌습니다.","그 파일이 애니메이션이었다면 첫 프레임만 변환되었습니다.","결과에는 EXIF, GPS, 색 프로필이 없습니다. 캔버스는 이들을 보존하지 않습니다.","이 탭에서 변환했으며 업로드된 것은 없습니다","이미지와 미디어",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","更改图片的格式,并在保留之前看清代价。","在此设备上运行","可离线使用","拖入 PNG、JPEG、WebP、GIF、AVIF、BMP 或 SVG — 最大 30 MB","把图片拖到上方","质量","在透明部分后垫一种颜色","源文件","结果","变化","下载","工作原理","浏览器先解码图片,以原始尺寸画到画布上,再按你选的格式重新编码。因此输出只有三种格式——PNG、JPEG 和 WebP——因为这是所有浏览器都能写出的三种。它能读的比能写的多:只要此浏览器能解码,AVIF、BMP、GIF 和 SVG 都能正常读入,页面会实际检测而不是想当然。\u003cstrong>AVIF 和 JPEG XL 不作为输出提供\u003c/strong>,老实说的原因是没有浏览器能从画布编码它们:要生成它们,就得随页面带上 1 MB 以上的 WebAssembly 编解码器,而本站不会为一个按钮这样做。","转成 JPEG 会丢掉透明度,所以透明区域会变成你选的颜色(不指定则为白色),页面会在你下载之前就说明这一点,而不是等你自己发现。PNG 是无损的:把 JPEG 转成 PNG 无法找回 JPEG 已经丢掉的信息,文件通常会变大数倍,所以大小变化会向两个方向都显示。质量只适用于 JPEG 和 WebP;PNG 会忽略它。","有两样东西经过画布后无法保留:元数据和动画。EXIF、GPS 和色彩配置文件都会从结果中消失——通常正合你意,不合意时也值得知道——动画 GIF 或 WebP 则只剩第一帧。页面会说明其中哪些适用于你的文件。","一切都在此标签页内完成。文件用 \u003ccode>FileReader\u003c/code> 读取,页面不发出任何网络请求,你拖入的内容不会被存储;深色和语言按钮各自把设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","图片格式转换 — 在你的设备上处理 PNG、JPEG 和 WebP — MDV","在 PNG、JPEG 和 WebP 之间转换图片,自选质量,下载前先看大小。可读取 AVIF 及 HEIC 以外的格式;文件不会离开设备。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择要转换的图片","转换为","质量","透明部分后面的颜色","文件太大","{name} 有 {size}。本页最多转换 {max}。","不是图片","{name} 是 {type}。请拖入图片文件。","该文件","无法读取","浏览器停止读取 {name}。","此浏览器无法解码","{name} 是 {kind},而此浏览器没有解码成功。AVIF 需要较新的浏览器;iPhone 的 HEIC 没有任何浏览器能解码,请先导出为 JPEG。","此浏览器没有写出该格式","画布没有返回任何 {format} 数据。PNG 始终可用,请试试它。","它返回的是 {returned} 而不是 image/{to},这表示它无法编码 {format}。PNG 始终可用。","{format} · {size} · 已写为 {name}","{format} · {size},无损","{format} · {size},质量 {quality}","比原文件大 {pct}%","比原文件小 {pct}%","JPEG 没有透明度:原来透明的部分现在是你选的颜色。","JPEG 没有透明度:原来透明的部分现在是白色。","由 JPEG 转成的 PNG 通常会大几倍却不会更好:PNG 无法恢复 JPEG 已经丢掉的信息。","WebP 在这里发挥了它的长处:同一张图片,更小。","如果该文件是动画,只转换了它的第一帧。","结果不含 EXIF、GPS 或色彩配置文件:画布不会保留它们。","已在此标签页内转换,没有上传任何内容","图像与媒体",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2374,22 +2587,31 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var $ = function (id) { return document.getElementById(id); };
   var drop = $("drop"), file = $("file"), empty = $("empty"), err = $("err"), errtitle = $("errtitle"), errmsg = $("errmsg");
   var ok = $("ok"), said = $("said"), note = $("note"), quality = $("quality"), flatten = $("flatten"), colour = $("colour");
-  var image = null, current = null, to = "png", blob = null, pending = 0;
+  var image = null, current = null, to = "png", blob = null, pending = 0, written = null, errPaint = null;
 
   function state(which) {
     empty.hidden = which !== "empty";
     err.hidden = which !== "error";
     ok.hidden = which !== "ok";
+    if (which !== "error") errPaint = null;
   }
-  function bad(title, message) { errtitle.textContent = title; errmsg.textContent = message; state("error"); }
+  // paint writes the title and message in the current language; it is kept so a language change can run it again
+  function bad(paint) { errPaint = paint; paint(); state("error"); }
+  function show(title, message) { errtitle.textContent = title; errmsg.textContent = message; }
 
   function take(files) {
     if (!files || !files.length) return;
     var f = files[0];
-    if (f.size > MAX_BYTES) { bad("Too large", f.name + " is " + bytes(f.size) + ". This page converts up to " + bytes(MAX_BYTES) + "."); return; }
-    if (f.type && f.type.indexOf("image/") !== 0) { bad("Not a picture", (f.name || "That file") + " is " + f.type + ". Drop an image file."); return; }
+    if (f.size > MAX_BYTES) {
+      bad(function () { show(tr("Too large"), tr("{name} is {size}. This page converts up to {max}.", { name: f.name, size: bytes(f.size), max: bytes(MAX_BYTES) })); });
+      return;
+    }
+    if (f.type && f.type.indexOf("image/") !== 0) {
+      bad(function () { show(tr("Not a picture"), tr("{name} is {type}. Drop an image file.", { name: f.name || tr("That file"), type: f.type })); });
+      return;
+    }
     var reader = new FileReader();
-    reader.onerror = function () { bad("Could not read that", "The browser stopped reading " + f.name + "."); };
+    reader.onerror = function () { bad(function () { show(tr("Could not read that"), tr("The browser stopped reading {name}.", { name: f.name })); }); };
     reader.onload = function () {
       var img = new Image();
       img.onload = function () {
@@ -2399,8 +2621,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         state("ok");
       };
       img.onerror = function () {
-        bad("This browser cannot decode that", (f.name || "That file") + " is " + kindOf(f.type, f.name) +
-          ", and this browser did not decode it. AVIF needs a recent browser; HEIC from an iPhone is not decoded by any of them, so export it as JPEG first.");
+        bad(function () {
+          show(tr("This browser cannot decode that"), tr("{name} is {kind}, and this browser did not decode it. AVIF needs a recent browser; HEIC from an iPhone is not decoded by any of them, so export it as JPEG first.",
+            { name: f.name || tr("That file"), kind: kindOf(f.type, f.name) }));
+        });
       };
       img.src = String(reader.result);
     };
@@ -2420,13 +2644,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     }
     ctx.drawImage(current.img, 0, 0);
 
-    var q = Number(quality.value) / 100, mine = ++pending;
+    var q = Number(quality.value) / 100, mine = ++pending, want = to;
+    written = null;
     $("save").disabled = true;
     canvas.toBlob(function (made) {
       if (mine !== pending) return;                       // a later change already started
-      if (!made) { bad("This browser did not write that format", "Nothing came back as " + NAMES[to] + " from the canvas. PNG always works; try that."); return; }
-      if (made.type !== "image/" + to) {
-        bad("This browser did not write that format", "It returned " + made.type + " instead of image/" + to + ", which means it cannot encode " + NAMES[to] + ". PNG always works.");
+      if (!made) {
+        bad(function () { show(tr("This browser did not write that format"), tr("Nothing came back as {format} from the canvas. PNG always works; try that.", { format: NAMES[want] })); });
+        return;
+      }
+      if (made.type !== "image/" + want) {
+        bad(function () {
+          show(tr("This browser did not write that format"), tr("It returned {returned} instead of image/{to}, which means it cannot encode {format}. PNG always works.",
+            { returned: made.type, to: want, format: NAMES[want] }));
+        });
         return;
       }
       blob = made;
@@ -2437,21 +2668,23 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function paint() {
     var from = kindOf(current.file.type, current.file.name);
     $("k-src").textContent = current.file.name + " · " + from + " · " + image.w + " × " + image.h + " px · " + bytes(current.file.size);
-    $("k-out").textContent = NAMES[to] + " · " + bytes(blob.size) + (to === "png" ? ", lossless" : ", quality " + (Number(quality.value) / 100).toFixed(2));
+    var ov = { format: NAMES[to], size: bytes(blob.size), quality: (Number(quality.value) / 100).toFixed(2), name: written };
+    $("k-out").textContent = written ? tr("{format} · {size} · written as {name}", ov)
+      : to === "png" ? tr("{format} · {size}, lossless", ov) : tr("{format} · {size}, quality {quality}", ov);
     var change = blob.size / current.file.size;
     $("k-change").textContent = change >= 1
-      ? Math.round((change - 1) * 100) + "% larger than the original"
-      : Math.round((1 - change) * 100) + "% smaller than the original";
+      ? tr("{pct}% larger than the original", { pct: Math.round((change - 1) * 100) })
+      : tr("{pct}% smaller than the original", { pct: Math.round((1 - change) * 100) });
 
     var notes = [];
-    if (to === "jpeg") notes.push("JPEG has no transparency: anything transparent is now " + (flatten.checked ? "the colour you chose." : "white."));
-    if (to === "png" && /jpe?g/i.test(from)) notes.push("A JPEG turned into a PNG is usually several times larger and no better: PNG cannot restore what JPEG already threw away.");
-    if (to === "webp" && change < 1) notes.push("WebP is doing what it is good at here: the same picture, smaller.");
-    if (/gif|webp/i.test(from)) notes.push("If that file was animated, only its first frame has been converted.");
-    notes.push("The result carries no EXIF, GPS or colour profile: a canvas keeps none of them.");
+    if (to === "jpeg") notes.push(flatten.checked ? tr("JPEG has no transparency: anything transparent is now the colour you chose.") : tr("JPEG has no transparency: anything transparent is now white."));
+    if (to === "png" && /jpe?g/i.test(from)) notes.push(tr("A JPEG turned into a PNG is usually several times larger and no better: PNG cannot restore what JPEG already threw away."));
+    if (to === "webp" && change < 1) notes.push(tr("WebP is doing what it is good at here: the same picture, smaller."));
+    if (/gif|webp/i.test(from)) notes.push(tr("If that file was animated, only its first frame has been converted."));
+    notes.push(tr("The result carries no EXIF, GPS or colour profile: a canvas keeps none of them."));
     said.textContent = notes.join(" ");
     said.hidden = false;
-    note.textContent = "converted in this tab, nothing uploaded";
+    note.textContent = tr("converted in this tab, nothing uploaded");
     note.className = "mdv-dot-note is-ok";
     $("qualityRow").hidden = to === "png";
     colour.disabled = !flatten.checked;
@@ -2468,7 +2701,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    $("k-out").textContent = NAMES[to] + " · " + bytes(blob.size) + " · written as " + name;
+    written = name;
+    paint();
   });
 
   Array.prototype.forEach.call(document.querySelectorAll("[data-to]"), function (b) {
@@ -2495,6 +2729,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   ["dragleave", "drop"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove("is-over"); }); });
   drop.addEventListener("drop", function (e) { if (e.dataTransfer && e.dataTransfer.files) take(e.dataTransfer.files); });
 
+  // a language change redraws the words from the kept result; nothing is converted again
+  onLang(function () {
+    if (!err.hidden && errPaint) errPaint();
+    if (!ok.hidden && blob && current) paint();
+  });
   drop.focus({ preventScroll: true });
   state("empty");
 })();

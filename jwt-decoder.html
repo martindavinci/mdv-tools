@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link is-here" href="./jwt-decoder.html" aria-current="page" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link is-here" href="./jwt-decoder.html" aria-current="page" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,24 +2353,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">JWT decoder</h1>
+      <h1 class="mdv-head-name" data-t="22">JWT decoder</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Paste a token. Read its header, payload and claims, with the times as dates.
+    <p class="mdv-head-line" data-t="79">Paste a token. Read its header, payload and claims, with the times as dates.
       The signature is not verified — this page decodes, it does not check; checking needs the key.
       The token never leaves this page.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-warn">Signature not verified</span>
+      <span class="mdv-badge is-warn" data-t="80">Signature not verified</span>
     </div>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="81">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="82">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <label class="mdv-label" style="margin:0" for="in">Token</label>
+      <label class="mdv-label" style="margin:0" for="in" data-t="83">Token</label>
       <span class="mdv-hint mdv-mono" style="margin:0" id="size">0 characters</span>
     </div>
     <textarea class="mdv-textarea" id="in" spellcheck="false" autocomplete="off"
@@ -2267,39 +2379,39 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <span class="mdv-label" style="margin:0">Result</span>
+      <span class="mdv-label" style="margin:0" data-t="84">Result</span>
       <div class="mdv-btn-row">
         <span class="mdv-badge" id="expbadge" hidden></span>
       </div>
     </div>
 
-    <div class="mdv-empty" id="empty"><span>paste a token above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="85">paste a token above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Not a readable token</span>
+      <span class="mdv-notice-title" data-t="86">Not a readable token</span>
       <span id="errmsg" class="mdv-mono"></span>
     </div>
 
     <div class="mdv-stack is-tight" id="errsrc" hidden>
-      <span class="mdv-tag">Decoded text</span>
+      <span class="mdv-tag" data-t="87">Decoded text</span>
       <pre class="mdv-out" id="errsrc-text"></pre>
       <p class="mdv-hint" id="errsrc-hint"></p>
     </div>
 
     <div class="mdv-stack" id="result" hidden>
       <div class="mdv-notice is-warn">
-        <span class="mdv-notice-title">Signature not verified</span>
-        This page decoded the token; it did not check the signature, and cannot — that needs the
-        issuer's key. A token that reads cleanly here can still be forged or revoked.
+        <span class="mdv-notice-title" data-t="80">Signature not verified</span>
+        <span data-t="88">This page decoded the token; it did not check the signature, and cannot — that needs the
+        issuer's key. A token that reads cleanly here can still be forged or revoked.</span>
         <span id="signote" class="mdv-mono"></span>
       </div>
 
       <div class="mdv-stack is-tight">
         <div class="mdv-row is-between">
-          <span class="mdv-label" style="margin:0">Header</span>
+          <span class="mdv-label" style="margin:0" data-t="89">Header</span>
           <div class="mdv-btn-row">
-            <span class="mdv-badge is-accent" id="copied-h" hidden>Copied</span>
-            <button class="mdv-btn is-sm is-quiet" id="copy-h" type="button">Copy</button>
+            <span class="mdv-badge is-accent" id="copied-h" hidden><span data-t="90">Copied</span></span>
+            <button class="mdv-btn is-sm is-quiet" id="copy-h" type="button"><span data-t="91">Copy</span></button>
           </div>
         </div>
         <pre class="mdv-out" id="out-h"></pre>
@@ -2307,17 +2419,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
       <div class="mdv-stack is-tight">
         <div class="mdv-row is-between">
-          <span class="mdv-label" style="margin:0">Payload</span>
+          <span class="mdv-label" style="margin:0" data-t="92">Payload</span>
           <div class="mdv-btn-row">
-            <span class="mdv-badge is-accent" id="copied-p" hidden>Copied</span>
-            <button class="mdv-btn is-sm is-quiet" id="copy-p" type="button">Copy</button>
+            <span class="mdv-badge is-accent" id="copied-p" hidden><span data-t="90">Copied</span></span>
+            <button class="mdv-btn is-sm is-quiet" id="copy-p" type="button"><span data-t="91">Copy</span></button>
           </div>
         </div>
         <pre class="mdv-out" id="out-p"></pre>
       </div>
 
       <div class="mdv-stack is-tight">
-        <span class="mdv-label" style="margin:0">Claims</span>
+        <span class="mdv-label" style="margin:0" data-t="93">Claims</span>
         <dl class="mdv-kv" id="claims"></dl>
         <p class="mdv-hint" id="clock"></p>
       </div>
@@ -2325,9 +2437,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="94">How this works</summary>
     <div class="mdv-method-body">
-      <p>A JWT is three base64url strings joined by dots: header, payload, signature. The first two
+      <p data-t="95">A JWT is three base64url strings joined by dots: header, payload, signature. The first two
         are decoded by swapping <code>-</code> and <code>_</code> back to <code>+</code> and
         <code>/</code>, adding the <code>=</code> padding the token format leaves off, running
         <code>atob</code>, and reading the bytes as UTF-8 with <code>TextDecoder</code> in fatal mode,
@@ -2339,7 +2451,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         message that names no position gets the first 600 characters, unmarked. Whitespace and line
         breaks anywhere in the pasted text are ignored and a leading <code>Bearer</code> is dropped,
         so a token copied out of an HTTP header decodes as it is.</p>
-      <p>The signature is not verified. Verifying needs the issuer's key — the HMAC secret or the
+      <p data-t="96">The signature is not verified. Verifying needs the issuer's key — the HMAC secret or the
         public key — and this page has neither and asks for neither; it reports only how many bytes
         the signature holds, and says when the signature part is empty and when <code>alg</code> is
         <code>none</code> — including when such a token still carries signature
@@ -2352,28 +2464,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <code>nbf</code> still in the future shows Not yet valid, ahead of any
         <code>exp</code> verdict, or Never valid when <code>exp</code> is not after it. The relative
         text does not tick, and the badge trusts this device's clock, not the issuer's.</p>
-      <p>Input above 100,000 characters is refused rather than attempted. The token is held in the
+      <p data-t="97">Input above 100,000 characters is refused rather than attempted. The token is held in the
         text box and nowhere else: there is no server in this file, nothing is written to storage,
         and closing the tab discards it. Claims are shown as the token states them — <code>aud</code>
         may be a string or a list and is printed either way; a claim that is missing shows as a dash.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="98">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Encoding &amp; Crypto">
-    <span class="mdv-tag">Also in Encoding &amp; Crypto</span>
-    <a href="./password-generator.html">Password generator</a>
-    <a href="./qr-code-generator.html">QR code generator</a>
-    <a href="./ssh-key-generator.html">SSH key generator</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Encoding &amp; Crypto"}'>Also in Encoding &amp; Crypto</span>
+    <a href="./password-generator.html" data-t="23">Password generator</a>
+    <a href="./qr-code-generator.html" data-t="24">QR code generator</a>
+    <a href="./ssh-key-generator.html" data-t="25">SSH key generator</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="99">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="100">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="101" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-10-31</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="102">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2384,6 +2497,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["JWT Decoder — read header and payload locally — MDV","Paste a JWT and read its header, payload and claims, with expiry and issue times as UTC dates. Decodes only, never verifies. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","(line {line}, column {col})","{name} has a character outside the base64url alphabet at position {pos}: {char}.","{name} is {n} characters long, a length no base64url encoding can have (remainder 1 when divided by 4).","{name} decodes to bytes that are not valid UTF-8.","{name} is not valid JSON: {message}","{name} is valid JSON but not an object.","Expected 3 dot-separated parts, got {n}.","Header (part 1)","Payload (part 2)","Signature (part 3)","in {time}","expired {time} ago","{time} ago","not a number: {value}","{value} — too large for seconds, and RFC 7519 times are seconds, so this is not a valid {name}; read as milliseconds it would be {when}","outside the range a date can hold","{value} — outside the range a date can hold","exp and nbf not in seconds","{name} not in seconds","Never valid: exp is not after nbf","Not yet valid, {when}","Expired","Not yet expired","signature","not base64url — {error}","empty (0 bytes), not verified","Relative times were computed once, at {time}, from this device's clock.","alg is none, and the signature part could not even be decoded: {error}","The signature part could not even be decoded: {error}","alg is none and the signature part is empty: nothing signs this token, so anyone could have written it.","alg is none, yet the signature part holds {n} bytes. RFC 7518 says a token with alg none must have an empty signature, so this one breaks the spec, and the header names no algorithm those bytes belong to.","The signature part is empty: there is nothing to check, even with the key.","{part} decodes to no text at all.","{part} as decoded. The parser named no position, so nothing is marked; these are the first {shown} of {total} characters.","{part} as decoded. The parser named no position, so nothing is marked.","{part} as decoded. The text ends before the JSON does; the mark sits after the last character.","{part} as decoded. The parser stopped at the marked line break, line {line}, column {col}; up to {around} characters either side are shown.","{part} as decoded. The parser stopped at the marked line break, line {line}, column {col}.","{part} as decoded. The parser stopped at the marked character, line {line}, column {col}; up to {around} characters either side are shown.","{part} as decoded. The parser stopped at the marked character, line {line}, column {col}.","{n} characters is past the {limit}-character ceiling this tool will attempt.","{n} second","{n} seconds","{n} minute","{n} minutes","{n} hour","{n} hours","{n} day","{n} days","{n} byte, not verified","{n} bytes, not verified","Signature present: {n} byte, unchecked.","Signature present: {n} bytes, unchecked.","{n} character","{n} characters","Encoding & Crypto","2026-11-02"],"h":103,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Pega un token. Lee su cabecera, su payload y sus claims, con las fechas legibles. La firma no se verifica: esta página decodifica, no comprueba; para comprobar hace falta la clave. El token no sale de esta página.","Firma sin verificar","En este dispositivo","Funciona sin conexión","Token","Resultado","pega un token arriba","Token ilegible","Texto decodificado","Esta página ha decodificado el token; no ha comprobado la firma y no puede hacerlo: eso requiere la clave del emisor. Un token que se lee bien aquí aún puede ser falso o estar revocado.","Cabecera","Copiado","Copiar","Payload","Claims","Cómo funciona","Un JWT son tres cadenas base64url unidas por puntos: cabecera, payload y firma. Las dos primeras se decodifican cambiando \u003ccode>-\u003c/code> y \u003ccode>_\u003c/code> de vuelta a \u003ccode>+\u003c/code> y \u003ccode>/\u003c/code>, añadiendo el relleno \u003ccode>=\u003c/code> que el formato del token omite, ejecutando \u003ccode>atob\u003c/code> y leyendo los bytes como UTF-8 con \u003ccode>TextDecoder\u003c/code> en modo fatal, de modo que una secuencia de bytes que no es UTF-8 se informa en lugar de adivinarse. Cada resultado pasa por \u003ccode>JSON.parse\u003c/code> y se imprime con \u003ccode>JSON.stringify(value, null, 2)\u003c/code>; si el análisis falla, se transmiten el mensaje y la posición del propio analizador, y el texto decodificado se muestra bajo el error, hasta 300 caracteres a cada lado de esa posición, con el carácter marcado. Un mensaje de que la entrada termina antes de tiempo marca el final del texto; cualquier otro mensaje que no indique posición muestra los primeros 600 caracteres, sin marcar. Los espacios y saltos de línea en cualquier punto del texto pegado se ignoran y un \u003ccode>Bearer\u003c/code> inicial se descarta, así que un token copiado de una cabecera HTTP se decodifica tal cual.","La firma no se verifica. Verificarla requiere la clave del emisor (el secreto HMAC o la clave pública), y esta página no tiene ninguna ni la pide; solo informa de cuántos bytes tiene la firma, y avisa cuando la parte de la firma está vacía y cuando \u003ccode>alg\u003c/code> es \u003ccode>none\u003c/code>, incluso si un token así lleva bytes de firma, lo que prohíbe la RFC 7518. Los tiempos son los claims \u003ccode>iat\u003c/code>, \u003ccode>nbf\u003c/code> y \u003ccode>exp\u003c/code> leídos como segundos desde 1970-01-01 UTC, impresos con \u003ccode>Date.prototype.toISOString\u003c/code> y comparados con \u003ccode>Date.now()\u003c/code> en el momento de decodificar. Los tiempos de la RFC 7519 son segundos, así que un valor superior a 100.000.000.000 (más allá del año 5000) se marca como no expresado en segundos, se muestra como se leería en milisegundos y nunca se juzga: la insignia dice «no está en segundos» en lugar de Caducado, Aún no caducado o Aún no válido. Un \u003ccode>nbf\u003c/code> aún en el futuro muestra Aún no válido, antes de cualquier veredicto sobre \u003ccode>exp\u003c/code>, o Never valid cuando \u003ccode>exp\u003c/code> no es posterior. El texto relativo no se actualiza, y la insignia se fía del reloj de este dispositivo, no del del emisor.","La entrada de más de 100.000 caracteres se rechaza en lugar de intentarlo. El token se guarda en el cuadro de texto y en ningún otro sitio: no hay servidor en este archivo, no se escribe nada en el almacenamiento y al cerrar la pestaña se descarta. Los claims se muestran tal como los declara el token: \u003ccode>aud\u003c/code> puede ser una cadena o una lista y se imprime de ambas formas; un claim ausente aparece como un guion.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Decodificador JWT: lee cabecera y payload en local — MDV","Pega un JWT y lee su cabecera, su payload y sus claims, con las fechas de emisión y caducidad en UTC. Solo decodifica, nunca verifica. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","(línea {line}, columna {col})","{name} contiene un carácter fuera del alfabeto base64url en la posición {pos}: {char}.","{name} tiene {n} caracteres, una longitud que ninguna codificación base64url puede tener (resto 1 al dividir entre 4).","{name} se decodifica a bytes que no son UTF-8 válido.","{name} no es JSON válido: {message}","{name} es JSON válido pero no un objeto.","Se esperaban 3 partes separadas por puntos y hay {n}.","Cabecera (parte 1)","Payload (parte 2)","Firma (parte 3)","dentro de {time}","caducó hace {time}","hace {time}","no es un número: {value}","{value} — demasiado grande para segundos, y los tiempos de la RFC 7519 son segundos, así que no es un {name} válido; leído como milisegundos sería {when}","fuera del rango que puede contener una fecha","{value} — fuera del rango que puede contener una fecha","exp y nbf no están en segundos","{name} no está en segundos","Nunca válido: exp no es posterior a nbf","Aún no válido, {when}","Caducado","Aún no caducado","firma","no es base64url — {error}","vacía (0 bytes), sin verificar","Los tiempos relativos se calcularon una sola vez, a las {time}, con el reloj de este dispositivo.","alg es none, y la parte de la firma ni siquiera se pudo decodificar: {error}","La parte de la firma ni siquiera se pudo decodificar: {error}","alg es none y la parte de la firma está vacía: nada firma este token, así que cualquiera pudo escribirlo.","alg es none, pero la parte de la firma contiene {n} bytes. La RFC 7518 dice que un token con alg none debe tener la firma vacía, así que este incumple la especificación, y la cabecera no nombra ningún algoritmo al que pertenezcan esos bytes.","La parte de la firma está vacía: no hay nada que comprobar, ni siquiera con la clave.","{part} se decodifica a ningún texto.","{part} tal como se decodificó. El analizador no indicó ninguna posición, así que no se marca nada; estos son los primeros {shown} de {total} caracteres.","{part} tal como se decodificó. El analizador no indicó ninguna posición, así que no se marca nada.","{part} tal como se decodificó. El texto termina antes que el JSON; la marca queda tras el último carácter.","{part} tal como se decodificó. El analizador se detuvo en el salto de línea marcado, línea {line}, columna {col}; se muestran hasta {around} caracteres a cada lado.","{part} tal como se decodificó. El analizador se detuvo en el salto de línea marcado, línea {line}, columna {col}.","{part} tal como se decodificó. El analizador se detuvo en el carácter marcado, línea {line}, columna {col}; se muestran hasta {around} caracteres a cada lado.","{part} tal como se decodificó. El analizador se detuvo en el carácter marcado, línea {line}, columna {col}.","{n} caracteres superan el límite de {limit} caracteres que esta herramienta intentará procesar.","{n} segundo","{n} segundos","{n} minuto","{n} minutos","{n} hora","{n} horas","{n} día","{n} días","{n} byte, sin verificar","{n} bytes, sin verificar","Firma presente: {n} byte, sin comprobar.","Firma presente: {n} bytes, sin comprobar.","{n} carácter","{n} caracteres","Codificación y criptografía",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Collez un jeton. Lisez son en-tête, son payload et ses claims, avec les dates lisibles. La signature n’est pas vérifiée : cette page décode, elle ne contrôle pas ; il faut la clé pour cela. Le jeton ne quitte pas cette page.","Signature non vérifiée","Sur cet appareil","Fonctionne hors ligne","Jeton","Résultat","collez un jeton ci-dessus","Jeton illisible","Texte décodé","Cette page a décodé le jeton ; elle n’a pas contrôlé la signature et ne le peut pas : il faut pour cela la clé de l’émetteur. Un jeton qui se lit sans erreur ici peut quand même être falsifié ou révoqué.","En-tête","Copié","Copier","Payload","Claims","Comment ça marche","Un JWT est formé de trois chaînes base64url séparées par des points : en-tête, payload, signature. Les deux premières sont décodées en remettant \u003ccode>-\u003c/code> et \u003ccode>_\u003c/code> à la place de \u003ccode>+\u003c/code> et \u003ccode>/\u003c/code>, en ajoutant le remplissage \u003ccode>=\u003c/code> que le format du jeton omet, en appliquant \u003ccode>atob\u003c/code>, puis en lisant les octets comme de l’UTF-8 avec \u003ccode>TextDecoder\u003c/code> en mode fatal : une suite d’octets qui n’est pas de l’UTF-8 est signalée au lieu d’être devinée. Chaque résultat passe par \u003ccode>JSON.parse\u003c/code> et est réécrit avec \u003ccode>JSON.stringify(value, null, 2)\u003c/code> ; si l’analyse échoue, le message et la position de l’analyseur lui-même sont transmis, et le texte décodé s’affiche sous l’erreur, jusqu’à 300 caractères de chaque côté de cette position, le caractère concerné étant marqué. Un message indiquant que l’entrée se termine trop tôt marque la fin du texte ; tout autre message sans position affiche les 600 premiers caractères, sans marque. Les espaces et sauts de ligne n’importe où dans le texte collé sont ignorés et un \u003ccode>Bearer\u003c/code> initial est retiré : un jeton copié depuis un en-tête HTTP se décode donc tel quel.","La signature n’est pas vérifiée. La vérifier demande la clé de l’émetteur (le secret HMAC ou la clé publique) ; cette page n’en a aucune et n’en demande aucune. Elle indique seulement combien d’octets contient la signature, et signale quand la partie signature est vide et quand \u003ccode>alg\u003c/code> vaut \u003ccode>none\u003c/code>, y compris lorsqu’un tel jeton porte quand même des octets de signature, ce que la RFC 7518 interdit. Les heures sont les claims \u003ccode>iat\u003c/code>, \u003ccode>nbf\u003c/code> et \u003ccode>exp\u003c/code> lus comme des secondes depuis 1970-01-01 UTC, affichés avec \u003ccode>Date.prototype.toISOString\u003c/code> et comparés à \u003ccode>Date.now()\u003c/code> au moment du décodage. Les heures de la RFC 7519 sont en secondes : une valeur supérieure à 100 000 000 000 (au-delà de l’an 5000) est signalée comme n’étant pas en secondes, affichée telle qu’elle se lirait en millisecondes et jamais jugée : le badge indique « pas en secondes » au lieu de Expiré, Pas encore expiré ou Pas encore valide. Un \u003ccode>nbf\u003c/code> encore dans le futur affiche Pas encore valide, avant tout verdict sur \u003ccode>exp\u003c/code>, ou Never valid quand \u003ccode>exp\u003c/code> ne lui est pas postérieur. Le texte relatif ne se met pas à jour, et le badge se fie à l’horloge de cet appareil, pas à celle de l’émetteur.","Une entrée de plus de 100 000 caractères est refusée plutôt que tentée. Le jeton est conservé dans la zone de texte et nulle part ailleurs : ce fichier n’a pas de serveur, rien n’est écrit dans le stockage, et fermer l’onglet l’efface. Les claims sont affichés tels que le jeton les énonce : \u003ccode>aud\u003c/code> peut être une chaîne ou une liste et s’affiche dans les deux cas ; un claim absent s’affiche sous forme de tiret.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Décodeur JWT : lisez l’en-tête et le payload en local — MDV","Collez un JWT et lisez son en-tête, son payload et ses claims, avec les dates d’émission et d’expiration en UTC. Il décode seulement, ne vérifie jamais. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","(ligne {line}, colonne {col})","{name} contient un caractère hors de l’alphabet base64url à la position {pos} : {char}.","{name} compte {n} caractères, une longueur qu’aucun encodage base64url ne peut avoir (reste 1 dans la division par 4).","{name} se décode en octets qui ne sont pas de l’UTF-8 valide.","{name} n’est pas du JSON valide : {message}","{name} est du JSON valide, mais pas un objet.","3 parties séparées par des points étaient attendues, {n} trouvée(s).","En-tête (partie 1)","Payload (partie 2)","Signature (partie 3)","dans {time}","expiré il y a {time}","il y a {time}","pas un nombre : {value}","{value} — trop grand pour des secondes, et les heures de la RFC 7519 sont en secondes : ce n’est donc pas un {name} valide ; lu en millisecondes, ce serait {when}","hors de la plage qu’une date peut contenir","{value} — hors de la plage qu’une date peut contenir","exp et nbf pas en secondes","{name} pas en secondes","Jamais valide : exp n’est pas postérieur à nbf","Pas encore valide, {when}","Expiré","Pas encore expiré","signature","pas du base64url — {error}","vide (0 octet), non vérifiée","Les heures relatives ont été calculées une seule fois, à {time}, avec l’horloge de cet appareil.","alg vaut none, et la partie signature n’a même pas pu être décodée : {error}","La partie signature n’a même pas pu être décodée : {error}","alg vaut none et la partie signature est vide : rien ne signe ce jeton, n’importe qui a pu l’écrire.","alg vaut none, mais la partie signature contient {n} octets. La RFC 7518 dit qu’un jeton avec alg none doit avoir une signature vide : celui-ci enfreint donc la spécification, et l’en-tête ne nomme aucun algorithme auquel ces octets appartiendraient.","La partie signature est vide : il n’y a rien à contrôler, même avec la clé.","{part} ne se décode en aucun texte.","{part} tel que décodé. L’analyseur n’a indiqué aucune position, rien n’est donc marqué ; voici les {shown} premiers caractères sur {total}.","{part} tel que décodé. L’analyseur n’a indiqué aucune position, rien n’est donc marqué.","{part} tel que décodé. Le texte se termine avant le JSON ; le repère se trouve après le dernier caractère.","{part} tel que décodé. L’analyseur s’est arrêté au saut de ligne marqué, ligne {line}, colonne {col} ; jusqu’à {around} caractères de chaque côté sont affichés.","{part} tel que décodé. L’analyseur s’est arrêté au saut de ligne marqué, ligne {line}, colonne {col}.","{part} tel que décodé. L’analyseur s’est arrêté au caractère marqué, ligne {line}, colonne {col} ; jusqu’à {around} caractères de chaque côté sont affichés.","{part} tel que décodé. L’analyseur s’est arrêté au caractère marqué, ligne {line}, colonne {col}.","{n} caractères dépassent la limite de {limit} caractères que cet outil acceptera de traiter.","{n} seconde","{n} secondes","{n} minute","{n} minutes","{n} heure","{n} heures","{n} jour","{n} jours","{n} octet, non vérifié","{n} octets, non vérifiés","Signature présente : {n} octet, non contrôlé.","Signature présente : {n} octets, non contrôlés.","{n} caractère","{n} caractères","Encodage et cryptographie",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Füge ein Token ein. Lies Header, Payload und Claims, mit den Zeiten als Datum. Die Signatur wird nicht geprüft: Diese Seite dekodiert, sie prüft nicht; dafür braucht es den Schlüssel. Das Token verlässt diese Seite nie.","Signatur ungeprüft","Läuft auf diesem Gerät","Funktioniert offline","Token","Ergebnis","token oben einfügen","Token nicht lesbar","Dekodierter Text","Diese Seite hat das Token dekodiert; die Signatur hat sie nicht geprüft und kann es auch nicht: Dafür braucht es den Schlüssel des Ausstellers. Ein Token, das sich hier sauber lesen lässt, kann trotzdem gefälscht oder widerrufen sein.","Header","Kopiert","Kopieren","Payload","Claims","So funktioniert es","Ein JWT besteht aus drei durch Punkte verbundenen Base64url-Zeichenketten: Header, Payload, Signatur. Die ersten beiden werden dekodiert, indem \u003ccode>-\u003c/code> und \u003ccode>_\u003c/code> zurück in \u003ccode>+\u003c/code> und \u003ccode>/\u003c/code> getauscht werden, das vom Token-Format weggelassene \u003ccode>=\u003c/code>-Padding ergänzt wird, \u003ccode>atob\u003c/code> läuft und die Bytes mit \u003ccode>TextDecoder\u003c/code> im Fatal-Modus als UTF-8 gelesen werden; eine Bytefolge, die kein UTF-8 ist, wird gemeldet statt geraten. Jedes Ergebnis geht durch \u003ccode>JSON.parse\u003c/code> und wird mit \u003ccode>JSON.stringify(value, null, 2)\u003c/code> wieder ausgegeben; schlägt das Parsen fehl, werden Meldung und Position des Parsers selbst weitergereicht, und der dekodierte Text steht unter dem Fehler, bis zu 300 Zeichen beiderseits dieser Position, mit markiertem Zeichen. Eine Meldung über vorzeitiges Ende der Eingabe markiert das Textende; jede andere Meldung ohne Position zeigt die ersten 600 Zeichen, unmarkiert. Leerzeichen und Zeilenumbrüche irgendwo im eingefügten Text werden ignoriert, ein führendes \u003ccode>Bearer\u003c/code> wird entfernt, sodass ein aus einem HTTP-Header kopiertes Token direkt dekodiert wird.","Die Signatur wird nicht geprüft. Dafür braucht es den Schlüssel des Ausstellers (das HMAC-Geheimnis oder den öffentlichen Schlüssel); diese Seite hat keinen und verlangt auch keinen. Sie meldet nur, wie viele Bytes die Signatur enthält, und sagt, wenn der Signaturteil leer ist und wenn \u003ccode>alg\u003c/code> den Wert \u003ccode>none\u003c/code> hat, auch dann, wenn ein solches Token trotzdem Signaturbytes trägt, was RFC 7518 verbietet. Zeiten sind die Claims \u003ccode>iat\u003c/code>, \u003ccode>nbf\u003c/code> und \u003ccode>exp\u003c/code>, gelesen als Sekunden seit 1970-01-01 UTC, ausgegeben mit \u003ccode>Date.prototype.toISOString\u003c/code> und beim Dekodieren mit \u003ccode>Date.now()\u003c/code> verglichen. Zeiten nach RFC 7519 sind Sekunden; ein Wert über 100.000.000.000 (jenseits des Jahres 5000) wird als nicht in Sekunden markiert, so gezeigt, wie er in Millisekunden gelesen würde, und nie bewertet: Das Abzeichen sagt „nicht in Sekunden“ statt Abgelaufen, Noch nicht abgelaufen oder Noch nicht gültig. Ein \u003ccode>nbf\u003c/code> in der Zukunft zeigt Noch nicht gültig, vor jedem Urteil über \u003ccode>exp\u003c/code>, oder Never valid, wenn \u003ccode>exp\u003c/code> nicht nach ihm liegt. Der relative Text tickt nicht weiter, und das Abzeichen verlässt sich auf die Uhr dieses Geräts, nicht auf die des Ausstellers.","Eingaben über 100.000 Zeichen werden abgelehnt, statt es zu versuchen. Das Token liegt im Textfeld und sonst nirgends: Diese Datei hat keinen Server, nichts wird im Speicher abgelegt, und das Schließen des Tabs verwirft es. Claims werden so gezeigt, wie das Token sie angibt: \u003ccode>aud\u003c/code> kann eine Zeichenkette oder eine Liste sein und wird in beiden Fällen ausgegeben; ein fehlender Claim erscheint als Strich.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","JWT-Decoder: Header und Payload lokal lesen — MDV","Füge ein JWT ein und lies Header, Payload und Claims, mit Ausstellungs- und Ablaufzeit als UTC-Datum. Es wird nur dekodiert, nie geprüft. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","(Zeile {line}, Spalte {col})","{name} enthält an Position {pos} ein Zeichen außerhalb des Base64url-Alphabets: {char}.","{name} ist {n} Zeichen lang, eine Länge, die keine Base64url-Kodierung haben kann (Rest 1 bei Division durch 4).","{name} wird zu Bytes dekodiert, die kein gültiges UTF-8 sind.","{name} ist kein gültiges JSON: {message}","{name} ist gültiges JSON, aber kein Objekt.","Erwartet wurden 3 durch Punkte getrennte Teile, gefunden: {n}.","Header (Teil 1)","Payload (Teil 2)","Signatur (Teil 3)","in {time}","vor {time} abgelaufen","vor {time}","keine Zahl: {value}","{value} — zu groß für Sekunden, und Zeiten nach RFC 7519 sind Sekunden, also ist das kein gültiges {name}; als Millisekunden gelesen wäre es {when}","außerhalb des Bereichs, den ein Datum fassen kann","{value} — außerhalb des Bereichs, den ein Datum fassen kann","exp und nbf nicht in Sekunden","{name} nicht in Sekunden","Nie gültig: exp liegt nicht nach nbf","Noch nicht gültig, {when}","Abgelaufen","Noch nicht abgelaufen","Signatur","kein Base64url — {error}","leer (0 Bytes), ungeprüft","Relative Zeiten wurden einmalig um {time} mit der Uhr dieses Geräts berechnet.","alg ist none, und der Signaturteil ließ sich nicht einmal dekodieren: {error}","Der Signaturteil ließ sich nicht einmal dekodieren: {error}","alg ist none und der Signaturteil ist leer: Nichts signiert dieses Token, es kann also jeder geschrieben haben.","alg ist none, doch der Signaturteil enthält {n} Bytes. RFC 7518 verlangt, dass ein Token mit alg none eine leere Signatur hat; dieses verstößt also gegen die Spezifikation, und der Header nennt keinen Algorithmus, zu dem diese Bytes gehören.","Der Signaturteil ist leer: Es gibt nichts zu prüfen, auch nicht mit dem Schlüssel.","{part} wird zu gar keinem Text dekodiert.","{part} wie dekodiert. Der Parser nannte keine Position, daher ist nichts markiert; das sind die ersten {shown} von {total} Zeichen.","{part} wie dekodiert. Der Parser nannte keine Position, daher ist nichts markiert.","{part} wie dekodiert. Der Text endet vor dem JSON; die Markierung steht hinter dem letzten Zeichen.","{part} wie dekodiert. Der Parser hielt am markierten Zeilenumbruch an, Zeile {line}, Spalte {col}; bis zu {around} Zeichen beiderseits werden gezeigt.","{part} wie dekodiert. Der Parser hielt am markierten Zeilenumbruch an, Zeile {line}, Spalte {col}.","{part} wie dekodiert. Der Parser hielt am markierten Zeichen an, Zeile {line}, Spalte {col}; bis zu {around} Zeichen beiderseits werden gezeigt.","{part} wie dekodiert. Der Parser hielt am markierten Zeichen an, Zeile {line}, Spalte {col}.","{n} Zeichen überschreiten die Grenze von {limit} Zeichen, die dieses Werkzeug zu verarbeiten versucht.","{n} Sekunde","{n} Sekunden","{n} Minute","{n} Minuten","{n} Stunde","{n} Stunden","{n} Tag","{n} Tage","{n} Byte, ungeprüft","{n} Bytes, ungeprüft","Signatur vorhanden: {n} Byte, ungeprüft.","Signatur vorhanden: {n} Bytes, ungeprüft.","{n} Zeichen","{n} Zeichen","Kodierung und Krypto",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Incolla un token. Leggi header, payload e claim, con gli orari come date. La firma non viene verificata: questa pagina decodifica, non controlla; per controllare serve la chiave. Il token non lascia mai questa pagina.","Firma non verificata","Su questo dispositivo","Funziona offline","Token","Risultato","incolla un token qui sopra","Token non leggibile","Testo decodificato","Questa pagina ha decodificato il token; non ha controllato la firma e non può farlo: serve la chiave dell’emittente. Un token che qui si legge senza problemi può comunque essere falso o revocato.","Header","Copiato","Copia","Payload","Claim","Come funziona","Un JWT è formato da tre stringhe base64url unite da punti: header, payload, firma. Le prime due si decodificano rimettendo \u003ccode>-\u003c/code> e \u003ccode>_\u003c/code> al posto di \u003ccode>+\u003c/code> e \u003ccode>/\u003c/code>, aggiungendo il padding \u003ccode>=\u003c/code> che il formato del token omette, eseguendo \u003ccode>atob\u003c/code> e leggendo i byte come UTF-8 con \u003ccode>TextDecoder\u003c/code> in modalità fatal, così una sequenza di byte che non è UTF-8 viene segnalata invece di essere indovinata. Ogni risultato passa per \u003ccode>JSON.parse\u003c/code> e viene riscritto con \u003ccode>JSON.stringify(value, null, 2)\u003c/code>; se l’analisi fallisce, vengono riportati il messaggio e la posizione del parser stesso, e il testo decodificato compare sotto l’errore, fino a 300 caratteri per lato rispetto a quella posizione, con il carattere indicato evidenziato. Un messaggio di fine anticipata dell’input segna la fine del testo; ogni altro messaggio senza posizione mostra i primi 600 caratteri, senza segno. Spazi e a capo in qualsiasi punto del testo incollato vengono ignorati e un \u003ccode>Bearer\u003c/code> iniziale viene scartato, quindi un token copiato da un header HTTP si decodifica così com’è.","La firma non viene verificata. Verificarla richiede la chiave dell’emittente (il segreto HMAC o la chiave pubblica); questa pagina non ne ha e non ne chiede. Riporta solo quanti byte contiene la firma, e segnala quando la parte della firma è vuota e quando \u003ccode>alg\u003c/code> è \u003ccode>none\u003c/code>, anche quando un token così porta comunque byte di firma, cosa che la RFC 7518 vieta. Gli orari sono i claim \u003ccode>iat\u003c/code>, \u003ccode>nbf\u003c/code> e \u003ccode>exp\u003c/code> letti come secondi dal 1970-01-01 UTC, scritti con \u003ccode>Date.prototype.toISOString\u003c/code> e confrontati con \u003ccode>Date.now()\u003c/code> al momento della decodifica. Gli orari della RFC 7519 sono in secondi, quindi un valore superiore a 100.000.000.000 (oltre l’anno 5000) viene segnalato come non in secondi, mostrato come si leggerebbe in millisecondi e mai giudicato: il badge dice «non in secondi» invece di Scaduto, Non ancora scaduto o Non ancora valido. Un \u003ccode>nbf\u003c/code> ancora nel futuro mostra Non ancora valido, prima di qualsiasi verdetto su \u003ccode>exp\u003c/code>, oppure Never valid quando \u003ccode>exp\u003c/code> non è successivo. Il testo relativo non si aggiorna, e il badge si fida dell’orologio di questo dispositivo, non di quello dell’emittente.","Un input oltre 100.000 caratteri viene rifiutato invece di essere tentato. Il token resta nella casella di testo e in nessun altro posto: questo file non ha un server, non viene scritto nulla nell’archivio e chiudere la scheda lo scarta. I claim sono mostrati come li dichiara il token: \u003ccode>aud\u003c/code> può essere una stringa o un elenco e viene stampato in entrambi i casi; un claim mancante appare come un trattino.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Decodificatore JWT: leggi header e payload in locale — MDV","Incolla un JWT e leggi header, payload e claim, con data di emissione e di scadenza in UTC. Decodifica soltanto, non verifica mai. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","(riga {line}, colonna {col})","{name} contiene un carattere fuori dall’alfabeto base64url alla posizione {pos}: {char}.","{name} è lungo {n} caratteri, una lunghezza che nessuna codifica base64url può avere (resto 1 dividendo per 4).","{name} si decodifica in byte che non sono UTF-8 valido.","{name} non è JSON valido: {message}","{name} è JSON valido ma non un oggetto.","Erano attese 3 parti separate da punti, trovate {n}.","Header (parte 1)","Payload (parte 2)","Firma (parte 3)","tra {time}","scaduto {time} fa","{time} fa","non è un numero: {value}","{value} — troppo grande per dei secondi, e gli orari della RFC 7519 sono in secondi, quindi non è un {name} valido; letto come millisecondi sarebbe {when}","fuori dall’intervallo che una data può contenere","{value} — fuori dall’intervallo che una data può contenere","exp e nbf non in secondi","{name} non in secondi","Mai valido: exp non è successivo a nbf","Non ancora valido, {when}","Scaduto","Non ancora scaduto","firma","non è base64url — {error}","vuota (0 byte), non verificata","Gli orari relativi sono stati calcolati una sola volta, alle {time}, con l’orologio di questo dispositivo.","alg è none, e la parte della firma non si è nemmeno potuta decodificare: {error}","La parte della firma non si è nemmeno potuta decodificare: {error}","alg è none e la parte della firma è vuota: nulla firma questo token, quindi chiunque può averlo scritto.","alg è none, ma la parte della firma contiene {n} byte. La RFC 7518 dice che un token con alg none deve avere la firma vuota, quindi questo viola la specifica, e l’header non nomina alcun algoritmo a cui quei byte appartengano.","La parte della firma è vuota: non c’è nulla da controllare, nemmeno con la chiave.","{part} non si decodifica in alcun testo.","{part} come decodificato. Il parser non ha indicato alcuna posizione, quindi non c’è nulla di evidenziato; questi sono i primi {shown} caratteri su {total}.","{part} come decodificato. Il parser non ha indicato alcuna posizione, quindi non c’è nulla di evidenziato.","{part} come decodificato. Il testo finisce prima del JSON; il segno si trova dopo l’ultimo carattere.","{part} come decodificato. Il parser si è fermato all’a capo evidenziato, riga {line}, colonna {col}; vengono mostrati fino a {around} caratteri per lato.","{part} come decodificato. Il parser si è fermato all’a capo evidenziato, riga {line}, colonna {col}.","{part} come decodificato. Il parser si è fermato al carattere evidenziato, riga {line}, colonna {col}; vengono mostrati fino a {around} caratteri per lato.","{part} come decodificato. Il parser si è fermato al carattere evidenziato, riga {line}, colonna {col}.","{n} caratteri superano il limite di {limit} caratteri che questo strumento tenterà di elaborare.","{n} secondo","{n} secondi","{n} minuto","{n} minuti","{n} ora","{n} ore","{n} giorno","{n} giorni","{n} byte, non verificato","{n} byte, non verificati","Firma presente: {n} byte, non controllato.","Firma presente: {n} byte, non controllati.","{n} carattere","{n} caratteri","Codifica e crittografia",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Cole um token. Leia o cabeçalho, o payload e as claims, com os horários como datas. A assinatura não é verificada: esta página decodifica, não confere; para conferir é preciso a chave. O token nunca sai desta página.","Assinatura não verificada","Neste dispositivo","Funciona offline","Token","Resultado","cole um token acima","Token ilegível","Texto decodificado","Esta página decodificou o token; não conferiu a assinatura e não consegue: isso exige a chave do emissor. Um token que se lê bem aqui ainda pode ser forjado ou revogado.","Cabeçalho","Copiado","Copiar","Payload","Claims","Como funciona","Um JWT são três strings base64url unidas por pontos: cabeçalho, payload e assinatura. As duas primeiras são decodificadas trocando \u003ccode>-\u003c/code> e \u003ccode>_\u003c/code> de volta para \u003ccode>+\u003c/code> e \u003ccode>/\u003c/code>, acrescentando o preenchimento \u003ccode>=\u003c/code> que o formato do token omite, executando \u003ccode>atob\u003c/code> e lendo os bytes como UTF-8 com \u003ccode>TextDecoder\u003c/code> em modo fatal, de modo que uma sequência de bytes que não é UTF-8 é informada em vez de adivinhada. Cada resultado passa por \u003ccode>JSON.parse\u003c/code> e é impresso com \u003ccode>JSON.stringify(value, null, 2)\u003c/code>; se a análise falha, a mensagem e a posição do próprio parser são repassadas, e o texto decodificado aparece sob o erro, até 300 caracteres de cada lado dessa posição, com o caractere marcado. Uma mensagem de que a entrada termina cedo demais marca o fim do texto; qualquer outra mensagem sem posição mostra os primeiros 600 caracteres, sem marca. Espaços e quebras de linha em qualquer ponto do texto colado são ignorados e um \u003ccode>Bearer\u003c/code> inicial é descartado, então um token copiado de um cabeçalho HTTP é decodificado como está.","A assinatura não é verificada. Verificá-la exige a chave do emissor (o segredo HMAC ou a chave pública), e esta página não tem nenhuma nem pede; ela só informa quantos bytes a assinatura contém e avisa quando a parte da assinatura está vazia e quando \u003ccode>alg\u003c/code> é \u003ccode>none\u003c/code>, inclusive quando um token assim ainda traz bytes de assinatura, o que a RFC 7518 proíbe. Os horários são as claims \u003ccode>iat\u003c/code>, \u003ccode>nbf\u003c/code> e \u003ccode>exp\u003c/code> lidas como segundos desde 1970-01-01 UTC, impressas com \u003ccode>Date.prototype.toISOString\u003c/code> e comparadas com \u003ccode>Date.now()\u003c/code> no momento da decodificação. Os horários da RFC 7519 são em segundos, então um valor acima de 100.000.000.000 (além do ano 5000) é sinalizado como não estando em segundos, mostrado como seria lido em milissegundos e nunca julgado: o selo diz “não está em segundos” em vez de Expirado, Ainda não expirado ou Ainda não válido. Um \u003ccode>nbf\u003c/code> ainda no futuro mostra Ainda não válido, antes de qualquer veredito sobre \u003ccode>exp\u003c/code>, ou Never valid quando \u003ccode>exp\u003c/code> não é posterior a ele. O texto relativo não se atualiza, e o selo confia no relógio deste dispositivo, não no do emissor.","Entrada acima de 100.000 caracteres é recusada em vez de tentada. O token fica na caixa de texto e em nenhum outro lugar: este arquivo não tem servidor, nada é gravado no armazenamento e fechar a aba o descarta. As claims são mostradas como o token as declara: \u003ccode>aud\u003c/code> pode ser uma string ou uma lista e é impresso nos dois casos; uma claim ausente aparece como um traço.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Decodificador JWT: leia cabeçalho e payload localmente — MDV","Cole um JWT e leia cabeçalho, payload e claims, com as datas de emissão e expiração em UTC. Apenas decodifica, nunca verifica. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","(linha {line}, coluna {col})","{name} tem um caractere fora do alfabeto base64url na posição {pos}: {char}.","{name} tem {n} caracteres, um comprimento que nenhuma codificação base64url pode ter (resto 1 na divisão por 4).","{name} é decodificado em bytes que não são UTF-8 válido.","{name} não é JSON válido: {message}","{name} é JSON válido, mas não um objeto.","Eram esperadas 3 partes separadas por pontos, mas há {n}.","Cabeçalho (parte 1)","Payload (parte 2)","Assinatura (parte 3)","em {time}","expirou há {time}","há {time}","não é um número: {value}","{value} — grande demais para segundos, e os horários da RFC 7519 são em segundos, então não é um {name} válido; lido como milissegundos seria {when}","fora do intervalo que uma data pode conter","{value} — fora do intervalo que uma data pode conter","exp e nbf não estão em segundos","{name} não está em segundos","Nunca válido: exp não é posterior a nbf","Ainda não válido, {when}","Expirado","Ainda não expirado","assinatura","não é base64url — {error}","vazia (0 byte), não verificada","Os horários relativos foram calculados uma única vez, às {time}, com o relógio deste dispositivo.","alg é none, e a parte da assinatura nem sequer pôde ser decodificada: {error}","A parte da assinatura nem sequer pôde ser decodificada: {error}","alg é none e a parte da assinatura está vazia: nada assina este token, então qualquer pessoa pode tê-lo escrito.","alg é none, mas a parte da assinatura contém {n} bytes. A RFC 7518 diz que um token com alg none deve ter a assinatura vazia, então este viola a especificação, e o cabeçalho não nomeia nenhum algoritmo ao qual esses bytes pertençam.","A parte da assinatura está vazia: não há nada para conferir, nem mesmo com a chave.","{part} não é decodificado em nenhum texto.","{part} como decodificado. O parser não indicou nenhuma posição, então nada é marcado; estes são os primeiros {shown} de {total} caracteres.","{part} como decodificado. O parser não indicou nenhuma posição, então nada é marcado.","{part} como decodificado. O texto termina antes do JSON; a marca fica depois do último caractere.","{part} como decodificado. O parser parou na quebra de linha marcada, linha {line}, coluna {col}; até {around} caracteres de cada lado são mostrados.","{part} como decodificado. O parser parou na quebra de linha marcada, linha {line}, coluna {col}.","{part} como decodificado. O parser parou no caractere marcado, linha {line}, coluna {col}; até {around} caracteres de cada lado são mostrados.","{part} como decodificado. O parser parou no caractere marcado, linha {line}, coluna {col}.","{n} caracteres passam do limite de {limit} caracteres que esta ferramenta tentará processar.","{n} segundo","{n} segundos","{n} minuto","{n} minutos","{n} hora","{n} horas","{n} dia","{n} dias","{n} byte, não verificado","{n} bytes, não verificados","Assinatura presente: {n} byte, não conferido.","Assinatura presente: {n} bytes, não conferidos.","{n} caractere","{n} caracteres","Codificação e criptografia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","トークンを貼り付けてください。ヘッダー、ペイロード、クレームを、時刻を日付にして読めます。署名は検証しません。このページはデコードするだけで検証は行わず、検証には鍵が必要です。トークンはこのページの外に出ません。","署名は未検証","この端末で動作","オフラインで動作","トークン","結果","上にトークンを貼り付け","読み取れないトークン","デコード結果","このページはトークンをデコードしただけで、署名は確認していません。確認するには発行者の鍵が必要で、ここではできません。ここで問題なく読めるトークンでも、偽造されている場合や失効している場合があります。","ヘッダー","コピーしました","コピー","ペイロード","クレーム","仕組み","JWT は、ドットでつながれた 3 つの base64url 文字列(ヘッダー、ペイロード、署名)です。最初の 2 つは、\u003ccode>-\u003c/code> と \u003ccode>_\u003c/code> を \u003ccode>+\u003c/code> と \u003ccode>/\u003c/code> に戻し、トークン形式が省略している \u003ccode>=\u003c/code> のパディングを補い、\u003ccode>atob\u003c/code> を実行し、バイト列を \u003ccode>TextDecoder\u003c/code> の fatal モードで UTF-8 として読むことでデコードします。UTF-8 でないバイト列は推測せずに報告します。各結果は \u003ccode>JSON.parse\u003c/code> を通り、\u003ccode>JSON.stringify(value, null, 2)\u003c/code> で書き出されます。解析に失敗した場合はパーサー自身のメッセージと位置をそのまま伝え、デコードしたテキストをエラーの下に、その位置の前後最大 300 文字まで、該当文字に印を付けて表示します。入力が途中で終わったというメッセージではテキストの末尾に印を付け、位置を示さないその他のメッセージでは先頭 600 文字を印なしで表示します。貼り付けたテキスト内の空白と改行はどこにあっても無視され、先頭の \u003ccode>Bearer\u003c/code> は取り除かれるため、HTTP ヘッダーからコピーしたトークンもそのままデコードできます。","署名は検証しません。検証には発行者の鍵(HMAC シークレットまたは公開鍵)が必要ですが、このページは鍵を持たず、求めもしません。報告するのは署名が何バイトあるかだけで、署名部分が空の場合や \u003ccode>alg\u003c/code> が \u003ccode>none\u003c/code> の場合、またそのようなトークンに署名バイトが付いている場合(RFC 7518 が禁じています)も知らせます。時刻は \u003ccode>iat\u003c/code>、\u003ccode>nbf\u003c/code>、\u003ccode>exp\u003c/code> クレームを 1970-01-01 UTC からの秒数として読み、\u003ccode>Date.prototype.toISOString\u003c/code> で表示し、デコード時点の \u003ccode>Date.now()\u003c/code> と比較したものです。RFC 7519 の時刻は秒なので、100,000,000,000 を超える値(西暦 5000 年より先)は秒ではないと示し、ミリ秒として読んだ場合の日時を表示するだけで、判定はしません。バッジには 失効、未失効、まだ有効ではない の代わりに “秒ではない” と表示されます。未来の \u003ccode>nbf\u003c/code> は、\u003ccode>exp\u003c/code> の判定より先に まだ有効ではない を表示し、\u003ccode>exp\u003c/code> がそれより後でない場合は Never valid を表示します。相対表示は時間経過で更新されず、バッジが信頼するのは発行者の時計ではなくこの端末の時計です。","100,000 文字を超える入力は、試みずに拒否します。トークンはテキストボックスの中にだけ保持されます。このファイルにはサーバーがなく、ストレージには何も書き込まれず、タブを閉じると破棄されます。クレームはトークンが示すとおりに表示されます。\u003ccode>aud\u003c/code> は文字列でもリストでもよく、どちらでも表示されます。存在しないクレームはダッシュで表示されます。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","JWT デコーダー: ヘッダーとペイロードをローカルで読む — MDV","JWT を貼り付けると、ヘッダー、ペイロード、クレームを読め、発行時刻と有効期限は UTC の日付で表示されます。デコードのみで、検証は行いません。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","({line} 行目、{col} 列目)","{name} の {pos} 文字目に base64url の文字集合外の文字があります: {char}。","{name} は {n} 文字で、base64url エンコードではあり得ない長さです(4 で割った余りが 1)。","{name} は有効な UTF-8 ではないバイト列にデコードされます。","{name} は有効な JSON ではありません: {message}","{name} は有効な JSON ですが、オブジェクトではありません。","ドットで区切られた 3 つの部分が必要ですが、{n} 個でした。","ヘッダー(パート 1)","ペイロード(パート 2)","署名(パート 3)","{time}後","{time}前に失効","{time}前","数値ではありません: {value}","{value} — 秒としては大きすぎます。RFC 7519 の時刻は秒なので、有効な {name} ではありません。ミリ秒として読むと {when} です","日付で扱える範囲外","{value} — 日付で扱える範囲外","exp と nbf は秒ではない","{name} は秒ではない","常に無効: exp が nbf より後ではない","まだ有効ではない、{when}","失効","未失効","署名","base64url ではありません — {error}","空(0 バイト)、未検証","相対時刻は {time} に、この端末の時計で一度だけ計算されました。","alg は none で、署名部分はデコードすらできませんでした: {error}","署名部分はデコードすらできませんでした: {error}","alg は none で署名部分は空です。このトークンには何の署名もないため、誰でも作成できます。","alg は none ですが、署名部分に {n} バイトが含まれています。RFC 7518 は alg が none のトークンの署名は空でなければならないと定めているため、これは仕様違反です。しかもヘッダーには、そのバイトが属するアルゴリズムが示されていません。","署名部分は空です。鍵があっても確認するものがありません。","{part} はまったくテキストにデコードされません。","デコード後の {part}。パーサーが位置を示さなかったため、印は付いていません。{total} 文字のうち先頭の {shown} 文字を表示しています。","デコード後の {part}。パーサーが位置を示さなかったため、印は付いていません。","デコード後の {part}。JSON が終わる前にテキストが終わっています。印は最後の文字の後ろにあります。","デコード後の {part}。パーサーは印の付いた改行({line} 行目、{col} 列目)で停止しました。前後最大 {around} 文字を表示しています。","デコード後の {part}。パーサーは印の付いた改行({line} 行目、{col} 列目)で停止しました。","デコード後の {part}。パーサーは印の付いた文字({line} 行目、{col} 列目)で停止しました。前後最大 {around} 文字を表示しています。","デコード後の {part}。パーサーは印の付いた文字({line} 行目、{col} 列目)で停止しました。","{n} 文字は、このツールが処理する上限の {limit} 文字を超えています。","{n} 秒","{n} 秒","{n} 分","{n} 分","{n} 時間","{n} 時間","{n} 日","{n} 日","{n} バイト、未検証","{n} バイト、未検証","署名あり: {n} バイト、未確認。","署名あり: {n} バイト、未確認。","{n} 文字","{n} 文字","エンコードと暗号",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","토큰을 붙여넣으세요. 헤더, 페이로드, 클레임을 시간을 날짜로 바꿔 읽을 수 있습니다. 서명은 검증하지 않습니다. 이 페이지는 디코딩만 하며 검증에는 키가 필요합니다. 토큰은 이 페이지를 벗어나지 않습니다.","서명 미검증","이 기기에서 실행","오프라인 작동","토큰","결과","위에 토큰을 붙여넣기","읽을 수 없는 토큰","디코딩된 텍스트","이 페이지는 토큰을 디코딩했을 뿐 서명은 확인하지 않았으며, 발급자의 키가 필요하므로 확인할 수도 없습니다. 여기서 문제없이 읽히는 토큰도 위조되었거나 폐기되었을 수 있습니다.","헤더","복사됨","복사","페이로드","클레임","작동 방식","JWT는 점으로 이어진 base64url 문자열 세 개(헤더, 페이로드, 서명)입니다. 앞의 둘은 \u003ccode>-\u003c/code>와 \u003ccode>_\u003c/code>를 \u003ccode>+\u003c/code>와 \u003ccode>/\u003c/code>로 되돌리고, 토큰 형식이 생략한 \u003ccode>=\u003c/code> 패딩을 채우고, \u003ccode>atob\u003c/code>를 실행한 뒤, 바이트를 \u003ccode>TextDecoder\u003c/code>의 fatal 모드로 UTF-8로 읽어 디코딩합니다. UTF-8이 아닌 바이트열은 추측하지 않고 오류로 알립니다. 각 결과는 \u003ccode>JSON.parse\u003c/code>를 거쳐 \u003ccode>JSON.stringify(value, null, 2)\u003c/code>로 다시 출력됩니다. 파싱이 실패하면 파서 자체의 메시지와 위치를 그대로 전달하고, 디코딩된 텍스트를 오류 아래에 그 위치 앞뒤로 최대 300자까지 해당 문자를 표시해 보여 줍니다. 입력이 일찍 끝났다는 메시지는 텍스트의 끝에 표시하고, 위치를 알려 주지 않는 다른 메시지는 처음 600자를 표시 없이 보여 줍니다. 붙여넣은 텍스트의 공백과 줄바꿈은 어디에 있든 무시하고 맨 앞의 \u003ccode>Bearer\u003c/code>는 제거하므로, HTTP 헤더에서 복사한 토큰도 그대로 디코딩됩니다.","서명은 검증하지 않습니다. 검증에는 발급자의 키(HMAC 비밀키 또는 공개키)가 필요한데, 이 페이지에는 그런 키가 없고 요구하지도 않습니다. 서명이 몇 바이트인지만 알려 주며, 서명 부분이 비어 있을 때와 \u003ccode>alg\u003c/code>가 \u003ccode>none\u003c/code>일 때, 그리고 그런 토큰에 서명 바이트가 남아 있을 때(RFC 7518에서 금지함)도 알려 줍니다. 시간은 \u003ccode>iat\u003c/code>, \u003ccode>nbf\u003c/code>, \u003ccode>exp\u003c/code> 클레임을 1970-01-01 UTC 이후의 초로 읽어 \u003ccode>Date.prototype.toISOString\u003c/code>으로 출력하고, 디코딩 시점의 \u003ccode>Date.now()\u003c/code>와 비교한 것입니다. RFC 7519의 시간은 초 단위이므로 100,000,000,000을 넘는 값(서기 5000년 이후)은 초가 아니라고 표시하고, 밀리초로 읽었을 때의 날짜를 보여 주며 판정은 하지 않습니다. 배지에는 만료됨, 아직 만료 안 됨, 아직 유효하지 않음 대신 “초 단위 아님”가 표시됩니다. 아직 미래인 \u003ccode>nbf\u003c/code>는 \u003ccode>exp\u003c/code> 판정보다 먼저 아직 유효하지 않음를 표시하고, \u003ccode>exp\u003c/code>가 그보다 뒤가 아니면 Never valid를 표시합니다. 상대 시간 표시는 갱신되지 않으며, 배지는 발급자의 시계가 아니라 이 기기의 시계를 믿습니다.","100,000자를 넘는 입력은 시도하지 않고 거부합니다. 토큰은 텍스트 상자 안에만 있고 다른 곳에는 없습니다. 이 파일에는 서버가 없고, 저장소에 아무것도 기록하지 않으며, 탭을 닫으면 사라집니다. 클레임은 토큰이 밝힌 그대로 표시됩니다. \u003ccode>aud\u003c/code>는 문자열이든 목록이든 모두 출력되고, 없는 클레임은 대시로 표시됩니다.","다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","JWT 디코더: 헤더와 페이로드를 로컬에서 읽기 — MDV","JWT를 붙여넣으면 헤더, 페이로드, 클레임을 읽을 수 있고 발급 및 만료 시간이 UTC 날짜로 표시됩니다. 디코딩만 하며 검증은 하지 않습니다. 내 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","({line}행 {col}열)","{name}의 {pos}번째 위치에 base64url 문자 집합에 없는 문자가 있습니다: {char}.","{name}의 길이는 {n}자로, base64url 인코딩으로는 나올 수 없는 길이입니다(4로 나눈 나머지가 1).","{name}은(는) 유효한 UTF-8이 아닌 바이트로 디코딩됩니다.","{name}은(는) 유효한 JSON이 아닙니다: {message}","{name}은(는) 유효한 JSON이지만 객체가 아닙니다.","점으로 구분된 3개 부분이 필요하지만 {n}개입니다.","헤더(1번째 부분)","페이로드(2번째 부분)","서명(3번째 부분)","{time} 후","{time} 전 만료","{time} 전","숫자가 아닙니다: {value}","{value} — 초로 보기에는 너무 큽니다. RFC 7519의 시간은 초 단위이므로 올바른 {name}이(가) 아닙니다. 밀리초로 읽으면 {when}입니다","날짜로 표현할 수 있는 범위 밖","{value} — 날짜로 표현할 수 있는 범위 밖","exp와 nbf는 초 단위 아님","{name}은(는) 초 단위 아님","항상 무효: exp가 nbf보다 뒤가 아님","아직 유효하지 않음, {when}","만료됨","아직 만료 안 됨","서명","base64url이 아님 — {error}","비어 있음(0바이트), 미검증","상대 시간은 이 기기의 시계로 {time}에 한 번만 계산되었습니다.","alg가 none이며 서명 부분은 디코딩조차 되지 않았습니다: {error}","서명 부분은 디코딩조차 되지 않았습니다: {error}","alg가 none이고 서명 부분이 비어 있습니다. 이 토큰에는 서명이 없어 누구든 만들 수 있습니다.","alg가 none인데 서명 부분에 {n}바이트가 들어 있습니다. RFC 7518은 alg가 none인 토큰의 서명이 비어 있어야 한다고 규정하므로 이 토큰은 규격을 어기며, 헤더에는 이 바이트가 속한 알고리즘도 나와 있지 않습니다.","서명 부분이 비어 있습니다. 키가 있어도 확인할 것이 없습니다.","{part}은(는) 어떤 텍스트로도 디코딩되지 않습니다.","디코딩된 {part}. 파서가 위치를 알려 주지 않아 표시한 곳이 없습니다. 전체 {total}자 중 처음 {shown}자입니다.","디코딩된 {part}. 파서가 위치를 알려 주지 않아 표시한 곳이 없습니다.","디코딩된 {part}. JSON이 끝나기 전에 텍스트가 끝납니다. 표시는 마지막 문자 뒤에 있습니다.","디코딩된 {part}. 파서는 표시된 줄바꿈({line}행 {col}열)에서 멈췄습니다. 앞뒤로 최대 {around}자를 보여 줍니다.","디코딩된 {part}. 파서는 표시된 줄바꿈({line}행 {col}열)에서 멈췄습니다.","디코딩된 {part}. 파서는 표시된 문자({line}행 {col}열)에서 멈췄습니다. 앞뒤로 최대 {around}자를 보여 줍니다.","디코딩된 {part}. 파서는 표시된 문자({line}행 {col}열)에서 멈췄습니다.","{n}자는 이 도구가 처리하는 상한인 {limit}자를 넘습니다.","{n}초","{n}초","{n}분","{n}분","{n}시간","{n}시간","{n}일","{n}일","{n}바이트, 미검증","{n}바이트, 미검증","서명 있음: {n}바이트, 미확인.","서명 있음: {n}바이트, 미확인.","{n}자","{n}자","인코딩과 암호화",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","粘贴令牌,即可读取其头部、负载和声明,时间显示为日期。不验证签名:本页只解码、不校验,校验需要密钥。令牌不会离开本页。","签名未验证","在此设备上运行","可离线使用","令牌","结果","在上方粘贴令牌","无法读取的令牌","解码文本","本页只对令牌做了解码,没有检查签名,也无法检查,因为这需要签发者的密钥。在这里能正常读取的令牌,仍可能是伪造的或已被吊销。","头部","已复制","复制","负载","声明","工作原理","JWT 由三段以点连接的 base64url 字符串组成:头部、负载、签名。前两段的解码方式是:把 \u003ccode>-\u003c/code> 和 \u003ccode>_\u003c/code> 换回 \u003ccode>+\u003c/code> 和 \u003ccode>/\u003c/code>,补上令牌格式省略的 \u003ccode>=\u003c/code> 填充,执行 \u003ccode>atob\u003c/code>,再用 \u003ccode>TextDecoder\u003c/code> 的 fatal 模式把字节按 UTF-8 读取,因此不是 UTF-8 的字节序列会被报告而不是被猜测。每个结果都经过 \u003ccode>JSON.parse\u003c/code>,再用 \u003ccode>JSON.stringify(value, null, 2)\u003c/code> 输出;解析失败时,会原样转达解析器自己的消息和位置,并在错误下方显示解码后的文本,即该位置前后各最多 300 个字符,并标出该处的字符。提示输入过早结束的消息会标在文本末尾;其他未指明位置的消息则显示前 600 个字符,不加标记。粘贴文本中任何位置的空白和换行都会被忽略,开头的 \u003ccode>Bearer\u003c/code> 会被去掉,所以从 HTTP 头里复制的令牌可以直接解码。","不验证签名。验证需要签发者的密钥(HMAC 密钥或公钥),本页既没有也不索取;它只报告签名有多少字节,并在签名部分为空、\u003ccode>alg\u003c/code> 为 \u003ccode>none\u003c/code> 时提示,包括这类令牌仍带有签名字节的情况(RFC 7518 禁止这样做)。时间指 \u003ccode>iat\u003c/code>、\u003ccode>nbf\u003c/code>、\u003ccode>exp\u003c/code> 声明,按自 1970-01-01 UTC 起的秒数读取,用 \u003ccode>Date.prototype.toISOString\u003c/code> 输出,并与解码时刻的 \u003ccode>Date.now()\u003c/code> 比较。RFC 7519 的时间以秒为单位,因此大于 100,000,000,000 的值(超过公元 5000 年)会被标记为不是秒,按毫秒读取时的样子显示,并且不做判断:徽章显示“不是秒”,而不是 已过期、尚未过期 或 尚未生效。仍在未来的 \u003ccode>nbf\u003c/code> 会先于任何 \u003ccode>exp\u003c/code> 判断显示 尚未生效;若 \u003ccode>exp\u003c/code> 不晚于它,则显示 Never valid。相对时间不会自动刷新,徽章信任的是本设备的时钟,而不是签发者的时钟。","超过 100,000 个字符的输入会被拒绝,不会尝试处理。令牌只保存在文本框中,别无他处:本文件没有服务器,不向存储写入任何内容,关闭标签页即丢弃。声明按令牌所述原样显示:\u003ccode>aud\u003c/code> 可以是字符串或列表,两种都会输出;缺失的声明显示为破折号。","深色和语言按钮会把各自的设置记在此浏览器的本地存储中。你输入或拖入页面的任何内容都不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","JWT 解码器:在本地读取头部和负载 — MDV","粘贴 JWT，即可读取头部、负载和声明,签发和过期时间以 UTC 日期显示。只解码,从不验证。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","(第 {line} 行,第 {col} 列)","{name} 在位置 {pos} 处含有 base64url 字母表之外的字符:{char}。","{name} 长 {n} 个字符,这是任何 base64url 编码都不可能出现的长度(除以 4 余 1)。","{name} 解码后的字节不是有效的 UTF-8。","{name} 不是有效的 JSON:{message}","{name} 是有效的 JSON，但不是对象。","应有 3 个以点分隔的部分,实际为 {n} 个。","头部(第 1 部分)","负载(第 2 部分)","签名(第 3 部分)","{time}后","{time}前已过期","{time}前","不是数字:{value}","{value} — 作为秒数过大,而 RFC 7519 的时间以秒为单位,所以这不是有效的 {name};按毫秒读取则为 {when}","超出日期可表示的范围","{value} — 超出日期可表示的范围","exp 和 nbf 不是秒","{name} 不是秒","永不有效:exp 不晚于 nbf","尚未生效,{when}","已过期","尚未过期","签名","不是 base64url — {error}","为空(0 字节),未验证","相对时间仅在 {time} 根据本设备的时钟计算了一次。","alg 为 none，且签名部分甚至无法解码:{error}","签名部分甚至无法解码:{error}","alg 为 none 且签名部分为空:没有任何东西为此令牌签名,因此任何人都可以写出它。","alg 为 none，但签名部分却有 {n} 字节。RFC 7518 规定 alg 为 none 的令牌签名必须为空,所以此令牌违反了规范,而且头部也没有指明这些字节属于哪种算法。","签名部分为空:即使有密钥也没有可检查的内容。","{part} 解码后没有任何文本。","解码后的{part}。解析器没有指明位置,因此未加标记;以下是 {total} 个字符中的前 {shown} 个。","解码后的{part}。解析器没有指明位置,因此未加标记。","解码后的{part}。文本在 JSON 结束之前就结束了;标记位于最后一个字符之后。","解码后的{part}。解析器停在了标记的换行符处,第 {line} 行,第 {col} 列;两侧各最多显示 {around} 个字符。","解码后的{part}。解析器停在了标记的换行符处,第 {line} 行,第 {col} 列。","解码后的{part}。解析器停在了标记的字符处,第 {line} 行,第 {col} 列;两侧各最多显示 {around} 个字符。","解码后的{part}。解析器停在了标记的字符处,第 {line} 行,第 {col} 列。","{n} 个字符超出了本工具会尝试处理的 {limit} 个字符上限。","{n} 秒","{n} 秒","{n} 分钟","{n} 分钟","{n} 小时","{n} 小时","{n} 天","{n} 天","{n} 字节,未验证","{n} 字节,未验证","存在签名:{n} 字节,未检查。","存在签名:{n} 字节,未检查。","{n} 个字符","{n} 个字符","编码与加密",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2413,7 +2626,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var m = /at position (\d+)/.exec(message);
     if (!m || /line \d+ column \d+/.test(message)) return message;
     var pos = +m[1], lc = lineCol(text, pos);
-    return message.replace(/position \d+/, "position " + pos + " (line " + lc.line + ", column " + lc.col + ")");
+    return message.replace(/position \d+/, "position " + pos + " " + tr("(line {line}, column {col})", { line: lc.line, col: lc.col }));
   }
   // Pure. The offset JSON.parse stopped at: "at position N" (Chrome), "at line L column C" (Firefox),
   // the end of the text for an end-of-input message, or -1 when the message names no place.
@@ -2444,10 +2657,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   function b64urlToBytes(s, name) {
     var bad = /[^A-Za-z0-9_-]/.exec(s);
-    if (bad) throw new Error(name + " has a character outside the base64url alphabet at position " +
-      bad.index + ": " + JSON.stringify(bad[0]) + ".");
-    if (s.length % 4 === 1) throw new Error(name + " is " + s.length +
-      " characters long, a length no base64url encoding can have (remainder 1 when divided by 4).");
+    if (bad) throw new Error(tr("{name} has a character outside the base64url alphabet at position {pos}: {char}.",
+      { name: name, pos: bad.index, char: JSON.stringify(bad[0]) }));
+    if (s.length % 4 === 1) throw new Error(tr("{name} is {n} characters long, a length no base64url encoding can have (remainder 1 when divided by 4).",
+      { name: name, n: s.length }));
     var b64 = s.replace(/-/g, "+").replace(/_/g, "/");
     while (b64.length % 4) b64 += "=";
     var bin = atob(b64), bytes = new Uint8Array(bin.length);
@@ -2456,17 +2669,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   function bytesToText(bytes, name) {
     try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
-    catch (e) { throw new Error(name + " decodes to bytes that are not valid UTF-8."); }
+    catch (e) { throw new Error(tr("{name} decodes to bytes that are not valid UTF-8.", { name: name })); }
   }
   function parseObject(text, name) {
     var v;
     try { v = JSON.parse(text); }
     catch (e) {
-      var fail = new Error(name + " is not valid JSON: " + where(text, String(e.message)));
+      var fail = new Error(tr("{name} is not valid JSON: {message}", { name: name, message: where(text, String(e.message)) }));
       fail.decoded = text; fail.pos = errorPos(text, String(e.message)); fail.part = name;
       throw fail;
     }
-    if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error(name + " is valid JSON but not an object.");
+    if (!v || typeof v !== "object" || Array.isArray(v)) throw new Error(tr("{name} is valid JSON but not an object.", { name: name }));
     return v;
   }
 
@@ -2474,11 +2687,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function decode(raw) {
     var t = raw.trim().replace(/^Bearer\s+/i, "").replace(/\s+/g, "");
     var parts = t.split(".");
-    if (parts.length !== 3) throw new Error("Expected 3 dot-separated parts, got " + parts.length + ".");
-    var header = parseObject(bytesToText(b64urlToBytes(parts[0], "Header (part 1)"), "Header (part 1)"), "Header (part 1)");
-    var payload = parseObject(bytesToText(b64urlToBytes(parts[1], "Payload (part 2)"), "Payload (part 2)"), "Payload (part 2)");
+    if (parts.length !== 3) throw new Error(tr("Expected 3 dot-separated parts, got {n}.", { n: parts.length }));
+    var nh = tr("Header (part 1)"), np = tr("Payload (part 2)"), ns = tr("Signature (part 3)");
+    var header = parseObject(bytesToText(b64urlToBytes(parts[0], nh), nh), nh);
+    var payload = parseObject(bytesToText(b64urlToBytes(parts[1], np), np), np);
     var sigBytes = null, sigError = null;
-    try { sigBytes = b64urlToBytes(parts[2], "Signature (part 3)").length; }
+    try { sigBytes = b64urlToBytes(parts[2], ns).length; }
     catch (e) { sigError = String(e.message); }
     return { header: header, payload: payload, sigBytes: sigBytes, sigError: sigError };
   }
@@ -2494,21 +2708,21 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     else if (abs < 3600) { n = Math.round(abs / 60); unit = "minute"; }
     else if (abs < 86400) { n = Math.round(abs / 3600); unit = "hour"; }
     else { n = Math.round(abs / 86400); unit = "day"; }
-    var s = n + " " + unit + (n === 1 ? "" : "s");
-    if (diff >= 0) return "in " + s;
-    return (isExp ? "expired " : "") + s + " ago";
+    var s = unit === "second" ? trn(n, "{n} second", "{n} seconds") : unit === "minute" ? trn(n, "{n} minute", "{n} minutes")
+      : unit === "hour" ? trn(n, "{n} hour", "{n} hours") : trn(n, "{n} day", "{n} days");
+    if (diff >= 0) return tr("in {time}", { time: s });
+    return isExp ? tr("expired {time} ago", { time: s }) : tr("{time} ago", { time: s });
   }
   // Pure. Turns a numeric-date claim into "2026-08-24 19:10:00 UTC (in 3 days)".
   function describeTime(v, nowSec, name) {
-    if (typeof v !== "number" || !isFinite(v)) return "not a number: " + JSON.stringify(v);
+    if (typeof v !== "number" || !isFinite(v)) return tr("not a number: {value}", { value: JSON.stringify(v) });
     if (v > NOT_SECONDS) {
       var asMs = utc(v);
-      return v + " — too large for seconds, and RFC 7519 times are seconds, so this is not a valid " + name +
-        "; read as milliseconds it would be " +
-        (asMs ? asMs + " (" + relative(v / 1000, nowSec, false) + ")" : "outside the range a date can hold");
+      return tr("{value} — too large for seconds, and RFC 7519 times are seconds, so this is not a valid {name}; read as milliseconds it would be {when}",
+        { value: v, name: name, when: asMs ? asMs + " (" + relative(v / 1000, nowSec, false) + ")" : tr("outside the range a date can hold") });
     }
     var date = utc(v * 1000);
-    if (!date) return v + " — outside the range a date can hold";
+    if (!date) return tr("{value} — outside the range a date can hold", { value: v });
     return date + " (" + relative(v, nowSec, name === "exp") + ")";
   }
   // Pure. The badge nbf and exp earn together, or null when neither is a number. A time in
@@ -2519,13 +2733,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var ms = [];
     if (exp !== null && exp > NOT_SECONDS) ms.push("exp");
     if (nbf !== null && nbf > NOT_SECONDS) ms.push("nbf");
-    if (ms.length) return { cls: "is-warn", text: ms.join(" and ") + " not in seconds" };
+    if (ms.length) return { cls: "is-warn", text: ms.length === 2 ? tr("exp and nbf not in seconds") : tr("{name} not in seconds", { name: ms[0] }) };
     if (nbf !== null && nowSec < nbf) {
-      if (exp !== null && exp <= nbf) return { cls: "is-bad", text: "Never valid: exp is not after nbf" };
-      return { cls: "is-warn", text: "Not yet valid, " + relative(nbf, nowSec, false) };
+      if (exp !== null && exp <= nbf) return { cls: "is-bad", text: tr("Never valid: exp is not after nbf") };
+      return { cls: "is-warn", text: tr("Not yet valid, {when}", { when: relative(nbf, nowSec, false) }) };
     }
     if (exp === null) return null;
-    return nowSec >= exp ? { cls: "is-bad", text: "Expired" } : { cls: "is-ok", text: "Not yet expired" };
+    return nowSec >= exp ? { cls: "is-bad", text: tr("Expired") } : { cls: "is-ok", text: tr("Not yet expired") };
   }
   function plain(v) {
     if (v === undefined) return "—";
@@ -2557,10 +2771,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     row("iat", p.iat === undefined ? "—" : describeTime(p.iat, nowSec, "iat"));
     row("nbf", p.nbf === undefined ? "—" : describeTime(p.nbf, nowSec, "nbf"));
     row("exp", p.exp === undefined ? "—" : describeTime(p.exp, nowSec, "exp"));
-    row("signature", d.sigError ? "not base64url — " + d.sigError
-      : d.sigBytes === 0 ? "empty (0 bytes), not verified"
-      : d.sigBytes + " bytes, not verified");
-    clock.textContent = "Relative times were computed once, at " + utc(nowMs) + ", from this device's clock.";
+    row(tr("signature"), d.sigError ? tr("not base64url — {error}", { error: d.sigError })
+      : d.sigBytes === 0 ? tr("empty (0 bytes), not verified")
+      : trn(d.sigBytes, "{n} byte, not verified", "{n} bytes, not verified"));
+    clock.textContent = tr("Relative times were computed once, at {time}, from this device's clock.", { time: utc(nowMs) });
 
     var badge = timeBadge(p, nowSec);
     expbadge.hidden = !badge;
@@ -2570,12 +2784,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     }
     var none = h.alg === "none";
     signote.textContent = d.sigError
-      ? (none ? "alg is none, and the signature part" : "The signature part") + " could not even be decoded: " + d.sigError
-      : none && d.sigBytes === 0 ? "alg is none and the signature part is empty: nothing signs this token, so anyone could have written it."
-      : none ? "alg is none, yet the signature part holds " + d.sigBytes + " bytes. RFC 7518 says a token with alg none " +
-        "must have an empty signature, so this one breaks the spec, and the header names no algorithm those bytes belong to."
-      : d.sigBytes === 0 ? "The signature part is empty: there is nothing to check, even with the key."
-      : "Signature present: " + d.sigBytes + " bytes, unchecked.";
+      ? (none ? tr("alg is none, and the signature part could not even be decoded: {error}", { error: d.sigError })
+        : tr("The signature part could not even be decoded: {error}", { error: d.sigError }))
+      : none && d.sigBytes === 0 ? tr("alg is none and the signature part is empty: nothing signs this token, so anyone could have written it.")
+      : none ? tr("alg is none, yet the signature part holds {n} bytes. RFC 7518 says a token with alg none must have an empty signature, so this one breaks the spec, and the header names no algorithm those bytes belong to.", { n: d.sigBytes })
+      : d.sigBytes === 0 ? tr("The signature part is empty: there is nothing to check, even with the key.")
+      : trn(d.sigBytes, "Signature present: {n} byte, unchecked.", "Signature present: {n} bytes, unchecked.");
   }
 
   // The decoded segment JSON.parse refused, with the place it stopped marked.
@@ -2589,16 +2803,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       errsrcText.appendChild(document.createTextNode(ex.after));
     }
     var n = e.decoded.length, lc = lineCol(e.decoded, e.pos);
+    var brk = e.pos >= 0 && e.pos < n && /[\r\n]/.test(e.decoded.charAt(e.pos)), more = n > 2 * AROUND + 1;
+    var hv = { part: e.part, shown: 2 * AROUND, total: n.toLocaleString(), line: lc.line, col: lc.col, around: AROUND };
     errsrcHint.textContent = n === 0
-      ? e.part + " decodes to no text at all."
+      ? tr("{part} decodes to no text at all.", hv)
       : e.pos < 0
-      ? e.part + " as decoded. The parser named no position, so nothing is marked" +
-        (n > 2 * AROUND ? "; these are the first " + (2 * AROUND) + " of " + n.toLocaleString() + " characters." : ".")
+      ? (n > 2 * AROUND ? tr("{part} as decoded. The parser named no position, so nothing is marked; these are the first {shown} of {total} characters.", hv)
+        : tr("{part} as decoded. The parser named no position, so nothing is marked.", hv))
       : e.pos >= n
-      ? e.part + " as decoded. The text ends before the JSON does; the mark sits after the last character."
-      : e.part + " as decoded. The parser stopped at the marked " +
-        (/[\r\n]/.test(e.decoded.charAt(e.pos)) ? "line break" : "character") + ", line " + lc.line + ", column " + lc.col +
-        (n > 2 * AROUND + 1 ? "; up to " + AROUND + " characters either side are shown." : ".");
+      ? tr("{part} as decoded. The text ends before the JSON does; the mark sits after the last character.", hv)
+      : brk ? (more ? tr("{part} as decoded. The parser stopped at the marked line break, line {line}, column {col}; up to {around} characters either side are shown.", hv)
+          : tr("{part} as decoded. The parser stopped at the marked line break, line {line}, column {col}.", hv))
+      : (more ? tr("{part} as decoded. The parser stopped at the marked character, line {line}, column {col}; up to {around} characters either side are shown.", hv)
+          : tr("{part} as decoded. The parser stopped at the marked character, line {line}, column {col}.", hv));
     errsrc.hidden = false;
   }
 
@@ -2610,14 +2827,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (which !== "result") expbadge.hidden = true;
   }
 
-  function run() {
+  var lastNow = null;
+  function run(keepNow) {
     var text = input.value;
-    size.textContent = text.length.toLocaleString() + " characters";
+    size.textContent = trn(text.length, "{n} character", "{n} characters");
     headerText = ""; payloadText = "";
     if (!text.trim()) { state("empty"); return; }
     if (text.length > LIMIT) {
-      errmsg.textContent = text.length.toLocaleString() + " characters is past the " +
-        LIMIT.toLocaleString() + "-character ceiling this tool will attempt.";
+      errmsg.textContent = tr("{n} characters is past the {limit}-character ceiling this tool will attempt.",
+        { n: text.length.toLocaleString(), limit: LIMIT.toLocaleString() });
       state("error"); return;
     }
     var d;
@@ -2627,7 +2845,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       if (typeof e.decoded === "string") showDecoded(e);
       return;
     }
-    render(d, Date.now());
+    if (keepNow !== true || lastNow === null) lastNow = Date.now();
+    render(d, lastNow);
     state("result");
   }
 
@@ -2643,10 +2862,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   }
 
-  input.addEventListener("input", run);
+  input.addEventListener("input", function () { run(); });
   wireCopy("copy-h", "copied-h", function () { return headerText; });
   wireCopy("copy-p", "copied-p", function () { return payloadText; });
   input.focus({ preventScroll: true });
+  onLang(function () { run(true); });
   run();
 })();
 </script>

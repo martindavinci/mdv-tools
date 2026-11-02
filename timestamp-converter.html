@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link is-here" href="./timestamp-converter.html" aria-current="page" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link is-here" href="./timestamp-converter.html" aria-current="page" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,39 +2353,39 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Timestamp converter</h1>
+      <h1 class="mdv-head-name" data-t="72">Timestamp converter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Paste a Unix timestamp, seconds to nanoseconds, or a date. Read it every way
+    <p class="mdv-head-line" data-t="79">Paste a Unix timestamp, seconds to nanoseconds, or a date. Read it every way
       at once: seconds, milliseconds, ISO 8601, this device's local time, ISO week, and how far it is from now.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
-    <label class="mdv-label" style="margin:0" for="in">Timestamp or date</label>
+    <label class="mdv-label" style="margin:0" for="in" data-t="82">Timestamp or date</label>
     <div class="mdv-row" style="gap:var(--space-2)">
       <input class="mdv-input mdv-mono" id="in" type="text" spellcheck="false" autocomplete="off"
         placeholder="1724500000 or 2026-08-24T12:00:00Z" style="flex:1">
-      <button class="mdv-btn" id="now" type="button">Now</button>
+      <button class="mdv-btn" id="now" type="button" data-t="83">Now</button>
     </div>
   </section>
 
   <div class="mdv-row is-between">
-    <div class="mdv-seg" role="group" aria-label="Zone for the local rows">
-      <button type="button" data-zone="local" class="is-on">Local</button>
+    <div class="mdv-seg" role="group" aria-label="Zone for the local rows" data-t-attrs="aria-label">
+      <button type="button" data-zone="local" class="is-on" data-t="84">Local</button>
       <button type="button" data-zone="utc">UTC</button>
     </div>
-    <label class="mdv-check"><input type="checkbox" id="tick"> Tick every second</label>
+    <label class="mdv-check"><input type="checkbox" id="tick"> <span data-t="85">Tick every second</span></label>
   </div>
   <p class="mdv-hint" id="zonehint" style="margin:0">—</p>
 
   <section class="mdv-stack is-tight">
-    <span class="mdv-label" style="margin:0">Result</span>
+    <span class="mdv-label" style="margin:0" data-t="86">Result</span>
 
-    <div class="mdv-empty" id="empty"><span>type a timestamp or a date above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="87">type a timestamp or a date above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Could not read that as a date</span>
@@ -2287,32 +2399,32 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <div class="mdv-panel is-flush" id="result" hidden>
       <dl class="mdv-kv">
-        <dt>Unix seconds</dt>
-        <dd><div class="mdv-row is-between"><span id="k-s" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-s">Copy</button></span></div></dd>
-        <dt>Unix milliseconds</dt>
-        <dd><div class="mdv-row is-between"><span id="k-ms" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-ms">Copy</button></span></div></dd>
+        <dt data-t="88">Unix seconds</dt>
+        <dd><div class="mdv-row is-between"><span id="k-s" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-s"><span data-t="90">Copy</span></button></span></div></dd>
+        <dt data-t="91">Unix milliseconds</dt>
+        <dd><div class="mdv-row is-between"><span id="k-ms" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-ms"><span data-t="90">Copy</span></button></span></div></dd>
         <dt>ISO 8601 UTC</dt>
-        <dd><div class="mdv-row is-between"><span id="k-iso" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-iso">Copy</button></span></div></dd>
-        <dt data-zoned="ISO 8601 with offset">ISO 8601 with offset</dt>
-        <dd><div class="mdv-row is-between"><span id="k-off" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-off">Copy</button></span></div></dd>
-        <dt data-zoned="Written out">Written out</dt>
-        <dd><div class="mdv-row is-between"><span id="k-fmt" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-fmt">Copy</button></span></div></dd>
+        <dd><div class="mdv-row is-between"><span id="k-iso" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-iso"><span data-t="90">Copy</span></button></span></div></dd>
+        <dt><span data-t="92">ISO 8601 with offset</span><span data-zl></span></dt>
+        <dd><div class="mdv-row is-between"><span id="k-off" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-off"><span data-t="90">Copy</span></button></span></div></dd>
+        <dt><span data-t="93">Written out</span><span data-zl></span></dt>
+        <dd><div class="mdv-row is-between"><span id="k-fmt" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-fmt"><span data-t="90">Copy</span></button></span></div></dd>
         <dt>UTC</dt>
-        <dd><div class="mdv-row is-between"><span id="k-utc" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-utc">Copy</button></span></div></dd>
-        <dt>Relative to now</dt>
-        <dd><div class="mdv-row is-between"><span id="k-rel" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-rel">Copy</button></span></div></dd>
-        <dt data-zoned="Day of week">Day of week</dt>
-        <dd><div class="mdv-row is-between"><span id="k-dow" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-dow">Copy</button></span></div></dd>
-        <dt data-zoned="Day of year">Day of year</dt>
-        <dd><div class="mdv-row is-between"><span id="k-doy" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-doy">Copy</button></span></div></dd>
-        <dt data-zoned="ISO week">ISO week</dt>
-        <dd><div class="mdv-row is-between"><span id="k-week" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-week">Copy</button></span></div></dd>
-        <dt>Read as</dt><dd id="k-kind">—</dd>
+        <dd><div class="mdv-row is-between"><span id="k-utc" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-utc"><span data-t="90">Copy</span></button></span></div></dd>
+        <dt data-t="94">Relative to now</dt>
+        <dd><div class="mdv-row is-between"><span id="k-rel" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-rel"><span data-t="90">Copy</span></button></span></div></dd>
+        <dt><span data-t="95">Day of week</span><span data-zl></span></dt>
+        <dd><div class="mdv-row is-between"><span id="k-dow" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-dow"><span data-t="90">Copy</span></button></span></div></dd>
+        <dt><span data-t="96">Day of year</span><span data-zl></span></dt>
+        <dd><div class="mdv-row is-between"><span id="k-doy" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-doy"><span data-t="90">Copy</span></button></span></div></dd>
+        <dt><span data-t="97">ISO week</span><span data-zl></span></dt>
+        <dd><div class="mdv-row is-between"><span id="k-week" style="flex:1">—</span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden data-t="89">Copied</span><button class="mdv-btn is-sm is-quiet" type="button" data-copy="k-week"><span data-t="90">Copy</span></button></span></div></dd>
+        <dt data-t="98">Read as</dt><dd id="k-kind">—</dd>
       </dl>
     </div>
 
     <div class="mdv-stack is-tight" id="zones" hidden>
-      <span class="mdv-label" style="margin:0">Other time zones</span>
+      <span class="mdv-label" style="margin:0" data-t="99">Other time zones</span>
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv" id="zonelist"></dl>
       </div>
@@ -2320,9 +2432,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="100">How this works</summary>
     <div class="mdv-method-body">
-      <p>A whole number (a fraction is allowed) is read as Unix time, and the count of digits before the
+      <p data-t="101">A whole number (a fraction is allowed) is read as Unix time, and the count of digits before the
         point picks the unit, leading zeros not counted: up to 11 digits is seconds, 12 to 14 is
         milliseconds, 15 to 17 is microseconds, 18 to 20 is nanoseconds; more is refused. Each line
         falls on 1973-03-03 in the smaller unit and the year 5138 in the larger, so a timestamp from
@@ -2332,7 +2444,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <code>BigInt</code>, not floating point; anything finer than a millisecond is dropped, rounding
         down to the whole millisecond — for a time before 1970, the earlier one — and Read as says when
         that happened.</p>
-      <p>A string shaped like ISO 8601 / RFC 3339 is checked field by field first, because
+      <p data-t="102">A string shaped like ISO 8601 / RFC 3339 is checked field by field first, because
         <code>Date.parse</code> rolls 2026-02-30 over into March: the year is 4 digits or a sign and 6,
         the month 01–12, the day one that exists in that month, the hour 00–23, minute and second
         00–59, an offset hour 00–23. 24:00 and a leap second 60 are refused. A space may stand for
@@ -2349,7 +2461,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         slashes, dots or one-digit fields (<code>2026/08/24</code>), or month first with slashes
         (<code>08/24/2026</code>), has its month and day checked the same way first, so it cannot roll
         over either.</p>
-      <p>A <code>Date</code> holds milliseconds since 1970-01-01T00:00:00Z as a number, and its range
+      <p data-t="103">A <code>Date</code> holds milliseconds since 1970-01-01T00:00:00Z as a number, and its range
         is ±8,640,000,000,000,000 ms, about ±273,000 years; beyond that the tool refuses. Unix time has
         no leap seconds: every day is exactly 86,400 s, so the 27 leap seconds inserted since 1972 are
         not in these numbers, and a leap second is a repeated 23:59:59, not a count. ISO UTC comes from
@@ -2365,14 +2477,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         week: weeks start on Monday and week 1 is the week that holds 4 January, so 1–3 January can
         belong to the last week of the previous year and 29–31 December to week 1 of the next. The tool
         takes the Thursday of the input's week, and counts weeks from the Monday of that year's week 1.</p>
-      <p>The rows marked with the zone depend on this device's zone setting, read from
+      <p data-t="104">The rows marked with the zone depend on this device's zone setting, read from
         <code>Intl.DateTimeFormat().resolvedOptions().timeZone</code>, and on the browser's copy of the
         zone database; change the operating system's zone and they change. The UTC switch makes those
         rows use UTC instead. "Now" and the ticking clock use <code>Date.now()</code> and a 1,000 ms
         <code>setInterval</code> — that is this device's clock, which can itself be wrong. Input over
         200 characters is refused; no date needs more. Nothing is uploaded: there is no server in
         this file.</p>
-      <p>Other time zones reads twelve places from the browser's own copy of the IANA zone database,
+      <p data-t="105">Other time zones reads twelve places from the browser's own copy of the IANA zone database,
         through <code>Intl.DateTimeFormat</code> with a <code>timeZone</code>: UTC,
         <code>America/Los_Angeles</code>, <code>America/Denver</code>, <code>America/Chicago</code>,
         <code>America/New_York</code>, <code>Europe/London</code>, <code>Europe/Paris</code> for Central
@@ -2388,24 +2500,25 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         many calendar days it sits ahead of or behind this device for the same instant, and the offset
         in short form; Copy copies the full ISO 8601 form with offset and milliseconds. A row that
         matches this device's zone says so.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="106">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Time &amp; Date">
-    <span class="mdv-tag">Also in Time &amp; Date</span>
-    <a href="./age-calculator.html">Age calculator</a>
-    <a href="./date-difference.html">Date difference</a>
-    <a href="./discord-timestamp.html">Discord timestamp</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Time &amp; Date"}'>Also in Time &amp; Date</span>
+    <a href="./age-calculator.html" data-t="68">Age calculator</a>
+    <a href="./date-difference.html" data-t="69">Date difference</a>
+    <a href="./discord-timestamp.html" data-t="70">Discord timestamp</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="107">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="108">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="109" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="110">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2416,6 +2529,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Timestamp Converter — Unix seconds, milliseconds, ISO 8601, local time — MDV","Paste a Unix timestamp in seconds, milliseconds, microseconds or nanoseconds, or an ISO 8601 date. Read it as UTC, local time, ISO week, relative time and twelve common time zones. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Zone for the local rows","Unix seconds — up to 11 digits","Unix seconds — up to 11 digits; digits finer than a millisecond dropped, rounded down","Unix milliseconds — 12 to 14 digits","Unix milliseconds — 12 to 14 digits; digits finer than a millisecond dropped, rounded down","Unix microseconds — 15 to 17 digits","Unix microseconds — 15 to 17 digits; digits finer than a millisecond dropped, rounded down","Unix nanoseconds — 18 to 20 digits","Unix nanoseconds — 18 to 20 digits; digits finer than a millisecond dropped, rounded down","US Pacific","US Mountain","US Central","US Eastern","UK","Central Europe","Eastern Europe","India","China","Japan","Australia East","{n} digits before the point is past the 20 of a nanosecond count. Up to 11 digits reads as seconds, 12–14 as milliseconds, 15–17 as microseconds, 18–20 as nanoseconds.","{name} {value} is out of range in {where}: {lo} to {hi}.","{name} {value} is out of range: {lo} to {hi}.","Year {year} has the wrong shape: write 4 digits, or + or - and 6 digits.","Year -000000 is not allowed in ISO 8601: write 0000 or +000000.","Month","Day","Hour 24 is not read here: write 00 on the next day.","Hour","Minute","Second 60 is a leap second, and Unix time has none: write 59.","Second","Offset hour","Offset minute","{s} is past what a Date can hold: -271821-04-20T00:00:00Z to +275760-09-13T00:00:00Z.","a space for T","offset {from} read as {to}","ISO 8601 — date only, read as UTC midnight","ISO 8601","ISO 8601 — no offset given, read as local time in {zone}","{kind} ({how})","Date.parse — engine-dependent format","“{text}” is not a Unix timestamp, not ISO 8601, and Date.parse returned NaN.","this browser has no zone data for {zone}","outside the range this zone can be shown in","this device","Copied","Copy","Copies the ISO 8601 form with offset","That local time does not exist","{s} falls in a gap the clocks skip in {zone}. This engine read it as {used}. Add an offset to say which instant you mean.","That local time happens twice","{s} happens twice in {zone}, when the clocks go back. This engine read it as {used}, the first; the other is {other}. Add an offset to pick one.","{s} happens twice in {zone}, when the clocks go back. This engine read it as {used}, the second; the other is {other}. Add an offset to pick one.","Refused","{n} characters is past the {limit}-character ceiling — no date needs more.","Could not read that as a date","Local is {zone} on this device — Intl.DateTimeFormat().resolvedOptions().timeZone.","Zone rows are showing UTC.","Zone rows are showing that zone.","{n} day","{n} days","Time & Date","2026-11-02"],"h":111,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Pega un timestamp Unix, de segundos a nanosegundos, o una fecha. Léelo de todas las formas a la vez: segundos, milisegundos, ISO 8601, la hora local de este dispositivo, la semana ISO y cuánto falta o ha pasado desde ahora.","En este dispositivo","Funciona sin conexión","Timestamp o fecha","Ahora","Local","Actualizar cada segundo","Resultado","escribe un timestamp o una fecha arriba","Segundos Unix","Copiado","Copiar","Milisegundos Unix","ISO 8601 con desfase","Escrito en palabras","Respecto a ahora","Día de la semana","Día del año","Semana ISO","Leído como","Otras zonas horarias","Cómo funciona","Un número entero (se admite una fracción) se lee como tiempo Unix, y la cantidad de dígitos antes del punto decide la unidad, sin contar los ceros a la izquierda: hasta 11 dígitos son segundos, de 12 a 14 son milisegundos, de 15 a 17 son microsegundos y de 18 a 20 son nanosegundos; más se rechaza. Cada límite cae en 1973-03-03 en la unidad menor y en el año 5138 en la mayor, así que un timestamp de las últimas cinco décadas no es ambiguo y un número alcanza desde el año −1199 hasta el 5138. Un valor en la unidad más fina anterior a 1973-03-03 se leería como la unidad más gruesa: escríbelo como fecha. Los dígitos se pasan a milisegundos como cadena decimal en \u003ccode>BigInt\u003c/code>, no en coma flotante; lo que es más fino que un milisegundo se descarta, redondeando hacia abajo al milisegundo entero (en una hora anterior a 1970, hacia la anterior), y Leído como avisa cuando ocurre.","Una cadena con forma de ISO 8601 / RFC 3339 se comprueba primero campo a campo, porque \u003ccode>Date.parse\u003c/code> pasa 2026-02-30 a marzo: el año tiene 4 dígitos o un signo y 6, el mes 01–12, el día uno que exista en ese mes, la hora 00–23, minuto y segundo 00–59, y la hora del desfase 00–23. 24:00 y el segundo intercalar 60 se rechazan. Un espacio puede sustituir a la \u003ccode>T\u003c/code>, como permite RFC 3339, y el desfase puede escribirse \u003ccode>+02:00\u003c/code>, \u003ccode>+0200\u003c/code> o \u003ccode>+02\u003c/code>; la página lo reescribe como \u003ccode>+02:00\u003c/code> y lo indica. Después \u003ccode>Date.parse\u003c/code> lo lee con las reglas de ECMAScript: una fecha sola es medianoche UTC, una fecha con hora y sin desfase es hora local, \u003ccode>Z\u003c/code> o un desfase se respetan y los decimales más allá de los milisegundos se descartan. La hora local se vuelve a leer con los getters locales; cuando cae en un hueco que los relojes se saltan, o en un tramo que se repite al retrasarse, un aviso lo dice y muestra qué instante eligió este motor. La comprobación de repetición prueba los desfases vigentes un día antes y un día después, así que dos cambios en un mismo día pueden pasar inadvertidos. Todo lo demás también va a \u003ccode>Date.parse\u003c/code>, pero lo que acepta más allá de ISO depende del motor: “Aug 24 2026” se lee en Chrome y Firefox; no te apoyes en ello. Una fecha escrita con el año primero y barras, puntos o campos de un dígito (\u003ccode>2026/08/24\u003c/code>), o con el mes primero y barras (\u003ccode>08/24/2026\u003c/code>), tiene su mes y su día comprobados igual antes, así que tampoco puede pasar al mes siguiente.","Un \u003ccode>Date\u003c/code> guarda los milisegundos desde 1970-01-01T00:00:00Z como un número, y su rango es ±8.640.000.000.000.000 ms, unos ±273.000 años; más allá, la herramienta lo rechaza. El tiempo Unix no tiene segundos intercalares: cada día dura exactamente 86.400 s, así que los 27 segundos intercalares añadidos desde 1972 no están en estos números, y un segundo intercalar es un 23:59:59 repetido, no una cuenta. El ISO UTC sale de \u003ccode>toISOString\u003c/code>. La forma con desfase se construye con los getters de componentes, y su desfase es la diferencia entre esos campos locales y UTC, al segundo, no \u003ccode>getTimezoneOffset\u003c/code>, que puede perder los segundos, mientras que la hora media local anterior a las zonas estándar los tenía (Roma era +00:49:56 hasta 1893). Un desfase con segundos se imprime como ±HH:MM:SS, algo que RFC 3339 no permite y que \u003ccode>Date.parse\u003c/code> no vuelve a leer. La forma escrita y el día de la semana salen de \u003ccode>Intl.DateTimeFormat\u003c/code> en el idioma de este navegador; el tiempo relativo usa \u003ccode>Intl.RelativeTimeFormat\u003c/code> con la mayor unidad que cabe, redondeada a una unidad entera, tomando un mes como 30,44 días y un año como 365,25. El día del año cuenta desde el 1 de enero. Semana ISO: las semanas empiezan en lunes y la semana 1 es la que contiene el 4 de enero, de modo que del 1 al 3 de enero pueden pertenecer a la última semana del año anterior y del 29 al 31 de diciembre a la semana 1 del siguiente. La herramienta toma el jueves de la semana de la entrada y cuenta las semanas desde el lunes de la semana 1 de ese año.","Las filas marcadas con la zona dependen del ajuste de zona de este dispositivo, leído de \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, y de la copia de la base de datos de zonas del navegador; si cambias la zona del sistema operativo, cambian. El selector UTC hace que esas filas usen UTC. “Ahora” y el reloj que avanza usan \u003ccode>Date.now()\u003c/code> y un \u003ccode>setInterval\u003c/code> de 1.000 ms: es el reloj de este dispositivo, que también puede estar mal. Una entrada de más de 200 caracteres se rechaza; ninguna fecha necesita más. No se sube nada: este archivo no tiene servidor.","Otras zonas horarias lee doce lugares de la copia que tiene el propio navegador de la base de datos de zonas IANA, mediante \u003ccode>Intl.DateTimeFormat\u003c/code> con un \u003ccode>timeZone\u003c/code>: UTC, \u003ccode>America/Los_Angeles\u003c/code>, \u003ccode>America/Denver\u003c/code>, \u003ccode>America/Chicago\u003c/code>, \u003ccode>America/New_York\u003c/code>, \u003ccode>Europe/London\u003c/code>, \u003ccode>Europe/Paris\u003c/code> para Europa Central, \u003ccode>Europe/Athens\u003c/code> para Europa Oriental, \u003ccode>Asia/Kolkata\u003c/code>, \u003ccode>Asia/Shanghai\u003c/code>, \u003ccode>Asia/Tokyo\u003c/code> y \u003ccode>Australia/Sydney\u003c/code>. Cada desfase se calcula al segundo a partir de los campos de hora que da la base de datos para ese instante, de modo que el horario de verano y los cambios de reglas pasados cuentan hasta donde los conoce la base de este navegador. La abreviatura (PST o PDT, CET o CEST) sale de una tabla pequeña de esta página y solo se muestra cuando el desfase es el estándar o el de verano actual de ese lugar; para una fecha anterior a que sus reglas se asentaran, o mientras eran distintas, la fila da solo el desfase en lugar de adivinar un nombre. La CST de China es la hora estándar de China, no la Central de EE. UU. Cada fila muestra la hora al segundo, la fecha en el idioma de este navegador (con el año cuando no es el actual), cuántos días de calendario va por delante o por detrás de este dispositivo para el mismo instante y el desfase en forma corta; Copiar copia la forma ISO 8601 completa con desfase y milisegundos. Una fila que coincide con la zona de este dispositivo lo indica.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Conversor de timestamp — segundos y milisegundos Unix, ISO 8601, hora local — MDV","Pega un timestamp Unix en segundos, milisegundos, microsegundos o nanosegundos, o una fecha ISO 8601. Léelo como UTC, hora local, semana ISO, tiempo relativo y doce zonas horarias habituales. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Zona para las filas locales","Segundos Unix — hasta 11 dígitos","Segundos Unix — hasta 11 dígitos; dígitos más finos que un milisegundo descartados, redondeado hacia abajo","Milisegundos Unix — de 12 a 14 dígitos","Milisegundos Unix — de 12 a 14 dígitos; dígitos más finos que un milisegundo descartados, redondeado hacia abajo","Microsegundos Unix — de 15 a 17 dígitos","Microsegundos Unix — de 15 a 17 dígitos; dígitos más finos que un milisegundo descartados, redondeado hacia abajo","Nanosegundos Unix — de 18 a 20 dígitos","Nanosegundos Unix — de 18 a 20 dígitos; dígitos más finos que un milisegundo descartados, redondeado hacia abajo","EE. UU. Pacífico","EE. UU. Montaña","EE. UU. Central","EE. UU. Este","Reino Unido","Europa Central","Europa Oriental","India","China","Japón","Australia Este","{n} dígitos antes del punto superan los 20 de un recuento de nanosegundos. Hasta 11 dígitos se lee como segundos, 12–14 como milisegundos, 15–17 como microsegundos y 18–20 como nanosegundos.","{name} {value} está fuera de rango en {where}: de {lo} a {hi}.","{name} {value} está fuera de rango: de {lo} a {hi}.","El año {year} tiene un formato incorrecto: escribe 4 dígitos, o + o - y 6 dígitos.","El año -000000 no se permite en ISO 8601: escribe 0000 o +000000.","Mes","Día","La hora 24 no se lee aquí: escribe 00 del día siguiente.","Hora","Minuto","El segundo 60 es un segundo intercalar y el tiempo Unix no los tiene: escribe 59.","Segundo","Hora del desfase","Minuto del desfase","{s} supera lo que un Date puede contener: de -271821-04-20T00:00:00Z a +275760-09-13T00:00:00Z.","un espacio en lugar de T","desfase {from} leído como {to}","ISO 8601 — solo fecha, leída como medianoche UTC","ISO 8601","ISO 8601 — sin desfase, leída como hora local en {zone}","{kind} ({how})","Date.parse — formato que depende del motor","“{text}” no es un timestamp Unix, ni ISO 8601, y Date.parse devolvió NaN.","este navegador no tiene datos de la zona {zone}","fuera del rango en que se puede mostrar esta zona","este dispositivo","Copiado","Copiar","Copia la forma ISO 8601 con desfase","Esa hora local no existe","{s} cae en un hueco que los relojes se saltan en {zone}. Este motor lo leyó como {used}. Añade un desfase para indicar qué instante quieres decir.","Esa hora local ocurre dos veces","{s} ocurre dos veces en {zone}, cuando los relojes se retrasan. Este motor lo leyó como {used}, la primera; la otra es {other}. Añade un desfase para elegir una.","{s} ocurre dos veces en {zone}, cuando los relojes se retrasan. Este motor lo leyó como {used}, la segunda; la otra es {other}. Añade un desfase para elegir una.","Rechazado","{n} caracteres superan el límite de {limit} caracteres: ninguna fecha necesita más.","No se pudo leer como fecha","La zona local es {zone} en este dispositivo — Intl.DateTimeFormat().resolvedOptions().timeZone.","Las filas de zona muestran UTC.","Las filas de zona muestran esa zona.","{n} día","{n} días","Hora y fecha",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Collez un timestamp Unix, des secondes aux nanosecondes, ou une date. Lisez-le de toutes les façons à la fois : secondes, millisecondes, ISO 8601, heure locale de cet appareil, semaine ISO et écart par rapport à maintenant.","Sur cet appareil","Fonctionne hors ligne","Timestamp ou date","Maintenant","Local","Actualiser chaque seconde","Résultat","saisissez un timestamp ou une date ci-dessus","Secondes Unix","Copié","Copier","Millisecondes Unix","ISO 8601 avec décalage","En toutes lettres","Par rapport à maintenant","Jour de la semaine","Jour de l’année","Semaine ISO","Lu comme","Autres fuseaux horaires","Comment ça marche","Un nombre entier (une fraction est permise) est lu comme du temps Unix, et le nombre de chiffres avant la virgule choisit l’unité, zéros initiaux non comptés : jusqu’à 11 chiffres, ce sont des secondes ; de 12 à 14, des millisecondes ; de 15 à 17, des microsecondes ; de 18 à 20, des nanosecondes ; au-delà, c’est refusé. Chaque limite tombe au 1973-03-03 dans la petite unité et en l’an 5138 dans la grande, si bien qu’un timestamp des cinq dernières décennies est sans ambiguïté et qu’un nombre couvre de l’an −1199 à l’an 5138. Une valeur de l’unité fine antérieure au 1973-03-03 serait lue comme l’unité grossière : saisissez-la plutôt comme une date. Les chiffres sont ramenés en millisecondes comme chaîne décimale dans \u003ccode>BigInt\u003c/code>, pas en virgule flottante ; ce qui est plus fin que la milliseconde est abandonné, par arrondi vers le bas à la milliseconde entière (pour une date antérieure à 1970, la plus ancienne), et Lu comme le signale quand cela arrive.","Une chaîne de forme ISO 8601 / RFC 3339 est d’abord vérifiée champ par champ, parce que \u003ccode>Date.parse\u003c/code> fait glisser 2026-02-30 vers mars : l’année a 4 chiffres ou un signe et 6, le mois 01–12, le jour existe dans ce mois, l’heure 00–23, minute et seconde 00–59, l’heure du décalage 00–23. 24:00 et la seconde intercalaire 60 sont refusées. Une espace peut remplacer le \u003ccode>T\u003c/code>, comme RFC 3339 le permet, et le décalage peut s’écrire \u003ccode>+02:00\u003c/code>, \u003ccode>+0200\u003c/code> ou \u003ccode>+02\u003c/code> ; la page le réécrit en \u003ccode>+02:00\u003c/code> et le dit. Ensuite \u003ccode>Date.parse\u003c/code> la lit selon les règles d’ECMAScript : une date seule est minuit UTC, une date et une heure sans décalage sont en heure locale, \u003ccode>Z\u003c/code> ou un décalage sont respectés, et les décimales au-delà des millisecondes sont abandonnées. Une heure locale est relue par les getters locaux ; quand elle tombe dans un trou que les horloges sautent, ou dans une plage qu’elles répètent en reculant, un avis le dit et montre quel instant ce moteur a retenu. La vérification de répétition essaie les décalages en vigueur un jour avant et un jour après, si bien que deux changements dans la même journée peuvent passer inaperçus. Tout le reste va aussi à \u003ccode>Date.parse\u003c/code>, mais ce qu’il accepte au-delà d’ISO dépend du moteur : « Aug 24 2026 » se lit dans Chrome et Firefox ; ne vous y fiez pas. Une date écrite année d’abord avec barres, points ou champs à un chiffre (\u003ccode>2026/08/24\u003c/code>), ou mois d’abord avec barres (\u003ccode>08/24/2026\u003c/code>), voit son mois et son jour vérifiés de la même façon au préalable, et ne peut donc pas déborder non plus.","Un \u003ccode>Date\u003c/code> contient les millisecondes depuis 1970-01-01T00:00:00Z sous forme de nombre, et sa plage est de ±8 640 000 000 000 000 ms, soit environ ±273 000 ans ; au-delà, l’outil refuse. Le temps Unix n’a pas de secondes intercalaires : chaque jour dure exactement 86 400 s, donc les 27 secondes intercalaires insérées depuis 1972 ne sont pas dans ces nombres, et une seconde intercalaire est un 23:59:59 répété, non un décompte. L’ISO UTC vient de \u003ccode>toISOString\u003c/code>. La forme avec décalage est construite à partir des getters de composantes, et son décalage est la différence entre ces champs locaux et UTC, à la seconde près, et non \u003ccode>getTimezoneOffset\u003c/code>, qui peut perdre les secondes, alors que l’heure moyenne locale d’avant les fuseaux standard en comptait (Rome était à +00:49:56 jusqu’en 1893). Un décalage avec secondes est écrit ±HH:MM:SS, ce que RFC 3339 n’autorise pas et que \u003ccode>Date.parse\u003c/code> ne relit pas. La forme en toutes lettres et le jour de la semaine viennent de \u003ccode>Intl.DateTimeFormat\u003c/code> dans la langue de ce navigateur ; le temps relatif utilise \u003ccode>Intl.RelativeTimeFormat\u003c/code> avec la plus grande unité qui convient, arrondie à une unité entière, un mois valant 30,44 jours et une année 365,25. Le jour de l’année compte à partir du 1er janvier. Semaine ISO : les semaines commencent le lundi et la semaine 1 est celle qui contient le 4 janvier, si bien que les 1er–3 janvier peuvent appartenir à la dernière semaine de l’année précédente et les 29–31 décembre à la semaine 1 de la suivante. L’outil prend le jeudi de la semaine de l’entrée et compte les semaines depuis le lundi de la semaine 1 de cette année-là.","Les lignes marquées d’une zone dépendent du réglage de fuseau de cet appareil, lu dans \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, et de la copie de la base de données des fuseaux du navigateur ; si vous changez le fuseau du système, elles changent. Le commutateur UTC leur fait utiliser UTC à la place. « Maintenant » et l’horloge qui avance utilisent \u003ccode>Date.now()\u003c/code> et un \u003ccode>setInterval\u003c/code> de 1 000 ms : c’est l’horloge de cet appareil, qui peut elle-même être fausse. Une entrée de plus de 200 caractères est refusée ; aucune date n’en demande davantage. Rien n’est envoyé : ce fichier n’a pas de serveur.","Autres fuseaux horaires lit douze lieux dans la copie que le navigateur possède de la base de données des fuseaux IANA, par \u003ccode>Intl.DateTimeFormat\u003c/code> avec un \u003ccode>timeZone\u003c/code> : UTC, \u003ccode>America/Los_Angeles\u003c/code>, \u003ccode>America/Denver\u003c/code>, \u003ccode>America/Chicago\u003c/code>, \u003ccode>America/New_York\u003c/code>, \u003ccode>Europe/London\u003c/code>, \u003ccode>Europe/Paris\u003c/code> pour l’Europe centrale, \u003ccode>Europe/Athens\u003c/code> pour l’Europe orientale, \u003ccode>Asia/Kolkata\u003c/code>, \u003ccode>Asia/Shanghai\u003c/code>, \u003ccode>Asia/Tokyo\u003c/code> et \u003ccode>Australia/Sydney\u003c/code>. Chaque décalage est calculé à la seconde près à partir des champs d’heure que la base donne pour cet instant, de sorte que l’heure d’été et les changements de règles passés comptent dans la mesure où la base de ce navigateur les connaît. L’abréviation (PST ou PDT, CET ou CEST) vient d’une petite table de cette page et n’est affichée que lorsque le décalage est le décalage standard ou d’été actuel de ce lieu ; pour une date antérieure à la stabilisation de ses règles, ou pendant qu’elles étaient différentes, la ligne ne donne que le décalage plutôt que de deviner un nom. Le CST de la Chine est l’heure normale de Chine, non l’heure centrale des États-Unis. Chaque ligne montre l’heure à la seconde, la date dans la langue de ce navigateur (avec l’année quand ce n’est pas l’année en cours), de combien de jours calendaires elle devance ou suit cet appareil pour le même instant, et le décalage en forme courte ; Copier copie la forme ISO 8601 complète avec décalage et millisecondes. Une ligne qui correspond au fuseau de cet appareil l’indique.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Convertisseur de timestamp — secondes et millisecondes Unix, ISO 8601, heure locale — MDV","Collez un timestamp Unix en secondes, millisecondes, microsecondes ou nanosecondes, ou une date ISO 8601. Lisez-le en UTC, en heure locale, en semaine ISO, en temps relatif et dans douze fuseaux horaires courants. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Fuseau des lignes locales","Secondes Unix — jusqu’à 11 chiffres","Secondes Unix — jusqu’à 11 chiffres ; chiffres plus fins que la milliseconde abandonnés, arrondi vers le bas","Millisecondes Unix — de 12 à 14 chiffres","Millisecondes Unix — de 12 à 14 chiffres ; chiffres plus fins que la milliseconde abandonnés, arrondi vers le bas","Microsecondes Unix — de 15 à 17 chiffres","Microsecondes Unix — de 15 à 17 chiffres ; chiffres plus fins que la milliseconde abandonnés, arrondi vers le bas","Nanosecondes Unix — de 18 à 20 chiffres","Nanosecondes Unix — de 18 à 20 chiffres ; chiffres plus fins que la milliseconde abandonnés, arrondi vers le bas","USA Pacifique","USA Montagnes","USA Centre","USA Est","Royaume-Uni","Europe centrale","Europe orientale","Inde","Chine","Japon","Australie Est","{n} chiffres avant la virgule dépassent les 20 d’un nombre de nanosecondes. Jusqu’à 11 chiffres, c’est lu en secondes, 12–14 en millisecondes, 15–17 en microsecondes, 18–20 en nanosecondes.","{name} {value} est hors plage en {where} : de {lo} à {hi}.","{name} {value} est hors plage : de {lo} à {hi}.","L’année {year} a une forme incorrecte : écrivez 4 chiffres, ou + ou - et 6 chiffres.","L’année -000000 n’est pas permise en ISO 8601 : écrivez 0000 ou +000000.","Mois","Jour","L’heure 24 n’est pas lue ici : écrivez 00 le jour suivant.","Heure","Minute","La seconde 60 est une seconde intercalaire, et le temps Unix n’en a pas : écrivez 59.","Seconde","Heure du décalage","Minute du décalage","{s} dépasse ce qu’un Date peut contenir : de -271821-04-20T00:00:00Z à +275760-09-13T00:00:00Z.","une espace à la place du T","décalage {from} lu comme {to}","ISO 8601 — date seule, lue comme minuit UTC","ISO 8601","ISO 8601 — aucun décalage donné, lue comme heure locale en {zone}","{kind} ({how})","Date.parse — format dépendant du moteur","« {text} » n’est ni un timestamp Unix, ni de l’ISO 8601, et Date.parse a renvoyé NaN.","ce navigateur n’a pas de données pour le fuseau {zone}","hors de la plage dans laquelle ce fuseau peut être affiché","cet appareil","Copié","Copier","Copie la forme ISO 8601 avec décalage","Cette heure locale n’existe pas","{s} tombe dans un trou que les horloges sautent en {zone}. Ce moteur l’a lu comme {used}. Ajoutez un décalage pour préciser l’instant voulu.","Cette heure locale se produit deux fois","{s} se produit deux fois en {zone}, quand les horloges reculent. Ce moteur l’a lu comme {used}, la première ; l’autre est {other}. Ajoutez un décalage pour choisir.","{s} se produit deux fois en {zone}, quand les horloges reculent. Ce moteur l’a lu comme {used}, la seconde ; l’autre est {other}. Ajoutez un décalage pour choisir.","Refusé","{n} caractères dépassent la limite de {limit} caractères : aucune date n’en demande davantage.","Lecture comme date impossible","Local est {zone} sur cet appareil — Intl.DateTimeFormat().resolvedOptions().timeZone.","Les lignes de fuseau affichent UTC.","Les lignes de fuseau affichent ce fuseau.","{n} jour","{n} jours","Heure et date",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Füge einen Unix-Timestamp ein, von Sekunden bis Nanosekunden, oder ein Datum. Du siehst ihn auf einmal in allen Formen: Sekunden, Millisekunden, ISO 8601, Ortszeit dieses Geräts, ISO-Woche und Abstand zu jetzt.","Läuft auf diesem Gerät","Funktioniert offline","Timestamp oder Datum","Jetzt","Lokal","Jede Sekunde aktualisieren","Ergebnis","timestamp oder datum oben eingeben","Unix-Sekunden","Kopiert","Kopieren","Unix-Millisekunden","ISO 8601 mit Offset","Ausgeschrieben","Relativ zu jetzt","Wochentag","Tag des Jahres","ISO-Woche","Gelesen als","Weitere Zeitzonen","So funktioniert es","Eine ganze Zahl (ein Bruchteil ist erlaubt) wird als Unix-Zeit gelesen, und die Anzahl der Ziffern vor dem Punkt bestimmt die Einheit, führende Nullen nicht mitgezählt: bis zu 11 Ziffern sind Sekunden, 12 bis 14 Millisekunden, 15 bis 17 Mikrosekunden, 18 bis 20 Nanosekunden; mehr wird abgelehnt. Jede Grenze liegt in der kleineren Einheit am 1973-03-03 und in der größeren im Jahr 5138, sodass ein Timestamp der letzten fünf Jahrzehnte eindeutig ist und eine Zahl vom Jahr −1199 bis 5138 reicht. Ein Wert in der feineren Einheit vor dem 1973-03-03 würde als die gröbere gelesen: gib ihn stattdessen als Datum ein. Die Ziffern werden als Dezimalzeichenfolge in \u003ccode>BigInt\u003c/code> auf Millisekunden umgerechnet, nicht in Gleitkomma; alles Feinere als eine Millisekunde wird verworfen, auf die ganze Millisekunde abgerundet (bei einer Zeit vor 1970 auf die frühere), und Gelesen als meldet, wenn das geschah.","Eine Zeichenfolge in der Form ISO 8601 / RFC 3339 wird zuerst Feld für Feld geprüft, weil \u003ccode>Date.parse\u003c/code> den 2026-02-30 in den März überlaufen lässt: Das Jahr hat 4 Ziffern oder ein Vorzeichen und 6, der Monat 01–12, der Tag einen, den es in diesem Monat gibt, die Stunde 00–23, Minute und Sekunde 00–59, die Offset-Stunde 00–23. 24:00 und die Schaltsekunde 60 werden abgelehnt. Ein Leerzeichen darf für das \u003ccode>T\u003c/code> stehen, wie RFC 3339 es erlaubt, und der Offset darf \u003ccode>+02:00\u003c/code>, \u003ccode>+0200\u003c/code> oder \u003ccode>+02\u003c/code> geschrieben sein; die Seite schreibt ihn als \u003ccode>+02:00\u003c/code> um und sagt es. Dann liest \u003ccode>Date.parse\u003c/code> ihn nach den ECMAScript-Regeln: Ein Datum allein ist Mitternacht UTC, Datum und Uhrzeit ohne Offset sind Ortszeit, \u003ccode>Z\u003c/code> oder ein Offset werden beachtet, und Nachkommastellen jenseits der Millisekunden fallen weg. Eine Ortszeit wird über die lokalen Getter zurückgelesen; fällt sie in eine Lücke, die die Uhren überspringen, oder in eine Spanne, die sich beim Zurückstellen wiederholt, sagt das ein Hinweis und zeigt, welchen Zeitpunkt diese Engine gewählt hat. Die Wiederholungsprüfung probiert die Offsets von einem Tag davor und einem Tag danach, sodass zwei Umstellungen innerhalb eines Tages unbemerkt bleiben können. Alles andere geht ebenfalls an \u003ccode>Date.parse\u003c/code>, aber was es über ISO hinaus akzeptiert, hängt von der Engine ab: „Aug 24 2026“ liest sich in Chrome und Firefox; verlass dich nicht darauf. Ein Datum mit dem Jahr zuerst und Schrägstrichen, Punkten oder einstelligen Feldern (\u003ccode>2026/08/24\u003c/code>) oder mit dem Monat zuerst und Schrägstrichen (\u003ccode>08/24/2026\u003c/code>) bekommt Monat und Tag vorher genauso geprüft und kann daher ebenfalls nicht überlaufen.","Ein \u003ccode>Date\u003c/code> hält die Millisekunden seit 1970-01-01T00:00:00Z als Zahl, und sein Bereich ist ±8.640.000.000.000.000 ms, etwa ±273.000 Jahre; darüber hinaus lehnt das Werkzeug ab. Unix-Zeit kennt keine Schaltsekunden: Jeder Tag hat genau 86.400 s, die 27 seit 1972 eingefügten Schaltsekunden stecken also nicht in diesen Zahlen, und eine Schaltsekunde ist ein wiederholtes 23:59:59, keine Zählung. ISO UTC kommt von \u003ccode>toISOString\u003c/code>. Die Form mit Offset wird aus den Komponenten-Gettern gebaut, und ihr Offset ist die Differenz zwischen diesen lokalen Feldern und UTC, sekundengenau, nicht \u003ccode>getTimezoneOffset\u003c/code>, das die Sekunden verlieren kann, während die mittlere Ortszeit vor den Standardzonen Sekunden hatte (Rom lag bis 1893 bei +00:49:56). Ein Offset mit Sekunden wird als ±HH:MM:SS ausgegeben, was RFC 3339 nicht erlaubt und \u003ccode>Date.parse\u003c/code> nicht zurückliest. Die ausgeschriebene Form und der Wochentag kommen von \u003ccode>Intl.DateTimeFormat\u003c/code> in der Sprache dieses Browsers; die relative Zeit nutzt \u003ccode>Intl.RelativeTimeFormat\u003c/code> mit der größten passenden Einheit, auf eine ganze Einheit gerundet, wobei ein Monat 30,44 Tage und ein Jahr 365,25 gilt. Der Tag des Jahres zählt ab dem 1. Januar. ISO-Woche: Wochen beginnen am Montag, und Woche 1 ist die Woche mit dem 4. Januar, sodass der 1.–3. Januar zur letzten Woche des Vorjahres und der 29.–31. Dezember zu Woche 1 des nächsten Jahres gehören können. Das Werkzeug nimmt den Donnerstag der Woche der Eingabe und zählt die Wochen ab dem Montag der Woche 1 dieses Jahres.","Die mit der Zone markierten Zeilen hängen von der Zoneneinstellung dieses Geräts ab, gelesen aus \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, und von der Kopie der Zonendatenbank im Browser; ändert sich die Zone des Betriebssystems, ändern sie sich. Der UTC-Schalter lässt diese Zeilen stattdessen UTC verwenden. „Jetzt“ und die tickende Uhr nutzen \u003ccode>Date.now()\u003c/code> und ein \u003ccode>setInterval\u003c/code> von 1.000 ms: Das ist die Uhr dieses Geräts, die selbst falsch gehen kann. Eingaben über 200 Zeichen werden abgelehnt; kein Datum braucht mehr. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Weitere Zeitzonen liest zwölf Orte aus der eigenen Kopie der IANA-Zonendatenbank des Browsers, über \u003ccode>Intl.DateTimeFormat\u003c/code> mit einer \u003ccode>timeZone\u003c/code>: UTC, \u003ccode>America/Los_Angeles\u003c/code>, \u003ccode>America/Denver\u003c/code>, \u003ccode>America/Chicago\u003c/code>, \u003ccode>America/New_York\u003c/code>, \u003ccode>Europe/London\u003c/code>, \u003ccode>Europe/Paris\u003c/code> für Mitteleuropa, \u003ccode>Europe/Athens\u003c/code> für Osteuropa, \u003ccode>Asia/Kolkata\u003c/code>, \u003ccode>Asia/Shanghai\u003c/code>, \u003ccode>Asia/Tokyo\u003c/code> und \u003ccode>Australia/Sydney\u003c/code>. Jeder Offset wird sekundengenau aus den Uhrzeitfeldern berechnet, die die Datenbank für diesen Zeitpunkt liefert, sodass Sommerzeit und frühere Regeländerungen zählen, soweit die Datenbank dieses Browsers sie kennt. Das Kürzel (PST oder PDT, CET oder CEST) stammt aus einer kleinen Tabelle in dieser Seite und wird nur gezeigt, wenn der Offset der aktuelle Standard- oder Sommer-Offset dieses Ortes ist; für ein Datum vor der Festlegung seiner Regeln oder während sie anders waren, nennt die Zeile nur den Offset, statt einen Namen zu raten. Chinas CST ist China Standard Time, nicht US Central. Jede Zeile zeigt die Zeit auf die Sekunde, das Datum in der Sprache dieses Browsers (mit Jahr, wenn es nicht das aktuelle ist), um wie viele Kalendertage sie für denselben Zeitpunkt vor oder hinter diesem Gerät liegt, und den Offset in Kurzform; Kopieren kopiert die vollständige ISO-8601-Form mit Offset und Millisekunden. Eine Zeile, die der Zone dieses Geräts entspricht, sagt das.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Timestamp-Konverter — Unix-Sekunden, Millisekunden, ISO 8601, Ortszeit — MDV","Füge einen Unix-Timestamp in Sekunden, Millisekunden, Mikrosekunden oder Nanosekunden oder ein ISO-8601-Datum ein. Lies ihn als UTC, Ortszeit, ISO-Woche, relative Zeit und zwölf gängige Zeitzonen. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Zone für die lokalen Zeilen","Unix-Sekunden — bis zu 11 Ziffern","Unix-Sekunden — bis zu 11 Ziffern; Ziffern feiner als eine Millisekunde verworfen, abgerundet","Unix-Millisekunden — 12 bis 14 Ziffern","Unix-Millisekunden — 12 bis 14 Ziffern; Ziffern feiner als eine Millisekunde verworfen, abgerundet","Unix-Mikrosekunden — 15 bis 17 Ziffern","Unix-Mikrosekunden — 15 bis 17 Ziffern; Ziffern feiner als eine Millisekunde verworfen, abgerundet","Unix-Nanosekunden — 18 bis 20 Ziffern","Unix-Nanosekunden — 18 bis 20 Ziffern; Ziffern feiner als eine Millisekunde verworfen, abgerundet","US-Pazifik","US-Mountain","US-Central","US-Eastern","Vereinigtes Königreich","Mitteleuropa","Osteuropa","Indien","China","Japan","Australien Ost","{n} Ziffern vor dem Punkt überschreiten die 20 einer Nanosekundenzahl. Bis zu 11 Ziffern gelten als Sekunden, 12–14 als Millisekunden, 15–17 als Mikrosekunden, 18–20 als Nanosekunden.","{name} {value} liegt außerhalb des Bereichs in {where}: {lo} bis {hi}.","{name} {value} liegt außerhalb des Bereichs: {lo} bis {hi}.","Das Jahr {year} hat die falsche Form: schreibe 4 Ziffern oder + oder - und 6 Ziffern.","Das Jahr -000000 ist in ISO 8601 nicht erlaubt: schreibe 0000 oder +000000.","Monat","Tag","Die Stunde 24 wird hier nicht gelesen: schreibe 00 am nächsten Tag.","Stunde","Minute","Sekunde 60 ist eine Schaltsekunde, und Unix-Zeit kennt keine: schreibe 59.","Sekunde","Offset-Stunde","Offset-Minute","{s} liegt außerhalb dessen, was ein Date fassen kann: -271821-04-20T00:00:00Z bis +275760-09-13T00:00:00Z.","ein Leerzeichen statt T","Offset {from} gelesen als {to}","ISO 8601 — nur Datum, gelesen als Mitternacht UTC","ISO 8601","ISO 8601 — kein Offset angegeben, gelesen als Ortszeit in {zone}","{kind} ({how})","Date.parse — Format abhängig von der Engine","„{text}“ ist weder ein Unix-Timestamp noch ISO 8601, und Date.parse lieferte NaN.","dieser Browser hat keine Zonendaten für {zone}","außerhalb des Bereichs, in dem diese Zone angezeigt werden kann","dieses Gerät","Kopiert","Kopieren","Kopiert die ISO-8601-Form mit Offset","Diese Ortszeit gibt es nicht","{s} fällt in {zone} in eine Lücke, die die Uhren überspringen. Diese Engine hat es als {used} gelesen. Füge einen Offset hinzu, um den gemeinten Zeitpunkt festzulegen.","Diese Ortszeit kommt zweimal vor","{s} kommt in {zone} zweimal vor, wenn die Uhren zurückgestellt werden. Diese Engine hat es als {used} gelesen, das erste; das andere ist {other}. Füge einen Offset hinzu, um eines zu wählen.","{s} kommt in {zone} zweimal vor, wenn die Uhren zurückgestellt werden. Diese Engine hat es als {used} gelesen, das zweite; das andere ist {other}. Füge einen Offset hinzu, um eines zu wählen.","Abgelehnt","{n} Zeichen überschreiten die Grenze von {limit} Zeichen: Kein Datum braucht mehr.","Nicht als Datum lesbar","Lokal ist auf diesem Gerät {zone} — Intl.DateTimeFormat().resolvedOptions().timeZone.","Die Zonenzeilen zeigen UTC.","Die Zonenzeilen zeigen diese Zone.","{n} Tag","{n} Tage","Zeit und Datum",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Incolla un timestamp Unix, da secondi a nanosecondi, o una data. Leggilo in tutti i modi insieme: secondi, millisecondi, ISO 8601, ora locale di questo dispositivo, settimana ISO e distanza da adesso.","Su questo dispositivo","Funziona offline","Timestamp o data","Ora","Locale","Aggiorna ogni secondo","Risultato","scrivi un timestamp o una data qui sopra","Secondi Unix","Copiato","Copia","Millisecondi Unix","ISO 8601 con offset","Per esteso","Rispetto a ora","Giorno della settimana","Giorno dell’anno","Settimana ISO","Letto come","Altri fusi orari","Come funziona","Un numero intero (è ammessa una frazione) viene letto come tempo Unix, e il numero di cifre prima del punto sceglie l’unità, zeri iniziali esclusi: fino a 11 cifre sono secondi, da 12 a 14 millisecondi, da 15 a 17 microsecondi, da 18 a 20 nanosecondi; oltre viene rifiutato. Ogni confine cade il 1973-03-03 nell’unità minore e nell’anno 5138 in quella maggiore, quindi un timestamp degli ultimi cinque decenni non è ambiguo e un numero copre dall’anno −1199 al 5138. Un valore nell’unità più fine precedente al 1973-03-03 verrebbe letto come l’unità più grossa: scrivilo invece come data. Le cifre vengono portate a millisecondi come stringa decimale in \u003ccode>BigInt\u003c/code>, non in virgola mobile; ciò che è più fine di un millisecondo viene scartato, arrotondando per difetto al millisecondo intero (per un istante prima del 1970, a quello precedente), e Letto come segnala quando è successo.","Una stringa nella forma ISO 8601 / RFC 3339 viene controllata prima campo per campo, perché \u003ccode>Date.parse\u003c/code> fa slittare 2026-02-30 a marzo: l’anno ha 4 cifre oppure un segno e 6, il mese 01–12, il giorno ne esiste uno in quel mese, l’ora 00–23, minuto e secondo 00–59, l’ora dell’offset 00–23. 24:00 e il secondo intercalare 60 vengono rifiutati. Uno spazio può sostituire la \u003ccode>T\u003c/code>, come consente RFC 3339, e l’offset può essere scritto \u003ccode>+02:00\u003c/code>, \u003ccode>+0200\u003c/code> o \u003ccode>+02\u003c/code>; la pagina lo riscrive come \u003ccode>+02:00\u003c/code> e lo dice. Poi \u003ccode>Date.parse\u003c/code> lo legge con le regole di ECMAScript: una data da sola è la mezzanotte UTC, una data con ora e senza offset è ora locale, \u003ccode>Z\u003c/code> o un offset vengono rispettati, e le cifre decimali oltre i millisecondi vengono scartate. Un’ora locale viene riletta con i getter locali; quando cade in un vuoto che gli orologi saltano, o in un tratto che si ripete quando tornano indietro, un avviso lo dice e mostra quale istante ha scelto questo motore. Il controllo della ripetizione prova gli offset in vigore un giorno prima e un giorno dopo, quindi due cambi nello stesso giorno possono passare inosservati. Tutto il resto va anch’esso a \u003ccode>Date.parse\u003c/code>, ma ciò che accetta oltre ISO dipende dal motore: “Aug 24 2026” si legge in Chrome e Firefox; non farci affidamento. Una data scritta con l’anno per primo e barre, punti o campi di una cifra (\u003ccode>2026/08/24\u003c/code>), o con il mese per primo e barre (\u003ccode>08/24/2026\u003c/code>), ha mese e giorno controllati allo stesso modo prima, quindi non può slittare nemmeno lei.","Un \u003ccode>Date\u003c/code> contiene i millisecondi dal 1970-01-01T00:00:00Z come numero, e il suo intervallo è ±8.640.000.000.000.000 ms, circa ±273.000 anni; oltre, lo strumento rifiuta. Il tempo Unix non ha secondi intercalari: ogni giorno dura esattamente 86.400 s, quindi i 27 secondi intercalari inseriti dal 1972 non sono in questi numeri, e un secondo intercalare è un 23:59:59 ripetuto, non un conteggio. L’ISO UTC viene da \u003ccode>toISOString\u003c/code>. La forma con offset è costruita dai getter dei componenti, e il suo offset è la differenza tra quei campi locali e UTC, al secondo, non \u003ccode>getTimezoneOffset\u003c/code>, che può perdere i secondi, mentre l’ora media locale prima dei fusi standard ne aveva (Roma era a +00:49:56 fino al 1893). Un offset con secondi viene stampato come ±HH:MM:SS, che RFC 3339 non consente e che \u003ccode>Date.parse\u003c/code> non rilegge. La forma per esteso e il giorno della settimana vengono da \u003ccode>Intl.DateTimeFormat\u003c/code> nella lingua di questo browser; il tempo relativo usa \u003ccode>Intl.RelativeTimeFormat\u003c/code> con la più grande unità che sta, arrotondata a un’unità intera, con un mese di 30,44 giorni e un anno di 365,25. Il giorno dell’anno parte dal 1° gennaio. Settimana ISO: le settimane iniziano il lunedì e la settimana 1 è quella che contiene il 4 gennaio, quindi dall’1 al 3 gennaio possono appartenere all’ultima settimana dell’anno prima e dal 29 al 31 dicembre alla settimana 1 del successivo. Lo strumento prende il giovedì della settimana dell’input e conta le settimane dal lunedì della settimana 1 di quell’anno.","Le righe contrassegnate con la zona dipendono dall’impostazione del fuso di questo dispositivo, letta da \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, e dalla copia del database dei fusi del browser; se cambi il fuso del sistema operativo, cambiano. L’interruttore UTC fa usare UTC a quelle righe. “Ora” e l’orologio che scorre usano \u003ccode>Date.now()\u003c/code> e un \u003ccode>setInterval\u003c/code> da 1.000 ms: è l’orologio di questo dispositivo, che può a sua volta essere sbagliato. Un input oltre 200 caratteri viene rifiutato; nessuna data ne richiede di più. Non viene caricato nulla: questo file non ha un server.","Altri fusi orari legge dodici luoghi dalla copia che il browser ha del database dei fusi IANA, tramite \u003ccode>Intl.DateTimeFormat\u003c/code> con un \u003ccode>timeZone\u003c/code>: UTC, \u003ccode>America/Los_Angeles\u003c/code>, \u003ccode>America/Denver\u003c/code>, \u003ccode>America/Chicago\u003c/code>, \u003ccode>America/New_York\u003c/code>, \u003ccode>Europe/London\u003c/code>, \u003ccode>Europe/Paris\u003c/code> per l’Europa centrale, \u003ccode>Europe/Athens\u003c/code> per l’Europa orientale, \u003ccode>Asia/Kolkata\u003c/code>, \u003ccode>Asia/Shanghai\u003c/code>, \u003ccode>Asia/Tokyo\u003c/code> e \u003ccode>Australia/Sydney\u003c/code>. Ogni offset viene calcolato al secondo dai campi dell’ora che il database fornisce per quell’istante, quindi l’ora legale e i cambi di regole passati contano per quanto li conosce il database di questo browser. L’abbreviazione (PST o PDT, CET o CEST) viene da una piccola tabella in questa pagina e viene mostrata solo quando l’offset è quello standard o estivo attuale di quel luogo; per una data precedente all’assestarsi delle sue regole, o mentre erano diverse, la riga dà solo l’offset invece di indovinare un nome. La CST della Cina è China Standard Time, non US Central. Ogni riga mostra l’ora al secondo, la data nella lingua di questo browser (con l’anno quando non è quello corrente), di quanti giorni di calendario precede o segue questo dispositivo per lo stesso istante, e l’offset in forma breve; Copia copia la forma ISO 8601 completa con offset e millisecondi. Una riga che coincide con il fuso di questo dispositivo lo dice.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Convertitore di timestamp — secondi e millisecondi Unix, ISO 8601, ora locale — MDV","Incolla un timestamp Unix in secondi, millisecondi, microsecondi o nanosecondi, oppure una data ISO 8601. Leggilo come UTC, ora locale, settimana ISO, tempo relativo e dodici fusi orari comuni. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Fuso per le righe locali","Secondi Unix — fino a 11 cifre","Secondi Unix — fino a 11 cifre; cifre più fini di un millisecondo scartate, arrotondato per difetto","Millisecondi Unix — da 12 a 14 cifre","Millisecondi Unix — da 12 a 14 cifre; cifre più fini di un millisecondo scartate, arrotondato per difetto","Microsecondi Unix — da 15 a 17 cifre","Microsecondi Unix — da 15 a 17 cifre; cifre più fini di un millisecondo scartate, arrotondato per difetto","Nanosecondi Unix — da 18 a 20 cifre","Nanosecondi Unix — da 18 a 20 cifre; cifre più fini di un millisecondo scartate, arrotondato per difetto","USA Pacifico","USA Montagne","USA Centrale","USA Orientale","Regno Unito","Europa centrale","Europa orientale","India","Cina","Giappone","Australia Est","{n} cifre prima del punto superano le 20 di un conteggio in nanosecondi. Fino a 11 cifre si legge come secondi, 12–14 come millisecondi, 15–17 come microsecondi, 18–20 come nanosecondi.","{name} {value} è fuori intervallo in {where}: da {lo} a {hi}.","{name} {value} è fuori intervallo: da {lo} a {hi}.","L’anno {year} ha una forma errata: scrivi 4 cifre, oppure + o - e 6 cifre.","L’anno -000000 non è consentito in ISO 8601: scrivi 0000 o +000000.","Mese","Giorno","L’ora 24 non viene letta qui: scrivi 00 del giorno dopo.","Ora","Minuto","Il secondo 60 è un secondo intercalare e il tempo Unix non ne ha: scrivi 59.","Secondo","Ora dell’offset","Minuto dell’offset","{s} supera ciò che un Date può contenere: da -271821-04-20T00:00:00Z a +275760-09-13T00:00:00Z.","uno spazio al posto di T","offset {from} letto come {to}","ISO 8601 — solo data, letta come mezzanotte UTC","ISO 8601","ISO 8601 — nessun offset indicato, letta come ora locale in {zone}","{kind} ({how})","Date.parse — formato che dipende dal motore","“{text}” non è un timestamp Unix né ISO 8601, e Date.parse ha restituito NaN.","questo browser non ha dati per il fuso {zone}","fuori dall’intervallo in cui questo fuso può essere mostrato","questo dispositivo","Copiato","Copia","Copia la forma ISO 8601 con offset","Quell’ora locale non esiste","{s} cade in un vuoto che gli orologi saltano in {zone}. Questo motore l’ha letto come {used}. Aggiungi un offset per indicare quale istante intendi.","Quell’ora locale ricorre due volte","{s} ricorre due volte in {zone}, quando gli orologi tornano indietro. Questo motore l’ha letto come {used}, la prima; l’altra è {other}. Aggiungi un offset per sceglierne una.","{s} ricorre due volte in {zone}, quando gli orologi tornano indietro. Questo motore l’ha letto come {used}, la seconda; l’altra è {other}. Aggiungi un offset per sceglierne una.","Rifiutato","{n} caratteri superano il limite di {limit} caratteri: nessuna data ne richiede di più.","Impossibile leggerlo come data","Locale è {zone} su questo dispositivo — Intl.DateTimeFormat().resolvedOptions().timeZone.","Le righe di fuso mostrano UTC.","Le righe di fuso mostrano quel fuso.","{n} giorno","{n} giorni","Ora e data",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Cole um timestamp Unix, de segundos a nanossegundos, ou uma data. Veja-o de todas as formas ao mesmo tempo: segundos, milissegundos, ISO 8601, hora local deste dispositivo, semana ISO e a distância até agora.","Neste dispositivo","Funciona offline","Timestamp ou data","Agora","Local","Atualizar a cada segundo","Resultado","digite um timestamp ou uma data acima","Segundos Unix","Copiado","Copiar","Milissegundos Unix","ISO 8601 com deslocamento","Por extenso","Em relação a agora","Dia da semana","Dia do ano","Semana ISO","Lido como","Outros fusos horários","Como funciona","Um número inteiro (uma fração é permitida) é lido como tempo Unix, e a quantidade de dígitos antes do ponto escolhe a unidade, sem contar zeros à esquerda: até 11 dígitos são segundos, de 12 a 14 são milissegundos, de 15 a 17 são microssegundos e de 18 a 20 são nanossegundos; mais que isso é recusado. Cada limite cai em 1973-03-03 na unidade menor e no ano 5138 na maior, então um timestamp das últimas cinco décadas é inequívoco e um número alcança do ano −1199 ao 5138. Um valor na unidade mais fina anterior a 1973-03-03 seria lido como a unidade mais grossa: digite-o como data. Os dígitos são levados a milissegundos como string decimal em \u003ccode>BigInt\u003c/code>, não em ponto flutuante; o que é mais fino que um milissegundo é descartado, arredondando para baixo ao milissegundo inteiro (em um horário anterior a 1970, o anterior), e Lido como avisa quando isso aconteceu.","Uma string no formato ISO 8601 / RFC 3339 é verificada primeiro campo a campo, porque \u003ccode>Date.parse\u003c/code> faz 2026-02-30 virar março: o ano tem 4 dígitos ou um sinal e 6, o mês 01–12, o dia um que exista naquele mês, a hora 00–23, minuto e segundo 00–59, a hora do deslocamento 00–23. 24:00 e o segundo intercalar 60 são recusados. Um espaço pode ocupar o lugar do \u003ccode>T\u003c/code>, como a RFC 3339 permite, e o deslocamento pode ser escrito \u003ccode>+02:00\u003c/code>, \u003ccode>+0200\u003c/code> ou \u003ccode>+02\u003c/code>; a página o reescreve como \u003ccode>+02:00\u003c/code> e avisa. Depois \u003ccode>Date.parse\u003c/code> o lê pelas regras do ECMAScript: uma data sozinha é meia-noite UTC, data e hora sem deslocamento são hora local, \u003ccode>Z\u003c/code> ou um deslocamento são respeitados, e frações além dos milissegundos são descartadas. Uma hora local é relida pelos getters locais; quando cai num intervalo que os relógios pulam, ou num trecho que se repete quando voltam, um aviso diz isso e mostra qual instante este motor escolheu. A verificação de repetição tenta os deslocamentos em vigor um dia antes e um dia depois, então duas mudanças no mesmo dia podem passar despercebidas. Todo o resto também vai para \u003ccode>Date.parse\u003c/code>, mas o que ele aceita além de ISO depende do motor: “Aug 24 2026” é lido no Chrome e no Firefox; não conte com isso. Uma data escrita com o ano primeiro e barras, pontos ou campos de um dígito (\u003ccode>2026/08/24\u003c/code>), ou com o mês primeiro e barras (\u003ccode>08/24/2026\u003c/code>), tem mês e dia verificados da mesma forma antes, então também não pode virar o mês.","Um \u003ccode>Date\u003c/code> guarda os milissegundos desde 1970-01-01T00:00:00Z como um número, e seu intervalo é ±8.640.000.000.000.000 ms, cerca de ±273.000 anos; além disso, a ferramenta recusa. O tempo Unix não tem segundos intercalares: cada dia tem exatamente 86.400 s, então os 27 segundos intercalares inseridos desde 1972 não estão nesses números, e um segundo intercalar é um 23:59:59 repetido, não uma contagem. O ISO UTC vem de \u003ccode>toISOString\u003c/code>. A forma com deslocamento é construída a partir dos getters de componentes, e seu deslocamento é a diferença entre esses campos locais e o UTC, ao segundo, e não \u003ccode>getTimezoneOffset\u003c/code>, que pode perder os segundos, enquanto a hora média local anterior aos fusos padrão os tinha (Roma estava em +00:49:56 até 1893). Um deslocamento com segundos é impresso como ±HH:MM:SS, o que a RFC 3339 não permite e \u003ccode>Date.parse\u003c/code> não lê de volta. A forma por extenso e o dia da semana vêm de \u003ccode>Intl.DateTimeFormat\u003c/code> no idioma deste navegador; o tempo relativo usa \u003ccode>Intl.RelativeTimeFormat\u003c/code> com a maior unidade que couber, arredondada para uma unidade inteira, com um mês de 30,44 dias e um ano de 365,25. O dia do ano conta a partir de 1º de janeiro. Semana ISO: as semanas começam na segunda-feira e a semana 1 é a que contém 4 de janeiro, então 1 a 3 de janeiro podem pertencer à última semana do ano anterior e 29 a 31 de dezembro à semana 1 do seguinte. A ferramenta pega a quinta-feira da semana da entrada e conta as semanas a partir da segunda-feira da semana 1 daquele ano.","As linhas marcadas com a zona dependem da configuração de fuso deste dispositivo, lida de \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, e da cópia do banco de dados de fusos do navegador; se você mudar o fuso do sistema operacional, elas mudam. A chave UTC faz essas linhas usarem UTC. “Agora” e o relógio que avança usam \u003ccode>Date.now()\u003c/code> e um \u003ccode>setInterval\u003c/code> de 1.000 ms: é o relógio deste dispositivo, que também pode estar errado. Entrada acima de 200 caracteres é recusada; nenhuma data precisa de mais. Nada é enviado: este arquivo não tem servidor.","Outros fusos horários lê doze lugares da cópia que o próprio navegador tem do banco de dados de fusos IANA, por meio de \u003ccode>Intl.DateTimeFormat\u003c/code> com um \u003ccode>timeZone\u003c/code>: UTC, \u003ccode>America/Los_Angeles\u003c/code>, \u003ccode>America/Denver\u003c/code>, \u003ccode>America/Chicago\u003c/code>, \u003ccode>America/New_York\u003c/code>, \u003ccode>Europe/London\u003c/code>, \u003ccode>Europe/Paris\u003c/code> para a Europa Central, \u003ccode>Europe/Athens\u003c/code> para a Europa Oriental, \u003ccode>Asia/Kolkata\u003c/code>, \u003ccode>Asia/Shanghai\u003c/code>, \u003ccode>Asia/Tokyo\u003c/code> e \u003ccode>Australia/Sydney\u003c/code>. Cada deslocamento é calculado ao segundo a partir dos campos de hora que o banco de dados dá para aquele instante, de modo que o horário de verão e mudanças de regras passadas contam até onde o banco deste navegador as conhece. A abreviação (PST ou PDT, CET ou CEST) vem de uma pequena tabela nesta página e só é mostrada quando o deslocamento é o padrão ou o de verão atual daquele lugar; para uma data anterior ao assentamento de suas regras, ou enquanto eram diferentes, a linha dá só o deslocamento em vez de adivinhar um nome. O CST da China é China Standard Time, não o US Central. Cada linha mostra a hora ao segundo, a data no idioma deste navegador (com o ano quando não é o atual), quantos dias de calendário ela está à frente ou atrás deste dispositivo para o mesmo instante, e o deslocamento em forma curta; Copiar copia a forma ISO 8601 completa com deslocamento e milissegundos. Uma linha que coincide com o fuso deste dispositivo avisa isso.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Conversor de timestamp — segundos e milissegundos Unix, ISO 8601, hora local — MDV","Cole um timestamp Unix em segundos, milissegundos, microssegundos ou nanossegundos, ou uma data ISO 8601. Veja-o como UTC, hora local, semana ISO, tempo relativo e doze fusos horários comuns. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Fuso das linhas locais","Segundos Unix — até 11 dígitos","Segundos Unix — até 11 dígitos; dígitos mais finos que um milissegundo descartados, arredondado para baixo","Milissegundos Unix — de 12 a 14 dígitos","Milissegundos Unix — de 12 a 14 dígitos; dígitos mais finos que um milissegundo descartados, arredondado para baixo","Microssegundos Unix — de 15 a 17 dígitos","Microssegundos Unix — de 15 a 17 dígitos; dígitos mais finos que um milissegundo descartados, arredondado para baixo","Nanossegundos Unix — de 18 a 20 dígitos","Nanossegundos Unix — de 18 a 20 dígitos; dígitos mais finos que um milissegundo descartados, arredondado para baixo","EUA Pacífico","EUA Montanha","EUA Central","EUA Leste","Reino Unido","Europa Central","Europa Oriental","Índia","China","Japão","Austrália Leste","{n} dígitos antes do ponto passam dos 20 de uma contagem em nanossegundos. Até 11 dígitos são lidos como segundos, 12–14 como milissegundos, 15–17 como microssegundos, 18–20 como nanossegundos.","{name} {value} está fora do intervalo em {where}: de {lo} a {hi}.","{name} {value} está fora do intervalo: de {lo} a {hi}.","O ano {year} tem formato incorreto: escreva 4 dígitos, ou + ou - e 6 dígitos.","O ano -000000 não é permitido em ISO 8601: escreva 0000 ou +000000.","Mês","Dia","A hora 24 não é lida aqui: escreva 00 do dia seguinte.","Hora","Minuto","O segundo 60 é um segundo intercalar, e o tempo Unix não os tem: escreva 59.","Segundo","Hora do deslocamento","Minuto do deslocamento","{s} passa do que um Date pode conter: de -271821-04-20T00:00:00Z a +275760-09-13T00:00:00Z.","um espaço no lugar do T","deslocamento {from} lido como {to}","ISO 8601 — só data, lida como meia-noite UTC","ISO 8601","ISO 8601 — sem deslocamento, lida como hora local em {zone}","{kind} ({how})","Date.parse — formato que depende do motor","“{text}” não é um timestamp Unix nem ISO 8601, e Date.parse retornou NaN.","este navegador não tem dados do fuso {zone}","fora do intervalo em que este fuso pode ser exibido","este dispositivo","Copiado","Copiar","Copia a forma ISO 8601 com deslocamento","Essa hora local não existe","{s} cai num intervalo que os relógios pulam em {zone}. Este motor o leu como {used}. Adicione um deslocamento para dizer qual instante você quer.","Essa hora local ocorre duas vezes","{s} ocorre duas vezes em {zone}, quando os relógios voltam. Este motor o leu como {used}, a primeira; a outra é {other}. Adicione um deslocamento para escolher uma.","{s} ocorre duas vezes em {zone}, quando os relógios voltam. Este motor o leu como {used}, a segunda; a outra é {other}. Adicione um deslocamento para escolher uma.","Recusado","{n} caracteres passam do limite de {limit} caracteres: nenhuma data precisa de mais.","Não foi possível ler como data","Local é {zone} neste dispositivo — Intl.DateTimeFormat().resolvedOptions().timeZone.","As linhas de fuso mostram UTC.","As linhas de fuso mostram esse fuso.","{n} dia","{n} dias","Hora e data",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","Unix タイムスタンプ(秒からナノ秒まで)または日付を貼り付けてください。秒、ミリ秒、ISO 8601、この端末のローカル時刻、ISO 週、現在からの差を、すべて一度に確認できます。","この端末で動作","オフラインで動作","タイムスタンプまたは日付","現在","ローカル","毎秒更新","結果","上にタイムスタンプか日付を入力","Unix 秒","コピーしました","コピー","Unix ミリ秒","オフセット付き ISO 8601","文字表記","現在との差","曜日","年内の日数","ISO 週","解釈","他のタイムゾーン","仕組み","整数(小数も可)は Unix 時間として読まれ、小数点より前の桁数(先頭のゼロは数えません)で単位が決まります。11 桁までは秒、12〜14 桁はミリ秒、15〜17 桁はマイクロ秒、18〜20 桁はナノ秒で、それ以上は拒否されます。各境界は小さい方の単位では 1973-03-03、大きい方の単位では 5138 年にあたるため、過去 50 年ほどのタイムスタンプは曖昧にならず、1 つの数値で −1199 年から 5138 年まで表せます。1973-03-03 より前の細かい単位の値は粗い単位として誤って読まれるため、日付として入力してください。桁は浮動小数点ではなく \u003ccode>BigInt\u003c/code> の 10 進文字列としてミリ秒に変換されます。ミリ秒より細かい部分は切り捨てられ、整数ミリ秒に丸められます(1970 年より前の時刻では、より前の時刻に丸められます)。切り捨てが起きた場合は「解釈」に表示されます。","ISO 8601 / RFC 3339 の形をした文字列は、まず項目ごとに検査されます。\u003ccode>Date.parse\u003c/code> は 2026-02-30 を 3 月に繰り上げてしまうためです。年は 4 桁、または符号と 6 桁、月は 01〜12、日はその月に存在する日、時は 00〜23、分と秒は 00〜59、オフセットの時は 00〜23 です。24:00 と閏秒の 60 は拒否されます。RFC 3339 で認められているとおり、\u003ccode>T\u003c/code> の代わりにスペースも使え、オフセットは \u003ccode>+02:00\u003c/code>、\u003ccode>+0200\u003c/code>、\u003ccode>+02\u003c/code> のいずれでも書けます。ページはそれを \u003ccode>+02:00\u003c/code> に書き直し、その旨を表示します。その後、\u003ccode>Date.parse\u003c/code> が ECMAScript の規則で読み取ります。日付だけなら UTC の 0 時、オフセットのない日時はローカル時刻、\u003ccode>Z\u003c/code> やオフセットはそのまま扱われ、ミリ秒より下の小数は切り捨てられます。ローカル時刻はローカルの getter で読み戻され、時計が飛ばす隙間や、時計が戻って繰り返される区間に当たる場合は、通知が出てこのエンジンが選んだ時点を示します。繰り返しの検査は前日と翌日のオフセットを試すため、1 日のうちに 2 回切り替えがあると見逃すことがあります。それ以外も \u003ccode>Date.parse\u003c/code> に渡されますが、ISO 以外で何を受け付けるかはエンジン依存です。“Aug 24 2026” は Chrome と Firefox では読めますが、頼らないでください。年が先でスラッシュ・ドット・1 桁の項目を使った日付(\u003ccode>2026/08/24\u003c/code>)や、月が先でスラッシュを使った日付(\u003ccode>08/24/2026\u003c/code>)も、先に同じ方法で月と日が検査されるため、繰り上がることはありません。","\u003ccode>Date\u003c/code> は 1970-01-01T00:00:00Z からのミリ秒を数値で保持し、範囲は ±8,640,000,000,000,000 ms(約 ±273,000 年)です。これを超えるとツールは拒否します。Unix 時間にはうるう秒がなく、1 日はちょうど 86,400 秒です。1972 年以降に挿入された 27 回のうるう秒はこれらの数値に含まれず、うるう秒は数ではなく 23:59:59 が繰り返されるものとして扱われます。ISO UTC は \u003ccode>toISOString\u003c/code> から得ます。オフセット付きの形式は各要素の getter から組み立て、そのオフセットはローカルの各フィールドと UTC との差を秒単位で求めたものです。秒を落とすことがある \u003ccode>getTimezoneOffset\u003c/code> は使いません。標準時帯の導入前の地方平均時には秒がありました(ローマは 1893 年まで +00:49:56)。秒を含むオフセットは ±HH:MM:SS で表示されますが、これは RFC 3339 では認められず、\u003ccode>Date.parse\u003c/code> も読み戻せません。文字表記と曜日は、このブラウザーの言語の \u003ccode>Intl.DateTimeFormat\u003c/code> から得ます。相対時間は \u003ccode>Intl.RelativeTimeFormat\u003c/code> で、収まる最大の単位を整数に丸めて表示し、1 か月は 30.44 日、1 年は 365.25 日として扱います。年内の日数は 1 月 1 日から数えます。ISO 週は月曜始まりで、第 1 週は 1 月 4 日を含む週です。そのため 1 月 1〜3 日は前年の最終週に、12 月 29〜31 日は翌年の第 1 週に属することがあります。ツールは入力日の週の木曜日を取り、その年の第 1 週の月曜日から週を数えます。","ゾーンの表記がある行は、\u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code> から読み取ったこの端末のタイムゾーン設定と、ブラウザー内のタイムゾーンデータベースに依存します。OS のタイムゾーンを変えると、これらの行も変わります。UTC に切り替えると、それらの行は代わりに UTC を使います。「現在」と毎秒更新は \u003ccode>Date.now()\u003c/code> と 1,000 ms の \u003ccode>setInterval\u003c/code> を使います。これはこの端末の時計であり、その時計自体が狂っていることもあります。200 文字を超える入力は拒否されます。日付にそれ以上は必要ありません。何もアップロードされません。このファイルにはサーバーがありません。","「他のタイムゾーン」は、ブラウザー自身が持つ IANA タイムゾーンデータベースの写しから、\u003ccode>timeZone\u003c/code> を指定した \u003ccode>Intl.DateTimeFormat\u003c/code> を通じて 12 か所を読み取ります。UTC、\u003ccode>America/Los_Angeles\u003c/code>、\u003ccode>America/Denver\u003c/code>、\u003ccode>America/Chicago\u003c/code>、\u003ccode>America/New_York\u003c/code>、\u003ccode>Europe/London\u003c/code>、中央ヨーロッパ用の \u003ccode>Europe/Paris\u003c/code>、東ヨーロッパ用の \u003ccode>Europe/Athens\u003c/code>、\u003ccode>Asia/Kolkata\u003c/code>、\u003ccode>Asia/Shanghai\u003c/code>、\u003ccode>Asia/Tokyo\u003c/code>、\u003ccode>Australia/Sydney\u003c/code> です。各オフセットは、データベースがその時点について返す時刻フィールドから秒単位で求めるため、夏時間や過去の規則変更は、このブラウザーのデータベースが把握している範囲で反映されます。略称(PST や PDT、CET や CEST)はこのページ内の小さな表から取り、オフセットがその場所の現在の標準時または夏時間のものと一致するときだけ表示します。規則が定まる前の日付や規則が異なっていた時期については、名前を推測せずオフセットだけを示します。中国の CST は China Standard Time であり、米国中部ではありません。各行には、秒までの時刻、このブラウザーの言語での日付(今年でなければ年も)、同じ時点でこの端末より暦の上で何日進んでいるか遅れているか、短い形式のオフセットが表示されます。コピーは、オフセットとミリ秒を含む完全な ISO 8601 形式をコピーします。この端末のタイムゾーンと一致する行には、その旨が表示されます。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","タイムスタンプ変換 — Unix 秒・ミリ秒、ISO 8601、ローカル時刻 — MDV","秒・ミリ秒・マイクロ秒・ナノ秒の Unix タイムスタンプ、または ISO 8601 の日付を貼り付けてください。UTC、ローカル時刻、ISO 週、相対時間、よく使う 12 のタイムゾーンで確認できます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","ローカル行のゾーン","Unix 秒 — 11 桁まで","Unix 秒 — 11 桁まで。ミリ秒より細かい桁は切り捨て、下方向に丸め","Unix ミリ秒 — 12〜14 桁","Unix ミリ秒 — 12〜14 桁。ミリ秒より細かい桁は切り捨て、下方向に丸め","Unix マイクロ秒 — 15〜17 桁","Unix マイクロ秒 — 15〜17 桁。ミリ秒より細かい桁は切り捨て、下方向に丸め","Unix ナノ秒 — 18〜20 桁","Unix ナノ秒 — 18〜20 桁。ミリ秒より細かい桁は切り捨て、下方向に丸め","米国太平洋","米国山岳部","米国中部","米国東部","英国","中央ヨーロッパ","東ヨーロッパ","インド","中国","日本","オーストラリア東部","小数点より前の {n} 桁は、ナノ秒の上限である 20 桁を超えています。11 桁までは秒、12〜14 桁はミリ秒、15〜17 桁はマイクロ秒、18〜20 桁はナノ秒として読まれます。","{where} の{name} {value} は範囲外です。{lo} から {hi} の間で指定してください。","{name} {value} は範囲外です。{lo} から {hi} の間で指定してください。","年 {year} の形式が正しくありません。4 桁、または + か - に続けて 6 桁で書いてください。","ISO 8601 では年 -000000 は使えません。0000 または +000000 と書いてください。","月","日","24 時はここでは読み取れません。翌日の 00 時と書いてください。","時","分","60 秒はうるう秒で、Unix 時間にはうるう秒がありません。59 と書いてください。","秒","オフセットの時","オフセットの分","{s} は Date が扱える範囲を超えています。-271821-04-20T00:00:00Z から +275760-09-13T00:00:00Z までです。","T の代わりにスペース","オフセット {from} を {to} として解釈","ISO 8601 — 日付のみ、UTC の 0 時として解釈","ISO 8601","ISO 8601 — オフセットなし、{zone} のローカル時刻として解釈","{kind}({how})","Date.parse — エンジン依存の形式","「{text}」は Unix タイムスタンプでも ISO 8601 でもなく、Date.parse は NaN を返しました。","このブラウザーには {zone} のタイムゾーンデータがありません","このゾーンで表示できる範囲外です","この端末","コピーしました","コピー","オフセット付きの ISO 8601 形式をコピー","そのローカル時刻は存在しません","{s} は {zone} で時計が飛ばす隙間に当たります。このエンジンは {used} として読み取りました。どの時点か指定するには、オフセットを付けてください。","そのローカル時刻は 2 回あります","{s} は、時計が戻る {zone} で 2 回あります。このエンジンは {used}(1 回目)として読み取りました。もう一方は {other} です。どちらかを選ぶには、オフセットを付けてください。","{s} は、時計が戻る {zone} で 2 回あります。このエンジンは {used}(2 回目)として読み取りました。もう一方は {other} です。どちらかを選ぶには、オフセットを付けてください。","拒否しました","{n} 文字は上限の {limit} 文字を超えています。日付にそれ以上は必要ありません。","日付として読み取れませんでした","この端末のローカルは {zone} です — Intl.DateTimeFormat().resolvedOptions().timeZone。","ゾーン行は UTC を表示しています。","ゾーン行はそのゾーンを表示しています。","{n} 日","{n} 日","日時",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","Unix 타임스탬프(초~나노초) 또는 날짜를 붙여넣으세요. 초, 밀리초, ISO 8601, 이 기기의 현지 시각, ISO 주, 지금과의 차이를 한꺼번에 볼 수 있습니다.","이 기기에서 실행","오프라인 작동","타임스탬프 또는 날짜","지금","로컬","매초 갱신","결과","위에 타임스탬프나 날짜를 입력","Unix 초","복사됨","복사","Unix 밀리초","오프셋 포함 ISO 8601","풀어쓴 형식","지금 기준","요일","연중 일차","ISO 주","해석","다른 시간대","작동 방식","정수(소수도 가능)는 Unix 시간으로 읽으며, 소수점 앞의 자릿수(앞쪽 0은 세지 않음)로 단위가 정해집니다. 11자리까지는 초, 12~14자리는 밀리초, 15~17자리는 마이크로초, 18~20자리는 나노초이며, 그보다 길면 거부합니다. 각 경계는 작은 단위에서는 1973-03-03, 큰 단위에서는 5138년에 해당하므로, 최근 50년가량의 타임스탬프는 모호하지 않고 하나의 숫자로 −1199년부터 5138년까지 표현합니다. 1973-03-03 이전의 더 작은 단위 값은 큰 단위로 잘못 읽히므로 날짜로 입력하세요. 숫자는 부동소수점이 아니라 \u003ccode>BigInt\u003c/code>의 10진 문자열로 밀리초로 옮기며, 밀리초보다 작은 값은 버려서 정수 밀리초로 내림합니다(1970년 이전 시각은 더 이른 쪽으로). 이런 일이 생기면 해석 항목에 표시합니다.","ISO 8601 / RFC 3339 형태의 문자열은 먼저 필드별로 검사합니다. \u003ccode>Date.parse\u003c/code>는 2026-02-30을 3월로 넘겨 버리기 때문입니다. 연도는 4자리 또는 부호와 6자리, 월은 01–12, 일은 해당 월에 존재하는 날, 시는 00–23, 분과 초는 00–59, 오프셋의 시는 00–23입니다. 24:00과 윤초 60은 거부합니다. RFC 3339에서 허용하듯 \u003ccode>T\u003c/code> 대신 공백을 쓸 수 있고, 오프셋은 \u003ccode>+02:00\u003c/code>, \u003ccode>+0200\u003c/code>, \u003ccode>+02\u003c/code> 모두 가능하며, 페이지가 이를 \u003ccode>+02:00\u003c/code>으로 고쳐 쓰고 그 사실을 알립니다. 그다음 \u003ccode>Date.parse\u003c/code>가 ECMAScript 규칙으로 읽습니다. 날짜만 있으면 UTC 자정, 오프셋 없는 날짜와 시각은 현지 시각, \u003ccode>Z\u003c/code>나 오프셋은 그대로 적용되고, 밀리초보다 아래 소수 자릿수는 버립니다. 현지 시각은 로컬 getter로 다시 읽으며, 시계가 건너뛰는 틈이나 시계가 되돌려져 반복되는 구간에 걸리면 알림이 나와 이 엔진이 고른 시점을 보여 줍니다. 반복 검사는 하루 전과 하루 후의 오프셋을 시도하므로, 하루 안에 전환이 두 번 있으면 놓칠 수 있습니다. 그 밖의 입력도 \u003ccode>Date.parse\u003c/code>로 넘어가지만 ISO 외에 무엇을 받아들이는지는 엔진마다 다릅니다. “Aug 24 2026”은 Chrome과 Firefox에서 읽히지만 기대지 마세요. 연도가 앞이고 슬래시·점·한 자리 필드를 쓴 날짜(\u003ccode>2026/08/24\u003c/code>), 또는 월이 앞이고 슬래시를 쓴 날짜(\u003ccode>08/24/2026\u003c/code>)도 먼저 같은 방식으로 월과 일을 검사하므로 넘어가지 않습니다.","\u003ccode>Date\u003c/code>는 1970-01-01T00:00:00Z 이후의 밀리초를 숫자로 담으며 범위는 ±8,640,000,000,000,000 ms(약 ±273,000년)입니다. 이를 넘으면 도구가 거부합니다. Unix 시간에는 윤초가 없어 하루가 정확히 86,400초이므로, 1972년 이후 삽입된 27번의 윤초는 이 숫자에 들어 있지 않으며 윤초는 세는 값이 아니라 반복되는 23:59:59입니다. ISO UTC는 \u003ccode>toISOString\u003c/code>에서 나옵니다. 오프셋 형식은 구성 요소 getter로 만들고, 오프셋은 이 현지 필드와 UTC의 차이를 초 단위로 구한 값입니다. 초를 떨어뜨릴 수 있는 \u003ccode>getTimezoneOffset\u003c/code>은 쓰지 않습니다. 표준 시간대가 생기기 전의 지방 평균시에는 초가 있었습니다(로마는 1893년까지 +00:49:56). 초가 있는 오프셋은 ±HH:MM:SS로 출력하는데, RFC 3339는 이를 허용하지 않고 \u003ccode>Date.parse\u003c/code>도 다시 읽지 못합니다. 풀어쓴 형식과 요일은 이 브라우저 언어의 \u003ccode>Intl.DateTimeFormat\u003c/code>에서 가져옵니다. 상대 시간은 \u003ccode>Intl.RelativeTimeFormat\u003c/code>으로 들어맞는 가장 큰 단위를 정수로 반올림해 표시하며, 한 달은 30.44일, 한 해는 365.25일로 칩니다. 연중 일차는 1월 1일부터 셉니다. ISO 주는 월요일에 시작하고 1주차는 1월 4일이 든 주이므로, 1월 1~3일은 전년도 마지막 주에, 12월 29~31일은 다음 해 1주차에 속할 수 있습니다. 도구는 입력일이 속한 주의 목요일을 잡고, 그해 1주차의 월요일부터 주를 셉니다.","존이 표시된 행은 \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>에서 읽은 이 기기의 시간대 설정과 브라우저가 가진 시간대 데이터베이스에 따라 달라지며, 운영체제의 시간대를 바꾸면 함께 바뀝니다. UTC 전환을 켜면 그 행들이 대신 UTC를 사용합니다. “지금”과 매초 갱신은 \u003ccode>Date.now()\u003c/code>와 1,000 ms \u003ccode>setInterval\u003c/code>을 사용합니다. 이는 이 기기의 시계이며, 그 시계 자체가 틀릴 수도 있습니다. 200자를 넘는 입력은 거부합니다. 날짜에 그 이상은 필요하지 않습니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","‘다른 시간대’는 브라우저가 가진 IANA 시간대 데이터베이스 사본에서 \u003ccode>timeZone\u003c/code>을 지정한 \u003ccode>Intl.DateTimeFormat\u003c/code>으로 열두 곳을 읽습니다. UTC, \u003ccode>America/Los_Angeles\u003c/code>, \u003ccode>America/Denver\u003c/code>, \u003ccode>America/Chicago\u003c/code>, \u003ccode>America/New_York\u003c/code>, \u003ccode>Europe/London\u003c/code>, 중부 유럽용 \u003ccode>Europe/Paris\u003c/code>, 동부 유럽용 \u003ccode>Europe/Athens\u003c/code>, \u003ccode>Asia/Kolkata\u003c/code>, \u003ccode>Asia/Shanghai\u003c/code>, \u003ccode>Asia/Tokyo\u003c/code>, \u003ccode>Australia/Sydney\u003c/code>입니다. 각 오프셋은 데이터베이스가 해당 시점에 주는 시각 필드로 초 단위까지 계산하므로, 서머타임과 과거의 규칙 변경은 이 브라우저의 데이터베이스가 아는 범위까지 반영됩니다. 약어(PST 또는 PDT, CET 또는 CEST)는 이 페이지 안의 작은 표에서 가져오며, 오프셋이 그곳의 현재 표준 또는 서머타임 오프셋일 때만 표시합니다. 규칙이 자리 잡기 전이거나 규칙이 달랐던 시기의 날짜에서는 이름을 추측하지 않고 오프셋만 보여 줍니다. 중국의 CST는 China Standard Time이며 미국 중부가 아닙니다. 각 행에는 초 단위까지의 시각, 이 브라우저 언어로 된 날짜(올해가 아니면 연도 포함), 같은 시점에서 이 기기보다 달력상 며칠 앞서거나 뒤처지는지, 짧은 형식의 오프셋이 표시됩니다. 복사는 오프셋과 밀리초를 포함한 전체 ISO 8601 형식을 복사합니다. 이 기기의 시간대와 같은 행은 그 사실을 표시합니다.","다크 모드와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","타임스탬프 변환기 — Unix 초·밀리초, ISO 8601, 현지 시각 — MDV","초, 밀리초, 마이크로초, 나노초 단위의 Unix 타임스탬프나 ISO 8601 날짜를 붙여넣으세요. UTC, 현지 시각, ISO 주, 상대 시간, 자주 쓰는 12개 시간대로 볼 수 있습니다. 사용 중인 기기에서 작동합니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","현지 행의 시간대","Unix 초 — 11자리까지","Unix 초 — 11자리까지; 밀리초보다 작은 자리는 버리고 내림","Unix 밀리초 — 12~14자리","Unix 밀리초 — 12~14자리; 밀리초보다 작은 자리는 버리고 내림","Unix 마이크로초 — 15~17자리","Unix 마이크로초 — 15~17자리; 밀리초보다 작은 자리는 버리고 내림","Unix 나노초 — 18~20자리","Unix 나노초 — 18~20자리; 밀리초보다 작은 자리는 버리고 내림","미국 태평양","미국 산악","미국 중부","미국 동부","영국","중부 유럽","동부 유럽","인도","중국","일본","호주 동부","소수점 앞 {n}자리는 나노초 한도인 20자리를 넘습니다. 11자리까지는 초, 12~14자리는 밀리초, 15~17자리는 마이크로초, 18~20자리는 나노초로 읽습니다.","{where}의 {name} {value}은(는) 범위를 벗어났습니다: {lo}~{hi}.","{name} {value}은(는) 범위를 벗어났습니다: {lo}~{hi}.","연도 {year}의 형식이 올바르지 않습니다. 4자리 또는 + 나 - 와 6자리로 쓰세요.","ISO 8601에서는 연도 -000000을 쓸 수 없습니다. 0000 또는 +000000으로 쓰세요.","월","일","24시는 여기서 읽지 않습니다. 다음 날 00시로 쓰세요.","시","분","60초는 윤초이며 Unix 시간에는 윤초가 없습니다. 59로 쓰세요.","초","오프셋의 시","오프셋의 분","{s}은(는) Date가 담을 수 있는 범위를 넘습니다: -271821-04-20T00:00:00Z ~ +275760-09-13T00:00:00Z.","T 대신 공백","오프셋 {from}을(를) {to}(으)로 해석","ISO 8601 — 날짜만, UTC 자정으로 해석","ISO 8601","ISO 8601 — 오프셋 없음, {zone}의 현지 시각으로 해석","{kind} ({how})","Date.parse — 엔진에 따라 다른 형식","“{text}”은(는) Unix 타임스탬프도 ISO 8601도 아니며, Date.parse가 NaN을 반환했습니다.","이 브라우저에는 {zone}의 시간대 데이터가 없습니다","이 시간대로 표시할 수 있는 범위를 벗어났습니다","이 기기","복사됨","복사","오프셋 포함 ISO 8601 형식을 복사","그 현지 시각은 존재하지 않습니다","{s}은(는) {zone}에서 시계가 건너뛰는 틈에 해당합니다. 이 엔진은 {used}(으)로 읽었습니다. 어느 시점인지 정하려면 오프셋을 붙이세요.","그 현지 시각은 두 번 나타납니다","{s}은(는) 시계가 되돌려지는 {zone}에서 두 번 나타납니다. 이 엔진은 {used}(첫 번째)로 읽었으며, 다른 하나는 {other}입니다. 하나를 고르려면 오프셋을 붙이세요.","{s}은(는) 시계가 되돌려지는 {zone}에서 두 번 나타납니다. 이 엔진은 {used}(두 번째)로 읽었으며, 다른 하나는 {other}입니다. 하나를 고르려면 오프셋을 붙이세요.","거부됨","{n}자는 한도인 {limit}자를 넘습니다. 날짜에 그 이상은 필요하지 않습니다.","날짜로 읽을 수 없습니다","이 기기의 로컬은 {zone}입니다 — Intl.DateTimeFormat().resolvedOptions().timeZone.","시간대 행이 UTC로 표시되고 있습니다.","시간대 행이 해당 시간대로 표시되고 있습니다.","{n}일","{n}일","시간과 날짜",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","粘贴 Unix 时间戳(秒到纳秒)或日期。一次读出所有形式:秒、毫秒、ISO 8601、本设备的本地时间、ISO 周,以及与现在的间隔。","在此设备上运行","可离线使用","时间戳或日期","现在","本地","每秒更新","结果","在上方输入时间戳或日期","Unix 秒","已复制","复制","Unix 毫秒","带偏移的 ISO 8601","完整写法","相对现在","星期","年内第几天","ISO 周","解析为","其他时区","工作原理","整数(允许带小数)按 Unix 时间读取,小数点前的位数(不计前导零)决定单位:最多 11 位为秒,12 到 14 位为毫秒,15 到 17 位为微秒,18 到 20 位为纳秒;更长的会被拒绝。每个分界在较小单位下落在 1973-03-03，在较大单位下落在 5138 年,因此近五十年的时间戳不会产生歧义,一个数字可覆盖 −1199 年到 5138 年。1973-03-03 之前、属于较细单位的值会被误当作较粗的单位,请改用日期输入。数字以十进制字符串经 \u003ccode>BigInt\u003c/code> 换算为毫秒,不经过浮点数;比毫秒更细的部分会被舍弃,向下取整到整毫秒(1970 年之前的时间则取更早的那个),发生时“解析为”会说明。","形如 ISO 8601 / RFC 3339 的字符串会先逐字段检查,因为 \u003ccode>Date.parse\u003c/code> 会把 2026-02-30 顺延到三月:年份为 4 位,或符号加 6 位;月份 01–12;日期必须是该月存在的日子;小时 00–23;分和秒 00–59;偏移的小时 00–23。24:00 和闰秒 60 会被拒绝。如 RFC 3339 所允许,空格可以代替 \u003ccode>T\u003c/code>,偏移可以写成 \u003ccode>+02:00\u003c/code>、\u003ccode>+0200\u003c/code> 或 \u003ccode>+02\u003c/code>;页面会把它改写为 \u003ccode>+02:00\u003c/code> 并加以说明。随后由 \u003ccode>Date.parse\u003c/code> 按 ECMAScript 规则读取:只有日期时为 UTC 零点,有日期和时间但没有偏移时为本地时间,\u003ccode>Z\u003c/code> 或偏移按其本意处理,毫秒以下的小数位被舍弃。本地时间会通过本地 getter 读回;当它落在时钟跳过的空档,或落在时钟回拨后重复的时段时,会出现提示,并显示此引擎选定的时刻。重复检查会尝试前一天和后一天的偏移,因此同一天内发生两次切换可能不被发现。其余输入同样交给 \u003ccode>Date.parse\u003c/code>,但它在 ISO 之外接受什么取决于引擎:“Aug 24 2026”在 Chrome 和 Firefox 中可读,不要依赖。年份在前、用斜杠、点号或一位数字字段的日期(\u003ccode>2026/08/24\u003c/code>),或月份在前、用斜杠的日期(\u003ccode>08/24/2026\u003c/code>),同样会先检查月和日,因此也不会顺延。","\u003ccode>Date\u003c/code> 以数字保存自 1970-01-01T00:00:00Z 起的毫秒数,范围为 ±8,640,000,000,000,000 ms，约 ±273,000 年;超出则工具拒绝。Unix 时间没有闰秒:每天恰好 86,400 秒,因此 1972 年以来插入的 27 个闰秒不在这些数字里,闰秒表现为重复的 23:59:59，而不是一个计数。ISO UTC 来自 \u003ccode>toISOString\u003c/code>。带偏移的形式由各分量 getter 拼出,其偏移是这些本地字段与 UTC 之差,精确到秒,而不是可能丢掉秒的 \u003ccode>getTimezoneOffset\u003c/code>,因为标准时区出现之前的地方平均时是带秒的(罗马在 1893 年前为 +00:49:56)。带秒的偏移会写成 ±HH:MM:SS，这不符合 RFC 3339,\u003ccode>Date.parse\u003c/code> 也无法读回。完整写法和星期来自该浏览器语言下的 \u003ccode>Intl.DateTimeFormat\u003c/code>;相对时间使用 \u003ccode>Intl.RelativeTimeFormat\u003c/code>,取能放得下的最大单位,四舍五入为整数单位,一个月按 30.44 天、一年按 365.25 天计。年内第几天从 1 月 1 日算起。ISO 周:周从星期一开始,第 1 周是包含 1 月 4 日的那一周,因此 1 月 1–3 日可能属于上一年的最后一周,12 月 29–31 日可能属于下一年的第 1 周。工具取输入日期所在周的星期四,并从该年第 1 周的星期一起数周。","带有时区标记的行取决于本设备的时区设置(读取自 \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>)以及浏览器自带的时区数据库;更改操作系统的时区,这些行也会变化。切换到 UTC 后,这些行改用 UTC。“现在”和每秒更新使用 \u003ccode>Date.now()\u003c/code> 和 1,000 ms 的 \u003ccode>setInterval\u003c/code>,这是本设备的时钟,它本身也可能不准。超过 200 个字符的输入会被拒绝,任何日期都不需要更多。不会上传任何内容:此文件中没有服务器。","“其他时区”通过带 \u003ccode>timeZone\u003c/code> 的 \u003ccode>Intl.DateTimeFormat\u003c/code>,从浏览器自带的 IANA 时区数据库副本中读取十二个地点:UTC、\u003ccode>America/Los_Angeles\u003c/code>、\u003ccode>America/Denver\u003c/code>、\u003ccode>America/Chicago\u003c/code>、\u003ccode>America/New_York\u003c/code>、\u003ccode>Europe/London\u003c/code>、代表中欧的 \u003ccode>Europe/Paris\u003c/code>、代表东欧的 \u003ccode>Europe/Athens\u003c/code>、\u003ccode>Asia/Kolkata\u003c/code>、\u003ccode>Asia/Shanghai\u003c/code>、\u003ccode>Asia/Tokyo\u003c/code> 和 \u003ccode>Australia/Sydney\u003c/code>。每个偏移都由数据库为该时刻给出的墙上时间字段精确到秒算出,因此夏令时和过去的规则变更,在此浏览器的数据库所知的范围内都会计入。缩写(PST 或 PDT、CET 或 CEST)来自本页中的一张小表,只有当偏移恰好是该地当前的标准或夏令时偏移时才显示;对于规则尚未确定之前或规则不同时期的日期,该行只给出偏移,而不去猜名称。中国的 CST 是中国标准时间,不是美国中部时间。每行显示精确到秒的时间、以该浏览器语言书写的日期(不是今年时带年份)、同一时刻相对本设备领先或落后多少个日历日,以及简写形式的偏移;“复制”会复制带偏移和毫秒的完整 ISO 8601 形式。与本设备时区相同的行会标明这一点。","“深色”和“语言”按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的任何内容都不会被保存。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","时间戳转换器 — Unix 秒和毫秒、ISO 8601、本地时间 — MDV","粘贴以秒、毫秒、微秒或纳秒为单位的 Unix 时间戳,或 ISO 8601 日期。可读出 UTC、本地时间、ISO 周、相对时间和十二个常用时区。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","本地行所用时区","Unix 秒 — 最多 11 位","Unix 秒 — 最多 11 位;比毫秒更细的位被舍弃,向下取整","Unix 毫秒 — 12 到 14 位","Unix 毫秒 — 12 到 14 位;比毫秒更细的位被舍弃,向下取整","Unix 微秒 — 15 到 17 位","Unix 微秒 — 15 到 17 位;比毫秒更细的位被舍弃,向下取整","Unix 纳秒 — 18 到 20 位","Unix 纳秒 — 18 到 20 位;比毫秒更细的位被舍弃,向下取整","美国太平洋","美国山区","美国中部","美国东部","英国","中欧","东欧","印度","中国","日本","澳大利亚东部","小数点前的 {n} 位超过了纳秒计数的 20 位上限。最多 11 位按秒读取,12–14 位按毫秒,15–17 位按微秒,18–20 位按纳秒。","{where} 中的{name} {value} 超出范围:{lo} 到 {hi}。","{name} {value} 超出范围:{lo} 到 {hi}。","年份 {year} 的格式不正确:请写 4 位数字,或 + 或 - 加 6 位数字。","ISO 8601 不允许年份 -000000:请写 0000 或 +000000。","月份","日期","此处不读取 24 时:请写成次日的 00 时。","小时","分钟","第 60 秒是闰秒,Unix 时间没有闰秒:请写 59。","秒","偏移的小时","偏移的分钟","{s} 超出了 Date 能表示的范围:-271821-04-20T00:00:00Z 到 +275760-09-13T00:00:00Z。","用空格代替 T","偏移 {from} 解析为 {to}","ISO 8601 — 仅日期,按 UTC 零点读取","ISO 8601","ISO 8601 — 未给出偏移,按 {zone} 的本地时间读取","{kind}({how})","Date.parse — 取决于引擎的格式","“{text}”既不是 Unix 时间戳,也不是 ISO 8601,Date.parse 返回了 NaN。","此浏览器没有 {zone} 的时区数据","超出该时区可显示的范围","本设备","已复制","复制","复制带偏移的 ISO 8601 形式","该本地时间不存在","{s} 落在 {zone} 时钟跳过的空档里。此引擎将其读作 {used}。请加上偏移来说明你指的是哪个时刻。","该本地时间出现两次","{s} 在 {zone} 因时钟回拨而出现两次。此引擎将其读作 {used}(第一次);另一次是 {other}。请加上偏移来选定其一。","{s} 在 {zone} 因时钟回拨而出现两次。此引擎将其读作 {used}(第二次);另一次是 {other}。请加上偏移来选定其一。","已拒绝","{n} 个字符超过了 {limit} 个字符的上限,任何日期都不需要更多。","无法读取为日期","本设备的本地时区是 {zone} — Intl.DateTimeFormat().resolvedOptions().timeZone。","时区行当前显示 UTC。","时区行当前显示该时区。","{n} 天","{n} 天","时间与日期",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2438,8 +2651,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var YMD = /^([+-]?\d{4,6})[-\/.](\d{1,2})[-\/.](\d{1,2})(?!\d)/;
   var MDY = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?!\d)/;
   // Digits before the point pick the unit: [most digits, unit, rule, power of ten to milliseconds].
-  var BANDS = [[11, "seconds", "up to 11 digits", 3], [14, "milliseconds", "12 to 14 digits", 0],
-    [17, "microseconds", "15 to 17 digits", -3], [20, "nanoseconds", "18 to 20 digits", -6]];
+  var BANDS = [
+    [11, trk("Unix seconds — up to 11 digits"), trk("Unix seconds — up to 11 digits; digits finer than a millisecond dropped, rounded down"), 3],
+    [14, trk("Unix milliseconds — 12 to 14 digits"), trk("Unix milliseconds — 12 to 14 digits; digits finer than a millisecond dropped, rounded down"), 0],
+    [17, trk("Unix microseconds — 15 to 17 digits"), trk("Unix microseconds — 15 to 17 digits; digits finer than a millisecond dropped, rounded down"), -3],
+    [20, trk("Unix nanoseconds — 18 to 20 digits"), trk("Unix nanoseconds — 18 to 20 digits; digits finer than a millisecond dropped, rounded down"), -6]];
   var MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   var deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown";
   var zone = "local", timer = null;
@@ -2448,17 +2664,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // [label, IANA zone, standard abbreviation and offset in minutes, summer abbreviation and offset or null]
   var ZONES = [
     ["UTC", "UTC", ["UTC", 0], null],
-    ["US Pacific", "America/Los_Angeles", ["PST", -480], ["PDT", -420]],
-    ["US Mountain", "America/Denver", ["MST", -420], ["MDT", -360]],
-    ["US Central", "America/Chicago", ["CST", -360], ["CDT", -300]],
-    ["US Eastern", "America/New_York", ["EST", -300], ["EDT", -240]],
-    ["UK", "Europe/London", ["GMT", 0], ["BST", 60]],
-    ["Central Europe", "Europe/Paris", ["CET", 60], ["CEST", 120]],
-    ["Eastern Europe", "Europe/Athens", ["EET", 120], ["EEST", 180]],
-    ["India", "Asia/Kolkata", ["IST", 330], null],
-    ["China", "Asia/Shanghai", ["CST", 480], null],
-    ["Japan", "Asia/Tokyo", ["JST", 540], null],
-    ["Australia East", "Australia/Sydney", ["AEST", 600], ["AEDT", 660]]
+    [trk("US Pacific"), "America/Los_Angeles", ["PST", -480], ["PDT", -420]],
+    [trk("US Mountain"), "America/Denver", ["MST", -420], ["MDT", -360]],
+    [trk("US Central"), "America/Chicago", ["CST", -360], ["CDT", -300]],
+    [trk("US Eastern"), "America/New_York", ["EST", -300], ["EDT", -240]],
+    [trk("UK"), "Europe/London", ["GMT", 0], ["BST", 60]],
+    [trk("Central Europe"), "Europe/Paris", ["CET", 60], ["CEST", 120]],
+    [trk("Eastern Europe"), "Europe/Athens", ["EET", 120], ["EEST", 180]],
+    [trk("India"), "Asia/Kolkata", ["IST", 330], null],
+    [trk("China"), "Asia/Shanghai", ["CST", 480], null],
+    [trk("Japan"), "Asia/Tokyo", ["JST", 540], null],
+    [trk("Australia East"), "Australia/Sydney", ["AEST", 600], ["AEDT", 660]]
   ];
   var zoneFmt = [];   // built once: [fields, short date, short date with year] per zone, or null if unknown here
 
@@ -2466,34 +2682,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function unix(m) {
     var int = m[2].replace(/^0+/, ""), band = null;
     for (var i = 0; i < BANDS.length && !band; i++) if (int.length <= BANDS[i][0]) band = BANDS[i];
-    if (!band) throw { range: true, msg: int.length + " digits before the point is past the 20 of a nanosecond count. Up to 11 digits reads as seconds, 12–14 as milliseconds, 15–17 as microseconds, 18–20 as nanoseconds." };
+    if (!band) throw { range: true, msg: tr("{n} digits before the point is past the 20 of a nanosecond count. Up to 11 digits reads as seconds, 12–14 as milliseconds, 15–17 as microseconds, 18–20 as nanoseconds.", { n: int.length }) };
     var point = int.length + band[3], all = (int + (m[3] || "")).padEnd(point, "0");
     var whole = BigInt(all.slice(0, point) || "0"), cut = /[1-9]/.test(all.slice(point));
     var ms = m[1] === "-" ? -whole - (cut ? 1n : 0n) : whole;
-    return { ms: Number(ms), kind: "Unix " + band[1] + " — " + band[2] + (cut ? "; digits finer than a millisecond dropped, rounded down" : "") };
+    return { ms: Number(ms), kind: tr(cut ? band[2] : band[1]) };
   }
 
   function within(name, text, lo, hi, where) {
-    var n = Number(text);
-    if (n < lo || n > hi) throw { msg: name + " " + text + " is out of range" + (where || "") + ": " + pad(lo) + " to " + pad(hi) + "." };
+    var n = Number(text), v = { name: tr(name), value: text, lo: pad(lo), hi: pad(hi), where: where };
+    if (n < lo || n > hi) throw { msg: where ? tr("{name} {value} is out of range in {where}: {lo} to {hi}.", v) : tr("{name} {value} is out of range: {lo} to {hi}.", v) };
   }
   // Every field is checked before Date.parse, which would roll 2026-02-30 over into March.
   function isoFields(m) {
-    if (!/^(\d{4}|[+-]\d{6})$/.test(m[1])) throw { msg: "Year " + m[1] + " has the wrong shape: write 4 digits, or + or - and 6 digits." };
-    if (m[1] === "-000000") throw { msg: "Year -000000 is not allowed in ISO 8601: write 0000 or +000000." };
+    if (!/^(\d{4}|[+-]\d{6})$/.test(m[1])) throw { msg: tr("Year {year} has the wrong shape: write 4 digits, or + or - and 6 digits.", { year: m[1] }) };
+    if (m[1] === "-000000") throw { msg: tr("Year -000000 is not allowed in ISO 8601: write 0000 or +000000.") };
     var f = { y: Number(m[1]), mo: Number(m[2]), d: Number(m[3]), h: Number(m[4] || 0), mi: Number(m[5] || 0), s: Number(m[6] || 0) };
     var leap = f.y % 4 === 0 && (f.y % 100 !== 0 || f.y % 400 === 0);
-    within("Month", m[2], 1, 12);
-    within("Day", m[3], 1, f.mo === 2 && leap ? 29 : MONTH_DAYS[f.mo - 1], " in " + m[1] + "-" + m[2]);
+    within(trk("Month"), m[2], 1, 12);
+    within(trk("Day"), m[3], 1, f.mo === 2 && leap ? 29 : MONTH_DAYS[f.mo - 1], m[1] + "-" + m[2]);
     if (m[4] === undefined) return f;
-    if (m[4] === "24") throw { msg: "Hour 24 is not read here: write 00 on the next day." };
-    within("Hour", m[4], 0, 23);
-    within("Minute", m[5], 0, 59);
-    if (m[6] === "60") throw { msg: "Second 60 is a leap second, and Unix time has none: write 59." };
-    if (m[6] !== undefined) within("Second", m[6], 0, 59);
+    if (m[4] === "24") throw { msg: tr("Hour 24 is not read here: write 00 on the next day.") };
+    within(trk("Hour"), m[4], 0, 23);
+    within(trk("Minute"), m[5], 0, 59);
+    if (m[6] === "60") throw { msg: tr("Second 60 is a leap second, and Unix time has none: write 59.") };
+    if (m[6] !== undefined) within(trk("Second"), m[6], 0, 59);
     if (m[7] && m[7].length > 1) {
-      within("Offset hour", m[7].slice(1, 3), 0, 23);
-      if (m[7].length > 3) within("Offset minute", m[7].slice(-2), 0, 59);
+      within(trk("Offset hour"), m[7].slice(1, 3), 0, 23);
+      if (m[7].length > 3) within(trk("Offset minute"), m[7].slice(-2), 0, 59);
     }
     return f;
   }
@@ -2511,8 +2727,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     else if ((m = MDY.exec(s)) && Number(m[1]) <= 12) { y = m[3]; mo = m[1]; d = m[2]; }
     else return;
     var leap = Number(y) % 4 === 0 && (Number(y) % 100 !== 0 || Number(y) % 400 === 0);
-    within("Month", pad(mo), 1, 12);
-    within("Day", pad(d), 1, Number(mo) === 2 && leap ? 29 : MONTH_DAYS[Number(mo) - 1], " in " + y + "-" + pad(mo));
+    within(trk("Month"), pad(mo), 1, 12);
+    within(trk("Day"), pad(d), 1, Number(mo) === 2 && leap ? 29 : MONTH_DAYS[Number(mo) - 1], y + "-" + pad(mo));
   }
 
   // Returns { ms, kind, local } or throws with a diagnostic message. local holds the fields of a time given without an offset.
@@ -2523,21 +2739,21 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       var f = isoFields(m), spelled = isoForParse(s, m), how = [];
       ms = Date.parse(spelled);
       if (isNaN(ms) && Math.abs(f.y) >= 271821)
-        throw { range: true, msg: s + " is past what a Date can hold: -271821-04-20T00:00:00Z to +275760-09-13T00:00:00Z." };
-      if (m[4] !== undefined && s.charAt(m[1].length + 6) === " ") how.push("a space for T");
-      if (m[7] && m[7].length > 1 && m[7].length !== 6) how.push("offset " + m[7] + " read as " + spelled.slice(-6));
-      if (m[4] === undefined) kind = "ISO 8601 — date only, read as UTC midnight";
-      else if (m[7]) kind = "ISO 8601";
-      else { kind = "ISO 8601 — no offset given, read as local time in " + deviceZone; local = f; }
-      if (how.length) kind += " (" + how.join(", ") + ")";
+        throw { range: true, msg: tr("{s} is past what a Date can hold: -271821-04-20T00:00:00Z to +275760-09-13T00:00:00Z.", { s: s }) };
+      if (m[4] !== undefined && s.charAt(m[1].length + 6) === " ") how.push(tr("a space for T"));
+      if (m[7] && m[7].length > 1 && m[7].length !== 6) how.push(tr("offset {from} read as {to}", { from: m[7], to: spelled.slice(-6) }));
+      if (m[4] === undefined) kind = tr("ISO 8601 — date only, read as UTC midnight");
+      else if (m[7]) kind = tr("ISO 8601");
+      else { kind = tr("ISO 8601 — no offset given, read as local time in {zone}", { zone: deviceZone }); local = f; }
+      if (how.length) kind = tr("{kind} ({how})", { kind: kind, how: how.join(", ") });
     } else {
       looseFields(s);
       ms = Date.parse(s);
-      kind = "Date.parse — engine-dependent format";
+      kind = tr("Date.parse — engine-dependent format");
     }
     if (isNaN(ms)) {
       var show = s.length > 60 ? s.slice(0, 60) + "…" : s;
-      throw { msg: "“" + show + "” is not a Unix timestamp, not ISO 8601, and Date.parse returned NaN." };
+      throw { msg: tr("“{text}” is not a Unix timestamp, not ISO 8601, and Date.parse returned NaN.", { text: show }) };
     }
     return { ms: ms, kind: kind, local: local };
   }
@@ -2576,7 +2792,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   function zoneRow(i, d, localDay) {
     var z = ZONES[i], f = zoneFmt[i];
-    if (!f) return { dt: z[0], time: "", date: "this browser has no zone data for " + z[1], shift: "", off: "", iso: "" };
+    if (!f) return { dt: tr(z[0]), time: "", date: tr("this browser has no zone data for {zone}", { zone: z[1] }), shift: "", off: "", iso: "" };
     var got = {};
     f[0].formatToParts(d).forEach(function (part) { got[part.type] = part.value; });
     var y = Number(got.year), mo = Number(got.month) - 1, day = Number(got.day), h = Number(got.hour) % 24;
@@ -2586,15 +2802,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     t.setUTCFullYear(y + shift, mo, day);
     t.setUTCHours(h, mi, s, 0);
     var off = Math.round((t.getTime() - shift / 400 * 146097 * 864e5 - (ms - sub)) / 1000);
-    if (!isFinite(off)) return { dt: z[0], time: "", date: "outside the range this zone can be shown in", shift: "", off: "", iso: "" };
+    if (!isFinite(off)) return { dt: tr(z[0]), time: "", date: tr("outside the range this zone can be shown in"), shift: "", off: "", iso: "" };
     var name = off === z[2][1] * 60 ? z[2][0] : z[3] && off === z[3][1] * 60 ? z[3][0] : "";
     // the calendar day there against the calendar day on this device, for the same instant
     var days = Math.round((utcDay(y, mo, day) - localDay) / 864e5);
     return {
-      dt: z[0] + (name ? " · " + name : "") + (z[1] === deviceZone ? " · this device" : ""),
+      dt: tr(z[0]) + (name ? " · " + name : "") + (z[1] === deviceZone ? " · " + tr("this device") : ""),
       time: pad(h) + ":" + pad(mi) + ":" + pad(s),
       date: (y === new Date().getFullYear() ? f[1] : f[2]).format(d),
-      shift: days ? (days > 0 ? "+" : "−") + Math.abs(days) + (Math.abs(days) === 1 ? " day" : " days") : "",
+      shift: days ? (days > 0 ? "+" : "−") + trn(Math.abs(days), "{n} day", "{n} days") : "",
       off: shortOffset(off),
       iso: isoOffset({ y: y, mo: mo, d: day, h: h, mi: mi, s: s, ms: sub, off: off })
     };
@@ -2607,8 +2823,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       // shown: time, date, day shift, offset; copied: the ISO form, held in a hidden span
       dd.innerHTML = '<div class="mdv-row is-between"><span style="flex:1"><span class="mdv-strong" id="zt-' + i + '">—</span> ' +
         '<span id="zd-' + i + '"></span> <span class="mdv-muted" id="zs-' + i + '"></span> <span class="mdv-faint" id="zo-' + i + '"></span>' +
-        '<span id="z-' + i + '" hidden></span></span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span>' +
-        '<button class="mdv-btn is-sm is-quiet" type="button" data-copy="z-' + i + '" title="Copies the ISO 8601 form with offset">Copy</button></span></div>';
+        '<span id="z-' + i + '" hidden></span></span><span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden></span>' +
+        '<button class="mdv-btn is-sm is-quiet" type="button" data-copy="z-' + i + '"></button></span></div>';
       zonelist.appendChild(dt);
       zonelist.appendChild(dd);
       try {
@@ -2619,6 +2835,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
           new Intl.DateTimeFormat(undefined, { timeZone: z[1], weekday: "short", day: "numeric", month: "short", year: "numeric" })
         ];
       } catch (e) { zoneFmt[i] = null; }   // a browser without data for this zone throws RangeError
+    });
+  }
+  // the Copy buttons and badges of the zone rows are drawn by the script, so their words are set here
+  function paintCopy() {
+    Array.prototype.forEach.call(zonelist.querySelectorAll(".mdv-badge"), function (b) { b.textContent = tr("Copied"); });
+    Array.prototype.forEach.call(zonelist.querySelectorAll("button"), function (b) {
+      b.textContent = tr("Copy");
+      b.title = tr("Copies the ISO 8601 form with offset");
     });
   }
   function renderZones(d) {
@@ -2644,14 +2868,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function localNote(s, r) {
     var used = isoOffset(parts(new Date(r.ms), false));
     if (!sameLocal(r.ms, r.local))
-      return ["That local time does not exist", s + " falls in a gap the clocks skip in " + deviceZone +
-        ". This engine read it as " + used + ". Add an offset to say which instant you mean."];
+      return [tr("That local time does not exist"), tr("{s} falls in a gap the clocks skip in {zone}. This engine read it as {used}. Add an offset to say which instant you mean.",
+        { s: s, zone: deviceZone, used: used })];
     var off = offsetSeconds(new Date(r.ms));
     for (var k = -1; k <= 1; k += 2) {
       var other = r.ms + (off - offsetSeconds(new Date(r.ms + k * 864e5))) * 1000;
       if (other !== r.ms && sameLocal(other, r.local))
-        return ["That local time happens twice", s + " happens twice in " + deviceZone + ", when the clocks go back. This engine read it as " +
-          used + (other > r.ms ? ", the first" : ", the second") + "; the other is " + isoOffset(parts(new Date(other), false)) + ". Add an offset to pick one."];
+        {
+        var w = { s: s, zone: deviceZone, used: used, other: isoOffset(parts(new Date(other), false)) };
+        return [tr("That local time happens twice"), other > r.ms
+          ? tr("{s} happens twice in {zone}, when the clocks go back. This engine read it as {used}, the first; the other is {other}. Add an offset to pick one.", w)
+          : tr("{s} happens twice in {zone}, when the clocks go back. This engine read it as {used}, the second; the other is {other}. Add an offset to pick one.", w)];
+      }
     }
     return null;
   }
@@ -2688,14 +2916,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     input.removeAttribute("aria-invalid");
     if (!text.trim()) { state("empty"); return; }
     if (text.length > LIMIT) {
-      errtitle.textContent = "Refused";
-      errmsg.textContent = text.length.toLocaleString() + " characters is past the " + LIMIT + "-character ceiling — no date needs more.";
+      errtitle.textContent = tr("Refused");
+      errmsg.textContent = tr("{n} characters is past the {limit}-character ceiling — no date needs more.", { n: text.length.toLocaleString(), limit: LIMIT });
       state("error"); return;
     }
     try { r = parse(text); }
     catch (e) {
       input.setAttribute("aria-invalid", "true");
-      errtitle.textContent = e.range ? "Refused" : "Could not read that as a date";
+      errtitle.textContent = e.range ? tr("Refused") : tr("Could not read that as a date");
       errmsg.textContent = e.msg || String(e);
       state("error"); return;
     }
@@ -2721,11 +2949,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   function paintZone() {
     var label = zone === "utc" ? "UTC" : deviceZone;
-    Array.prototype.forEach.call(document.querySelectorAll("[data-zoned]"), function (dt) {
-      dt.textContent = dt.dataset.zoned + " · " + label;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-zl]"), function (s) {
+      s.textContent = " · " + label;
     });
-    zonehint.textContent = "Local is " + deviceZone + " on this device — Intl.DateTimeFormat().resolvedOptions().timeZone. " +
-      (zone === "utc" ? "Zone rows are showing UTC." : "Zone rows are showing that zone.");
+    zonehint.textContent = tr("Local is {zone} on this device — Intl.DateTimeFormat().resolvedOptions().timeZone.", { zone: deviceZone }) + " " +
+      (zone === "utc" ? tr("Zone rows are showing UTC.") : tr("Zone rows are showing that zone."));
   }
 
   function setNow() { input.value = String(Date.now()); run(); }
@@ -2756,7 +2984,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   });
   buildZones();
+  paintCopy();
   paintZone();
+  onLang(function () { paintCopy(); paintZone(); run(); });
   input.focus({ preventScroll: true });
   run();
 })();

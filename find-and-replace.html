@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link is-here" href="./find-and-replace.html" aria-current="page" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link is-here" href="./find-and-replace.html" aria-current="page" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,50 +2353,50 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Find and replace</h1>
+      <h1 class="mdv-head-name" data-t="9">Find and replace</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Change every match at once, and see how many before you copy it.</p>
+    <p class="mdv-head-line" data-t="79">Change every match at once, and see how many before you copy it.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <label class="mdv-label" style="margin:0" for="in">Text</label>
+      <label class="mdv-label" style="margin:0" for="in" data-t="4">Text</label>
       <span class="mdv-hint mdv-mono" style="margin:0" id="size">0 characters</span>
     </div>
     <textarea class="mdv-textarea" id="in" spellcheck="false" autocomplete="off" style="min-height:130px"
-      placeholder="Paste the text to work on."></textarea>
+      placeholder="Paste the text to work on." data-t-attrs="placeholder"></textarea>
   </section>
 
   <div class="mdv-cols">
     <div>
-      <label class="mdv-label" for="find">Find</label>
+      <label class="mdv-label" for="find" data-t="82">Find</label>
       <input class="mdv-input mdv-mono" id="find" type="text" spellcheck="false" autocomplete="off" style="width:100%">
     </div>
     <div>
-      <label class="mdv-label" for="repl">Replace with</label>
+      <label class="mdv-label" for="repl" data-t="83">Replace with</label>
       <input class="mdv-input mdv-mono" id="repl" type="text" spellcheck="false" autocomplete="off" style="width:100%">
     </div>
   </div>
 
   <div class="mdv-row is-between">
-    <div class="mdv-seg" role="group" aria-label="How to match">
-      <button type="button" data-how="plain" class="is-on" aria-pressed="true">Plain text</button>
-      <button type="button" data-how="regex" aria-pressed="false">Regular expression</button>
+    <div class="mdv-seg" role="group" aria-label="How to match" data-t-attrs="aria-label">
+      <button type="button" data-how="plain" class="is-on" aria-pressed="true" data-t="84">Plain text</button>
+      <button type="button" data-how="regex" aria-pressed="false" data-t="85">Regular expression</button>
     </div>
     <div class="mdv-row" style="gap:var(--space-4)">
-      <label class="mdv-check"><input type="checkbox" id="icase"> Ignore case</label>
-      <label class="mdv-check"><input type="checkbox" id="whole"> Whole words only</label>
-      <label class="mdv-check"><input type="checkbox" id="first"> First match only</label>
+      <label class="mdv-check"><input type="checkbox" id="icase"> <span data-t="86">Ignore case</span></label>
+      <label class="mdv-check"><input type="checkbox" id="whole"> <span data-t="87">Whole words only</span></label>
+      <label class="mdv-check"><input type="checkbox" id="first"> <span data-t="88">First match only</span></label>
     </div>
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>paste text and type what to find</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="89">paste text and type what to find</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Cannot search for that</span>
@@ -2295,8 +2407,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-row is-between">
         <div class="mdv-readout"><span id="count"></span></div>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy</button>
+          <span class="mdv-badge is-accent" id="copied" hidden><span data-t="90">Copied</span></span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn"><span data-t="91">Copy</span></button>
         </span>
       </div>
       <pre class="mdv-out" id="out"></pre>
@@ -2305,45 +2417,46 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="92">How this works</summary>
     <div class="mdv-method-body">
-      <p><strong>Plain text</strong> means exactly that: every character you type is looked for as itself,
+      <p data-t="93"><strong>Plain text</strong> means exactly that: every character you type is looked for as itself,
         so a dot is a dot and <code>$1</code> is two characters. The page escapes the pattern before the
         engine sees it, which is the difference between this and a search box that quietly treats your full
         stop as "any character". <strong>Regular expression</strong> hands the pattern to the browser's own
         engine, so it is JavaScript's flavour: <code>\d</code>, <code>\b</code>, groups, lookahead and
         named groups all work, and in the replacement <code>$1</code> is the first group,
         <code>$&amp;</code> the whole match, <code>$$</code> a literal dollar.</p>
-      <p>Whole words only wraps the pattern in word boundaries, which treats letters, digits and the
+      <p data-t="94">Whole words only wraps the pattern in word boundaries, which treats letters, digits and the
         underscore as word characters and everything else as a break — so it will not find "cat" inside
         "concatenate", and it will find "cat" in "cat-like". Ignore case is the engine's own
         case-insensitive matching, which handles accented letters as the browser does. First match only
         stops after one replacement instead of running through the document.</p>
-      <p>Nothing is changed in place: the result is a new text beside the original, and the original is
+      <p data-t="95">Nothing is changed in place: the result is a new text beside the original, and the original is
         still in the box above until you replace it yourself. A pattern that matches empty — <code>a*</code>
         against a string with no a — is refused rather than run, because the engine would insert the
         replacement between every character and the result is never what anyone meant. Input is capped at
         one million characters, and a regular expression that takes more than two seconds is stopped: some
         patterns backtrack exponentially, and a page that freezes is worse than one that says no.</p>
-      <p>Everything runs in this tab: nothing is uploaded and nothing you paste is stored. The Dark button
-        keeps its own setting in this browser's local storage.</p>
+      <p data-t="96">Everything runs in this tab: nothing is uploaded and nothing you paste is stored. The Dark and language buttons
+        keep their own settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Text &amp; Writing">
-    <span class="mdv-tag">Also in Text &amp; Writing</span>
-    <a href="./lorem-ipsum.html">Lorem ipsum</a>
-    <a href="./remove-duplicate-lines.html">Remove duplicate lines</a>
-    <a href="./remove-whitespace.html">Remove whitespace</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Text &amp; Writing"}'>Also in Text &amp; Writing</span>
+    <a href="./lorem-ipsum.html" data-t="8">Lorem ipsum</a>
+    <a href="./remove-duplicate-lines.html" data-t="6">Remove duplicate lines</a>
+    <a href="./remove-whitespace.html" data-t="13">Remove whitespace</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="97">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="98">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="99" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="100">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2354,6 +2467,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Find and Replace — plain text or regular expression, with a live count — MDV","Replace text across a whole document at once, plain or by regular expression, with capture groups, case options and a count of what changed. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Paste the text to work on.","How to match","No matches","Too much text","That is {n} characters; this page works on up to {limit}.","Not a valid regular expression","{message}. Switch to Plain text if you meant those characters literally.","That pattern matches nothing at all","“{find}” can match an empty string, so it would fire between every character in the text. Make it match at least one character — {fixed} instead of {find}, for instance.","That took too long","The pattern was still running after {seconds} seconds, so it was stopped. Nested quantifiers such as (a+)+ can backtrack for ever on text that nearly matches.","Nothing in the text matches that pattern.","Nothing in the text matches that pattern; case is being matched, so try Ignore case.","Nothing in the text matches “{find}”.","Nothing in the text matches “{find}”; case is being matched, so try Ignore case.","The replacement is empty, so every match was deleted.","Those symbols were matched as themselves, not as regular-expression syntax, because Plain text is on.","Capture groups are being substituted into the replacement.","Only the first match was replaced.","{n} character","{n} characters","{n} replacement","{n} replacements","Text & Writing","2026-11-02"],"h":101,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Cambia todas las coincidencias de una vez y mira cuántas son antes de copiar.","En este dispositivo","Funciona sin conexión","Buscar","Reemplazar con","Texto sin formato","Expresión regular","Ignorar mayúsculas","Solo palabras completas","Solo la primera coincidencia","pega texto y escribe qué buscar","Copiado","Copiar","Cómo funciona","\u003cstrong>Texto sin formato\u003c/strong> significa exactamente eso: cada carácter que escribes se busca tal cual, así que un punto es un punto y \u003ccode>$1\u003c/code> son dos caracteres. La página escapa el patrón antes de que lo vea el motor, que es la diferencia entre esto y un cuadro de búsqueda que trata discretamente tu punto como “cualquier carácter”. \u003cstrong>Expresión regular\u003c/strong> entrega el patrón al propio motor del navegador, así que es la variante de JavaScript: \u003ccode>\\d\u003c/code>, \u003ccode>\\b\u003c/code>, grupos, anticipación y grupos con nombre funcionan, y en el reemplazo \u003ccode>$1\u003c/code> es el primer grupo, \u003ccode>$&amp;\u003c/code> la coincidencia completa y \u003ccode>$$\u003c/code> un dólar literal.","Solo palabras completas envuelve el patrón en límites de palabra, que tratan letras, dígitos y el guion bajo como caracteres de palabra y todo lo demás como separador: por eso no encuentra “cat” dentro de “concatenate”, y sí encuentra “cat” en “cat-like”. Ignorar mayúsculas es la comparación sin distinción de mayúsculas del propio motor, que trata las letras con acento como lo hace el navegador. Solo la primera coincidencia se detiene tras un reemplazo en lugar de recorrer el documento.","Nada se cambia en el sitio: el resultado es un texto nuevo junto al original, y el original sigue en el cuadro de arriba hasta que lo reemplaces tú. Un patrón que coincide con vacío (\u003ccode>a*\u003c/code> contra una cadena sin ninguna a) se rechaza en lugar de ejecutarse, porque el motor insertaría el reemplazo entre cada carácter y el resultado nunca es lo que nadie quería. La entrada se limita a un millón de caracteres, y una expresión regular que tarda más de dos segundos se detiene: algunos patrones retroceden de forma exponencial, y una página que se congela es peor que una que dice que no.","Todo se ejecuta en esta pestaña: no se sube nada y nada de lo que pegas se guarda. Los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Buscar y reemplazar — texto sin formato o expresión regular, con recuento en vivo — MDV","Reemplaza texto en todo un documento de una vez, como texto sin formato o con expresión regular, con grupos de captura, opciones de mayúsculas y un recuento de lo que cambió. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Pega el texto con el que trabajar.","Cómo buscar","Sin coincidencias","Demasiado texto","Son {n} caracteres; esta página trabaja con hasta {limit}.","No es una expresión regular válida","{message}. Cambia a Texto sin formato si querías esos caracteres literalmente.","Ese patrón no coincide con nada","“{find}” puede coincidir con una cadena vacía, así que se activaría entre cada carácter del texto. Haz que coincida con al menos un carácter; por ejemplo, {fixed} en lugar de {find}.","Tardó demasiado","El patrón seguía ejecutándose tras {seconds} segundos, así que se detuvo. Los cuantificadores anidados como (a+)+ pueden retroceder eternamente con texto que casi coincide.","Nada en el texto coincide con ese patrón.","Nada en el texto coincide con ese patrón; se distingue entre mayúsculas y minúsculas, así que prueba Ignorar mayúsculas.","Nada en el texto coincide con “{find}”.","Nada en el texto coincide con “{find}”; se distingue entre mayúsculas y minúsculas, así que prueba Ignorar mayúsculas.","El reemplazo está vacío, así que se eliminó cada coincidencia.","Esos símbolos se buscaron tal cual, no como sintaxis de expresión regular, porque Texto sin formato está activado.","Los grupos de captura se están sustituyendo en el reemplazo.","Solo se reemplazó la primera coincidencia.","{n} carácter","{n} caracteres","{n} reemplazo","{n} reemplazos","Texto y escritura",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Changez toutes les occurrences d’un coup et voyez combien il y en a avant de copier.","Sur cet appareil","Fonctionne hors ligne","Rechercher","Remplacer par","Texte brut","Expression régulière","Ignorer la casse","Mots entiers uniquement","Première occurrence seulement","collez du texte et saisissez quoi rechercher","Copié","Copier","Comment ça marche","\u003cstrong>Texte brut\u003c/strong> veut dire exactement cela : chaque caractère que vous saisissez est recherché tel quel, donc un point est un point et \u003ccode>$1\u003c/code> fait deux caractères. La page échappe le motif avant que le moteur ne le voie, ce qui distingue cet outil d’une zone de recherche qui traite discrètement votre point comme « n’importe quel caractère ». \u003cstrong>Expression régulière\u003c/strong> confie le motif au moteur du navigateur lui-même, donc c’est la variante JavaScript : \u003ccode>\\d\u003c/code>, \u003ccode>\\b\u003c/code>, les groupes, les assertions avant et les groupes nommés fonctionnent, et dans le remplacement \u003ccode>$1\u003c/code> est le premier groupe, \u003ccode>$&amp;\u003c/code> la correspondance entière et \u003ccode>$$\u003c/code> un dollar littéral.","Mots entiers uniquement entoure le motif de limites de mot, qui traitent les lettres, les chiffres et le tiret bas comme des caractères de mot et tout le reste comme une coupure : il ne trouvera donc pas « cat » dans « concatenate », mais trouvera « cat » dans « cat-like ». Ignorer la casse est la comparaison insensible à la casse du moteur lui-même, qui traite les lettres accentuées comme le fait le navigateur. Première occurrence seulement s’arrête après un remplacement au lieu de parcourir tout le document.","Rien n’est modifié sur place : le résultat est un nouveau texte à côté de l’original, et l’original reste dans la zone du dessus jusqu’à ce que vous le remplaciez vous-même. Un motif qui correspond au vide (\u003ccode>a*\u003c/code> sur une chaîne sans a) est refusé plutôt qu’exécuté, car le moteur insérerait le remplacement entre chaque caractère et le résultat n’est jamais ce que l’on voulait. L’entrée est limitée à un million de caractères, et une expression régulière qui prend plus de deux secondes est arrêtée : certains motifs reviennent en arrière de façon exponentielle, et une page qui se fige est pire qu’une page qui dit non.","Tout s’exécute dans cet onglet : rien n’est envoyé et rien de ce que vous collez n’est stocké. Les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Rechercher et remplacer — texte brut ou expression régulière, avec compteur en direct — MDV","Remplacez du texte dans tout un document d’un coup, en texte brut ou par expression régulière, avec groupes de capture, options de casse et un compteur de ce qui a changé. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Collez le texte à traiter.","Mode de recherche","Aucune correspondance","Trop de texte","Cela fait {n} caractères ; cette page en traite jusqu’à {limit}.","Expression régulière non valide","{message}. Passez à Texte brut si vous vouliez ces caractères littéralement.","Ce motif ne correspond à rien","« {find} » peut correspondre à une chaîne vide, donc il se déclencherait entre chaque caractère du texte. Faites-le correspondre à au moins un caractère — {fixed} au lieu de {find}, par exemple.","Cela a pris trop de temps","Le motif tournait encore après {seconds} secondes ; il a donc été arrêté. Les quantificateurs imbriqués comme (a+)+ peuvent revenir en arrière indéfiniment sur un texte qui correspond presque.","Rien dans le texte ne correspond à ce motif.","Rien dans le texte ne correspond à ce motif ; la casse est respectée, essayez donc Ignorer la casse.","Rien dans le texte ne correspond à « {find} ».","Rien dans le texte ne correspond à « {find} » ; la casse est respectée, essayez donc Ignorer la casse.","Le remplacement est vide ; chaque occurrence a donc été supprimée.","Ces symboles ont été recherchés tels quels, et non comme syntaxe d’expression régulière, car Texte brut est activé.","Les groupes de capture sont substitués dans le remplacement.","Seule la première occurrence a été remplacée.","{n} caractère","{n} caractères","{n} remplacement","{n} remplacements","Texte et écriture",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Ändere alle Treffer auf einmal und sieh vor dem Kopieren, wie viele es sind.","Läuft auf diesem Gerät","Funktioniert offline","Suchen","Ersetzen durch","Klartext","Regulärer Ausdruck","Groß-/Kleinschreibung ignorieren","Nur ganze Wörter","Nur der erste Treffer","füge Text ein und gib ein, was gesucht wird","Kopiert","Kopieren","So funktioniert es","\u003cstrong>Klartext\u003c/strong> heißt genau das: Jedes Zeichen, das du tippst, wird als es selbst gesucht, ein Punkt ist also ein Punkt und \u003ccode>$1\u003c/code> sind zwei Zeichen. Die Seite maskiert das Muster, bevor die Engine es sieht; das unterscheidet dieses Werkzeug von einem Suchfeld, das deinen Punkt stillschweigend als „beliebiges Zeichen“ behandelt. \u003cstrong>Regulärer Ausdruck\u003c/strong> übergibt das Muster an die Engine des Browsers selbst, es gilt also die JavaScript-Variante: \u003ccode>\\d\u003c/code>, \u003ccode>\\b\u003c/code>, Gruppen, Lookahead und benannte Gruppen funktionieren, und im Ersatz ist \u003ccode>$1\u003c/code> die erste Gruppe, \u003ccode>$&amp;\u003c/code> der gesamte Treffer und \u003ccode>$$\u003c/code> ein wörtliches Dollarzeichen.","Nur ganze Wörter setzt das Muster in Wortgrenzen; sie behandeln Buchstaben, Ziffern und den Unterstrich als Wortzeichen und alles andere als Trennung, sodass „cat“ in „concatenate“ nicht gefunden wird, „cat“ in „cat-like“ aber schon. Groß-/Kleinschreibung ignorieren ist der eigene, von der Schreibung unabhängige Vergleich der Engine, der Buchstaben mit Akzent so behandelt, wie es der Browser tut. Nur der erste Treffer hört nach einer Ersetzung auf, statt das Dokument durchzugehen.","Nichts wird an Ort und Stelle geändert: Das Ergebnis ist ein neuer Text neben dem Original, und das Original bleibt im Feld darüber, bis du es selbst ersetzt. Ein Muster, das auf leer passt (\u003ccode>a*\u003c/code> gegen eine Zeichenkette ohne a), wird abgelehnt statt ausgeführt, weil die Engine den Ersatz zwischen jedes Zeichen setzen würde und das Ergebnis nie das ist, was jemand wollte. Die Eingabe ist auf eine Million Zeichen begrenzt, und ein regulärer Ausdruck, der länger als zwei Sekunden braucht, wird gestoppt: Manche Muster backtracken exponentiell, und eine Seite, die einfriert, ist schlimmer als eine, die Nein sagt.","Alles läuft in diesem Tab: Nichts wird hochgeladen und nichts, was du einfügst, wird gespeichert. Die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Suchen und Ersetzen — Klartext oder regulärer Ausdruck, mit Live-Zähler — MDV","Ersetze Text in einem ganzen Dokument auf einmal, als Klartext oder per regulärem Ausdruck, mit Erfassungsgruppen, Optionen zur Groß-/Kleinschreibung und einer Zählung der Änderungen. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Füge den Text ein, der bearbeitet werden soll.","Suchmodus","Keine Treffer","Zu viel Text","Das sind {n} Zeichen; diese Seite verarbeitet bis zu {limit}.","Kein gültiger regulärer Ausdruck","{message}. Wechsle zu Klartext, wenn du diese Zeichen wörtlich meintest.","Dieses Muster passt auf nichts","„{find}“ kann auf eine leere Zeichenkette passen und würde daher zwischen jedem Zeichen des Textes auslösen. Lass es auf mindestens ein Zeichen passen, etwa {fixed} statt {find}.","Das hat zu lange gedauert","Das Muster lief nach {seconds} Sekunden noch und wurde deshalb gestoppt. Verschachtelte Quantifizierer wie (a+)+ können bei Text, der fast passt, endlos zurückverfolgen.","Nichts im Text passt auf dieses Muster.","Nichts im Text passt auf dieses Muster; die Groß-/Kleinschreibung wird beachtet, versuche also Groß-/Kleinschreibung ignorieren.","Nichts im Text passt auf „{find}“.","Nichts im Text passt auf „{find}“; die Groß-/Kleinschreibung wird beachtet, versuche also Groß-/Kleinschreibung ignorieren.","Der Ersatz ist leer, daher wurde jeder Treffer gelöscht.","Diese Symbole wurden als sie selbst gesucht, nicht als Syntax regulärer Ausdrücke, weil Klartext aktiv ist.","Erfassungsgruppen werden in den Ersatz eingesetzt.","Nur der erste Treffer wurde ersetzt.","{n} Zeichen","{n} Zeichen","{n} Ersetzung","{n} Ersetzungen","Text und Schreiben",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Cambia tutte le corrispondenze in una volta e vedi quante sono prima di copiare.","Su questo dispositivo","Funziona offline","Trova","Sostituisci con","Testo semplice","Espressione regolare","Ignora maiuscole","Solo parole intere","Solo la prima corrispondenza","incolla il testo e scrivi cosa cercare","Copiato","Copia","Come funziona","\u003cstrong>Testo semplice\u003c/strong> significa esattamente questo: ogni carattere che scrivi viene cercato com’è, quindi un punto è un punto e \u003ccode>$1\u003c/code> sono due caratteri. La pagina esegue l’escape del pattern prima che il motore lo veda, ed è la differenza tra questo strumento e una casella di ricerca che tratta in silenzio il tuo punto come “qualsiasi carattere”. \u003cstrong>Espressione regolare\u003c/strong> passa il pattern al motore stesso del browser, quindi è la variante di JavaScript: \u003ccode>\\d\u003c/code>, \u003ccode>\\b\u003c/code>, gruppi, lookahead e gruppi con nome funzionano, e nella sostituzione \u003ccode>$1\u003c/code> è il primo gruppo, \u003ccode>$&amp;\u003c/code> l’intera corrispondenza e \u003ccode>$$\u003c/code> un dollaro letterale.","Solo parole intere racchiude il pattern tra confini di parola, che trattano lettere, cifre e trattino basso come caratteri di parola e tutto il resto come separazione: quindi non trova “cat” dentro “concatenate”, ma trova “cat” in “cat-like”. Ignora maiuscole è il confronto senza distinzione di maiuscole del motore stesso, che tratta le lettere accentate come fa il browser. Solo la prima corrispondenza si ferma dopo una sostituzione invece di scorrere il documento.","Nulla viene modificato sul posto: il risultato è un nuovo testo accanto all’originale, e l’originale resta nella casella sopra finché non lo sostituisci tu. Un pattern che corrisponde al vuoto (\u003ccode>a*\u003c/code> contro una stringa senza a) viene rifiutato invece di essere eseguito, perché il motore inserirebbe la sostituzione tra ogni carattere e il risultato non è mai quello che qualcuno voleva. L’input è limitato a un milione di caratteri, e un’espressione regolare che impiega più di due secondi viene fermata: alcuni pattern fanno backtracking in modo esponenziale, e una pagina che si blocca è peggio di una che dice di no.","Tutto viene eseguito in questa scheda: non viene caricato nulla e nulla di ciò che incolli viene salvato. I pulsanti Scuro e Lingua conservano la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Trova e sostituisci — testo semplice o espressione regolare, con conteggio in tempo reale — MDV","Sostituisci il testo in un intero documento in una volta, come testo semplice o con espressione regolare, con gruppi di cattura, opzioni sulle maiuscole e il conteggio di ciò che è cambiato. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Incolla il testo su cui lavorare.","Come cercare","Nessuna corrispondenza","Troppo testo","Sono {n} caratteri; questa pagina ne gestisce fino a {limit}.","Non è un’espressione regolare valida","{message}. Passa a Testo semplice se intendevi quei caratteri alla lettera.","Quel pattern non corrisponde a nulla","“{find}” può corrispondere a una stringa vuota, quindi scatterebbe tra ogni carattere del testo. Fai in modo che corrisponda ad almeno un carattere, ad esempio {fixed} invece di {find}.","Ci ha messo troppo","Il pattern era ancora in esecuzione dopo {seconds} secondi, quindi è stato fermato. I quantificatori annidati come (a+)+ possono fare backtracking all’infinito su un testo che corrisponde quasi.","Nulla nel testo corrisponde a quel pattern.","Nulla nel testo corrisponde a quel pattern; le maiuscole contano, quindi prova Ignora maiuscole.","Nulla nel testo corrisponde a “{find}”.","Nulla nel testo corrisponde a “{find}”; le maiuscole contano, quindi prova Ignora maiuscole.","La sostituzione è vuota, quindi ogni corrispondenza è stata eliminata.","Quei simboli sono stati cercati così come sono, non come sintassi di espressione regolare, perché Testo semplice è attivo.","I gruppi di cattura vengono sostituiti nella sostituzione.","È stata sostituita solo la prima corrispondenza.","{n} carattere","{n} caratteri","{n} sostituzione","{n} sostituzioni","Testo e scrittura",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Altere todas as ocorrências de uma vez e veja quantas são antes de copiar.","Neste dispositivo","Funciona offline","Localizar","Substituir por","Texto simples","Expressão regular","Ignorar maiúsculas","Somente palavras inteiras","Somente a primeira ocorrência","cole o texto e digite o que localizar","Copiado","Copiar","Como funciona","\u003cstrong>Texto simples\u003c/strong> significa exatamente isso: cada caractere que você digita é procurado como ele mesmo, então um ponto é um ponto e \u003ccode>$1\u003c/code> são dois caracteres. A página faz o escape do padrão antes de o motor vê-lo, que é a diferença entre isto e uma caixa de busca que trata discretamente o seu ponto como “qualquer caractere”. \u003cstrong>Expressão regular\u003c/strong> entrega o padrão ao próprio motor do navegador, então é a variante do JavaScript: \u003ccode>\\d\u003c/code>, \u003ccode>\\b\u003c/code>, grupos, lookahead e grupos nomeados funcionam, e na substituição \u003ccode>$1\u003c/code> é o primeiro grupo, \u003ccode>$&amp;\u003c/code> a correspondência inteira e \u003ccode>$$\u003c/code> um cifrão literal.","Somente palavras inteiras envolve o padrão em limites de palavra, que tratam letras, dígitos e o sublinhado como caracteres de palavra e todo o resto como separação: por isso não encontra “cat” dentro de “concatenate”, mas encontra “cat” em “cat-like”. Ignorar maiúsculas é a comparação sem distinção de maiúsculas do próprio motor, que trata letras acentuadas como o navegador faz. Somente a primeira ocorrência para após uma substituição em vez de percorrer o documento.","Nada é alterado no lugar: o resultado é um texto novo ao lado do original, e o original continua na caixa acima até você substituí-lo. Um padrão que corresponde ao vazio (\u003ccode>a*\u003c/code> contra uma string sem a) é recusado em vez de executado, porque o motor inseriria a substituição entre cada caractere e o resultado nunca é o que alguém queria. A entrada é limitada a um milhão de caracteres, e uma expressão regular que leva mais de dois segundos é interrompida: alguns padrões fazem backtracking exponencial, e uma página que trava é pior que uma que diz não.","Tudo roda nesta aba: nada é enviado e nada do que você cola é armazenado. Os botões Escuro e Idioma guardam a própria configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Localizar e substituir — texto simples ou expressão regular, com contagem em tempo real — MDV","Substitua texto em um documento inteiro de uma vez, como texto simples ou por expressão regular, com grupos de captura, opções de maiúsculas e a contagem do que mudou. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Cole o texto para trabalhar.","Como localizar","Nenhuma correspondência","Texto demais","São {n} caracteres; esta página trabalha com até {limit}.","Não é uma expressão regular válida","{message}. Mude para Texto simples se você queria esses caracteres literalmente.","Esse padrão não corresponde a nada","“{find}” pode corresponder a uma string vazia, então dispararia entre cada caractere do texto. Faça-o corresponder a pelo menos um caractere, por exemplo {fixed} em vez de {find}.","Demorou demais","O padrão ainda estava rodando após {seconds} segundos, então foi interrompido. Quantificadores aninhados como (a+)+ podem fazer backtracking para sempre em textos que quase correspondem.","Nada no texto corresponde a esse padrão.","Nada no texto corresponde a esse padrão; maiúsculas e minúsculas são diferenciadas, então tente Ignorar maiúsculas.","Nada no texto corresponde a “{find}”.","Nada no texto corresponde a “{find}”; maiúsculas e minúsculas são diferenciadas, então tente Ignorar maiúsculas.","A substituição está vazia, então cada ocorrência foi apagada.","Esses símbolos foram procurados como eles mesmos, não como sintaxe de expressão regular, porque Texto simples está ativado.","Os grupos de captura estão sendo substituídos na substituição.","Somente a primeira ocorrência foi substituída.","{n} caractere","{n} caracteres","{n} substituição","{n} substituições","Texto e escrita",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","一致する箇所をまとめて置換し、コピーする前に件数を確認できます。","この端末で動作","オフラインで動作","検索","置換後","通常のテキスト","正規表現","大文字小文字を区別しない","単語全体のみ","最初の一致のみ","テキストを貼り付けて、検索する内容を入力","コピーしました","コピー","仕組み","\u003cstrong>通常のテキスト\u003c/strong>はその名のとおり、入力した文字をそのままの文字として検索します。ドットはドットであり、\u003ccode>$1\u003c/code> は 2 文字です。ページはパターンをエンジンに渡す前にエスケープします。これが、ドットを黙って「任意の 1 文字」として扱う検索ボックスとの違いです。\u003cstrong>正規表現\u003c/strong>はパターンをブラウザー自身のエンジンに渡すため、JavaScript の方言になります。\u003ccode>\\d\u003c/code>、\u003ccode>\\b\u003c/code>、グループ、先読み、名前付きグループが使えます。置換後の文字列では、\u003ccode>$1\u003c/code> が最初のグループ、\u003ccode>$&amp;\u003c/code> が一致した全体、\u003ccode>$$\u003c/code> がドル記号そのものです。","「単語全体のみ」は、パターンを単語境界で囲みます。単語境界では、英字・数字・アンダースコアが単語の文字、それ以外が区切りとして扱われるため、“concatenate” の中の “cat” は見つかりませんが、“cat-like” の “cat” は見つかります。「大文字小文字を区別しない」はエンジン自身の大文字小文字を区別しない照合で、アクセント付きの文字はブラウザーの扱いに従います。「最初の一致のみ」は、文書全体を処理せず、1 回置換した時点で止まります。","元のテキストはその場では変更されません。結果は元のテキストの横に新しいテキストとして表示され、置き換えるまで元のテキストは上のボックスに残ります。空の文字列に一致するパターン(\u003ccode>a*\u003c/code> を a のない文字列に適用する場合など)は、実行せずに拒否します。エンジンが置換後の文字列をすべての文字の間に挿入してしまい、望んだ結果になることがないからです。入力は 100 万文字までで、2 秒を超える正規表現は停止します。指数的にバックトラックするパターンがあり、固まるページより「できません」と言うページのほうがましだからです。","すべてこのタブの中で実行されます。何もアップロードされず、貼り付けた内容も保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","検索と置換 — 通常のテキストまたは正規表現、リアルタイムの件数表示 — MDV","文書全体のテキストを、通常のテキストまたは正規表現でまとめて置換します。キャプチャグループ、大文字小文字の指定、変更件数の表示に対応。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","処理するテキストを貼り付けてください。","検索方法","一致なし","テキストが多すぎます","{n} 文字あります。このページで扱えるのは最大 {limit} 文字です。","正規表現として無効です","{message}。これらの文字をそのまま探したい場合は、「通常のテキスト」に切り替えてください。","そのパターンは何にも一致しません","“{find}” は空の文字列に一致しうるため、テキストのすべての文字の間で一致してしまいます。少なくとも 1 文字に一致するようにしてください。たとえば {find} の代わりに {fixed} とします。","時間がかかりすぎました","パターンが {seconds} 秒たっても終わらなかったため、停止しました。(a+)+ のような入れ子の量指定子は、ほぼ一致するテキストで延々とバックトラックすることがあります。","テキスト内にそのパターンに一致するものはありません。","テキスト内にそのパターンに一致するものはありません。大文字小文字を区別しているため、「大文字小文字を区別しない」を試してください。","テキスト内に “{find}” に一致するものはありません。","テキスト内に “{find}” に一致するものはありません。大文字小文字を区別しているため、「大文字小文字を区別しない」を試してください。","置換後の文字列が空のため、一致した箇所はすべて削除されました。","「通常のテキスト」が有効なため、これらの記号は正規表現の構文ではなく、そのままの文字として検索されました。","キャプチャグループが置換後の文字列に反映されています。","最初の一致だけを置換しました。","{n} 文字","{n} 文字","{n} 件置換","{n} 件置換","テキストと文章",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","일치하는 항목을 한꺼번에 바꾸고, 복사하기 전에 몇 개인지 확인하세요.","이 기기에서 실행","오프라인 작동","찾기","바꿀 내용","일반 텍스트","정규식","대소문자 무시","단어 단위로만","첫 번째 일치만","텍스트를 붙여넣고 찾을 내용을 입력하세요","복사됨","복사","작동 방식","\u003cstrong>일반 텍스트\u003c/strong>는 말 그대로 입력한 글자를 있는 그대로 찾습니다. 점은 점이고 \u003ccode>$1\u003c/code>은 두 글자입니다. 페이지는 엔진이 보기 전에 패턴을 이스케이프하며, 이것이 점을 조용히 “임의의 한 글자”로 취급하는 검색창과 다른 점입니다. \u003cstrong>정규식\u003c/strong>은 패턴을 브라우저 자체 엔진에 넘기므로 JavaScript 방식입니다. \u003ccode>\\d\u003c/code>, \u003ccode>\\b\u003c/code>, 그룹, 전방 탐색, 이름 있는 그룹이 모두 동작하며, 바꿀 내용에서 \u003ccode>$1\u003c/code>은 첫 번째 그룹, \u003ccode>$&amp;\u003c/code>는 일치한 전체, \u003ccode>$$\u003c/code>는 달러 기호 그대로입니다.","“단어 단위로만”은 패턴을 단어 경계로 감쌉니다. 단어 경계는 영문자, 숫자, 밑줄을 단어 문자로, 그 밖의 모든 것을 구분으로 취급하므로 “concatenate” 안의 “cat”은 찾지 않지만 “cat-like”의 “cat”은 찾습니다. “대소문자 무시”는 엔진 자체의 대소문자 무시 비교이며, 악센트가 있는 글자는 브라우저가 처리하는 방식을 따릅니다. “첫 번째 일치만”은 문서 전체를 훑지 않고 한 번 바꾼 뒤 멈춥니다.","원본은 그 자리에서 바뀌지 않습니다. 결과는 원본 옆의 새 텍스트이며, 직접 바꾸기 전까지 원본은 위 입력란에 그대로 있습니다. 빈 문자열과 일치하는 패턴(a가 없는 문자열에 대한 \u003ccode>a*\u003c/code> 등)은 실행하지 않고 거부합니다. 엔진이 모든 글자 사이에 바꿀 내용을 끼워 넣게 되어 원하는 결과가 나오지 않기 때문입니다. 입력은 100만 자로 제한되며, 2초를 넘는 정규식은 중단됩니다. 일부 패턴은 지수적으로 되돌아가기를 하고, 멈춰 버리는 페이지보다 안 된다고 말하는 페이지가 낫기 때문입니다.","모든 처리는 이 탭에서 이루어집니다. 아무것도 업로드되지 않으며 붙여넣은 내용도 저장되지 않습니다. 다크와 언어 버튼은 각자의 설정을 이 브라우저의 로컬 저장소에 기억합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","찾기 및 바꾸기 — 일반 텍스트 또는 정규식, 실시간 개수 표시 — MDV","문서 전체의 텍스트를 일반 텍스트나 정규식으로 한 번에 바꿉니다. 캡처 그룹, 대소문자 옵션, 바뀐 개수 표시를 지원합니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","작업할 텍스트를 붙여넣으세요.","검색 방식","일치 없음","텍스트가 너무 많습니다","{n}자입니다. 이 페이지는 최대 {limit}자까지 처리합니다.","올바른 정규식이 아닙니다","{message}. 이 문자들을 그대로 찾으려는 것이었다면 일반 텍스트로 바꾸세요.","이 패턴은 아무것에도 일치하지 않습니다","“{find}”은(는) 빈 문자열과 일치할 수 있어 텍스트의 모든 글자 사이에서 일치하게 됩니다. 최소한 한 글자와 일치하도록 하세요. 예를 들어 {find} 대신 {fixed}를 쓰면 됩니다.","시간이 너무 오래 걸렸습니다","패턴이 {seconds}초가 지나도 끝나지 않아 중단했습니다. (a+)+ 같은 중첩 수량자는 거의 일치하는 텍스트에서 끝없이 되돌아가기를 할 수 있습니다.","텍스트에 이 패턴과 일치하는 것이 없습니다.","텍스트에 이 패턴과 일치하는 것이 없습니다. 대소문자를 구분하고 있으니 대소문자 무시를 사용해 보세요.","텍스트에 “{find}”과(와) 일치하는 것이 없습니다.","텍스트에 “{find}”과(와) 일치하는 것이 없습니다. 대소문자를 구분하고 있으니 대소문자 무시를 사용해 보세요.","바꿀 내용이 비어 있어 일치한 항목이 모두 삭제되었습니다.","일반 텍스트가 켜져 있어서 이 기호들은 정규식 문법이 아니라 있는 그대로 찾았습니다.","캡처 그룹이 바꿀 내용에 대입되고 있습니다.","첫 번째 일치만 바꿨습니다.","{n}자","{n}자","{n}개 바꿈","{n}개 바꿈","텍스트와 글쓰기",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","一次性替换所有匹配项,复制前先看有多少处。","在此设备上运行","可离线使用","查找","替换为","纯文本","正则表达式","忽略大小写","仅匹配整词","仅替换第一处","粘贴文本并输入要查找的内容","已复制","复制","工作原理","\u003cstrong>纯文本\u003c/strong>正是字面意思:你输入的每个字符都按其本身查找,所以点就是点,\u003ccode>$1\u003c/code> 是两个字符。页面会在引擎看到模式之前先对其转义,这正是它与那种悄悄把句点当作“任意字符”的搜索框的区别。\u003cstrong>正则表达式\u003c/strong>把模式交给浏览器自己的引擎,所以采用的是 JavaScript 的风格:\u003ccode>\\d\u003c/code>、\u003ccode>\\b\u003c/code>、分组、先行断言和命名分组都可用,替换内容中 \u003ccode>$1\u003c/code> 是第一个分组,\u003ccode>$&amp;\u003c/code> 是整个匹配,\u003ccode>$$\u003c/code> 是字面的美元符号。","“仅匹配整词”会用单词边界包住模式,边界把字母、数字和下划线视为单词字符,其余一律视为分隔,因此它找不到“concatenate”里的“cat”,但能找到“cat-like”里的“cat”。“忽略大小写”是引擎自带的不区分大小写匹配,带重音的字母按浏览器的方式处理。“仅替换第一处”在一次替换后就停止,而不是遍历整个文档。","不会就地修改:结果是原文旁边的一份新文本,原文仍留在上方的框中,直到你自己替换它。能匹配空字符串的模式(例如对没有 a 的字符串使用 \u003ccode>a*\u003c/code>)会被拒绝而不是运行,因为引擎会在每个字符之间插入替换内容,结果从来不是任何人想要的。输入上限为一百万个字符,耗时超过两秒的正则表达式会被停止:有些模式会指数级回溯,页面卡死比直接说不更糟。","一切都在此标签页中运行:不上传任何内容,你粘贴的内容也不会被保存。“深色”和“语言”按钮会把各自的设置记在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","查找和替换 — 纯文本或正则表达式,实时计数 — MDV","一次性替换整个文档中的文本,支持纯文本或正则表达式、捕获组、大小写选项,并统计更改数量。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","粘贴要处理的文本。","匹配方式","无匹配","文本过多","共 {n} 个字符;本页最多处理 {limit} 个。","不是有效的正则表达式","{message}。如果你想按字面查找这些字符,请切换到纯文本。","该模式不匹配任何内容","“{find}”可以匹配空字符串,因此会在文本的每个字符之间触发。请让它至少匹配一个字符,例如用 {fixed} 代替 {find}。","耗时过长","该模式运行 {seconds} 秒后仍未结束,已被停止。(a+)+ 这样的嵌套量词在几乎匹配的文本上可能无限回溯。","文本中没有与该模式匹配的内容。","文本中没有与该模式匹配的内容;当前区分大小写,请试试“忽略大小写”。","文本中没有与“{find}”匹配的内容。","文本中没有与“{find}”匹配的内容;当前区分大小写,请试试“忽略大小写”。","替换内容为空,所以每处匹配都被删除了。","由于启用了纯文本,这些符号按其本身匹配,而不是按正则表达式语法处理。","捕获组正被代入替换内容中。","只替换了第一处匹配。","{n} 个字符","{n} 个字符","{n} 处替换","{n} 处替换","文本与写作",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2388,7 +2601,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var input = $("in"), find = $("find"), repl = $("repl"), empty = $("empty"), err = $("err"), errtitle = $("errtitle"), errmsg = $("errmsg");
   var ok = $("ok"), out = $("out"), said = $("said"), count = $("count"), copied = $("copied");
   var icase = $("icase"), whole = $("whole"), first = $("first");
-  var how = "plain";
+  var how = "plain", shown = { kind: "empty" };
 
   function state(which) {
     empty.hidden = which !== "empty";
@@ -2396,19 +2609,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     ok.hidden = which !== "ok";
     if (which !== "ok") copied.hidden = true;
   }
-  function bad(title, message) { errtitle.textContent = title; errmsg.textContent = message; state("error"); }
+  // what is on screen is kept as words-to-be (keys and values), so a language change redraws it without running the search again
+  function bad(title, message, vars) { shown = { kind: "bad", title: title, message: message, vars: vars }; paint(); }
+
+  function paint() {
+    $("size").textContent = trn(input.value.length, "{n} character", "{n} characters");
+    if (shown.kind === "empty") { state("empty"); return; }
+    if (shown.kind === "bad") {
+      errtitle.textContent = tr(shown.title);
+      errmsg.textContent = tr(shown.message, shown.vars);
+      state("error");
+      return;
+    }
+    count.textContent = shown.found ? trn(shown.found, "{n} replacement", "{n} replacements") : tr("No matches");
+    said.textContent = shown.notes.map(function (x) { return tr(x[0], x[1]); }).join(" ");
+    said.hidden = !shown.notes.length;
+    state("ok");
+  }
 
   function run() {
     var text = input.value;
-    $("size").textContent = n(text.length) + (text.length === 1 ? " character" : " characters");
-    if (!text || !find.value) { state("empty"); return; }
-    if (text.length > LIMIT) { bad("Too much text", "That is " + n(text.length) + " characters; this page works on up to " + n(LIMIT) + "."); return; }
+    if (!text || !find.value) { shown = { kind: "empty" }; paint(); return; }
+    if (text.length > LIMIT) { bad(trk("Too much text"), trk("That is {n} characters; this page works on up to {limit}."), { n: n(text.length), limit: n(LIMIT) }); return; }
 
     var built = buildRegex(find.value, how, { whole: whole.checked, icase: icase.checked, first: first.checked });
-    if (built.error) { bad("Not a valid regular expression", built.error + ". Switch to Plain text if you meant those characters literally."); return; }
+    if (built.error) { bad(trk("Not a valid regular expression"), trk("{message}. Switch to Plain text if you meant those characters literally."), { message: built.error }); return; }
     if (matchesEmpty(built.re)) {
-      bad("That pattern matches nothing at all", "“" + find.value + "” can match an empty string, so it would fire between every character in the text. Make it match at least one character — " +
-        find.value.replace(/\*$/, "+") + " instead of " + find.value + ", for instance.");
+      bad(trk("That pattern matches nothing at all"), trk("“{find}” can match an empty string, so it would fire between every character in the text. Make it match at least one character — {fixed} instead of {find}, for instance."),
+        { find: find.value, fixed: find.value.replace(/\*$/, "+") });
       return;
     }
 
@@ -2431,22 +2659,22 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         });
       });
     } catch (e) {
-      bad("That took too long", "The pattern was still running after " + (SLOW_MS / 1000) + " seconds, so it was stopped. Nested quantifiers such as (a+)+ can backtrack for ever on text that nearly matches.");
+      bad(trk("That took too long"), trk("The pattern was still running after {seconds} seconds, so it was stopped. Nested quantifiers such as (a+)+ can backtrack for ever on text that nearly matches."), { seconds: SLOW_MS / 1000 });
       return;
     }
 
-    count.textContent = found ? n(found) + (found === 1 ? " replacement" : " replacements") : "No matches";
     out.textContent = result;
 
-    var notes = [];
-    if (!found) notes.push("Nothing in the text matches " + (how === "regex" ? "that pattern" : "“" + find.value + "”") + (icase.checked ? "" : "; case is being matched, so try Ignore case") + ".");
-    if (found && !repl.value) notes.push("The replacement is empty, so every match was deleted.");
-    if (how === "plain" && /[.*+?^${}()|[\]\\]/.test(find.value)) notes.push("Those symbols were matched as themselves, not as regular-expression syntax, because Plain text is on.");
-    if (how === "regex" && /\$\d/.test(repl.value)) notes.push("Capture groups are being substituted into the replacement.");
-    if (first.checked && found) notes.push("Only the first match was replaced.");
-    said.textContent = notes.join(" ");
-    said.hidden = !notes.length;
-    state("ok");
+    var notes = [], fv = { find: find.value };
+    if (!found) notes.push(how === "regex"
+      ? (icase.checked ? [trk("Nothing in the text matches that pattern.")] : [trk("Nothing in the text matches that pattern; case is being matched, so try Ignore case.")])
+      : (icase.checked ? [trk("Nothing in the text matches “{find}”."), fv] : [trk("Nothing in the text matches “{find}”; case is being matched, so try Ignore case."), fv]));
+    if (found && !repl.value) notes.push([trk("The replacement is empty, so every match was deleted.")]);
+    if (how === "plain" && /[.*+?^${}()|[\]\\]/.test(find.value)) notes.push([trk("Those symbols were matched as themselves, not as regular-expression syntax, because Plain text is on.")]);
+    if (how === "regex" && /\$\d/.test(repl.value)) notes.push([trk("Capture groups are being substituted into the replacement.")]);
+    if (first.checked && found) notes.push([trk("Only the first match was replaced.")]);
+    shown = { kind: "ok", found: found, notes: notes };
+    paint();
   }
 
   [input, find, repl].forEach(function (el) { el.addEventListener("input", run); });
@@ -2472,6 +2700,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   input.focus({ preventScroll: true });
+  onLang(paint);
   run();
 })();
 </script>

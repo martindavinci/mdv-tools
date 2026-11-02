@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link is-here" href="./clamp-calculator.html" aria-current="page" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link is-here" href="./clamp-calculator.html" aria-current="page" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,103 +2353,103 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Clamp calculator</h1>
+      <h1 class="mdv-head-name" data-t="43">Clamp calculator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Type two sizes and two viewport widths; get the <code>clamp()</code> between them.</p>
+    <p class="mdv-head-line" data-t="79">Type two sizes and two viewport widths; get the <code>clamp()</code> between them.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-panel">
     <div class="mdv-cols">
       <div>
-        <label class="mdv-label" for="min">Size, min to max</label>
+        <label class="mdv-label" for="min" data-t="82">Size, min to max</label>
         <div class="mdv-row" style="gap:var(--space-2)">
-          <input class="mdv-input mdv-mono" id="min" type="number" min="0" max="100000" step="any" value="16" style="flex:1" aria-label="Min size in px">
-          <span class="mdv-mono mdv-faint">to</span>
-          <input class="mdv-input mdv-mono" id="max" type="number" min="0" max="100000" step="any" value="24" style="flex:1" aria-label="Max size in px">
+          <input class="mdv-input mdv-mono" id="min" type="number" min="0" max="100000" step="any" value="16" style="flex:1" aria-label="Min size in px" data-t-attrs="aria-label">
+          <span class="mdv-mono mdv-faint" data-t="83">to</span>
+          <input class="mdv-input mdv-mono" id="max" type="number" min="0" max="100000" step="any" value="24" style="flex:1" aria-label="Max size in px" data-t-attrs="aria-label">
         </div>
         <div class="mdv-btn-row" style="margin-top:var(--space-3)">
-          <button class="mdv-btn is-sm is-quiet" type="button" data-size="16,18">16 to 18</button>
-          <button class="mdv-btn is-sm is-quiet" type="button" data-size="20,28">20 to 28</button>
-          <button class="mdv-btn is-sm is-quiet" type="button" data-size="28,48">28 to 48</button>
-          <button class="mdv-btn is-sm is-quiet" type="button" data-size="40,72">40 to 72</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" data-size="16,18">16 <span data-t="83">to</span> 18</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" data-size="20,28">20 <span data-t="83">to</span> 28</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" data-size="28,48">28 <span data-t="83">to</span> 48</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" data-size="40,72">40 <span data-t="83">to</span> 72</button>
         </div>
       </div>
       <div>
-        <label class="mdv-label" for="vmin">Viewport, min to max</label>
+        <label class="mdv-label" for="vmin" data-t="84">Viewport, min to max</label>
         <div class="mdv-row" style="gap:var(--space-2)">
-          <input class="mdv-input mdv-mono" id="vmin" type="number" min="1" max="100000" step="any" value="360" style="flex:1" aria-label="Min viewport in px">
-          <span class="mdv-mono mdv-faint">to</span>
-          <input class="mdv-input mdv-mono" id="vmax" type="number" min="1" max="100000" step="any" value="1280" style="flex:1" aria-label="Max viewport in px">
+          <input class="mdv-input mdv-mono" id="vmin" type="number" min="1" max="100000" step="any" value="360" style="flex:1" aria-label="Min viewport in px" data-t-attrs="aria-label">
+          <span class="mdv-mono mdv-faint" data-t="83">to</span>
+          <input class="mdv-input mdv-mono" id="vmax" type="number" min="1" max="100000" step="any" value="1280" style="flex:1" aria-label="Max viewport in px" data-t-attrs="aria-label">
         </div>
         <div class="mdv-btn-row" style="margin-top:var(--space-3)">
-          <button class="mdv-btn is-sm is-quiet" type="button" data-vw="360,1280">360 to 1280</button>
-          <button class="mdv-btn is-sm is-quiet" type="button" data-vw="320,1440">320 to 1440</button>
-          <button class="mdv-btn is-sm is-quiet" type="button" data-vw="375,1920">375 to 1920</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" data-vw="360,1280">360 <span data-t="83">to</span> 1280</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" data-vw="320,1440">320 <span data-t="83">to</span> 1440</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" data-vw="375,1920">375 <span data-t="83">to</span> 1920</button>
         </div>
       </div>
     </div>
     <div class="mdv-cols" style="margin-top:var(--space-4)">
       <div>
-        <label class="mdv-label" for="root">Root font size</label>
-        <input class="mdv-input mdv-mono" id="root" type="number" min="1" max="100000" step="any" value="16" aria-label="Root font size in px">
+        <label class="mdv-label" for="root" data-t="85">Root font size</label>
+        <input class="mdv-input mdv-mono" id="root" type="number" min="1" max="100000" step="any" value="16" aria-label="Root font size in px" data-t-attrs="aria-label">
       </div>
     </div>
   </section>
 
   <div class="mdv-row is-between">
-    <div class="mdv-seg" role="group" aria-label="Output unit">
+    <div class="mdv-seg" role="group" aria-label="Output unit" data-t-attrs="aria-label">
       <button type="button" data-unit="rem" class="is-on">rem</button>
       <button type="button" data-unit="px">px</button>
     </div>
     <div class="mdv-btn-row">
-      <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-      <button class="mdv-btn is-sm is-quiet" id="copy" type="button">Copy</button>
+      <span class="mdv-badge is-accent" id="copied" hidden><span data-t="86">Copied</span></span>
+      <button class="mdv-btn is-sm is-quiet" id="copy" type="button"><span data-t="87">Copy</span></button>
     </div>
   </div>
 
   <section class="mdv-stack is-tight">
-    <div class="mdv-empty" id="empty" hidden><span>fill in all five fields</span></div>
+    <div class="mdv-empty" id="empty" hidden><span data-t="88">fill in all five fields</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Refused</span>
+      <span class="mdv-notice-title" data-t="89">Refused</span>
       <span id="errmsg" class="mdv-mono"></span>
     </div>
 
     <section class="mdv-panel-ink" id="result" data-mdv-result>
-      <span class="mdv-tag">Expression</span>
+      <span class="mdv-tag" data-t="90">Expression</span>
       <div class="mdv-readout" id="readout" style="margin-top:var(--space-3)"></div>
       <dl class="mdv-kv" style="margin-top:var(--space-4)">
-        <dt>Slope</dt><dd id="k-slope"></dd>
-        <dt>Intercept</dt><dd id="k-int"></dd>
-        <dt>Slope formula</dt><dd id="k-f1"></dd>
-        <dt>Intercept formula</dt><dd id="k-f2"></dd>
-        <dt>Preferred</dt><dd id="k-f3"></dd>
-        <dt>To rem</dt><dd id="k-f4"></dd>
+        <dt data-t="91">Slope</dt><dd id="k-slope"></dd>
+        <dt data-t="92">Intercept</dt><dd id="k-int"></dd>
+        <dt data-t="93">Slope formula</dt><dd id="k-f1"></dd>
+        <dt data-t="94">Intercept formula</dt><dd id="k-f2"></dd>
+        <dt data-t="95">Preferred</dt><dd id="k-f3"></dd>
+        <dt data-t="96">To rem</dt><dd id="k-f4"></dd>
       </dl>
       <p class="mdv-hint" id="note" style="color:var(--text-on-ink-muted)"></p>
     </section>
 
     <div class="mdv-panel is-flush" id="preview">
       <div class="mdv-panel-head">
-        <span class="mdv-tag">Preview</span>
-        <span class="mdv-tag mdv-mono">computed size by viewport</span>
+        <span class="mdv-tag" data-t="97">Preview</span>
+        <span class="mdv-tag mdv-mono" data-t="98">computed size by viewport</span>
       </div>
       <table class="mdv-table">
-        <thead><tr><th>Viewport</th><th>Size</th><th>In rem</th><th>State</th></tr></thead>
+        <thead><tr><th data-t="99">Viewport</th><th data-t="100">Size</th><th data-t="101">In rem</th><th data-t="102">State</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="103">How this works</summary>
     <div class="mdv-method-body">
-      <p>All five fields are in px. The root font size is used only to turn px into rem; browsers
+      <p data-t="104">All five fields are in px. The root font size is used only to turn px into rem; browsers
         default it to 16. The preferred value is the straight line through two points: (min viewport, min size) and
         (max viewport, max size). <code>slope = (max − min) ÷ (max viewport − min viewport)</code>,
         <code>intercept = min − slope × min viewport</code>. A viewport width is <code>100vw</code>, so
@@ -2345,7 +2457,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         sizes outside that range. For rem output every px figure is divided by the root font size you give;
         the vw coefficient is unitless and stays as it is. The fields are read with <code>parseFloat</code>
         and each coefficient is rounded with <code>toFixed(4)</code>, then trailing zeros are trimmed.</p>
-      <p>Rounding to four decimals moves the computed size by under 0.01 px at any viewport up to
+      <p data-t="105">Rounding to four decimals moves the computed size by under 0.01 px at any viewport up to
         1,920 px, which no renderer can show. The preview table applies the unrounded line and then the
         clamp, so it is the value the browser will land on to two decimals. One caution the numbers
         cannot hide: the vw term does not scale with the user's font-size setting or browser zoom the way
@@ -2355,28 +2467,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         positive exactly when max viewport ÷ min viewport is larger than max size ÷ min size, so the note
         tells you to widen the viewport range or narrow the size range, and prints the min size that would
         do it on its own, and the max viewport too when that is under 100,000 px.</p>
-      <p>Min size may be 0 (a margin that vanishes on phones). Its intercept is then always negative, and
+      <p data-t="106">Min size may be 0 (a margin that vanishes on phones). Its intercept is then always negative, and
         the note says the value is all vw without asking you to change it. Viewports and the root size
         must be at least 1 px, every field at most 100,000 px, max size larger than min size, and max
         viewport at least 1 px larger than min viewport; otherwise the tool refuses and names the field
         or the pair rather than printing a line with a negative or infinite slope or a number too large
         to write out. Nothing is uploaded: there is no server in this file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="107">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in CSS &amp; Design">
-    <span class="mdv-tag">Also in CSS &amp; Design</span>
-    <a href="./px-to-rem.html">PX to REM</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"CSS &amp; Design"}'>Also in CSS &amp; Design</span>
+    <a href="./px-to-rem.html" data-t="44">PX to REM</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="108">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="109">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="110" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="111">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2387,6 +2500,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Clamp Calculator — fluid CSS clamp() for font-size and spacing — MDV","Type min and max sizes and viewports. Get the CSS clamp() expression in rem or px, slope and intercept, and a preview at six widths. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Min size in px","Max size in px","Min viewport in px","Max viewport in px","Root font size in px","Output unit","Min size","Max size","Min viewport","Max viewport","Root font size","{name} is {x} px. Keep every field at or below {limit} px.","{name} is {x} px. It must be at least {low} px.","{name} is {x} px. A size cannot be negative.","Max size ({max} px) must be larger than min size ({min} px).","Max viewport ({vmax} px) must be at least 1 px larger than min viewport ({vmin} px).","widen the viewport range (max viewport above {vmax} px) or narrow the size range (min size above {min} px)","widen the viewport range or narrow the size range (min size above {min} px)","{slope} px per viewport px · {vw}vw","{a} ÷ {root} = {b} rem; the vw term is unchanged","Fluid between {vmin} and {vmax} px, growing {slope} px for every px of viewport. Below {vmin} px it holds {min} px, above {vmax} px it holds {max} px.","Min size is 0, so the intercept is negative and the value is all vw: right for a gap or margin that vanishes on small screens, wrong for text, which would not grow when the user zooms.","The intercept is negative, so the value is all vw and will not grow when the user zooms. To make it positive, {fix}.","The intercept is zero, so the value is all vw and will not grow when the user zooms. To make it positive, {fix}.","fluid","held at min","held at max","CSS & Design","2026-11-02"],"h":112,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Escribe dos tamaños y dos anchos de viewport; obtén el \u003ccode>clamp()\u003c/code> entre ellos.","En este dispositivo","Funciona sin conexión","Tamaño, mín. a máx.","a","Viewport, mín. a máx.","Tamaño de fuente raíz","Copiado","Copiar","rellena los cinco campos","Rechazado","Expresión","Pendiente","Ordenada","Fórmula de la pendiente","Fórmula de la ordenada","Preferido","A rem","Vista previa","tamaño calculado por viewport","Viewport","Tamaño","En rem","Estado","Cómo funciona","Los cinco campos están en px. El tamaño de fuente raíz solo sirve para convertir px en rem; los navegadores lo fijan por defecto en 16. El valor preferido es la recta que pasa por dos puntos: (viewport mín., tamaño mín.) y (viewport máx., tamaño máx.). \u003ccode>slope = (max − min) ÷ (max viewport − min viewport)\u003c/code>, \u003ccode>intercept = min − slope × min viewport\u003c/code>. El ancho de un viewport es \u003ccode>100vw\u003c/code>, así que la recta se lee \u003ccode>intercept + slope × 100vw\u003c/code>, y \u003ccode>clamp()\u003c/code> la limita a los dos tamaños fuera de ese rango. Para la salida en rem, cada cifra en px se divide por el tamaño de fuente raíz que indiques; el coeficiente de vw no tiene unidad y se mantiene. Los campos se leen con \u003ccode>parseFloat\u003c/code> y cada coeficiente se redondea con \u003ccode>toFixed(4)\u003c/code>; después se recortan los ceros finales.","Redondear a cuatro decimales cambia el tamaño calculado en menos de 0,01 px en cualquier viewport hasta 1.920 px, algo que ningún motor de renderizado puede mostrar. La tabla de vista previa aplica la recta sin redondear y luego el clamp, de modo que es el valor al que llegará el navegador, con dos decimales. Una advertencia que los números no pueden ocultar: el término vw no escala con el ajuste de tamaño de fuente del usuario ni con el zoom del navegador como lo hace rem. La ordenada en rem es la parte que sigue creciendo cuando el usuario hace zoom, así que una expresión cuya ordenada es cero o negativa depende solo de vw y puede incumplir WCAG 1.4.4 con zoom al 200 %; la herramienta muestra esa ordenada sin cambios y lo indica bajo la expresión. La ordenada es positiva exactamente cuando viewport máx. ÷ viewport mín. es mayor que tamaño máx. ÷ tamaño mín., por lo que la nota te indica ampliar el rango de viewport o reducir el rango de tamaños, e imprime el tamaño mínimo que bastaría por sí solo, y también el viewport máximo cuando es inferior a 100.000 px.","El tamaño mín. puede ser 0 (un margen que desaparece en móviles). Su ordenada es entonces siempre negativa, y la nota dice que el valor es todo vw sin pedirte que lo cambies. Los viewports y el tamaño raíz deben ser de al menos 1 px, cada campo de 100.000 px como máximo, el tamaño máx. mayor que el mín., y el viewport máx. al menos 1 px mayor que el mín.; en caso contrario la herramienta rechaza y nombra el campo o el par, en lugar de imprimir una recta con pendiente negativa o infinita o un número demasiado grande para escribirse. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Calculadora de clamp: clamp() CSS fluido para fuente y espaciado — MDV","Escribe tamaños y viewports mínimo y máximo. Obtén la expresión CSS clamp() en rem o px, la pendiente y la ordenada, y una vista previa en seis anchos. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Tamaño mínimo en px","Tamaño máximo en px","Viewport mínimo en px","Viewport máximo en px","Tamaño de fuente raíz en px","Unidad de salida","Tamaño mín.","Tamaño máx.","Viewport mín.","Viewport máx.","Tamaño de fuente raíz","{name} es {x} px. Mantén cada campo en {limit} px o menos.","{name} es {x} px. Debe ser de al menos {low} px.","{name} es {x} px. Un tamaño no puede ser negativo.","El tamaño máx. ({max} px) debe ser mayor que el tamaño mín. ({min} px).","El viewport máx. ({vmax} px) debe ser al menos 1 px mayor que el viewport mín. ({vmin} px).","amplía el rango de viewport (viewport máx. por encima de {vmax} px) o reduce el rango de tamaños (tamaño mín. por encima de {min} px)","amplía el rango de viewport o reduce el rango de tamaños (tamaño mín. por encima de {min} px)","{slope} px por px de viewport · {vw}vw","{a} ÷ {root} = {b} rem; el término vw no cambia","Fluido entre {vmin} y {vmax} px, con un crecimiento de {slope} px por cada px de viewport. Por debajo de {vmin} px mantiene {min} px; por encima de {vmax} px mantiene {max} px.","El tamaño mín. es 0, así que la ordenada es negativa y el valor es todo vw: correcto para un hueco o margen que desaparece en pantallas pequeñas, incorrecto para texto, que no crecería al hacer zoom el usuario.","La ordenada es negativa, así que el valor es todo vw y no crecerá cuando el usuario haga zoom. Para hacerla positiva, {fix}.","La ordenada es cero, así que el valor es todo vw y no crecerá cuando el usuario haga zoom. Para hacerla positiva, {fix}.","fluido","fijo en mín.","fijo en máx.","CSS y diseño",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Saisissez deux tailles et deux largeurs de viewport ; obtenez le \u003ccode>clamp()\u003c/code> qui les relie.","Sur cet appareil","Fonctionne hors ligne","Taille, min à max","à","Viewport, min à max","Taille de police racine","Copié","Copier","remplissez les cinq champs","Refusé","Expression","Pente","Ordonnée","Formule de la pente","Formule de l’ordonnée","Préféré","En rem","Aperçu","taille calculée par viewport","Viewport","Taille","En rem","État","Comment ça marche","Les cinq champs sont en px. La taille de police racine ne sert qu’à convertir les px en rem ; les navigateurs la fixent par défaut à 16. La valeur préférée est la droite passant par deux points : (viewport min, taille min) et (viewport max, taille max). \u003ccode>slope = (max − min) ÷ (max viewport − min viewport)\u003c/code>, \u003ccode>intercept = min − slope × min viewport\u003c/code>. Une largeur de viewport vaut \u003ccode>100vw\u003c/code> ; la droite s’écrit donc \u003ccode>intercept + slope × 100vw\u003c/code>, et \u003ccode>clamp()\u003c/code> la borne aux deux tailles en dehors de cette plage. En sortie rem, chaque valeur en px est divisée par la taille de police racine que vous donnez ; le coefficient de vw est sans unité et reste tel quel. Les champs sont lus avec \u003ccode>parseFloat\u003c/code> et chaque coefficient est arrondi avec \u003ccode>toFixed(4)\u003c/code>, puis les zéros finaux sont supprimés.","L’arrondi à quatre décimales modifie la taille calculée de moins de 0,01 px pour tout viewport jusqu’à 1 920 px, ce qu’aucun moteur de rendu ne peut afficher. Le tableau d’aperçu applique la droite non arrondie puis le clamp : c’est donc la valeur à laquelle le navigateur aboutira, à deux décimales. Une mise en garde que les chiffres ne peuvent pas cacher : le terme vw ne suit ni le réglage de taille de police de l’utilisateur ni le zoom du navigateur comme le fait rem. L’ordonnée en rem est la partie qui continue de croître quand l’utilisateur zoome ; une expression dont l’ordonnée est nulle ou négative repose donc sur vw seul et peut échouer au critère WCAG 1.4.4 avec un zoom à 200 % — l’outil affiche cette ordonnée telle quelle et le signale sous l’expression. L’ordonnée est positive exactement quand viewport max ÷ viewport min est supérieur à taille max ÷ taille min ; la note vous invite donc à élargir la plage de viewport ou à resserrer la plage de tailles, et indique la taille min qui suffirait à elle seule, ainsi que le viewport max quand il est inférieur à 100 000 px.","La taille min peut valoir 0 (une marge qui disparaît sur mobile). Son ordonnée est alors toujours négative, et la note indique que la valeur est entièrement en vw sans vous demander de la changer. Les viewports et la taille racine doivent valoir au moins 1 px, chaque champ au plus 100 000 px, la taille max doit dépasser la taille min, et le viewport max doit dépasser le viewport min d’au moins 1 px ; sinon l’outil refuse et nomme le champ ou la paire, plutôt que d’afficher une droite à pente négative ou infinie, ou un nombre trop grand pour être écrit. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Calculateur clamp : clamp() CSS fluide pour police et espacement — MDV","Saisissez les tailles et viewports min et max. Obtenez l’expression CSS clamp() en rem ou px, la pente et l’ordonnée, et un aperçu à six largeurs. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Taille min en px","Taille max en px","Viewport min en px","Viewport max en px","Taille de police racine en px","Unité de sortie","Taille min","Taille max","Viewport min","Viewport max","Taille de police racine","{name} vaut {x} px. Gardez chaque champ à {limit} px ou moins.","{name} vaut {x} px. Il doit valoir au moins {low} px.","{name} vaut {x} px. Une taille ne peut pas être négative.","La taille max ({max} px) doit dépasser la taille min ({min} px).","Le viewport max ({vmax} px) doit dépasser le viewport min ({vmin} px) d’au moins 1 px.","élargissez la plage de viewport (viewport max au-dessus de {vmax} px) ou resserrez la plage de tailles (taille min au-dessus de {min} px)","élargissez la plage de viewport ou resserrez la plage de tailles (taille min au-dessus de {min} px)","{slope} px par px de viewport · {vw}vw","{a} ÷ {root} = {b} rem ; le terme vw ne change pas","Fluide entre {vmin} et {vmax} px, avec une croissance de {slope} px par px de viewport. En dessous de {vmin} px, il reste à {min} px ; au-dessus de {vmax} px, il reste à {max} px.","La taille min vaut 0 : l’ordonnée est donc négative et la valeur est entièrement en vw. C’est bien pour un espace ou une marge qui disparaît sur petit écran, mais pas pour du texte, qui ne grandirait pas quand l’utilisateur zoome.","L’ordonnée est négative : la valeur est donc entièrement en vw et ne grandira pas quand l’utilisateur zoomera. Pour la rendre positive, {fix}.","L’ordonnée est nulle : la valeur est donc entièrement en vw et ne grandira pas quand l’utilisateur zoomera. Pour la rendre positive, {fix}.","fluide","bloqué au min","bloqué au max","CSS et design",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Gib zwei Größen und zwei Viewport-Breiten ein und erhalte das \u003ccode>clamp()\u003c/code> dazwischen.","Läuft auf diesem Gerät","Funktioniert offline","Größe, min bis max","bis","Viewport, min bis max","Root-Schriftgröße","Kopiert","Kopieren","alle fünf Felder ausfüllen","Abgelehnt","Ausdruck","Steigung","Achsenabschnitt","Steigungsformel","Achsenabschnittsformel","Bevorzugt","In rem","Vorschau","berechnete Größe je Viewport","Viewport","Größe","In rem","Status","So funktioniert es","Alle fünf Felder sind in px. Die Root-Schriftgröße dient nur dazu, px in rem umzurechnen; Browser setzen sie standardmäßig auf 16. Der bevorzugte Wert ist die Gerade durch zwei Punkte: (min. Viewport, min. Größe) und (max. Viewport, max. Größe). \u003ccode>slope = (max − min) ÷ (max viewport − min viewport)\u003c/code>, \u003ccode>intercept = min − slope × min viewport\u003c/code>. Eine Viewport-Breite ist \u003ccode>100vw\u003c/code>, die Gerade lautet also \u003ccode>intercept + slope × 100vw\u003c/code>, und \u003ccode>clamp()\u003c/code> hält sie außerhalb dieses Bereichs auf den beiden Größen. Bei der rem-Ausgabe wird jeder px-Wert durch die angegebene Root-Schriftgröße geteilt; der vw-Koeffizient ist einheitenlos und bleibt unverändert. Die Felder werden mit \u003ccode>parseFloat\u003c/code> gelesen, jeder Koeffizient wird mit \u003ccode>toFixed(4)\u003c/code> gerundet, danach werden nachgestellte Nullen entfernt.","Das Runden auf vier Dezimalstellen verändert die berechnete Größe bei jedem Viewport bis 1.920 px um weniger als 0,01 px, was kein Renderer darstellen kann. Die Vorschautabelle wendet die ungerundete Gerade an und dann das Clamp; sie zeigt also den Wert, auf dem der Browser landet, auf zwei Dezimalstellen. Eine Warnung, die die Zahlen nicht verbergen können: Der vw-Term skaliert nicht mit der Schriftgrößeneinstellung des Nutzers oder dem Browser-Zoom, wie es rem tut. Der rem-Achsenabschnitt ist der Teil, der beim Zoomen weiter wächst; ein Ausdruck, dessen Achsenabschnitt null oder negativ ist, stützt sich allein auf vw und kann WCAG 1.4.4 bei 200 % Zoom verfehlen. Das Werkzeug gibt einen solchen Achsenabschnitt unverändert aus und weist unter dem Ausdruck darauf hin. Der Achsenabschnitt ist genau dann positiv, wenn max. Viewport ÷ min. Viewport größer ist als max. Größe ÷ min. Größe; der Hinweis empfiehlt daher, den Viewport-Bereich zu erweitern oder den Größenbereich zu verengen, und nennt die min. Größe, die allein genügen würde, sowie den max. Viewport, wenn er unter 100.000 px liegt.","Die min. Größe darf 0 sein (ein Rand, der auf Telefonen verschwindet). Ihr Achsenabschnitt ist dann immer negativ, und der Hinweis sagt, dass der Wert ganz aus vw besteht, ohne dich um eine Änderung zu bitten. Viewports und Root-Größe müssen mindestens 1 px betragen, jedes Feld höchstens 100.000 px, die max. Größe größer als die min. Größe und der max. Viewport mindestens 1 px größer als der min. Viewport; andernfalls lehnt das Werkzeug ab und nennt das Feld oder das Paar, statt eine Gerade mit negativer oder unendlicher Steigung oder eine zu große Zahl auszugeben. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Clamp-Rechner: fließendes CSS-clamp() für Schrift und Abstände — MDV","Gib min. und max. Größen und Viewports ein. Du erhältst den CSS-clamp()-Ausdruck in rem oder px, Steigung und Achsenabschnitt sowie eine Vorschau bei sechs Breiten. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Min. Größe in px","Max. Größe in px","Min. Viewport in px","Max. Viewport in px","Root-Schriftgröße in px","Ausgabeeinheit","Min. Größe","Max. Größe","Min. Viewport","Max. Viewport","Root-Schriftgröße","{name} ist {x} px. Halte jedes Feld bei höchstens {limit} px.","{name} ist {x} px. Es muss mindestens {low} px sein.","{name} ist {x} px. Eine Größe kann nicht negativ sein.","Die max. Größe ({max} px) muss größer sein als die min. Größe ({min} px).","Der max. Viewport ({vmax} px) muss mindestens 1 px größer sein als der min. Viewport ({vmin} px).","erweitere den Viewport-Bereich (max. Viewport über {vmax} px) oder verenge den Größenbereich (min. Größe über {min} px)","erweitere den Viewport-Bereich oder verenge den Größenbereich (min. Größe über {min} px)","{slope} px pro Viewport-px · {vw}vw","{a} ÷ {root} = {b} rem; der vw-Term bleibt unverändert","Fließend zwischen {vmin} und {vmax} px, mit einem Zuwachs von {slope} px je Viewport-px. Unter {vmin} px bleibt er bei {min} px, über {vmax} px bei {max} px.","Die min. Größe ist 0, daher ist der Achsenabschnitt negativ und der Wert besteht ganz aus vw: richtig für einen Abstand oder Rand, der auf kleinen Bildschirmen verschwindet, falsch für Text, der beim Zoomen des Nutzers nicht wachsen würde.","Der Achsenabschnitt ist negativ, daher besteht der Wert ganz aus vw und wächst beim Zoomen des Nutzers nicht mit. Um ihn positiv zu machen: {fix}.","Der Achsenabschnitt ist null, daher besteht der Wert ganz aus vw und wächst beim Zoomen des Nutzers nicht mit. Um ihn positiv zu machen: {fix}.","fließend","bei min gehalten","bei max gehalten","CSS und Design",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Scrivi due dimensioni e due larghezze di viewport; ottieni il \u003ccode>clamp()\u003c/code> che le collega.","Su questo dispositivo","Funziona offline","Dimensione, min–max","a","Viewport, min–max","Dimensione font radice","Copiato","Copia","compila tutti e cinque i campi","Rifiutato","Espressione","Pendenza","Intercetta","Formula della pendenza","Formula dell’intercetta","Preferito","In rem","Anteprima","dimensione calcolata per viewport","Viewport","Dimensione","In rem","Stato","Come funziona","Tutti e cinque i campi sono in px. La dimensione del font radice serve solo a convertire px in rem; i browser la impostano di default a 16. Il valore preferito è la retta per due punti: (viewport min, dimensione min) e (viewport max, dimensione max). \u003ccode>slope = (max − min) ÷ (max viewport − min viewport)\u003c/code>, \u003ccode>intercept = min − slope × min viewport\u003c/code>. La larghezza di un viewport è \u003ccode>100vw\u003c/code>, quindi la retta si scrive \u003ccode>intercept + slope × 100vw\u003c/code>, e \u003ccode>clamp()\u003c/code> la limita alle due dimensioni fuori da quell’intervallo. Per l’output in rem ogni valore in px è diviso per la dimensione del font radice indicata; il coefficiente di vw è senza unità e resta com’è. I campi sono letti con \u003ccode>parseFloat\u003c/code> e ogni coefficiente è arrotondato con \u003ccode>toFixed(4)\u003c/code>, poi gli zeri finali vengono tolti.","L’arrotondamento a quattro decimali sposta la dimensione calcolata di meno di 0,01 px per qualsiasi viewport fino a 1.920 px, cosa che nessun motore di rendering può mostrare. La tabella di anteprima applica la retta non arrotondata e poi il clamp, quindi è il valore a cui arriverà il browser, a due decimali. Un’avvertenza che i numeri non possono nascondere: il termine vw non scala con l’impostazione della dimensione del font dell’utente né con lo zoom del browser come fa rem. L’intercetta in rem è la parte che continua a crescere quando l’utente fa zoom, quindi un’espressione con intercetta zero o negativa si affida al solo vw e può non rispettare WCAG 1.4.4 con zoom al 200%: lo strumento mostra questa intercetta invariata e lo segnala sotto l’espressione. L’intercetta è positiva esattamente quando viewport max ÷ viewport min è maggiore di dimensione max ÷ dimensione min, quindi la nota ti dice di allargare l’intervallo di viewport o restringere quello delle dimensioni, e stampa la dimensione min che basterebbe da sola, e anche il viewport max quando è sotto 100.000 px.","La dimensione min può essere 0 (un margine che sparisce sui telefoni). La sua intercetta è allora sempre negativa, e la nota dice che il valore è tutto vw senza chiederti di cambiarlo. I viewport e la dimensione radice devono essere almeno 1 px, ogni campo al massimo 100.000 px, la dimensione max maggiore della min, e il viewport max almeno 1 px maggiore del min; altrimenti lo strumento rifiuta e indica il campo o la coppia, invece di stampare una retta con pendenza negativa o infinita o un numero troppo grande da scrivere. Non viene caricato nulla: questo file non ha un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Calcolatore clamp: clamp() CSS fluido per font e spaziatura — MDV","Scrivi dimensioni e viewport minimi e massimi. Ottieni l’espressione CSS clamp() in rem o px, pendenza e intercetta, e un’anteprima a sei larghezze. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Dimensione min in px","Dimensione max in px","Viewport min in px","Viewport max in px","Dimensione font radice in px","Unità di output","Dimensione min","Dimensione max","Viewport min","Viewport max","Dimensione font radice","{name} è {x} px. Tieni ogni campo a {limit} px o meno.","{name} è {x} px. Deve essere almeno {low} px.","{name} è {x} px. Una dimensione non può essere negativa.","La dimensione max ({max} px) deve essere maggiore della dimensione min ({min} px).","Il viewport max ({vmax} px) deve essere almeno 1 px maggiore del viewport min ({vmin} px).","allarga l’intervallo di viewport (viewport max sopra {vmax} px) o restringi quello delle dimensioni (dimensione min sopra {min} px)","allarga l’intervallo di viewport o restringi quello delle dimensioni (dimensione min sopra {min} px)","{slope} px per px di viewport · {vw}vw","{a} ÷ {root} = {b} rem; il termine vw non cambia","Fluido tra {vmin} e {vmax} px, con una crescita di {slope} px per ogni px di viewport. Sotto {vmin} px resta a {min} px, sopra {vmax} px resta a {max} px.","La dimensione min è 0, quindi l’intercetta è negativa e il valore è tutto vw: va bene per uno spazio o un margine che sparisce sugli schermi piccoli, non per il testo, che non crescerebbe quando l’utente fa zoom.","L’intercetta è negativa, quindi il valore è tutto vw e non crescerà quando l’utente fa zoom. Per renderla positiva, {fix}.","L’intercetta è zero, quindi il valore è tutto vw e non crescerà quando l’utente fa zoom. Per renderla positiva, {fix}.","fluido","fermo al min","fermo al max","CSS e design",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Digite dois tamanhos e duas larguras de viewport; receba o \u003ccode>clamp()\u003c/code> entre eles.","Neste dispositivo","Funciona offline","Tamanho, mín. a máx.","a","Viewport, mín. a máx.","Tamanho da fonte raiz","Copiado","Copiar","preencha os cinco campos","Recusado","Expressão","Inclinação","Intercepto","Fórmula da inclinação","Fórmula do intercepto","Preferido","Para rem","Prévia","tamanho calculado por viewport","Viewport","Tamanho","Em rem","Estado","Como funciona","Os cinco campos estão em px. O tamanho da fonte raiz serve apenas para converter px em rem; os navegadores o definem por padrão como 16. O valor preferido é a reta que passa por dois pontos: (viewport mín., tamanho mín.) e (viewport máx., tamanho máx.). \u003ccode>slope = (max − min) ÷ (max viewport − min viewport)\u003c/code>, \u003ccode>intercept = min − slope × min viewport\u003c/code>. A largura de um viewport é \u003ccode>100vw\u003c/code>, então a reta se lê \u003ccode>intercept + slope × 100vw\u003c/code>, e \u003ccode>clamp()\u003c/code> a prende aos dois tamanhos fora desse intervalo. Na saída em rem, cada valor em px é dividido pelo tamanho da fonte raiz informado; o coeficiente de vw não tem unidade e permanece. Os campos são lidos com \u003ccode>parseFloat\u003c/code> e cada coeficiente é arredondado com \u003ccode>toFixed(4)\u003c/code>; depois os zeros à direita são removidos.","Arredondar para quatro casas decimais altera o tamanho calculado em menos de 0,01 px em qualquer viewport até 1.920 px, o que nenhum renderizador consegue mostrar. A tabela de prévia aplica a reta sem arredondar e depois o clamp, então é o valor em que o navegador vai parar, com duas casas decimais. Um alerta que os números não conseguem esconder: o termo vw não escala com a configuração de tamanho de fonte do usuário nem com o zoom do navegador como o rem escala. O intercepto em rem é a parte que continua crescendo quando o usuário dá zoom, então uma expressão cujo intercepto é zero ou negativo depende só de vw e pode falhar no WCAG 1.4.4 com zoom de 200%; a ferramenta mostra esse intercepto sem alteração e avisa sob a expressão. O intercepto é positivo exatamente quando viewport máx. ÷ viewport mín. é maior que tamanho máx. ÷ tamanho mín., então a nota manda ampliar o intervalo de viewport ou estreitar o intervalo de tamanhos, e imprime o tamanho mín. que bastaria sozinho, e também o viewport máx. quando é menor que 100.000 px.","O tamanho mín. pode ser 0 (uma margem que some em celulares). O intercepto é então sempre negativo, e a nota diz que o valor é todo vw sem pedir que você o mude. Viewports e o tamanho raiz devem ter pelo menos 1 px, cada campo no máximo 100.000 px, o tamanho máx. maior que o mín., e o viewport máx. pelo menos 1 px maior que o mín.; caso contrário a ferramenta recusa e nomeia o campo ou o par, em vez de imprimir uma reta com inclinação negativa ou infinita ou um número grande demais para ser escrito. Nada é enviado: este arquivo não tem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Calculadora de clamp: clamp() CSS fluido para fonte e espaçamento — MDV","Digite tamanhos e viewports mínimos e máximos. Receba a expressão CSS clamp() em rem ou px, inclinação e intercepto, e uma prévia em seis larguras. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Tamanho mínimo em px","Tamanho máximo em px","Viewport mínimo em px","Viewport máximo em px","Tamanho da fonte raiz em px","Unidade de saída","Tamanho mín.","Tamanho máx.","Viewport mín.","Viewport máx.","Tamanho da fonte raiz","{name} é {x} px. Mantenha cada campo em {limit} px ou menos.","{name} é {x} px. Precisa ser de pelo menos {low} px.","{name} é {x} px. Um tamanho não pode ser negativo.","O tamanho máx. ({max} px) precisa ser maior que o tamanho mín. ({min} px).","O viewport máx. ({vmax} px) precisa ser pelo menos 1 px maior que o viewport mín. ({vmin} px).","amplie o intervalo de viewport (viewport máx. acima de {vmax} px) ou estreite o intervalo de tamanhos (tamanho mín. acima de {min} px)","amplie o intervalo de viewport ou estreite o intervalo de tamanhos (tamanho mín. acima de {min} px)","{slope} px por px de viewport · {vw}vw","{a} ÷ {root} = {b} rem; o termo vw não muda","Fluido entre {vmin} e {vmax} px, crescendo {slope} px para cada px de viewport. Abaixo de {vmin} px mantém {min} px; acima de {vmax} px mantém {max} px.","O tamanho mín. é 0, então o intercepto é negativo e o valor é todo vw: certo para um espaço ou margem que some em telas pequenas, errado para texto, que não cresceria quando o usuário desse zoom.","O intercepto é negativo, então o valor é todo vw e não crescerá quando o usuário der zoom. Para torná-lo positivo, {fix}.","O intercepto é zero, então o valor é todo vw e não crescerá quando o usuário der zoom. Para torná-lo positivo, {fix}.","fluido","fixo no mín.","fixo no máx.","CSS e design",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","2 つのサイズと 2 つのビューポート幅を入力すると、その間の \u003ccode>clamp()\u003c/code> が得られます。","この端末で動作","オフラインで動作","サイズ(最小〜最大)","〜","ビューポート(最小〜最大)","ルートのフォントサイズ","コピーしました","コピー","5 つの欄をすべて入力","拒否しました","式","傾き","切片","傾きの式","切片の式","推奨値","rem へ","プレビュー","ビューポート別の計算サイズ","ビューポート","サイズ","rem 値","状態","仕組み","5 つの欄はすべて px です。ルートのフォントサイズは px を rem に変換するためだけに使い、ブラウザーの既定は 16 です。推奨値は 2 点(最小ビューポート・最小サイズ)と(最大ビューポート・最大サイズ)を通る直線です。\u003ccode>slope = (max − min) ÷ (max viewport − min viewport)\u003c/code>、\u003ccode>intercept = min − slope × min viewport\u003c/code>。ビューポート幅は \u003ccode>100vw\u003c/code> なので、直線は \u003ccode>intercept + slope × 100vw\u003c/code> と表され、\u003ccode>clamp()\u003c/code> はその範囲の外側で 2 つのサイズに固定します。rem 出力では、すべての px の値を指定したルートのフォントサイズで割ります。vw の係数は単位なしで、そのままです。各欄は \u003ccode>parseFloat\u003c/code> で読み取り、各係数は \u003ccode>toFixed(4)\u003c/code> で丸めたあと、末尾のゼロを取り除きます。","小数点以下 4 桁への丸めは、1,920 px までのどのビューポートでも計算サイズを 0.01 px 未満しか動かさず、これはどのレンダラーでも表示できない差です。プレビュー表は丸める前の直線を適用してから clamp を掛けるため、ブラウザーが実際に到達する値を小数第 2 位まで示します。数値では隠せない注意点が 1 つあります。vw の項は、rem のようにはユーザーのフォントサイズ設定やブラウザーのズームに追従しません。ズームしても伸び続けるのは rem の切片の部分なので、切片がゼロまたは負の式は vw だけに頼ることになり、200% ズームで WCAG 1.4.4 を満たせない場合があります。このツールはそのような切片を変更せずに表示し、式の下でそのことを知らせます。切片が正になるのは、最大ビューポート ÷ 最小ビューポートが最大サイズ ÷ 最小サイズより大きいときに限られます。そのためメモでは、ビューポートの範囲を広げるかサイズの範囲を狭めるよう案内し、それだけで足りる最小サイズと、100,000 px 未満の場合は最大ビューポートも表示します。","最小サイズは 0 でもかまいません(スマートフォンで消えるマージンなど)。その場合、切片は常に負になり、メモには変更を求めずに値が完全に vw であると表示されます。ビューポートとルートサイズは 1 px 以上、すべての欄は 100,000 px 以下、最大サイズは最小サイズより大きく、最大ビューポートは最小ビューポートより 1 px 以上大きくなければなりません。満たさない場合、ツールは負や無限大の傾きの直線や、書き出せないほど大きな数を出力せず、該当する欄または組み合わせを示して拒否します。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","clamp 計算機: フォントと余白のための流動的な CSS clamp() — MDV","最小・最大のサイズとビューポートを入力すると、rem または px の CSS clamp() 式、傾きと切片、6 つの幅でのプレビューが得られます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","最小サイズ(px)","最大サイズ(px)","最小ビューポート(px)","最大ビューポート(px)","ルートのフォントサイズ(px)","出力単位","最小サイズ","最大サイズ","最小ビューポート","最大ビューポート","ルートのフォントサイズ","{name} が {x} px です。すべての欄を {limit} px 以下にしてください。","{name} が {x} px です。{low} px 以上にしてください。","{name} が {x} px です。サイズを負にはできません。","最大サイズ({max} px)は最小サイズ({min} px)より大きくしてください。","最大ビューポート({vmax} px)は最小ビューポート({vmin} px)より 1 px 以上大きくしてください。","ビューポートの範囲を広げる(最大ビューポートを {vmax} px 超にする)か、サイズの範囲を狭める(最小サイズを {min} px 超にする)","ビューポートの範囲を広げるか、サイズの範囲を狭める(最小サイズを {min} px 超にする)","ビューポート 1 px あたり {slope} px · {vw}vw","{a} ÷ {root} = {b} rem。vw の項は変わりません","{vmin} px から {vmax} px の間は流動的で、ビューポート 1 px につき {slope} px 増えます。{vmin} px 未満では {min} px、{vmax} px を超えると {max} px を保ちます。","最小サイズが 0 なので、切片は負になり、値は完全に vw になります。小さい画面で消える余白やマージンには適していますが、ユーザーがズームしても大きくならないため、テキストには向きません。","切片が負なので、値は完全に vw になり、ユーザーがズームしても大きくなりません。正にするには、{fix}。","切片がゼロなので、値は完全に vw になり、ユーザーがズームしても大きくなりません。正にするには、{fix}。","流動","最小で固定","最大で固定","CSS とデザイン",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","크기 두 개와 뷰포트 너비 두 개를 입력하면 그 사이의 \u003ccode>clamp()\u003c/code>를 얻습니다.","이 기기에서 실행","오프라인 작동","크기, 최소~최대","~","뷰포트, 최소~최대","루트 글꼴 크기","복사됨","복사","다섯 칸을 모두 입력","거부됨","표현식","기울기","절편","기울기 공식","절편 공식","선호값","rem으로","미리보기","뷰포트별 계산된 크기","뷰포트","크기","rem 값","상태","작동 방식","다섯 칸은 모두 px입니다. 루트 글꼴 크기는 px를 rem으로 바꾸는 데만 쓰이며, 브라우저 기본값은 16입니다. 선호값은 (최소 뷰포트, 최소 크기)와 (최대 뷰포트, 최대 크기) 두 점을 지나는 직선입니다. \u003ccode>slope = (max − min) ÷ (max viewport − min viewport)\u003c/code>, \u003ccode>intercept = min − slope × min viewport\u003c/code>. 뷰포트 너비는 \u003ccode>100vw\u003c/code>이므로 직선은 \u003ccode>intercept + slope × 100vw\u003c/code>로 쓰이고, \u003ccode>clamp()\u003c/code>는 그 범위 밖에서 두 크기로 고정합니다. rem 출력에서는 모든 px 값을 입력한 루트 글꼴 크기로 나눕니다. vw 계수는 단위가 없어 그대로입니다. 칸의 값은 \u003ccode>parseFloat\u003c/code>로 읽고 각 계수는 \u003ccode>toFixed(4)\u003c/code>로 반올림한 뒤 끝의 0을 제거합니다.","소수점 넷째 자리로 반올림해도 1,920px까지 어떤 뷰포트에서든 계산된 크기는 0.01px 미만으로만 달라지며, 이는 어떤 렌더러도 표시할 수 없는 차이입니다. 미리보기 표는 반올림하지 않은 직선을 적용한 다음 clamp를 적용하므로, 브라우저가 실제로 도달할 값을 소수점 둘째 자리까지 보여 줍니다. 숫자로는 감출 수 없는 주의점이 하나 있습니다. vw 항은 rem처럼 사용자의 글꼴 크기 설정이나 브라우저 확대에 맞춰 커지지 않습니다. 확대할 때 계속 커지는 것은 rem 절편 부분이므로, 절편이 0이거나 음수인 표현식은 vw만 믿게 되어 200% 확대에서 WCAG 1.4.4를 충족하지 못할 수 있습니다. 이 도구는 그런 절편을 바꾸지 않고 그대로 출력하며 표현식 아래에 그 사실을 알립니다. 절편이 양수가 되는 것은 최대 뷰포트 ÷ 최소 뷰포트가 최대 크기 ÷ 최소 크기보다 클 때에 한정됩니다. 그래서 안내문은 뷰포트 범위를 넓히거나 크기 범위를 좁히라고 알려 주고, 그것만으로 충분한 최소 크기와, 100,000px 미만이면 최대 뷰포트도 함께 출력합니다.","최소 크기는 0이어도 됩니다(휴대폰에서 사라지는 여백 등). 이 경우 절편은 항상 음수이며, 안내문은 값을 바꾸라고 요구하지 않고 전부 vw라고만 알려 줍니다. 뷰포트와 루트 크기는 1px 이상, 모든 칸은 100,000px 이하, 최대 크기는 최소 크기보다 커야 하고, 최대 뷰포트는 최소 뷰포트보다 1px 이상 커야 합니다. 그렇지 않으면 이 도구는 기울기가 음수이거나 무한대인 직선, 또는 쓸 수 없을 만큼 큰 숫자를 출력하는 대신 해당 칸이나 조합을 짚어 거부합니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","clamp 계산기: 글꼴과 간격을 위한 유동적 CSS clamp() — MDV","최소·최대 크기와 뷰포트를 입력하면 rem 또는 px의 CSS clamp() 표현식, 기울기와 절편, 여섯 가지 너비의 미리보기를 얻습니다. 내 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","최소 크기(px)","최대 크기(px)","최소 뷰포트(px)","최대 뷰포트(px)","루트 글꼴 크기(px)","출력 단위","최소 크기","최대 크기","최소 뷰포트","최대 뷰포트","루트 글꼴 크기","{name}이(가) {x}px입니다. 모든 칸을 {limit}px 이하로 하세요.","{name}이(가) {x}px입니다. {low}px 이상이어야 합니다.","{name}이(가) {x}px입니다. 크기는 음수일 수 없습니다.","최대 크기({max}px)는 최소 크기({min}px)보다 커야 합니다.","최대 뷰포트({vmax}px)는 최소 뷰포트({vmin}px)보다 1px 이상 커야 합니다.","뷰포트 범위를 넓히거나(최대 뷰포트를 {vmax}px 초과로) 크기 범위를 좁히세요(최소 크기를 {min}px 초과로)","뷰포트 범위를 넓히거나 크기 범위를 좁히세요(최소 크기를 {min}px 초과로)","뷰포트 1px당 {slope}px · {vw}vw","{a} ÷ {root} = {b} rem. vw 항은 그대로입니다","{vmin}px에서 {vmax}px 사이에서는 유동적이며 뷰포트 1px당 {slope}px씩 커집니다. {vmin}px 미만에서는 {min}px, {vmax}px 초과에서는 {max}px를 유지합니다.","최소 크기가 0이므로 절편은 음수이고 값은 전부 vw입니다. 작은 화면에서 사라지는 간격이나 여백에는 맞지만, 사용자가 확대해도 커지지 않으므로 텍스트에는 맞지 않습니다.","절편이 음수이므로 값은 전부 vw이며 사용자가 확대해도 커지지 않습니다. 양수로 만들려면 {fix}.","절편이 0이므로 값은 전부 vw이며 사용자가 확대해도 커지지 않습니다. 양수로 만들려면 {fix}.","유동","최소로 고정","최대로 고정","CSS와 디자인",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","输入两个尺寸和两个视口宽度,即可得到它们之间的 \u003ccode>clamp()\u003c/code>。","在此设备上运行","可离线使用","尺寸,最小至最大","至","视口,最小至最大","根字体大小","已复制","复制","请填写全部五个字段","已拒绝","表达式","斜率","截距","斜率公式","截距公式","首选值","转为 rem","预览","按视口计算的尺寸","视口","尺寸","rem 值","状态","工作原理","五个字段都以 px 为单位。根字体大小只用于把 px 换算成 rem，浏览器默认值为 16。首选值是经过两点的直线:(最小视口,最小尺寸)和(最大视口,最大尺寸)。\u003ccode>slope = (max − min) ÷ (max viewport − min viewport)\u003c/code>,\u003ccode>intercept = min − slope × min viewport\u003c/code>。视口宽度即 \u003ccode>100vw\u003c/code>,所以这条直线写作 \u003ccode>intercept + slope × 100vw\u003c/code>,\u003ccode>clamp()\u003c/code> 在该范围之外把它限定为这两个尺寸。输出 rem 时,每个 px 数值都除以你给出的根字体大小;vw 系数没有单位,保持不变。各字段用 \u003ccode>parseFloat\u003c/code> 读取,每个系数用 \u003ccode>toFixed(4)\u003c/code> 四舍五入,然后去掉末尾的零。","四舍五入到小数点后四位,在不超过 1,920 px 的任何视口下,计算出的尺寸变化都小于 0.01 px，任何渲染器都显示不出来。预览表先应用未经舍入的直线,再应用 clamp，所以它显示的就是浏览器最终会得到的值,精确到两位小数。有一点是数字掩盖不了的:vw 项不会像 rem 那样随用户的字体大小设置或浏览器缩放而变化。用户缩放时仍会增长的是 rem 截距部分,因此截距为零或为负的表达式只依赖 vw，在 200% 缩放下可能不符合 WCAG 1.4.4;本工具会原样输出这样的截距,并在表达式下方说明。截距恰好在“最大视口 ÷ 最小视口 大于 最大尺寸 ÷ 最小尺寸”时为正,所以提示会建议你加大视口范围或缩小尺寸范围,并给出仅靠它就够用的最小尺寸;当最大视口小于 100,000 px 时,也会给出最大视口。","最小尺寸可以为 0(例如在手机上消失的边距)。此时截距总是负数,提示会说明该值完全是 vw，而不要求你修改。视口和根字体大小必须至少为 1 px，每个字段至多 100,000 px，最大尺寸须大于最小尺寸,最大视口须比最小视口至少大 1 px;否则本工具会拒绝并指出具体的字段或字段组合,而不会输出斜率为负或无穷的直线,或大到无法写出的数字。不会上传任何内容:本文件没有服务器。","深色和语言按钮会把各自的设置记在此浏览器的本地存储中。你输入或拖入页面的任何内容都不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","clamp 计算器:用于字体和间距的流式 CSS clamp() — MDV","输入最小和最大的尺寸与视口,即可得到 rem 或 px 的 CSS clamp() 表达式、斜率和截距,以及六种宽度下的预览。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","最小尺寸(px)","最大尺寸(px)","最小视口(px)","最大视口(px)","根字体大小(px)","输出单位","最小尺寸","最大尺寸","最小视口","最大视口","根字体大小","{name} 为 {x} px。请让每个字段不超过 {limit} px。","{name} 为 {x} px。至少应为 {low} px。","{name} 为 {x} px。尺寸不能为负。","最大尺寸({max} px)必须大于最小尺寸({min} px)。","最大视口({vmax} px)必须比最小视口({vmin} px)至少大 1 px。","加大视口范围(最大视口大于 {vmax} px)或缩小尺寸范围(最小尺寸大于 {min} px)","加大视口范围或缩小尺寸范围(最小尺寸大于 {min} px)","每视口 px {slope} px · {vw}vw","{a} ÷ {root} = {b} rem;vw 项不变","在 {vmin} 到 {vmax} px 之间是流式的,视口每增加 1 px，尺寸增加 {slope} px。低于 {vmin} px 时保持 {min} px，高于 {vmax} px 时保持 {max} px。","最小尺寸为 0，因此截距为负,值完全由 vw 决定:适合在小屏幕上消失的间隙或边距,但不适合文字,因为用户缩放时文字不会变大。","截距为负,因此值完全由 vw 决定,用户缩放时不会变大。要使它为正,请{fix}。","截距为零,因此值完全由 vw 决定,用户缩放时不会变大。要使它为正,请{fix}。","流式","停在最小","停在最大","CSS 与设计",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2411,8 +2624,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // 1 px apart the slope is at most 100,000 and the intercept under 1e10, far from 1e21, where
   // toFixed would switch to exponent form.
   var LIMIT = 100000;
-  var FIELDS = [["min", "Min size", 0], ["max", "Max size", 0], ["vmin", "Min viewport", 1],
-                ["vmax", "Max viewport", 1], ["root", "Root font size", 1]];   // key, name, lowest allowed
+  var FIELDS = [["min", trk("Min size"), 0], ["max", trk("Max size"), 0], ["vmin", trk("Min viewport"), 1],
+                ["vmax", trk("Max viewport"), 1], ["root", trk("Root font size"), 1]];   // key, name, lowest allowed
 
   // ---- pure ---------------------------------------------------------------
   function fmt(n) {
@@ -2427,12 +2640,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function validate(v) {
     if (isNaN(v.min) || isNaN(v.max) || isNaN(v.vmin) || isNaN(v.vmax) || isNaN(v.root)) return null;
     for (var i = 0; i < FIELDS.length; i++) {
-      var x = v[FIELDS[i][0]], name = FIELDS[i][1], low = FIELDS[i][2];
-      if (x > LIMIT) return name + " is " + x + " px. Keep every field at or below " + LIMIT.toLocaleString("en-US") + " px.";
-      if (x < low) return name + " is " + x + " px. " + (low ? "It must be at least " + low + " px." : "A size cannot be negative.");
+      var x = v[FIELDS[i][0]], name = tr(FIELDS[i][1]), low = FIELDS[i][2], pv = { name: name, x: x, limit: LIMIT.toLocaleString("en-US"), low: low };
+      if (x > LIMIT) return tr("{name} is {x} px. Keep every field at or below {limit} px.", pv);
+      if (x < low) return low ? tr("{name} is {x} px. It must be at least {low} px.", pv) : tr("{name} is {x} px. A size cannot be negative.", pv);
     }
-    if (v.max <= v.min) return "Max size (" + v.max + " px) must be larger than min size (" + v.min + " px).";
-    if (!(v.vmax - v.vmin >= 1)) return "Max viewport (" + v.vmax + " px) must be at least 1 px larger than min viewport (" + v.vmin + " px).";
+    if (v.max <= v.min) return tr("Max size ({max} px) must be larger than min size ({min} px).", v);
+    if (!(v.vmax - v.vmin >= 1)) return tr("Max viewport ({vmax} px) must be at least 1 px larger than min viewport ({vmin} px).", v);
     return "";
   }
 
@@ -2452,8 +2665,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // The intercept is positive exactly when max viewport ÷ min viewport > max size ÷ min size (min > 0).
   function fixes(v) {
     var vmax = v.vmin * (v.max / v.min), min = v.max * (v.vmin / v.vmax);
-    return "widen the viewport range" + (vmax < LIMIT ? " (max viewport above " + fmt(vmax) + " px)" : "") +
-      " or narrow the size range (min size above " + fmt(min) + " px)";
+    return vmax < LIMIT
+      ? tr("widen the viewport range (max viewport above {vmax} px) or narrow the size range (min size above {min} px)", { vmax: fmt(vmax), min: fmt(min) })
+      : tr("widen the viewport range or narrow the size range (min size above {min} px)", { min: fmt(min) });
   }
 
   function at(v, c, vw) {
@@ -2481,34 +2695,33 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     full = expression(v, c, unit);
     readout.textContent = full;
 
-    set("k-slope", fmt(c.slope) + " px per viewport px · " + fmt(c.vw) + "vw");
+    set("k-slope", tr("{slope} px per viewport px · {vw}vw", { slope: fmt(c.slope), vw: fmt(c.vw) }));
     set("k-int", fmt(c.intercept) + " px · " + fmt(c.intercept / v.root) + " rem");
     set("k-f1", "(" + v.max + " − " + v.min + ") ÷ (" + v.vmax + " − " + v.vmin + ") = " + fmt(c.slope));
     set("k-f2", v.min + " − " + fmt(c.slope) + " × " + v.vmin + " = " + fmt(c.intercept) + " px");
     set("k-f3", fmt(c.intercept) + "px + " + fmt(c.vw) + "vw");
-    set("k-f4", fmt(c.intercept) + " ÷ " + v.root + " = " + fmt(c.intercept / v.root) + " rem; the vw term is unchanged");
+    set("k-f4", tr("{a} ÷ {root} = {b} rem; the vw term is unchanged", { a: fmt(c.intercept), root: v.root, b: fmt(c.intercept / v.root) }));
 
-    var text = "Fluid between " + v.vmin + " and " + v.vmax + " px, growing " + fmt(c.slope) +
-      " px for every px of viewport. Below " + v.vmin + " px it holds " + v.min + " px, above " +
-      v.vmax + " px it holds " + v.max + " px.";
-    if (c.intercept <= 0) text += v.min === 0
-      ? " Min size is 0, so the intercept is negative and the value is all vw: right for a gap or margin that" +
-        " vanishes on small screens, wrong for text, which would not grow when the user zooms."
-      : " The intercept is " + (c.intercept < 0 ? "negative" : "zero") + ", so the value is all vw and will not" +
-        " grow when the user zooms. To make it positive, " + fixes(v) + ".";
+    var text = tr("Fluid between {vmin} and {vmax} px, growing {slope} px for every px of viewport. Below {vmin} px it holds {min} px, above {vmax} px it holds {max} px.",
+      { vmin: v.vmin, vmax: v.vmax, slope: fmt(c.slope), min: v.min, max: v.max });
+    if (c.intercept <= 0) text += " " + (v.min === 0
+      ? tr("Min size is 0, so the intercept is negative and the value is all vw: right for a gap or margin that vanishes on small screens, wrong for text, which would not grow when the user zooms.")
+      : c.intercept < 0
+      ? tr("The intercept is negative, so the value is all vw and will not grow when the user zooms. To make it positive, {fix}.", { fix: fixes(v) })
+      : tr("The intercept is zero, so the value is all vw and will not grow when the user zooms. To make it positive, {fix}.", { fix: fixes(v) }));
     note.textContent = text;
 
     rows.textContent = "";
     VIEWPORTS.forEach(function (vw) {
-      var r = at(v, c, vw), tr = document.createElement("tr");
+      var r = at(v, c, vw), trow = document.createElement("tr");
       [vw + " px", r.px.toFixed(2) + " px", fmt(r.px / v.root) + " rem"].forEach(function (cell) {
-        var td = document.createElement("td"); td.textContent = cell; tr.appendChild(td);
+        var td = document.createElement("td"); td.textContent = cell; trow.appendChild(td);
       });
       var td = document.createElement("td"), badge = document.createElement("span");
       badge.className = r.state === "fluid" ? "mdv-badge is-ok" : "mdv-badge no-dot";
-      badge.textContent = r.state === "fluid" ? "fluid" : "held at " + r.state;
-      td.appendChild(badge); tr.appendChild(td);
-      rows.appendChild(tr);
+      badge.textContent = r.state === "fluid" ? tr("fluid") : r.state === "min" ? tr("held at min") : tr("held at max");
+      td.appendChild(badge); trow.appendChild(td);
+      rows.appendChild(trow);
     });
     state("result");
   }
@@ -2541,6 +2754,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   });
   f.min.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

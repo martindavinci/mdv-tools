@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link is-here" href="./json-diff.html" aria-current="page" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link is-here" href="./json-diff.html" aria-current="page" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,20 +2353,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">JSON diff</h1>
+      <h1 class="mdv-head-name" data-t="38">JSON diff</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Two documents in, and what actually changed out — by path, not by line.</p>
+    <p class="mdv-head-line" data-t="79">Two documents in, and what actually changed out — by path, not by line.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <div class="mdv-cols">
     <div>
       <div class="mdv-row is-between">
-        <label class="mdv-label" style="margin:0" for="a">Before</label>
+        <label class="mdv-label" style="margin:0" for="a" data-t="82">Before</label>
         <span class="mdv-hint mdv-mono" style="margin:0" id="cA"></span>
       </div>
       <textarea class="mdv-textarea is-mono" id="a" spellcheck="false" autocomplete="off" style="min-height:150px"
@@ -2262,7 +2374,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     </div>
     <div>
       <div class="mdv-row is-between">
-        <label class="mdv-label" style="margin:0" for="b">After</label>
+        <label class="mdv-label" style="margin:0" for="b" data-t="83">After</label>
         <span class="mdv-hint mdv-mono" style="margin:0" id="cB"></span>
       </div>
       <textarea class="mdv-textarea is-mono" id="b" spellcheck="false" autocomplete="off" style="min-height:150px"
@@ -2271,15 +2383,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </div>
 
   <div class="mdv-row is-between">
-    <div class="mdv-seg" role="group" aria-label="How to compare arrays">
-      <button type="button" data-arrays="position" class="is-on" aria-pressed="true">Arrays by position</button>
-      <button type="button" data-arrays="set" aria-pressed="false">Arrays in any order</button>
+    <div class="mdv-seg" role="group" aria-label="How to compare arrays" data-t-attrs="aria-label">
+      <button type="button" data-arrays="position" class="is-on" aria-pressed="true" data-t="84">Arrays by position</button>
+      <button type="button" data-arrays="set" aria-pressed="false" data-t="85">Arrays in any order</button>
     </div>
-    <label class="mdv-check"><input type="checkbox" id="values"> Show the values</label>
+    <label class="mdv-check"><input type="checkbox" id="values"> <span data-t="86">Show the values</span></label>
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>paste json on both sides</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="87">paste json on both sides</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Not valid JSON</span>
@@ -2290,8 +2402,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-row is-between">
         <div class="mdv-readout"><span id="summary"></span></div>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy</button>
+          <span class="mdv-badge is-accent" id="copied" hidden><span data-t="88">Copied</span></span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn"><span data-t="89">Copy</span></button>
         </span>
       </div>
       <pre class="mdv-out" id="out"></pre>
@@ -2300,45 +2412,46 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="90">How this works</summary>
     <div class="mdv-method-body">
-      <p>Both sides are parsed and then walked together, so the comparison is of structure and not of text:
+      <p data-t="91">Both sides are parsed and then walked together, so the comparison is of structure and not of text:
         the order of keys in an object never matters, whitespace and indentation never matter, and
         <code>1</code>, <code>1.0</code> and <code>1e0</code> are the same number. Each difference is
         reported at its path — <code>parts[2]</code>, <code>machine.name</code> — with
         <code>+</code> for something only in After, <code>-</code> for something only in Before, and
         <code>~</code> for a value that changed. A change of type is reported as a change, with both types
         named, because <code>"1"</code> becoming <code>1</code> is the bug behind a great many afternoons.</p>
-      <p>Arrays are the part where a diff has to make a choice, so the choice is yours.
+      <p data-t="92">Arrays are the part where a diff has to make a choice, so the choice is yours.
         <strong>By position</strong> compares index against index, which is right for a fixed tuple and
         noisy for a list where one item was inserted at the front. <strong>In any order</strong> treats each
         array as a bag of values: it reports what was added and removed regardless of where, and says
         nothing about a reordering, which is right for a set of tags and wrong for a sequence of steps.
         Neither tries to guess which item "is" which by an id field; that guess is what makes other diff
         tools confusing.</p>
-      <p>Duplicate keys in an object are resolved by the parser before this page sees them — the last one
+      <p data-t="93">Duplicate keys in an object are resolved by the parser before this page sees them — the last one
         wins, silently, as it does everywhere in JavaScript — and integers beyond about 9 quadrillion lose
         precision on the way in, so two documents that differ only past that point can read as identical.
         Both are noted when they can be detected. Each side is capped at 2 MB.</p>
-      <p>Everything is compared in this tab: no upload, no server, nothing stored. The Dark button keeps
-        its own setting in this browser's local storage.</p>
+      <p data-t="94">Everything is compared in this tab: no upload, no server.</p>
+      <p data-t="95">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Developer">
-    <span class="mdv-tag">Also in Developer</span>
-    <a href="./json-formatter.html">JSON formatter</a>
-    <a href="./regex-tester.html">Regex tester</a>
-    <a href="./subnet-calculator.html">Subnet calculator</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Developer"}'>Also in Developer</span>
+    <a href="./json-formatter.html" data-t="39">JSON formatter</a>
+    <a href="./regex-tester.html" data-t="40">Regex tester</a>
+    <a href="./subnet-calculator.html" data-t="37">Subnet calculator</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="96">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="97">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="98" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="99">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2349,6 +2462,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["JSON Diff — what changed between two JSON documents — MDV","Compare two JSON documents by structure rather than by line: added, removed and changed values with their paths, ignoring key order. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","How to compare arrays","Before is not valid JSON: {message} at line {line}, column {col}.","After is not valid JSON: {message} at line {line}, column {col}.","Before is not valid JSON: {message}.","After is not valid JSON: {message}.","Too large","Each side takes up to {limit} characters; this pair is {a} and {b}.","Not valid JSON","No differences","The two documents hold the same data.","The two documents hold the same data, written differently.","… and {n} more, not listed","{added} added, {removed} removed, {changed} changed.","Arrays are compared as bags of values: a reordering is reported as no change at all.","Arrays are compared index against index, so an item inserted at the front shifts everything after it.","A number in here is past the precision JavaScript keeps, so two values that differ only in their last digits can read as identical.","One side repeats a key inside the same object; the parser keeps the last one, so an earlier value is invisible to this comparison.","The text differs but the data does not: key order, whitespace or number formatting.","{n} character","{n} characters","{n} difference","{n} differences","Developer","2026-11-02"],"h":100,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Entran dos documentos y sale lo que cambió de verdad, por ruta y no por línea.","En este dispositivo","Funciona sin conexión","Antes","Después","Arrays por posición","Arrays en cualquier orden","Mostrar los valores","pega json en ambos lados","Copiado","Copiar","Cómo funciona","Ambos lados se analizan y luego se recorren a la vez, de modo que se compara la estructura y no el texto: el orden de las claves de un objeto nunca importa, los espacios y la sangría tampoco, y \u003ccode>1\u003c/code>, \u003ccode>1.0\u003c/code> y \u003ccode>1e0\u003c/code> son el mismo número. Cada diferencia se indica en su ruta (\u003ccode>parts[2]\u003c/code>, \u003ccode>machine.name\u003c/code>) con \u003ccode>+\u003c/code> para lo que solo está en Después, \u003ccode>-\u003c/code> para lo que solo está en Antes y \u003ccode>~\u003c/code> para un valor que cambió. Un cambio de tipo se indica como cambio, con ambos tipos nombrados, porque que \u003ccode>\"1\"\u003c/code> pase a ser \u003ccode>1\u003c/code> es el error detrás de muchísimas tardes.","Los arrays son la parte donde una comparación tiene que elegir, así que la elección es tuya. \u003cstrong>Por posición\u003c/strong> compara índice con índice, lo cual es correcto para una tupla fija y ruidoso para una lista donde se insertó un elemento al principio. \u003cstrong>En cualquier orden\u003c/strong> trata cada array como una bolsa de valores: indica qué se añadió y qué se quitó sin importar dónde, y no dice nada de un reordenamiento, lo cual es correcto para un conjunto de etiquetas e incorrecto para una secuencia de pasos. Ninguna intenta adivinar qué elemento “es” cuál por un campo id; esa suposición es lo que hace confusas a otras herramientas de diferencias.","Las claves duplicadas en un objeto las resuelve el analizador antes de que esta página las vea (gana la última, en silencio, como en todo JavaScript), y los enteros de más de unos 9 mil billones pierden precisión al entrar, así que dos documentos que difieren solo más allá de ese punto pueden leerse como idénticos. Ambos casos se avisan cuando se pueden detectar. Cada lado está limitado a 2 MB.","Todo se compara en esta pestaña: sin subidas y sin servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Diferencias JSON: qué cambió entre dos documentos JSON — MDV","Compara dos documentos JSON por estructura y no por línea: valores añadidos, eliminados y cambiados con sus rutas, sin tener en cuenta el orden de las claves. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Cómo comparar arrays","Antes no es JSON válido: {message} en la línea {line}, columna {col}.","Después no es JSON válido: {message} en la línea {line}, columna {col}.","Antes no es JSON válido: {message}.","Después no es JSON válido: {message}.","Demasiado grande","Cada lado admite hasta {limit} caracteres; este par tiene {a} y {b}.","JSON no válido","Sin diferencias","Los dos documentos contienen los mismos datos.","Los dos documentos contienen los mismos datos, escritos de otra forma.","… y {n} más, sin listar","{added} añadidos, {removed} eliminados, {changed} cambiados.","Los arrays se comparan como bolsas de valores: un reordenamiento se indica como ningún cambio.","Los arrays se comparan índice con índice, así que un elemento insertado al principio desplaza todo lo que va después.","Hay un número que supera la precisión que conserva JavaScript, así que dos valores que difieren solo en las últimas cifras pueden leerse como idénticos.","Un lado repite una clave dentro del mismo objeto; el analizador conserva la última, así que un valor anterior es invisible para esta comparación.","El texto difiere pero los datos no: orden de claves, espacios o formato de los números.","{n} carácter","{n} caracteres","{n} diferencia","{n} diferencias","Desarrollo",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Deux documents en entrée, et en sortie ce qui a vraiment changé, par chemin et non par ligne.","Sur cet appareil","Fonctionne hors ligne","Avant","Après","Tableaux par position","Tableaux sans ordre","Afficher les valeurs","collez du json des deux côtés","Copié","Copier","Comment ça marche","Les deux côtés sont analysés puis parcourus ensemble : la comparaison porte donc sur la structure et non sur le texte. L’ordre des clés d’un objet n’a jamais d’importance, ni les espaces ni l’indentation, et \u003ccode>1\u003c/code>, \u003ccode>1.0\u003c/code> et \u003ccode>1e0\u003c/code> sont le même nombre. Chaque différence est signalée à son chemin (\u003ccode>parts[2]\u003c/code>, \u003ccode>machine.name\u003c/code>) avec \u003ccode>+\u003c/code> pour ce qui n’est que dans Après, \u003ccode>-\u003c/code> pour ce qui n’est que dans Avant et \u003ccode>~\u003c/code> pour une valeur modifiée. Un changement de type est signalé comme un changement, avec les deux types nommés, car \u003ccode>\"1\"\u003c/code> devenant \u003ccode>1\u003c/code> est le bogue derrière bien des après-midi.","Les tableaux sont l’endroit où une comparaison doit faire un choix, alors ce choix est le vôtre. \u003cstrong>Par position\u003c/strong> compare indice contre indice, ce qui convient à un n-uplet fixe et fait du bruit pour une liste où un élément a été inséré au début. \u003cstrong>Sans ordre\u003c/strong> traite chaque tableau comme un sac de valeurs : il signale ce qui a été ajouté et retiré, où que ce soit, et ne dit rien d’une réorganisation, ce qui convient à un ensemble d’étiquettes et pas à une suite d’étapes. Aucun mode ne tente de deviner quel élément « est » lequel d’après un champ id ; cette supposition est ce qui rend d’autres outils de comparaison confus.","Les clés en double dans un objet sont résolues par l’analyseur avant que cette page ne les voie (la dernière l’emporte, en silence, comme partout en JavaScript), et les entiers au-delà d’environ 9 billiards perdent en précision à l’entrée : deux documents qui ne diffèrent qu’au-delà de ce point peuvent donc sembler identiques. Les deux cas sont signalés quand ils peuvent être détectés. Chaque côté est limité à 2 Mo.","Tout est comparé dans cet onglet : pas d’envoi, pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Différences JSON — ce qui a changé entre deux documents JSON — MDV","Comparez deux documents JSON par structure plutôt que par ligne : valeurs ajoutées, supprimées et modifiées avec leurs chemins, sans tenir compte de l’ordre des clés. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Comment comparer les tableaux","Avant n’est pas du JSON valide : {message} à la ligne {line}, colonne {col}.","Après n’est pas du JSON valide : {message} à la ligne {line}, colonne {col}.","Avant n’est pas du JSON valide : {message}.","Après n’est pas du JSON valide : {message}.","Trop volumineux","Chaque côté accepte jusqu’à {limit} caractères ; cette paire en compte {a} et {b}.","JSON non valide","Aucune différence","Les deux documents contiennent les mêmes données.","Les deux documents contiennent les mêmes données, écrites autrement.","… et {n} de plus, non listées","{added} ajoutées, {removed} supprimées, {changed} modifiées.","Les tableaux sont comparés comme des sacs de valeurs : une réorganisation est signalée comme aucun changement.","Les tableaux sont comparés indice contre indice : un élément inséré au début décale tout ce qui suit.","Un nombre ici dépasse la précision que conserve JavaScript : deux valeurs qui ne diffèrent que par leurs derniers chiffres peuvent sembler identiques.","Un côté répète une clé dans le même objet ; l’analyseur garde la dernière, donc une valeur antérieure est invisible pour cette comparaison.","Le texte diffère mais pas les données : ordre des clés, espaces ou format des nombres.","{n} caractère","{n} caractères","{n} différence","{n} différences","Développement",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Zwei Dokumente rein, und heraus kommt, was sich wirklich geändert hat, nach Pfad und nicht nach Zeile.","Läuft auf diesem Gerät","Funktioniert offline","Vorher","Nachher","Arrays nach Position","Arrays in beliebiger Reihenfolge","Werte zeigen","JSON auf beiden Seiten einfügen","Kopiert","Kopieren","So funktioniert es","Beide Seiten werden geparst und dann gemeinsam durchlaufen, verglichen wird also die Struktur und nicht der Text: Die Reihenfolge der Schlüssel in einem Objekt spielt nie eine Rolle, Leerzeichen und Einrückung auch nicht, und \u003ccode>1\u003c/code>, \u003ccode>1.0\u003c/code> und \u003ccode>1e0\u003c/code> sind dieselbe Zahl. Jeder Unterschied wird an seinem Pfad gemeldet (\u003ccode>parts[2]\u003c/code>, \u003ccode>machine.name\u003c/code>), mit \u003ccode>+\u003c/code> für etwas, das nur in Nachher steht, \u003ccode>-\u003c/code> für etwas, das nur in Vorher steht, und \u003ccode>~\u003c/code> für einen geänderten Wert. Eine Typänderung wird als Änderung gemeldet, mit beiden Typen, denn dass aus \u003ccode>\"1\"\u003c/code> die \u003ccode>1\u003c/code> wird, ist der Fehler hinter sehr vielen Nachmittagen.","Bei Arrays muss ein Vergleich eine Entscheidung treffen, also ist es deine. \u003cstrong>Nach Position\u003c/strong> vergleicht Index gegen Index, was für ein festes Tupel richtig ist und für eine Liste, in die vorn ein Element eingefügt wurde, viel Rauschen erzeugt. \u003cstrong>In beliebiger Reihenfolge\u003c/strong> behandelt jedes Array als Sack voller Werte: Es meldet, was hinzugekommen und entfernt wurde, egal wo, und sagt nichts über eine Umordnung, was für eine Menge von Tags richtig und für eine Folge von Schritten falsch ist. Keiner der beiden Modi versucht zu erraten, welches Element über ein id-Feld „welches“ ist; genau dieses Raten macht andere Vergleichswerkzeuge verwirrend.","Doppelte Schlüssel in einem Objekt löst der Parser auf, bevor diese Seite sie sieht (der letzte gewinnt, still, wie überall in JavaScript), und Ganzzahlen jenseits von etwa 9 Billiarden verlieren beim Einlesen an Genauigkeit, sodass zwei Dokumente, die sich erst dahinter unterscheiden, identisch wirken können. Beides wird gemeldet, wenn es erkannt werden kann. Jede Seite ist auf 2 MB begrenzt.","Alles wird in diesem Tab verglichen: kein Upload, kein Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","JSON-Vergleich: was sich zwischen zwei JSON-Dokumenten geändert hat — MDV","Vergleiche zwei JSON-Dokumente nach Struktur statt nach Zeile: hinzugefügte, entfernte und geänderte Werte mit ihren Pfaden, ohne Rücksicht auf die Schlüsselreihenfolge. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Arrays vergleichen","Vorher ist kein gültiges JSON: {message} in Zeile {line}, Spalte {col}.","Nachher ist kein gültiges JSON: {message} in Zeile {line}, Spalte {col}.","Vorher ist kein gültiges JSON: {message}.","Nachher ist kein gültiges JSON: {message}.","Zu groß","Jede Seite nimmt bis zu {limit} Zeichen; dieses Paar hat {a} und {b}.","Kein gültiges JSON","Keine Unterschiede","Die beiden Dokumente enthalten dieselben Daten.","Die beiden Dokumente enthalten dieselben Daten, nur anders geschrieben.","… und {n} weitere, nicht aufgelistet","{added} hinzugefügt, {removed} entfernt, {changed} geändert.","Arrays werden als Säcke von Werten verglichen: Eine Umordnung wird als gar keine Änderung gemeldet.","Arrays werden Index gegen Index verglichen, daher verschiebt ein vorn eingefügtes Element alles danach.","Eine Zahl hier liegt über der Genauigkeit, die JavaScript behält, daher können zwei Werte, die sich nur in den letzten Ziffern unterscheiden, identisch wirken.","Eine Seite wiederholt einen Schlüssel im selben Objekt; der Parser behält den letzten, daher ist ein früherer Wert für diesen Vergleich unsichtbar.","Der Text unterscheidet sich, die Daten nicht: Schlüsselreihenfolge, Leerraum oder Zahlenformat.","{n} Zeichen","{n} Zeichen","{n} Unterschied","{n} Unterschiede","Entwicklung",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Due documenti in ingresso, e in uscita ciò che è cambiato davvero, per percorso e non per riga.","Su questo dispositivo","Funziona offline","Prima","Dopo","Array per posizione","Array in qualsiasi ordine","Mostra i valori","incolla json su entrambi i lati","Copiato","Copia","Come funziona","Entrambi i lati vengono analizzati e poi percorsi insieme, quindi il confronto riguarda la struttura e non il testo: l’ordine delle chiavi in un oggetto non conta mai, né spazi e rientri, e \u003ccode>1\u003c/code>, \u003ccode>1.0\u003c/code> e \u003ccode>1e0\u003c/code> sono lo stesso numero. Ogni differenza è indicata al suo percorso (\u003ccode>parts[2]\u003c/code>, \u003ccode>machine.name\u003c/code>) con \u003ccode>+\u003c/code> per ciò che è solo in Dopo, \u003ccode>-\u003c/code> per ciò che è solo in Prima e \u003ccode>~\u003c/code> per un valore cambiato. Un cambio di tipo è indicato come cambiamento, con entrambi i tipi nominati, perché \u003ccode>\"1\"\u003c/code> che diventa \u003ccode>1\u003c/code> è il bug dietro moltissimi pomeriggi.","Gli array sono il punto in cui un confronto deve fare una scelta, quindi la scelta è tua. \u003cstrong>Per posizione\u003c/strong> confronta indice con indice, il che va bene per una tupla fissa ed è rumoroso per una lista in cui un elemento è stato inserito all’inizio. \u003cstrong>In qualsiasi ordine\u003c/strong> tratta ogni array come un sacco di valori: indica che cosa è stato aggiunto e rimosso, ovunque, e non dice nulla di un riordino, il che va bene per un insieme di tag e non per una sequenza di passaggi. Nessuno dei due prova a indovinare quale elemento “è” quale da un campo id; quell’ipotesi è ciò che rende confusi altri strumenti di confronto.","Le chiavi duplicate in un oggetto sono risolte dal parser prima che questa pagina le veda (vince l’ultima, in silenzio, come ovunque in JavaScript), e gli interi oltre circa 9 biliardi perdono precisione in ingresso, quindi due documenti che differiscono solo oltre quel punto possono sembrare identici. Entrambi i casi sono segnalati quando si possono rilevare. Ogni lato è limitato a 2 MB.","Tutto viene confrontato in questa scheda: nessun caricamento, nessun server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Differenze JSON — che cosa è cambiato tra due documenti JSON — MDV","Confronta due documenti JSON per struttura anziché per riga: valori aggiunti, rimossi e cambiati con i rispettivi percorsi, ignorando l’ordine delle chiavi. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Come confrontare gli array","Prima non è JSON valido: {message} alla riga {line}, colonna {col}.","Dopo non è JSON valido: {message} alla riga {line}, colonna {col}.","Prima non è JSON valido: {message}.","Dopo non è JSON valido: {message}.","Troppo grande","Ogni lato accetta fino a {limit} caratteri; questa coppia ne ha {a} e {b}.","JSON non valido","Nessuna differenza","I due documenti contengono gli stessi dati.","I due documenti contengono gli stessi dati, scritti in modo diverso.","… e altre {n}, non elencate","{added} aggiunti, {removed} rimossi, {changed} cambiati.","Gli array sono confrontati come sacchi di valori: un riordino viene segnalato come nessun cambiamento.","Gli array sono confrontati indice con indice, quindi un elemento inserito all’inizio sposta tutto ciò che segue.","Un numero qui supera la precisione che JavaScript conserva, quindi due valori che differiscono solo nelle ultime cifre possono sembrare identici.","Un lato ripete una chiave nello stesso oggetto; il parser tiene l’ultima, quindi un valore precedente è invisibile per questo confronto.","Il testo differisce ma i dati no: ordine delle chiavi, spazi o formato dei numeri.","{n} carattere","{n} caratteri","{n} differenza","{n} differenze","Sviluppo",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Entram dois documentos e sai o que realmente mudou, por caminho e não por linha.","Neste dispositivo","Funciona offline","Antes","Depois","Arrays por posição","Arrays em qualquer ordem","Mostrar os valores","cole json nos dois lados","Copiado","Copiar","Como funciona","Os dois lados são analisados e depois percorridos juntos, então a comparação é de estrutura e não de texto: a ordem das chaves de um objeto nunca importa, espaços e indentação também não, e \u003ccode>1\u003c/code>, \u003ccode>1.0\u003c/code> e \u003ccode>1e0\u003c/code> são o mesmo número. Cada diferença é indicada no seu caminho (\u003ccode>parts[2]\u003c/code>, \u003ccode>machine.name\u003c/code>) com \u003ccode>+\u003c/code> para o que só está em Depois, \u003ccode>-\u003c/code> para o que só está em Antes e \u003ccode>~\u003c/code> para um valor que mudou. Uma mudança de tipo é indicada como mudança, com os dois tipos nomeados, porque \u003ccode>\"1\"\u003c/code> virar \u003ccode>1\u003c/code> é o bug por trás de muitas tardes.","Arrays são a parte em que uma comparação precisa fazer uma escolha, então a escolha é sua. \u003cstrong>Por posição\u003c/strong> compara índice com índice, o que é certo para uma tupla fixa e ruidoso para uma lista em que um item foi inserido no início. \u003cstrong>Em qualquer ordem\u003c/strong> trata cada array como um saco de valores: indica o que foi adicionado e removido, não importa onde, e não diz nada sobre uma reordenação, o que é certo para um conjunto de tags e errado para uma sequência de passos. Nenhum dos dois tenta adivinhar qual item “é” qual por um campo id; esse palpite é o que deixa outras ferramentas de comparação confusas.","Chaves duplicadas em um objeto são resolvidas pelo parser antes que esta página as veja (a última vence, em silêncio, como em todo JavaScript), e inteiros além de cerca de 9 quatrilhões perdem precisão na entrada, então dois documentos que diferem só depois desse ponto podem parecer idênticos. Os dois casos são avisados quando podem ser detectados. Cada lado é limitado a 2 MB.","Tudo é comparado nesta aba: sem envio, sem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Diferenças JSON: o que mudou entre dois documentos JSON — MDV","Compare dois documentos JSON por estrutura em vez de por linha: valores adicionados, removidos e alterados com seus caminhos, ignorando a ordem das chaves. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Como comparar arrays","Antes não é JSON válido: {message} na linha {line}, coluna {col}.","Depois não é JSON válido: {message} na linha {line}, coluna {col}.","Antes não é JSON válido: {message}.","Depois não é JSON válido: {message}.","Grande demais","Cada lado aceita até {limit} caracteres; este par tem {a} e {b}.","JSON inválido","Sem diferenças","Os dois documentos contêm os mesmos dados.","Os dois documentos contêm os mesmos dados, escritos de outro jeito.","… e mais {n}, não listadas","{added} adicionados, {removed} removidos, {changed} alterados.","Arrays são comparados como sacos de valores: uma reordenação é indicada como nenhuma mudança.","Arrays são comparados índice com índice, então um item inserido no início desloca tudo o que vem depois.","Um número aqui passa da precisão que o JavaScript mantém, então dois valores que diferem só nos últimos dígitos podem parecer idênticos.","Um lado repete uma chave dentro do mesmo objeto; o parser mantém a última, então um valor anterior fica invisível para esta comparação.","O texto difere, mas os dados não: ordem das chaves, espaços ou formato dos números.","{n} caractere","{n} caracteres","{n} diferença","{n} diferenças","Desenvolvimento",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","2 つのドキュメントを入れると、実際に変わった点を行ではなくパスで返します。","この端末で動作","オフラインで動作","変更前","変更後","配列は位置で比較","配列は順序を問わない","値を表示","両側に json を貼り付け","コピーしました","コピー","仕組み","両側を解析してから一緒にたどるため、比較されるのはテキストではなく構造です。オブジェクトのキーの順序は関係なく、空白やインデントも関係なく、\u003ccode>1\u003c/code>、\u003ccode>1.0\u003c/code>、\u003ccode>1e0\u003c/code> は同じ数値です。差異はそれぞれのパス(\u003ccode>parts[2]\u003c/code>、\u003ccode>machine.name\u003c/code>)で報告され、変更後にだけあるものは \u003ccode>+\u003c/code>、変更前にだけあるものは \u003ccode>-\u003c/code>、値が変わったものは \u003ccode>~\u003c/code> で示されます。型の変更は両方の型名とともに変更として報告されます。\u003ccode>\"1\"\u003c/code> が \u003ccode>1\u003c/code> になることは、多くの午後を潰してきたバグの原因だからです。","配列は、差分が選択を迫られる部分なので、選ぶのはあなたです。\u003cstrong>位置で比較\u003c/strong>は添え字同士を比べます。固定長のタプルには適していますが、先頭に 1 件挿入された一覧ではノイズが多くなります。\u003cstrong>順序を問わない\u003c/strong>は各配列を値の袋として扱い、場所に関係なく追加されたものと削除されたものを報告し、並べ替えについては何も言いません。タグの集合には適していますが、手順の並びには向きません。どちらも、id フィールドによってどの項目がどれに当たるかを推測しようとはしません。その推測こそ、他の差分ツールを分かりにくくしているものです。","オブジェクト内の重複キーは、このページに渡る前にパーサーが解決します(最後のものが黙って優先されます。JavaScript ではどこでもそうです)。また、約 9 千兆を超える整数は読み込み時に精度を失うため、その先でしか違わない 2 つのドキュメントは同一に見えることがあります。どちらも検出できる場合は通知されます。各側の上限は 2 MB です。","すべての比較はこのタブの中で行われます。アップロードもサーバーもありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","JSON 差分 — 2 つの JSON ドキュメントの違い — MDV","2 つの JSON ドキュメントを行ではなく構造で比較します。追加・削除・変更された値をパスとともに表示し、キーの順序は無視します。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","配列の比較方法","変更前は有効な JSON ではありません: {message}({line} 行目、{col} 列目)。","変更後は有効な JSON ではありません: {message}({line} 行目、{col} 列目)。","変更前は有効な JSON ではありません: {message}。","変更後は有効な JSON ではありません: {message}。","大きすぎます","各側は {limit} 文字まで受け付けます。この組は {a} 文字と {b} 文字です。","JSON として無効です","差異なし","2 つのドキュメントは同じデータを保持しています。","2 つのドキュメントは同じデータを保持していますが、書き方が異なります。","… ほか {n} 件は一覧に表示していません","追加 {added} 件、削除 {removed} 件、変更 {changed} 件。","配列は値の袋として比較されるため、並べ替えは変更なしとして報告されます。","配列は添え字同士で比較されるため、先頭に挿入された項目があると、それ以降すべてがずれます。","ここには JavaScript が保持できる精度を超える数値があるため、末尾の桁だけが異なる 2 つの値が同一に見えることがあります。","片側で同じオブジェクト内のキーが重複しています。パーサーは最後のものを残すため、それ以前の値はこの比較では見えません。","テキストは異なりますがデータは同じです。キーの順序、空白、数値の書式の違いです。","{n} 文字","{n} 文字","{n} 件の差異","{n} 件の差異","開発",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","문서 두 개를 넣으면 줄이 아니라 경로로 실제로 바뀐 내용을 보여 줍니다.","이 기기에서 실행","오프라인 작동","이전","이후","배열은 위치로","배열은 순서 무관","값 표시","양쪽에 json 붙여넣기","복사됨","복사","작동 방식","양쪽을 파싱한 뒤 함께 순회하므로, 텍스트가 아니라 구조를 비교합니다. 객체의 키 순서는 중요하지 않고, 공백과 들여쓰기도 중요하지 않으며, \u003ccode>1\u003c/code>, \u003ccode>1.0\u003c/code>, \u003ccode>1e0\u003c/code>은 같은 숫자입니다. 각 차이는 경로(\u003ccode>parts[2]\u003c/code>, \u003ccode>machine.name\u003c/code>)에 보고되며, 이후에만 있는 것은 \u003ccode>+\u003c/code>, 이전에만 있는 것은 \u003ccode>-\u003c/code>, 값이 바뀐 것은 \u003ccode>~\u003c/code>로 표시합니다. 타입 변경은 두 타입을 모두 밝혀 변경으로 보고합니다. \u003ccode>\"1\"\u003c/code>이 \u003ccode>1\u003c/code>이 되는 것은 수많은 오후를 날려 버린 버그의 원인이기 때문입니다.","배열은 비교가 선택을 해야 하는 부분이므로 선택은 당신 몫입니다. \u003cstrong>위치로\u003c/strong>는 인덱스끼리 비교하며, 고정된 튜플에는 맞지만 맨 앞에 항목이 하나 끼어든 목록에서는 노이즈가 많습니다. \u003cstrong>순서 무관\u003c/strong>은 각 배열을 값의 자루로 보고, 위치와 상관없이 추가된 것과 제거된 것을 보고하며, 순서가 바뀐 것에 대해서는 아무 말도 하지 않습니다. 태그 집합에는 맞지만 단계의 연속에는 맞지 않습니다. 어느 쪽도 id 필드로 어떤 항목이 어떤 항목인지 추측하려 하지 않습니다. 그 추측이 다른 비교 도구를 헷갈리게 만듭니다.","객체 안의 중복 키는 이 페이지가 보기 전에 파서가 처리합니다(마지막 것이 조용히 이깁니다. JavaScript 어디서나 그렇습니다). 또 약 9천조를 넘는 정수는 읽는 과정에서 정밀도를 잃으므로, 그 지점 이후에서만 다른 두 문서는 같아 보일 수 있습니다. 둘 다 감지할 수 있을 때는 알려 줍니다. 각 쪽은 2 MB로 제한됩니다.","모든 비교는 이 탭에서 이루어집니다. 업로드도 서버도 없습니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","JSON 비교 — 두 JSON 문서 사이에서 바뀐 것 — MDV","두 JSON 문서를 줄이 아니라 구조로 비교합니다. 추가, 제거, 변경된 값을 경로와 함께 보여 주며 키 순서는 무시합니다. 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","배열 비교 방법","이전은 올바른 JSON이 아닙니다: {message} ({line}번째 줄, {col}번째 열).","이후는 올바른 JSON이 아닙니다: {message} ({line}번째 줄, {col}번째 열).","이전은 올바른 JSON이 아닙니다: {message}.","이후는 올바른 JSON이 아닙니다: {message}.","너무 큼","각 쪽은 {limit}자까지 받습니다. 이 쌍은 {a}자와 {b}자입니다.","유효하지 않은 JSON","차이 없음","두 문서는 같은 데이터를 담고 있습니다.","두 문서는 같은 데이터를 담고 있지만 표기가 다릅니다.","… 외 {n}개는 나열하지 않음","추가 {added}, 제거 {removed}, 변경 {changed}.","배열은 값의 자루로 비교되므로 순서 변경은 변경 없음으로 보고됩니다.","배열은 인덱스끼리 비교되므로 맨 앞에 끼워 넣은 항목이 뒤의 모든 것을 밀어 냅니다.","여기에 JavaScript가 유지하는 정밀도를 넘는 숫자가 있어, 마지막 자리만 다른 두 값이 같아 보일 수 있습니다.","한쪽에서 같은 객체 안의 키가 반복됩니다. 파서는 마지막 것을 유지하므로 앞선 값은 이 비교에서 보이지 않습니다.","텍스트는 다르지만 데이터는 같습니다. 키 순서, 공백, 숫자 표기의 차이입니다.","{n}자","{n}자","차이 {n}개","차이 {n}개","개발",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","输入两份文档,输出真正变化的内容,按路径而不是按行。","在此设备上运行","可离线使用","之前","之后","数组按位置","数组不限顺序","显示值","在两侧粘贴 json","已复制","复制","工作原理","两侧先被解析,再一起遍历,所以比较的是结构而不是文本:对象中键的顺序无关紧要,空白和缩进也无关紧要,\u003ccode>1\u003c/code>、\u003ccode>1.0\u003c/code> 和 \u003ccode>1e0\u003c/code> 是同一个数。每处差异都按其路径(\u003ccode>parts[2]\u003c/code>、\u003ccode>machine.name\u003c/code>)报告,\u003ccode>+\u003c/code> 表示只在“之后”中出现,\u003ccode>-\u003c/code> 表示只在“之前”中出现,\u003ccode>~\u003c/code> 表示值发生了变化。类型的变化也作为变化报告,并写明前后两种类型,因为 \u003ccode>\"1\"\u003c/code> 变成 \u003ccode>1\u003c/code> 正是许多个下午的元凶。","数组是对比必须做出选择的地方,所以选择权在你。\u003cstrong>按位置\u003c/strong>逐个索引比较,适用于固定的元组,而对在开头插入了一项的列表则噪声很大。\u003cstrong>不限顺序\u003c/strong>把每个数组当作一袋值:无论位置如何,报告新增和移除了什么,对重新排序只字不提,适用于一组标签,不适用于一系列步骤。两者都不会通过 id 字段去猜哪一项“是”哪一项;这种猜测正是其他对比工具令人困惑的原因。","对象中的重复键在本页看到之前就已由解析器处理(最后一个静默胜出,JavaScript 中处处如此),而超过约 9 千万亿的整数在读入时会损失精度,所以只在该点之后才不同的两份文档可能读起来完全相同。这两种情况在能检测到时都会提示。每侧上限为 2 MB。","所有对比都在此标签页中完成:不上传,没有服务器。","深色和语言按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","JSON 对比:两份 JSON 文档之间有什么变化 — MDV","按结构而不是按行对比两份 JSON 文档:显示新增、移除和更改的值及其路径,忽略键的顺序。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","数组的对比方式","“之前”不是有效的 JSON:{message},位于第 {line} 行第 {col} 列。","“之后”不是有效的 JSON:{message},位于第 {line} 行第 {col} 列。","“之前”不是有效的 JSON:{message}。","“之后”不是有效的 JSON:{message}。","太大","每侧最多接受 {limit} 个字符;这一对分别是 {a} 和 {b} 个。","不是有效的 JSON","没有差异","两份文档包含相同的数据。","两份文档包含相同的数据,只是写法不同。","……另有 {n} 项未列出","新增 {added},移除 {removed},更改 {changed}。","数组按值的集合比较:重新排序不会被报告为任何变化。","数组按索引逐一比较,所以在开头插入一项会使其后所有项错位。","这里有数字超出了 JavaScript 能保留的精度,因此仅末位不同的两个值可能读起来完全相同。","其中一侧在同一对象内重复了某个键;解析器保留最后一个,因此较早的值在此对比中不可见。","文本不同但数据相同:键的顺序、空白或数字格式不同。","{n} 个字符","{n} 个字符","{n} 处差异","{n} 处差异","开发",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2422,15 +2635,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     return out;
   }
 
-  function parseSide(text, which) {
+  function parseSide(text, isBefore) {
     try { return { value: JSON.parse(text) }; }
     catch (e) {
-      var at = /position (\d+)/.exec(e.message), where = "";
+      var at = /position (\d+)/.exec(e.message), message = e.message.replace(/^JSON\.parse: /, "").replace(/ in JSON at position \d+.*/, "");
       if (at) {
-        var upto = text.slice(0, Number(at[1])), line = upto.split("\n").length, col = Number(at[1]) - upto.lastIndexOf("\n");
-        where = " at line " + line + ", column " + col;
+        var upto = text.slice(0, Number(at[1])), vars = { message: message, line: upto.split("\n").length, col: Number(at[1]) - upto.lastIndexOf("\n") };
+        return { error: isBefore ? tr("Before is not valid JSON: {message} at line {line}, column {col}.", vars) : tr("After is not valid JSON: {message} at line {line}, column {col}.", vars) };
       }
-      return { error: which + " is not valid JSON: " + e.message.replace(/^JSON\.parse: /, "").replace(/ in JSON at position \d+.*/, "") + where + "." };
+      return { error: isBefore ? tr("Before is not valid JSON: {message}.", { message: message }) : tr("After is not valid JSON: {message}.", { message: message }) };
     }
   }
   function n(x) { return x.toLocaleString(); }
@@ -2450,18 +2663,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   function run() {
-    $("cA").textContent = a.value ? n(a.value.length) + " characters" : "";
-    $("cB").textContent = b.value ? n(b.value.length) + " characters" : "";
+    $("cA").textContent = a.value ? trn(a.value.length, "{n} character", "{n} characters") : "";
+    $("cB").textContent = b.value ? trn(b.value.length, "{n} character", "{n} characters") : "";
     if (!a.value.trim() || !b.value.trim()) { state("empty"); return; }
     if (a.value.length > LIMIT || b.value.length > LIMIT) {
-      errtitle.textContent = "Too large";
-      errmsg.textContent = "Each side takes up to " + n(LIMIT) + " characters; this pair is " + n(a.value.length) + " and " + n(b.value.length) + ".";
+      errtitle.textContent = tr("Too large");
+      errmsg.textContent = tr("Each side takes up to {limit} characters; this pair is {a} and {b}.", { limit: n(LIMIT), a: n(a.value.length), b: n(b.value.length) });
       state("error");
       return;
     }
-    var left = parseSide(a.value, "Before"), right = parseSide(b.value, "After");
+    var left = parseSide(a.value, true), right = parseSide(b.value, false);
     if (left.error || right.error) {
-      errtitle.textContent = "Not valid JSON";
+      errtitle.textContent = tr("Not valid JSON");
       errmsg.textContent = left.error || right.error;
       state("error");
       return;
@@ -2472,10 +2685,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     list.forEach(function (d) { if (d.kind === "+") added++; else if (d.kind === "-") removed++; else changed++; });
 
     if (!list.length) {
-      summary.textContent = "No differences";
-      out.textContent = "The two documents hold the same data" + (a.value === b.value ? "." : ", written differently.");
+      summary.textContent = tr("No differences");
+      out.textContent = a.value === b.value ? tr("The two documents hold the same data.") : tr("The two documents hold the same data, written differently.");
     } else {
-      summary.textContent = n(list.length) + (list.length === 1 ? " difference" : " differences");
+      summary.textContent = trn(list.length, "{n} difference", "{n} differences");
       out.textContent = list.slice(0, MAX_REPORT).map(function (d) {
         var line = d.kind + " " + d.path;
         if (d.kind === "~") line += d.types ? "  " + d.types : "";
@@ -2485,16 +2698,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
           else line += ": " + short(d.from) + " → " + short(d.to);
         }
         return line;
-      }).join("\n") + (list.length > MAX_REPORT ? "\n… and " + n(list.length - MAX_REPORT) + " more, not listed" : "");
+      }).join("\n") + (list.length > MAX_REPORT ? "\n" + tr("… and {n} more, not listed", { n: n(list.length - MAX_REPORT) }) : "");
     }
 
     var notes = [];
-    if (list.length) notes.push(added + " added, " + removed + " removed, " + changed + " changed.");
-    if (mode === "set") notes.push("Arrays are compared as bags of values: a reordering is reported as no change at all.");
-    else notes.push("Arrays are compared index against index, so an item inserted at the front shifts everything after it.");
-    if (/"(-?\d{16,})"?\s*:/.test(a.value) || /:\s*-?\d{16,}/.test(a.value) || /:\s*-?\d{16,}/.test(b.value)) notes.push("A number in here is past the precision JavaScript keeps, so two values that differ only in their last digits can read as identical.");
-    if (hasDuplicateKeys(a.value) || hasDuplicateKeys(b.value)) notes.push("One side repeats a key inside the same object; the parser keeps the last one, so an earlier value is invisible to this comparison.");
-    if (!list.length && a.value !== b.value) notes.push("The text differs but the data does not: key order, whitespace or number formatting.");
+    if (list.length) notes.push(tr("{added} added, {removed} removed, {changed} changed.", { added: added, removed: removed, changed: changed }));
+    if (mode === "set") notes.push(tr("Arrays are compared as bags of values: a reordering is reported as no change at all."));
+    else notes.push(tr("Arrays are compared index against index, so an item inserted at the front shifts everything after it."));
+    if (/"(-?\d{16,})"?\s*:/.test(a.value) || /:\s*-?\d{16,}/.test(a.value) || /:\s*-?\d{16,}/.test(b.value)) notes.push(tr("A number in here is past the precision JavaScript keeps, so two values that differ only in their last digits can read as identical."));
+    if (hasDuplicateKeys(a.value) || hasDuplicateKeys(b.value)) notes.push(tr("One side repeats a key inside the same object; the parser keeps the last one, so an earlier value is invisible to this comparison."));
+    if (!list.length && a.value !== b.value) notes.push(tr("The text differs but the data does not: key order, whitespace or number formatting."));
     said.textContent = notes.join(" ");
     said.hidden = !notes.length;
     state("ok");
@@ -2537,6 +2750,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   a.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link is-here" href="./json-formatter.html" aria-current="page" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link is-here" href="./json-formatter.html" aria-current="page" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,20 +2353,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">JSON formatter</h1>
+      <h1 class="mdv-head-name" data-t="39">JSON formatter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Paste JSON. Get it indented, minified, or with keys sorted.
+    <p class="mdv-head-line" data-t="79">Paste JSON. Get it indented, minified, or with keys sorted.
       Malformed input is reported with the line and column that broke it.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <label class="mdv-label" style="margin:0" for="in">Input</label>
+      <label class="mdv-label" style="margin:0" for="in" data-t="82">Input</label>
       <span class="mdv-hint mdv-mono" style="margin:0" id="size">0 bytes</span>
     </div>
     <textarea class="mdv-textarea" id="in" spellcheck="false" autocomplete="off"
@@ -2262,26 +2374,26 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <div class="mdv-row is-between">
-    <div class="mdv-seg" role="group" aria-label="Output shape">
-      <button type="button" data-mode="2" class="is-on">Indent 2</button>
-      <button type="button" data-mode="4">Indent 4</button>
-      <button type="button" data-mode="tab">Tab</button>
-      <button type="button" data-mode="min">Minify</button>
+    <div class="mdv-seg" role="group" aria-label="Output shape" data-t-attrs="aria-label">
+      <button type="button" data-mode="2" class="is-on" data-t="83">Indent 2</button>
+      <button type="button" data-mode="4" data-t="84">Indent 4</button>
+      <button type="button" data-mode="tab" data-t="85">Tab</button>
+      <button type="button" data-mode="min" data-t="86">Minify</button>
     </div>
-    <label class="mdv-check"><input type="checkbox" id="sort"> Sort keys</label>
+    <label class="mdv-check"><input type="checkbox" id="sort"> <span data-t="87">Sort keys</span></label>
   </div>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <span class="mdv-label" style="margin:0">Result</span>
+      <span class="mdv-label" style="margin:0" data-t="88">Result</span>
       <div class="mdv-btn-row">
-        <span class="mdv-badge is-ok" id="ok" hidden>Valid</span>
-        <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-        <button class="mdv-btn is-sm is-quiet" id="copy" type="button">Copy</button>
+        <span class="mdv-badge is-ok" id="ok" hidden><span data-t="89">Valid</span></span>
+        <span class="mdv-badge is-accent" id="copied" hidden><span data-t="90">Copied</span></span>
+        <button class="mdv-btn is-sm is-quiet" id="copy" type="button"><span data-t="91">Copy</span></button>
       </div>
     </div>
 
-    <div class="mdv-empty" id="empty"><span>paste json above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="92">paste json above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Not valid JSON</span>
@@ -2290,7 +2402,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <pre class="mdv-out is-paper" id="errat" hidden></pre>
 
     <div class="mdv-notice is-warn" id="warn" hidden>
-      <span class="mdv-notice-title">Numbers changed</span>
+      <span class="mdv-notice-title" data-t="93">Numbers changed</span>
       <span id="warnmsg" class="mdv-mono"></span>
     </div>
 
@@ -2298,48 +2410,49 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="94">How this works</summary>
     <div class="mdv-method-body">
-      <p>The text is first read by a scanner in this page that follows the JSON grammar of RFC 8259
+      <p data-t="95">The text is first read by a scanner in this page that follows the JSON grammar of RFC 8259
         one character at a time. It stops at the first error and prints the line, the column
         (counted in characters, a tab is one), what the grammar expected there and what it found,
         then the line itself, clipped to 30 characters either side, with a caret under the column.
         Only text the scanner accepts goes on to the browser's <code>JSON.parse</code>, and the
         parsed value is written back out with <code>JSON.stringify(value, null, indent)</code>.</p>
-      <p>Sorting keys rebuilds every object with its keys in <code>Array.prototype.sort</code> order,
+      <p data-t="96">Sorting keys rebuilds every object with its keys in <code>Array.prototype.sort</code> order,
         which is code-unit order, so <code>Z</code> sorts before <code>a</code>. One exception, sorted
         or not: keys that are array indices, such as <code>"0"</code> or <code>"42"</code>, are always
         written first in numeric order, because that is how JavaScript objects hold them. Duplicate
         keys collapse to the last one, per the parser, without a warning.</p>
-      <p>Every number is read as a 64-bit float, and the float is what gets written. <code>1.0</code>
+      <p data-t="97">Every number is read as a 64-bit float, and the float is what gets written. <code>1.0</code>
         becomes <code>1</code> with nothing lost, but <code>12345678901234567890</code> becomes
         <code>12345678901234567000</code>, <code>1e400</code> becomes <code>null</code> and
         <code>-0</code> becomes <code>0</code>. JSON text allows those numbers; the loss happens in the
         reading. When a number comes out with different digits, sign or magnitude than it went in
         (trailing zeros and exponent notation aside), the page counts them and names the first.</p>
-      <p>Input above 4,000,000 characters is refused rather than attempted. Valid JSON nested
+      <p data-t="98">Input above 4,000,000 characters is refused rather than attempted. Valid JSON nested
         thousands of levels deep can run the browser out of stack while it is written back out; the
         page then says so instead of formatting it. The caret counts characters, so it can drift
         under wide characters such as CJK or emoji, or when a narrow screen wraps the line. Nothing is uploaded: there is no server in this
         file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="99">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Developer">
-    <span class="mdv-tag">Also in Developer</span>
-    <a href="./regex-tester.html">Regex tester</a>
-    <a href="./subnet-calculator.html">Subnet calculator</a>
-    <a href="./xml-formatter.html">XML formatter</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Developer"}'>Also in Developer</span>
+    <a href="./regex-tester.html" data-t="40">Regex tester</a>
+    <a href="./subnet-calculator.html" data-t="37">Subnet calculator</a>
+    <a href="./xml-formatter.html" data-t="41">XML formatter</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="100">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="101">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="102" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="103">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2350,6 +2463,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["JSON formatter — MDV","Paste JSON, get it indented, key-sorted or minified. Syntax errors are shown by line and column. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Output shape","'\"' to close the string","Inside a string, control characters must be escaped: \\n for a line break, \\t for a tab.","a hex digit (four follow \\u)","one of \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u after '\\'","a digit after '-'","a digit after '.'","a digit in the exponent","'{ch}' to finish {word}","a value","JSON allows no comma before a closing bracket.","JSON strings take double quotes.","a key in double quotes","':' after the key","JSON numbers take no leading zeros.","the end of the input","A JSON text holds exactly one value.","',' or '}'","',' or ']'","a line break","Refused","{n} characters is past the {limit}-character ceiling this tool will attempt.","Not valid JSON","Line {line}, column {col}: expected {expected}, found {found}.","Could not format","Valid JSON, but the browser could not write it back out: {message}. This happens when arrays and objects nest thousands of levels deep.","1 number changes when read as a 64-bit float: {token} at line {line}, column {col} is written as {written}. Write it as a string in the source if every digit matters.","{n} numbers change when read as 64-bit floats. The first, {token} at line {line}, column {col}, is written as {written}. Write them as strings in the source if every digit matters.","showing first {shown} of {total} characters — copy gives you all of it","{n} byte","{n} bytes","Developer","2026-11-02"],"h":104,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Pega JSON. Obtenlo con sangría, minificado o con las claves ordenadas. Si la entrada está mal formada, se indica la línea y la columna donde falla.","En este dispositivo","Funciona sin conexión","Entrada","Sangría 2","Sangría 4","Tab","Minificar","Ordenar claves","Resultado","Válido","Copiado","Copiar","pega json arriba","Números modificados","Cómo funciona","Primero, un analizador de esta página lee el texto carácter a carácter según la gramática JSON de la RFC 8259. Se detiene en el primer error e imprime la línea, la columna (contada en caracteres; un tabulador cuenta como uno), lo que la gramática esperaba en ese punto y lo que encontró, y después la propia línea, recortada a 30 caracteres a cada lado, con un cursor ^ bajo la columna. Solo el texto que el analizador acepta pasa al \u003ccode>JSON.parse\u003c/code> del navegador, y el valor analizado se escribe de nuevo con \u003ccode>JSON.stringify(value, null, indent)\u003c/code>.","Al ordenar claves se reconstruye cada objeto con sus claves en el orden de \u003ccode>Array.prototype.sort\u003c/code>, que es el orden por unidades de código, así que \u003ccode>Z\u003c/code> va antes que \u003ccode>a\u003c/code>. Hay una excepción, con o sin ordenar: las claves que son índices de array, como \u003ccode>\"0\"\u003c/code> o \u003ccode>\"42\"\u003c/code>, se escriben siempre primero y en orden numérico, porque así guarda JavaScript los objetos. Las claves duplicadas se reducen a la última, según el analizador, sin ningún aviso.","Cada número se lee como un float de 64 bits, y lo que se escribe es ese float. \u003ccode>1.0\u003c/code> pasa a \u003ccode>1\u003c/code> sin perder nada, pero \u003ccode>12345678901234567890\u003c/code> pasa a \u003ccode>12345678901234567000\u003c/code>, \u003ccode>1e400\u003c/code> pasa a \u003ccode>null\u003c/code> y \u003ccode>-0\u003c/code> pasa a \u003ccode>0\u003c/code>. El texto JSON admite esos números; la pérdida ocurre al leerlos. Cuando un número sale con otros dígitos, signo o magnitud que al entrar (salvo ceros finales y notación exponencial), la página los cuenta y nombra el primero.","La entrada de más de 4.000.000 de caracteres se rechaza en lugar de intentarlo. Un JSON válido anidado a miles de niveles puede agotar la pila del navegador al escribirlo de nuevo; entonces la página lo dice en lugar de darle formato. El cursor cuenta caracteres, así que puede desviarse bajo caracteres anchos como CJK o emoji, o cuando una pantalla estrecha parte la línea. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Formateador JSON — MDV","Pega JSON y obtén el resultado con sangría, con claves ordenadas o minificado. Los errores de sintaxis se indican por línea y columna. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Forma de salida","'\"' para cerrar la cadena","Dentro de una cadena, los caracteres de control deben escaparse: \\n para un salto de línea, \\t para un tabulador.","un dígito hexadecimal (tras \\u van cuatro)","uno de \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u tras '\\'","un dígito tras '-'","un dígito tras '.'","un dígito en el exponente","'{ch}' para terminar {word}","un valor","JSON no admite coma antes de un corchete o llave de cierre.","Las cadenas JSON llevan comillas dobles.","una clave entre comillas dobles","':' tras la clave","Los números JSON no admiten ceros a la izquierda.","el final de la entrada","Un texto JSON contiene exactamente un valor.","',' o '}'","',' o ']'","un salto de línea","Rechazado","{n} caracteres superan el límite de {limit} caracteres que esta herramienta intentará procesar.","JSON no válido","Línea {line}, columna {col}: se esperaba {expected}, se encontró {found}.","No se pudo formatear","JSON válido, pero el navegador no pudo escribirlo de nuevo: {message}. Esto ocurre cuando arrays y objetos se anidan a miles de niveles.","1 número cambia al leerse como float de 64 bits: {token} en la línea {line}, columna {col} se escribe como {written}. Escríbelo como cadena en el origen si importan todos los dígitos.","{n} números cambian al leerse como floats de 64 bits. El primero, {token} en la línea {line}, columna {col}, se escribe como {written}. Escríbelos como cadenas en el origen si importan todos los dígitos.","se muestran los primeros {shown} de {total} caracteres; copiar te da todo","{n} byte","{n} bytes","Desarrollo",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Collez du JSON. Obtenez-le indenté, minifié ou avec les clés triées. Une entrée mal formée est signalée avec la ligne et la colonne où elle casse.","Sur cet appareil","Fonctionne hors ligne","Entrée","Retrait 2","Retrait 4","Tab","Minifier","Trier les clés","Résultat","Valide","Copié","Copier","collez du json ci-dessus","Nombres modifiés","Comment ça marche","Le texte est d’abord lu par un analyseur de cette page qui suit la grammaire JSON de la RFC 8259, caractère par caractère. Il s’arrête à la première erreur et affiche la ligne, la colonne (comptée en caractères ; une tabulation vaut un), ce que la grammaire attendait à cet endroit et ce qu’elle a trouvé, puis la ligne elle-même, tronquée à 30 caractères de chaque côté, avec un repère ^ sous la colonne. Seul le texte que l’analyseur accepte passe au \u003ccode>JSON.parse\u003c/code> du navigateur, et la valeur analysée est réécrite avec \u003ccode>JSON.stringify(value, null, indent)\u003c/code>.","Trier les clés reconstruit chaque objet avec ses clés dans l’ordre de \u003ccode>Array.prototype.sort\u003c/code>, qui est l’ordre des unités de code : \u003ccode>Z\u003c/code> passe donc avant \u003ccode>a\u003c/code>. Une exception, trié ou non : les clés qui sont des indices de tableau, comme \u003ccode>\"0\"\u003c/code> ou \u003ccode>\"42\"\u003c/code>, sont toujours écrites en premier, dans l’ordre numérique, car c’est ainsi que JavaScript conserve les objets. Les clés en double se réduisent à la dernière, selon l’analyseur, sans avertissement.","Chaque nombre est lu comme un flottant 64 bits, et c’est ce flottant qui est écrit. \u003ccode>1.0\u003c/code> devient \u003ccode>1\u003c/code> sans rien perdre, mais \u003ccode>12345678901234567890\u003c/code> devient \u003ccode>12345678901234567000\u003c/code>, \u003ccode>1e400\u003c/code> devient \u003ccode>null\u003c/code> et \u003ccode>-0\u003c/code> devient \u003ccode>0\u003c/code>. Le texte JSON autorise ces nombres ; la perte a lieu à la lecture. Quand un nombre ressort avec d’autres chiffres, un autre signe ou une autre grandeur qu’à l’entrée (zéros finaux et notation exponentielle mis à part), la page les compte et nomme le premier.","Une entrée de plus de 4 000 000 de caractères est refusée plutôt que tentée. Un JSON valide imbriqué sur des milliers de niveaux peut épuiser la pile du navigateur à la réécriture ; la page le dit alors au lieu de le formater. Le repère compte des caractères : il peut se décaler sous des caractères larges comme le CJK ou les emoji, ou quand un écran étroit fait passer la ligne à la ligne. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Formateur JSON — MDV","Collez du JSON, obtenez-le indenté, aux clés triées ou minifié. Les erreurs de syntaxe sont indiquées par ligne et colonne. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Format de sortie","'\"' pour fermer la chaîne","Dans une chaîne, les caractères de contrôle doivent être échappés : \\n pour un saut de ligne, \\t pour une tabulation.","un chiffre hexadécimal (quatre suivent \\u)","l’un de \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u après '\\'","un chiffre après '-'","un chiffre après '.'","un chiffre dans l’exposant","'{ch}' pour finir {word}","une valeur","JSON n’autorise pas de virgule avant un crochet ou une accolade fermant.","Les chaînes JSON prennent des guillemets doubles.","une clé entre guillemets doubles","':' après la clé","Les nombres JSON n’admettent pas de zéros initiaux.","la fin de l’entrée","Un texte JSON contient exactement une valeur.","',' ou '}'","',' ou ']'","un saut de ligne","Refusé","{n} caractères dépassent la limite de {limit} caractères que cet outil acceptera de traiter.","JSON non valide","Ligne {line}, colonne {col} : attendu {expected}, trouvé {found}.","Mise en forme impossible","JSON valide, mais le navigateur n’a pas pu le réécrire : {message}. Cela arrive quand des tableaux et des objets sont imbriqués sur des milliers de niveaux.","1 nombre change à la lecture en flottant 64 bits : {token} à la ligne {line}, colonne {col} est écrit {written}. Écrivez-le comme une chaîne dans la source si chaque chiffre compte.","{n} nombres changent à la lecture en flottants 64 bits. Le premier, {token} à la ligne {line}, colonne {col}, est écrit {written}. Écrivez-les comme des chaînes dans la source si chaque chiffre compte.","affichage des {shown} premiers caractères sur {total} ; copier vous donne tout","{n} octet","{n} octets","Développement",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Füge JSON ein. Du bekommst es eingerückt, minimiert oder mit sortierten Schlüsseln. Fehlerhafte Eingaben werden mit Zeile und Spalte gemeldet, an denen sie brechen.","Läuft auf diesem Gerät","Funktioniert offline","Eingabe","Einzug 2","Einzug 4","Tab","Minimieren","Schlüssel sortieren","Ergebnis","Gültig","Kopiert","Kopieren","json oben einfügen","Zahlen geändert","So funktioniert es","Den Text liest zuerst ein Scanner in dieser Seite, der der JSON-Grammatik der RFC 8259 Zeichen für Zeichen folgt. Er hält beim ersten Fehler an und gibt die Zeile aus, die Spalte (in Zeichen gezählt, ein Tabulator zählt als eins), was die Grammatik an dieser Stelle erwartet hat und was sie fand, dann die Zeile selbst, auf 30 Zeichen links und rechts gekürzt, mit einem Zeiger ^ unter der Spalte. Nur Text, den der Scanner akzeptiert, geht weiter an das \u003ccode>JSON.parse\u003c/code> des Browsers, und der geparste Wert wird mit \u003ccode>JSON.stringify(value, null, indent)\u003c/code> wieder ausgegeben.","Beim Sortieren der Schlüssel wird jedes Objekt mit seinen Schlüsseln in der Reihenfolge von \u003ccode>Array.prototype.sort\u003c/code> neu aufgebaut, also nach Code-Einheiten, sodass \u003ccode>Z\u003c/code> vor \u003ccode>a\u003c/code> kommt. Eine Ausnahme, sortiert oder nicht: Schlüssel, die Array-Indizes sind, etwa \u003ccode>\"0\"\u003c/code> oder \u003ccode>\"42\"\u003c/code>, stehen immer zuerst und in numerischer Reihenfolge, weil JavaScript Objekte so ablegt. Doppelte Schlüssel fallen laut Parser auf den letzten zusammen, ohne Warnung.","Jede Zahl wird als 64-Bit-Float gelesen, und der Float wird geschrieben. \u003ccode>1.0\u003c/code> wird ohne Verlust zu \u003ccode>1\u003c/code>, aber \u003ccode>12345678901234567890\u003c/code> wird zu \u003ccode>12345678901234567000\u003c/code>, \u003ccode>1e400\u003c/code> wird zu \u003ccode>null\u003c/code> und \u003ccode>-0\u003c/code> wird zu \u003ccode>0\u003c/code>. JSON-Text erlaubt diese Zahlen; der Verlust entsteht beim Lesen. Kommt eine Zahl mit anderen Ziffern, anderem Vorzeichen oder anderer Größenordnung heraus, als sie hineinging (abgesehen von nachgestellten Nullen und Exponentialschreibweise), zählt die Seite diese Zahlen und nennt die erste.","Eingaben über 4.000.000 Zeichen werden abgelehnt, statt es zu versuchen. Gültiges JSON, das tausende Ebenen tief verschachtelt ist, kann dem Browser beim erneuten Ausgeben den Stack erschöpfen; die Seite sagt das dann, statt zu formatieren. Der Zeiger zählt Zeichen, kann also unter breiten Zeichen wie CJK oder Emoji verrutschen oder wenn ein schmaler Bildschirm die Zeile umbricht. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","JSON-Formatierer — MDV","Füge JSON ein und erhalte es eingerückt, mit sortierten Schlüsseln oder minimiert. Syntaxfehler werden mit Zeile und Spalte angezeigt. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Ausgabeformat","'\"' zum Schließen der Zeichenkette","In einer Zeichenkette müssen Steuerzeichen maskiert werden: \\n für einen Zeilenumbruch, \\t für einen Tabulator.","eine Hexadezimalziffer (nach \\u folgen vier)","eines von \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u nach '\\'","eine Ziffer nach '-'","eine Ziffer nach '.'","eine Ziffer im Exponenten","'{ch}' zum Beenden von {word}","ein Wert","JSON erlaubt kein Komma vor einer schließenden Klammer.","JSON-Zeichenketten stehen in doppelten Anführungszeichen.","ein Schlüssel in doppelten Anführungszeichen","':' nach dem Schlüssel","JSON-Zahlen haben keine führenden Nullen.","das Ende der Eingabe","Ein JSON-Text enthält genau einen Wert.","',' oder '}'","',' oder ']'","ein Zeilenumbruch","Abgelehnt","{n} Zeichen überschreiten die Grenze von {limit} Zeichen, die dieses Werkzeug zu verarbeiten versucht.","Kein gültiges JSON","Zeile {line}, Spalte {col}: erwartet wurde {expected}, gefunden wurde {found}.","Formatieren nicht möglich","Gültiges JSON, aber der Browser konnte es nicht wieder ausgeben: {message}. Das passiert, wenn Arrays und Objekte tausende Ebenen tief verschachtelt sind.","1 Zahl ändert sich beim Lesen als 64-Bit-Float: {token} in Zeile {line}, Spalte {col} wird als {written} geschrieben. Schreibe sie in der Quelle als Zeichenkette, wenn es auf jede Ziffer ankommt.","{n} Zahlen ändern sich beim Lesen als 64-Bit-Floats. Die erste, {token} in Zeile {line}, Spalte {col}, wird als {written} geschrieben. Schreibe sie in der Quelle als Zeichenketten, wenn es auf jede Ziffer ankommt.","zeigt die ersten {shown} von {total} Zeichen; Kopieren liefert alles","{n} Byte","{n} Bytes","Entwicklung",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Incolla JSON. Ottienilo indentato, minificato o con le chiavi ordinate. L’input malformato viene segnalato con la riga e la colonna in cui si rompe.","Su questo dispositivo","Funziona offline","Input","Rientro 2","Rientro 4","Tab","Minifica","Ordina chiavi","Risultato","Valido","Copiato","Copia","incolla json qui sopra","Numeri modificati","Come funziona","Il testo viene letto prima da uno scanner in questa pagina che segue la grammatica JSON della RFC 8259, un carattere alla volta. Si ferma al primo errore e stampa la riga, la colonna (contata in caratteri; una tabulazione vale uno), che cosa la grammatica si aspettava in quel punto e che cosa ha trovato, poi la riga stessa, tagliata a 30 caratteri per lato, con un cursore ^ sotto la colonna. Solo il testo che lo scanner accetta passa al \u003ccode>JSON.parse\u003c/code> del browser, e il valore letto viene riscritto con \u003ccode>JSON.stringify(value, null, indent)\u003c/code>.","Ordinare le chiavi ricostruisce ogni oggetto con le chiavi nell’ordine di \u003ccode>Array.prototype.sort\u003c/code>, cioè per unità di codice, quindi \u003ccode>Z\u003c/code> viene prima di \u003ccode>a\u003c/code>. Un’eccezione, con o senza ordinamento: le chiavi che sono indici di array, come \u003ccode>\"0\"\u003c/code> o \u003ccode>\"42\"\u003c/code>, vengono sempre scritte per prime in ordine numerico, perché così JavaScript conserva gli oggetti. Le chiavi duplicate si riducono all’ultima, secondo il parser, senza alcun avviso.","Ogni numero viene letto come float a 64 bit, e quello che si scrive è il float. \u003ccode>1.0\u003c/code> diventa \u003ccode>1\u003c/code> senza perdere nulla, ma \u003ccode>12345678901234567890\u003c/code> diventa \u003ccode>12345678901234567000\u003c/code>, \u003ccode>1e400\u003c/code> diventa \u003ccode>null\u003c/code> e \u003ccode>-0\u003c/code> diventa \u003ccode>0\u003c/code>. Il testo JSON consente questi numeri; la perdita avviene nella lettura. Quando un numero esce con cifre, segno o grandezza diversi da quelli con cui è entrato (zeri finali e notazione esponenziale a parte), la pagina li conta e nomina il primo.","Un input oltre 4.000.000 di caratteri viene rifiutato invece di essere tentato. Un JSON valido annidato per migliaia di livelli può esaurire lo stack del browser mentre viene riscritto; la pagina lo dice invece di formattarlo. Il cursore conta caratteri, quindi può slittare sotto caratteri larghi come CJK o emoji, o quando uno schermo stretto manda a capo la riga. Non viene caricato nulla: questo file non ha un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Formattatore JSON — MDV","Incolla JSON e ottienilo indentato, con le chiavi ordinate o minificato. Gli errori di sintassi sono indicati per riga e colonna. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Formato di output","'\"' per chiudere la stringa","Dentro una stringa, i caratteri di controllo vanno preceduti da escape: \\n per un a capo, \\t per una tabulazione.","una cifra esadecimale (dopo \\u ne seguono quattro)","uno tra \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u dopo '\\'","una cifra dopo '-'","una cifra dopo '.'","una cifra nell’esponente","'{ch}' per terminare {word}","un valore","JSON non consente una virgola prima di una parentesi di chiusura.","Le stringhe JSON usano le virgolette doppie.","una chiave tra virgolette doppie","':' dopo la chiave","I numeri JSON non ammettono zeri iniziali.","la fine dell’input","Un testo JSON contiene esattamente un valore.","',' o '}'","',' o ']'","un a capo","Rifiutato","{n} caratteri superano il limite di {limit} caratteri che questo strumento tenterà di elaborare.","JSON non valido","Riga {line}, colonna {col}: atteso {expected}, trovato {found}.","Impossibile formattare","JSON valido, ma il browser non è riuscito a riscriverlo: {message}. Succede quando array e oggetti sono annidati per migliaia di livelli.","1 numero cambia se letto come float a 64 bit: {token} alla riga {line}, colonna {col} viene scritto come {written}. Scrivilo come stringa nella sorgente se ogni cifra conta.","{n} numeri cambiano se letti come float a 64 bit. Il primo, {token} alla riga {line}, colonna {col}, viene scritto come {written}. Scrivili come stringhe nella sorgente se ogni cifra conta.","primi {shown} caratteri su {total}; copia ti dà tutto","{n} byte","{n} byte","Sviluppo",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Cole JSON. Receba-o indentado, minificado ou com as chaves ordenadas. Entrada malformada é indicada com a linha e a coluna em que quebra.","Neste dispositivo","Funciona offline","Entrada","Recuo 2","Recuo 4","Tab","Minificar","Ordenar chaves","Resultado","Válido","Copiado","Copiar","cole json acima","Números alterados","Como funciona","O texto é lido primeiro por um scanner desta página que segue a gramática JSON da RFC 8259, um caractere por vez. Ele para no primeiro erro e imprime a linha, a coluna (contada em caracteres; uma tabulação vale um), o que a gramática esperava ali e o que encontrou, depois a própria linha, cortada em 30 caracteres de cada lado, com um cursor ^ sob a coluna. Só o texto que o scanner aceita segue para o \u003ccode>JSON.parse\u003c/code> do navegador, e o valor lido é escrito de volta com \u003ccode>JSON.stringify(value, null, indent)\u003c/code>.","Ordenar as chaves reconstrói cada objeto com as chaves na ordem de \u003ccode>Array.prototype.sort\u003c/code>, que é a ordem por unidades de código, então \u003ccode>Z\u003c/code> vem antes de \u003ccode>a\u003c/code>. Uma exceção, ordenando ou não: chaves que são índices de array, como \u003ccode>\"0\"\u003c/code> ou \u003ccode>\"42\"\u003c/code>, são sempre escritas primeiro, em ordem numérica, porque é assim que o JavaScript guarda objetos. Chaves duplicadas se reduzem à última, conforme o parser, sem aviso.","Todo número é lido como float de 64 bits, e o float é o que se escreve. \u003ccode>1.0\u003c/code> vira \u003ccode>1\u003c/code> sem perder nada, mas \u003ccode>12345678901234567890\u003c/code> vira \u003ccode>12345678901234567000\u003c/code>, \u003ccode>1e400\u003c/code> vira \u003ccode>null\u003c/code> e \u003ccode>-0\u003c/code> vira \u003ccode>0\u003c/code>. O texto JSON permite esses números; a perda acontece na leitura. Quando um número sai com dígitos, sinal ou magnitude diferentes dos que entraram (exceto zeros à direita e notação exponencial), a página os conta e nomeia o primeiro.","Entrada acima de 4.000.000 de caracteres é recusada em vez de tentada. Um JSON válido aninhado em milhares de níveis pode esgotar a pilha do navegador ao ser escrito de volta; a página então avisa em vez de formatar. O cursor conta caracteres, então pode se deslocar sob caracteres largos, como CJK ou emoji, ou quando uma tela estreita quebra a linha. Nada é enviado: este arquivo não tem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Formatador JSON — MDV","Cole JSON e receba-o indentado, com as chaves ordenadas ou minificado. Erros de sintaxe são mostrados por linha e coluna. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Formato de saída","'\"' para fechar a string","Dentro de uma string, caracteres de controle precisam de escape: \\n para uma quebra de linha, \\t para uma tabulação.","um dígito hexadecimal (quatro seguem \\u)","um de \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u após '\\'","um dígito após '-'","um dígito após '.'","um dígito no expoente","'{ch}' para terminar {word}","um valor","JSON não permite vírgula antes de um colchete ou chave de fechamento.","Strings JSON usam aspas duplas.","uma chave entre aspas duplas","':' após a chave","Números JSON não aceitam zeros à esquerda.","o fim da entrada","Um texto JSON contém exatamente um valor.","',' ou '}'","',' ou ']'","uma quebra de linha","Recusado","{n} caracteres passam do limite de {limit} caracteres que esta ferramenta tentará processar.","JSON inválido","Linha {line}, coluna {col}: esperado {expected}, encontrado {found}.","Não foi possível formatar","JSON válido, mas o navegador não conseguiu escrevê-lo de volta: {message}. Isso acontece quando arrays e objetos são aninhados em milhares de níveis.","1 número muda ao ser lido como float de 64 bits: {token} na linha {line}, coluna {col} é escrito como {written}. Escreva-o como string na origem se cada dígito importar.","{n} números mudam ao serem lidos como floats de 64 bits. O primeiro, {token} na linha {line}, coluna {col}, é escrito como {written}. Escreva-os como strings na origem se cada dígito importar.","mostrando os primeiros {shown} de {total} caracteres; copiar entrega tudo","{n} byte","{n} bytes","Desenvolvimento",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","JSON を貼り付けてください。インデント付き、最小化、キーを並べ替えた形で取得できます。形式が不正な入力は、壊れている行と列とともに報告されます。","この端末で動作","オフラインで動作","入力","インデント 2","インデント 4","タブ","最小化","キーを並べ替え","結果","有効","コピーしました","コピー","上に json を貼り付け","数値が変更されました","仕組み","まず、このページ内のスキャナーが RFC 8259 の JSON 文法に従って、1 文字ずつテキストを読みます。最初のエラーで停止し、行、列(文字数で数え、タブは 1 文字)、その位置で文法が求めていたもの、実際に見つかったものを表示します。続いてその行自体を、前後 30 文字までに切り詰めて示し、列の下にキャレット ^ を付けます。スキャナーが受け入れたテキストだけがブラウザーの \u003ccode>JSON.parse\u003c/code> に渡され、解析された値は \u003ccode>JSON.stringify(value, null, indent)\u003c/code> で書き戻されます。","キーを並べ替えると、すべてのオブジェクトが \u003ccode>Array.prototype.sort\u003c/code> の順、つまりコードユニット順のキーで作り直されます。そのため \u003ccode>Z\u003c/code> は \u003ccode>a\u003c/code> より前に来ます。並べ替えの有無にかかわらず例外が 1 つあります。\u003ccode>\"0\"\u003c/code> や \u003ccode>\"42\"\u003c/code> のような配列インデックスのキーは、JavaScript のオブジェクトがそう保持するため、常に数値順で先頭に書かれます。重複したキーはパーサーの仕様どおり最後の 1 つにまとまり、警告は出ません。","すべての数値は 64 ビット浮動小数点として読まれ、書き出されるのはその浮動小数点です。\u003ccode>1.0\u003c/code> は何も失わずに \u003ccode>1\u003c/code> になりますが、\u003ccode>12345678901234567890\u003c/code> は \u003ccode>12345678901234567000\u003c/code> に、\u003ccode>1e400\u003c/code> は \u003ccode>null\u003c/code> に、\u003ccode>-0\u003c/code> は \u003ccode>0\u003c/code> になります。JSON テキストはこれらの数値を許していますが、失われるのは読み込みの段階です。入力時と異なる桁、符号、桁数で数値が出力される場合(末尾のゼロと指数表記は除く)、ページはその数を数え、最初のものを示します。","4,000,000 文字を超える入力は、試みずに拒否します。数千階層も入れ子になった有効な JSON は、書き戻す際にブラウザーのスタックを使い切ることがあります。その場合、ページは整形せずにその旨を表示します。キャレットは文字数で数えるため、CJK や絵文字のような幅の広い文字の下や、狭い画面で行が折り返された場合にはずれることがあります。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","JSON フォーマッター — MDV","JSON を貼り付けると、インデント付き、キー並べ替え済み、または最小化した形で取得できます。構文エラーは行と列で表示されます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","出力形式","文字列を閉じる '\"'","文字列の中の制御文字はエスケープが必要です。改行は \\n、タブは \\t を使ってください。","16 進数の数字(\\u の後に 4 つ続きます)","'\\' の後の \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u のいずれか","'-' の後の数字","'.' の後の数字","指数部の数字","{word} を終える '{ch}'","値","JSON では、閉じ括弧の前にカンマを置けません。","JSON の文字列にはダブルクォートを使います。","ダブルクォートで囲んだキー","キーの後の ':'","JSON の数値は先頭にゼロを付けられません。","入力の終わり","JSON テキストには値がちょうど 1 つだけ入ります。","',' または '}'","',' または ']'","改行","拒否しました","{n} 文字は、このツールが処理する上限の {limit} 文字を超えています。","JSON として無効です","{line} 行目、{col} 列目: {expected} が必要ですが、{found} が見つかりました。","整形できませんでした","有効な JSON ですが、ブラウザーが書き戻せませんでした: {message}。配列やオブジェクトが数千階層も入れ子になっている場合に起こります。","64 ビット浮動小数点として読むと 1 件の数値が変わります。{line} 行目、{col} 列目の {token} は {written} として書き出されます。すべての桁が重要な場合は、元データで文字列として記述してください。","64 ビット浮動小数点として読むと {n} 件の数値が変わります。最初の {token}({line} 行目、{col} 列目)は {written} として書き出されます。すべての桁が重要な場合は、元データで文字列として記述してください。","{total} 文字のうち先頭の {shown} 文字を表示中。コピーするとすべてを取得できます","{n} バイト","{n} バイト","開発",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","JSON을 붙여넣으세요. 들여쓰기, 압축, 키 정렬된 형태로 받을 수 있습니다. 형식이 잘못된 입력은 오류가 난 줄과 열로 알려 줍니다.","이 기기에서 실행","오프라인 작동","입력","들여쓰기 2","들여쓰기 4","탭","압축","키 정렬","결과","유효","복사됨","복사","위에 json을 붙여넣으세요","숫자 변경됨","작동 방식","먼저 이 페이지 안의 스캐너가 RFC 8259의 JSON 문법에 따라 텍스트를 한 글자씩 읽습니다. 첫 번째 오류에서 멈추고, 줄, 열(글자 수로 세며 탭은 1), 그 위치에서 문법이 기대한 것과 실제로 찾은 것을 출력합니다. 이어서 그 줄 자체를 양쪽 30자까지로 잘라 보여 주고, 열 아래에 캐럿 ^을 붙입니다. 스캐너가 받아들인 텍스트만 브라우저의 \u003ccode>JSON.parse\u003c/code>로 넘어가며, 파싱된 값은 \u003ccode>JSON.stringify(value, null, indent)\u003c/code>로 다시 출력됩니다.","키를 정렬하면 모든 객체가 \u003ccode>Array.prototype.sort\u003c/code> 순서, 즉 코드 유닛 순서의 키로 다시 만들어지므로 \u003ccode>Z\u003c/code>가 \u003ccode>a\u003c/code>보다 앞에 옵니다. 정렬 여부와 관계없는 예외가 하나 있습니다. \u003ccode>\"0\"\u003c/code>이나 \u003ccode>\"42\"\u003c/code>처럼 배열 인덱스인 키는 JavaScript 객체가 그렇게 보관하므로 항상 숫자 순서로 맨 앞에 쓰입니다. 중복된 키는 파서의 동작대로 마지막 하나로 합쳐지며 경고는 없습니다.","모든 숫자는 64비트 부동소수점으로 읽히고, 쓰이는 것은 그 부동소수점입니다. \u003ccode>1.0\u003c/code>은 아무것도 잃지 않고 \u003ccode>1\u003c/code>이 되지만, \u003ccode>12345678901234567890\u003c/code>은 \u003ccode>12345678901234567000\u003c/code>이 되고, \u003ccode>1e400\u003c/code>은 \u003ccode>null\u003c/code>이 되고, \u003ccode>-0\u003c/code>은 \u003ccode>0\u003c/code>이 됩니다. JSON 텍스트는 이런 숫자를 허용하지만, 손실은 읽는 단계에서 일어납니다. 숫자가 입력과 다른 자릿수, 부호, 크기로 나오면(끝의 0과 지수 표기는 제외) 페이지가 그 수를 세고 첫 번째를 알려 줍니다.","4,000,000자를 넘는 입력은 시도하지 않고 거부합니다. 수천 단계로 중첩된 유효한 JSON은 다시 출력하는 동안 브라우저의 스택을 소진할 수 있으며, 그 경우 페이지는 포맷하는 대신 그렇다고 알려 줍니다. 캐럿은 글자 수로 세기 때문에 CJK나 이모지 같은 넓은 문자 아래에서, 또는 좁은 화면에서 줄이 바뀔 때 어긋날 수 있습니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","JSON 포맷터 — MDV","JSON을 붙여넣으면 들여쓰기, 키 정렬 또는 압축된 형태로 받을 수 있습니다. 구문 오류는 줄과 열로 표시됩니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","출력 형식","문자열을 닫는 '\"'","문자열 안의 제어 문자는 이스케이프해야 합니다. 줄바꿈은 \\n, 탭은 \\t를 쓰세요.","16진수 숫자(\\u 뒤에 4개가 옵니다)","'\\' 뒤의 \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u 중 하나","'-' 뒤의 숫자","'.' 뒤의 숫자","지수의 숫자","{word}를 끝내는 '{ch}'","값","JSON에서는 닫는 괄호 앞에 쉼표를 둘 수 없습니다.","JSON 문자열에는 큰따옴표를 씁니다.","큰따옴표로 묶은 키","키 뒤의 ':'","JSON 숫자는 앞에 0을 붙일 수 없습니다.","입력의 끝","JSON 텍스트에는 값이 정확히 하나만 들어갑니다.","',' 또는 '}'","',' 또는 ']'","줄바꿈","거부됨","{n}자는 이 도구가 처리하려는 상한인 {limit}자를 넘습니다.","유효하지 않은 JSON","{line}번째 줄, {col}번째 열: {expected}이(가) 필요하지만 {found}이(가) 발견되었습니다.","포맷할 수 없음","유효한 JSON이지만 브라우저가 다시 출력하지 못했습니다: {message}. 배열과 객체가 수천 단계로 중첩되었을 때 발생합니다.","64비트 부동소수점으로 읽으면 숫자 1개가 바뀝니다. {line}번째 줄, {col}번째 열의 {token}은 {written}(으)로 출력됩니다. 모든 자릿수가 중요하면 원본에서 문자열로 쓰세요.","64비트 부동소수점으로 읽으면 숫자 {n}개가 바뀝니다. 첫 번째인 {token}({line}번째 줄, {col}번째 열)은 {written}(으)로 출력됩니다. 모든 자릿수가 중요하면 원본에서 문자열로 쓰세요.","{total}자 중 처음 {shown}자를 표시 중 — 복사하면 전체를 받습니다","{n}바이트","{n}바이트","개발",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","粘贴 JSON，即可得到缩进、压缩或按键排序的结果。格式有误的输入会报告出错的行和列。","在此设备上运行","可离线使用","输入","缩进 2","缩进 4","制表符","压缩","排序键","结果","有效","已复制","复制","在上方粘贴 json","数字已更改","工作原理","文本首先由本页中的扫描器读取,它按 RFC 8259 的 JSON 语法逐字符检查。遇到第一个错误就停止,并输出行号、列号(按字符计数,制表符算一个)、语法在该处期望的内容和实际找到的内容,然后是该行本身(左右各截取 30 个字符),并在对应列下方标出插入符 ^。只有扫描器接受的文本才会交给浏览器的 \u003ccode>JSON.parse\u003c/code>,解析出的值再用 \u003ccode>JSON.stringify(value, null, indent)\u003c/code> 写回。","排序键会重建每个对象,键按 \u003ccode>Array.prototype.sort\u003c/code> 的顺序排列,即按代码单元排序,因此 \u003ccode>Z\u003c/code> 排在 \u003ccode>a\u003c/code> 之前。无论是否排序,都有一个例外:数组索引形式的键,如 \u003ccode>\"0\"\u003c/code> 或 \u003ccode>\"42\"\u003c/code>,总是按数值顺序写在最前面,因为 JavaScript 对象就是这样保存它们的。重复的键按解析器的规则只保留最后一个,不会给出警告。","每个数字都按 64 位浮点数读取,写出的就是这个浮点数。\u003ccode>1.0\u003c/code> 变成 \u003ccode>1\u003c/code>,不丢失任何信息;但 \u003ccode>12345678901234567890\u003c/code> 会变成 \u003ccode>12345678901234567000\u003c/code>,\u003ccode>1e400\u003c/code> 会变成 \u003ccode>null\u003c/code>,\u003ccode>-0\u003c/code> 会变成 \u003ccode>0\u003c/code>。JSON 文本允许这些数字;损失发生在读取时。当某个数字写出时的数位、符号或量级与输入不同(末尾的零和指数写法除外),页面会统计这些数字并指出第一个。","超过 4,000,000 个字符的输入会被拒绝,而不会尝试处理。嵌套数千层的有效 JSON 在写回时可能耗尽浏览器的栈;此时页面会如实说明,而不是进行格式化。插入符按字符计数,因此在 CJK 或 emoji 等宽字符下,或窄屏使该行换行时,可能会错位。不会上传任何内容:此文件中没有服务器。","深色和语言按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","JSON 格式化工具 — MDV","粘贴 JSON，即可得到缩进、按键排序或压缩的结果。语法错误会按行和列显示。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","输出格式","用于结束字符串的 '\"'","字符串内的控制字符必须转义:换行用 \\n，制表符用 \\t。","一个十六进制数字(\\u 后跟四个)","'\\' 之后的 \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u 之一","'-' 之后的数字","'.' 之后的数字","指数中的数字","用于结束 {word} 的 '{ch}'","一个值","JSON 不允许在右括号前出现逗号。","JSON 字符串使用双引号。","双引号括起的键","键之后的 ':'","JSON 数字不能有前导零。","输入的结尾","一个 JSON 文本只能包含一个值。","',' 或 '}'","',' 或 ']'","换行符","已拒绝","{n} 个字符超过了本工具愿意处理的 {limit} 个字符上限。","不是有效的 JSON","第 {line} 行,第 {col} 列:期望{expected},找到{found}。","无法格式化","JSON 有效,但浏览器无法将其写回:{message}。数组和对象嵌套数千层时会出现这种情况。","按 64 位浮点数读取时有 1 个数字会改变:第 {line} 行第 {col} 列的 {token} 会写成 {written}。如果每一位都重要,请在源数据中把它写成字符串。","按 64 位浮点数读取时有 {n} 个数字会改变。第一个是第 {line} 行第 {col} 列的 {token},会写成 {written}。如果每一位都重要,请在源数据中把它们写成字符串。","显示 {total} 个字符中的前 {shown} 个;复制会得到全部内容","{n} 字节","{n} 字节","开发",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2369,7 +2582,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   function bytes(s) { return new TextEncoder().encode(s).length; }
   function fmtBytes(n) {
-    if (n < 1024) return n + " bytes";
+    if (n < 1024) return trn(n, "{n} byte", "{n} bytes");
     if (n < 1048576) return (n / 1024).toFixed(1) + " KiB";
     return (n / 1048576).toFixed(2) + " MiB";
   }
@@ -2379,7 +2592,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // Iterative, with an explicit stack, so a million open brackets cannot overflow it.
   function scan(text) {
     var n = text.length, i = 0, stack = [], st = "value", zeroAt = -1, lossy = 0, first = null, c, e;
-    function fail(expected, hint) { return { at: i, expected: expected, hint: hint || "" }; }
+    function fail(expected, hint, vars) { return { at: i, expected: expected, hint: hint || "", vars: vars }; }
     function digit(k) { k = text.charCodeAt(k); return k >= 48 && k <= 57; }
     function digits() { var s = i; while (digit(i)) i++; return i > s; }
     function space() { while (i < n && ((c = text.charCodeAt(i)) === 32 || c === 9 || c === 10 || c === 13)) i++; }
@@ -2387,29 +2600,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       for (i++; i < n; i++) {
         c = text.charCodeAt(i);
         if (c === 34) { i++; return null; }
-        if (c < 32) return fail("'\"' to close the string", "Inside a string, control characters must be escaped: \\n for a line break, \\t for a tab.");
+        if (c < 32) return fail(trk("'\"' to close the string"), trk("Inside a string, control characters must be escaped: \\n for a line break, \\t for a tab."));
         if (c === 92) {
           i++;
           if (text.charAt(i) === "u") {
-            for (var k = 0; k < 4; k++) { i++; if (!/[0-9a-fA-F]/.test(text.charAt(i))) return fail("a hex digit (four follow \\u)"); }
+            for (var k = 0; k < 4; k++) { i++; if (!/[0-9a-fA-F]/.test(text.charAt(i))) return fail(trk("a hex digit (four follow \\u)")); }
           } else if (i >= n || '"\\/bfnrt'.indexOf(text.charAt(i)) < 0) {
-            return fail("one of \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u after '\\'");
+            return fail(trk("one of \\\" \\\\ \\/ \\b \\f \\n \\r \\t \\u after '\\'"));
           }
         }
       }
-      return fail("'\"' to close the string");
+      return fail(trk("'\"' to close the string"));
     }
     function number() {
       var s = i;
       if (text.charCodeAt(i) === 45) i++;
       if (text.charCodeAt(i) === 48) { i++; if (digit(i)) zeroAt = i; }
-      else if (!digits()) return fail("a digit after '-'");
-      if (text.charCodeAt(i) === 46) { i++; if (!digits()) return fail("a digit after '.'"); }
+      else if (!digits()) return fail(trk("a digit after '-'"));
+      if (text.charCodeAt(i) === 46) { i++; if (!digits()) return fail(trk("a digit after '.'")); }
       c = text.charCodeAt(i);
       if (c === 101 || c === 69) {
         i++; c = text.charCodeAt(i);
         if (c === 43 || c === 45) i++;
-        if (!digits()) return fail("a digit in the exponent");
+        if (!digits()) return fail(trk("a digit in the exponent"));
       }
       var tok = text.slice(s, i), v = Number(tok);
       if (String(v) !== tok && (!isFinite(v) || shape(tok) !== shape(String(v)))) {
@@ -2420,7 +2633,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     }
     function literal(word) {
       for (var k = 0; k < word.length; k++, i++) {
-        if (text.charCodeAt(i) !== word.charCodeAt(k)) return fail("'" + word.charAt(k) + "' to finish " + word);
+        if (text.charCodeAt(i) !== word.charCodeAt(k)) return fail(trk("'{ch}' to finish {word}"), "", { ch: word.charAt(k), word: word });
       }
       return null;
     }
@@ -2441,25 +2654,25 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         else if (c === 102) e = literal("false");
         else if (c === 110) e = literal("null");
         // a value is only awaited at "]" inside an array just after a comma: "[" + "]" is taken above
-        else return fail("a value", c === 93 && stack[stack.length - 1] === 91 ? "JSON allows no comma before a closing bracket." :
-          c === 39 ? "JSON strings take double quotes." : "");
+        else return fail(trk("a value"), c === 93 && stack[stack.length - 1] === 91 ? trk("JSON allows no comma before a closing bracket.") :
+          c === 39 ? trk("JSON strings take double quotes.") : "");
         if (e) return e;
         st = "after";
       } else if (st === "key") {
-        if (c !== 34) return fail("a key in double quotes", c === 125 ? "JSON allows no comma before a closing bracket." :
-          c === 39 ? "JSON strings take double quotes." : "");
+        if (c !== 34) return fail(trk("a key in double quotes"), c === 125 ? trk("JSON allows no comma before a closing bracket.") :
+          c === 39 ? trk("JSON strings take double quotes.") : "");
         if ((e = string())) return e;
         space();
-        if (text.charCodeAt(i) !== 58) return fail("':' after the key");
+        if (text.charCodeAt(i) !== 58) return fail(trk("':' after the key"));
         i++; space(); st = "value";
       } else {
-        var zero = i === zeroAt ? "JSON numbers take no leading zeros." : "";
+        var zero = i === zeroAt ? trk("JSON numbers take no leading zeros.") : "";
         space(); c = text.charCodeAt(i);
-        if (!stack.length) return i < n ? fail("the end of the input", zero || "A JSON text holds exactly one value.") : { lossy: lossy, first: first };
+        if (!stack.length) return i < n ? fail(trk("the end of the input"), zero || trk("A JSON text holds exactly one value.")) : { lossy: lossy, first: first };
         var top = stack[stack.length - 1];
         if (c === 44) { i++; space(); st = top === 123 ? "key" : "value"; }
         else if (c === top + 2) { i++; stack.pop(); }
-        else return fail(top === 123 ? "',' or '}'" : "',' or ']'", zero);
+        else return fail(top === 123 ? trk("',' or '}'") : trk("',' or ']'"), zero);
       }
     }
   }
@@ -2476,9 +2689,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     return { line: line, column: Array.from(text.slice(start, at)).length + 1, start: start };
   }
   function found(text, at) {
-    if (at >= text.length) return "the end of the input";
+    if (at >= text.length) return tr("the end of the input");
     var ch = String.fromCodePoint(text.codePointAt(at));
-    if (ch === "\n") return "a line break";
+    if (ch === "\n") return tr("a line break");
     if (/[\p{C}\p{Z}]/u.test(ch)) return "U+" + ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
     return ch === "'" ? "\"'\"" : "'" + ch + "'";
   }
@@ -2527,14 +2740,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     size.textContent = fmtBytes(bytes(text));
     if (!text.trim()) { state("empty"); full = ""; return; }
     if (text.length > LIMIT) {
-      return refuse("Refused", text.length.toLocaleString() + " characters is past the " +
-        LIMIT.toLocaleString() + "-character ceiling this tool will attempt.");
+      return refuse(tr("Refused"), tr("{n} characters is past the {limit}-character ceiling this tool will attempt.",
+        { n: text.length.toLocaleString(), limit: LIMIT.toLocaleString() }));
     }
     var r = scan(text), value;
     if (r.expected) {
       var p = where(text, r.at);
-      return refuse("Not valid JSON", "Line " + p.line + ", column " + p.column + ": expected " + r.expected +
-        ", found " + found(text, r.at) + "." + (r.hint ? " " + r.hint : ""), excerpt(text, r.at, p.start));
+      return refuse(tr("Not valid JSON"), tr("Line {line}, column {col}: expected {expected}, found {found}.",
+        { line: p.line, col: p.column, expected: tr(r.expected, r.vars), found: found(text, r.at) }) +
+        (r.hint ? " " + tr(r.hint) : ""), excerpt(text, r.at, p.start));
     }
     try {
       value = JSON.parse(text);
@@ -2543,18 +2757,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       full = JSON.stringify(value, null, indent);
     } catch (e) {
       // the scanner passed it, so this is the engine running out of stack on deep nesting
-      return refuse("Could not format", "Valid JSON, but the browser could not write it back out: " +
-        String(e.message) + ". This happens when arrays and objects nest thousands of levels deep.");
+      return refuse(tr("Could not format"), tr("Valid JSON, but the browser could not write it back out: {message}. This happens when arrays and objects nest thousands of levels deep.",
+        { message: String(e.message) }));
     }
 
     if (r.lossy) {
-      var q = where(text, r.first.at), at = " at line " + q.line + ", column " + q.column;
+      var q = where(text, r.first.at);
       var tok = r.first.token.length > 40 ? r.first.token.slice(0, 40) + "…" : r.first.token;
+      var wv = { n: r.lossy.toLocaleString(), token: tok, line: q.line, col: q.column, written: r.first.written };
       warnmsg.textContent = r.lossy === 1
-        ? "1 number changes when read as a 64-bit float: " + tok + at + " is written as " + r.first.written +
-          ". Write it as a string in the source if every digit matters."
-        : r.lossy.toLocaleString() + " numbers change when read as 64-bit floats. The first, " + tok + at +
-          ", is written as " + r.first.written + ". Write them as strings in the source if every digit matters.";
+        ? tr("1 number changes when read as a 64-bit float: {token} at line {line}, column {col} is written as {written}. Write it as a string in the source if every digit matters.", wv)
+        : tr("{n} numbers change when read as 64-bit floats. The first, {token} at line {line}, column {col}, is written as {written}. Write them as strings in the source if every digit matters.", wv);
     }
     out.textContent = full.length > PREVIEW ? full.slice(0, PREVIEW) : full;
     var stamp = out.querySelector(".mdv-truncated");
@@ -2562,8 +2775,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (full.length > PREVIEW) {
       var s = document.createElement("span");
       s.className = "mdv-truncated";
-      s.textContent = "showing first " + PREVIEW.toLocaleString() + " of " +
-        full.length.toLocaleString() + " characters — copy gives you all of it";
+      s.textContent = tr("showing first {shown} of {total} characters — copy gives you all of it",
+        { shown: PREVIEW.toLocaleString(), total: full.length.toLocaleString() });
       out.appendChild(s);
     }
     state("result");
@@ -2589,6 +2802,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   });
   input.focus({ preventScroll: true });
+  onLang(run);
   run();   // the browser may have restored the textarea (reload, back/forward)
 })();
 </script>

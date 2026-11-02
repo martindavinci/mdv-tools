@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link is-here" href="./ssh-key-generator.html" aria-current="page" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link is-here" href="./ssh-key-generator.html" aria-current="page" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,94 +2353,94 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">SSH key generator</h1>
+      <h1 class="mdv-head-name" data-t="25">SSH key generator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Make an SSH key pair here: a line for authorized_keys and a private key for PuTTY or OpenSSH.</p>
+    <p class="mdv-head-line" data-t="79">Make an SSH key pair here: a line for authorized_keys and a private key for PuTTY or OpenSSH.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <div class="mdv-row is-between">
     <div class="mdv-row" style="gap:var(--space-3)">
-      <div class="mdv-seg" role="group" aria-label="Key type">
+      <div class="mdv-seg" role="group" aria-label="Key type" data-t-attrs="aria-label">
         <button type="button" data-kind="ed25519" class="is-on" aria-pressed="true">Ed25519</button>
         <button type="button" data-kind="ecdsa" aria-pressed="false">ECDSA</button>
         <button type="button" data-kind="rsa" aria-pressed="false">RSA</button>
       </div>
-      <div class="mdv-seg" role="group" aria-label="Curve" id="ecSizes" hidden>
+      <div class="mdv-seg" role="group" aria-label="Curve" data-t-attrs="aria-label" id="ecSizes" hidden>
         <button type="button" data-ec="256" class="is-on" aria-pressed="true">P-256</button>
         <button type="button" data-ec="384" aria-pressed="false">P-384</button>
         <button type="button" data-ec="521" aria-pressed="false">P-521</button>
       </div>
-      <div class="mdv-seg" role="group" aria-label="RSA size" id="rsaSizes" hidden>
+      <div class="mdv-seg" role="group" aria-label="RSA size" data-t-attrs="aria-label" id="rsaSizes" hidden>
         <button type="button" data-rsa="2048" aria-pressed="false">2048</button>
         <button type="button" data-rsa="3072" class="is-on" aria-pressed="true">3072</button>
-        <button type="button" data-rsa="4096" aria-pressed="false">4096 bits</button>
+        <button type="button" data-rsa="4096" aria-pressed="false" data-t="82">4096 bits</button>
       </div>
     </div>
     <button class="mdv-btn is-primary" type="button" id="gen">Generate key</button>
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>choose a key type, then generate</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="83">choose a key type, then generate</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">No key made</span>
+      <span class="mdv-notice-title" data-t="84">No key made</span>
       <span id="errmsg"></span>
     </div>
 
     <div class="mdv-stack is-tight" id="ok" hidden>
       <div class="mdv-row is-between">
-        <label class="mdv-label" style="margin:0" for="pubLine">Public key for authorized_keys</label>
+        <label class="mdv-label" style="margin:0" for="pubLine" data-t="85">Public key for authorized_keys</label>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copiedPub" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyPub">Copy</button>
+          <span class="mdv-badge is-accent" id="copiedPub" hidden><span data-t="86">Copied</span></span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyPub"><span data-t="87">Copy</span></button>
         </span>
       </div>
       <textarea class="mdv-textarea mdv-mono" id="pubLine" readonly spellcheck="false" rows="1" style="min-height:0;word-break:break-all"></textarea>
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Key</dt><dd id="k-type"></dd>
-          <dt>Fingerprint</dt><dd id="k-sha" style="word-break:break-all"></dd>
+          <dt data-t="88">Key</dt><dd id="k-type"></dd>
+          <dt data-t="89">Fingerprint</dt><dd id="k-sha" style="word-break:break-all"></dd>
           <dt>MD5</dt><dd id="k-md5" style="word-break:break-all"></dd>
         </dl>
       </div>
 
-      <label class="mdv-label" for="comment">Comment</label>
+      <label class="mdv-label" for="comment" data-t="90">Comment</label>
       <input class="mdv-input mdv-mono" id="comment" type="text" spellcheck="false" autocomplete="off">
       <div class="mdv-cols" id="passRow">
         <div class="mdv-stack is-tight">
-          <label class="mdv-label" style="margin:0" for="pass">Passphrase</label>
+          <label class="mdv-label" style="margin:0" for="pass" data-t="91">Passphrase</label>
           <input class="mdv-input mdv-mono" id="pass" type="password" autocomplete="new-password" spellcheck="false">
         </div>
         <div class="mdv-stack is-tight">
-          <label class="mdv-label" style="margin:0" for="pass2">Passphrase again</label>
+          <label class="mdv-label" style="margin:0" for="pass2" data-t="92">Passphrase again</label>
           <input class="mdv-input mdv-mono" id="pass2" type="password" autocomplete="new-password" spellcheck="false">
         </div>
       </div>
       <p class="mdv-dot-note" id="passNote"></p>
 
-      <span class="mdv-label">Save as</span>
+      <span class="mdv-label" data-t="93">Save as</span>
       <div class="mdv-row is-between">
-        <div class="mdv-seg" role="group" aria-label="Save as">
+        <div class="mdv-seg" role="group" aria-label="Save as" data-t-attrs="aria-label">
           <button type="button" data-fmt="ppk" class="is-on" aria-pressed="true">PuTTY .ppk</button>
           <button type="button" data-fmt="openssh" aria-pressed="false">OpenSSH</button>
           <button type="button" data-fmt="pem" aria-pressed="false">PEM</button>
           <button type="button" data-fmt="pub" aria-pressed="false">.pub</button>
           <button type="button" data-fmt="rfc" aria-pressed="false">RFC 4716</button>
         </div>
-        <label class="mdv-check" id="v2row"><input type="checkbox" id="v2"> Version 2, for PuTTY before 0.75</label>
+        <label class="mdv-check" id="v2row"><input type="checkbox" id="v2"> <span data-t="94">Version 2, for PuTTY before 0.75</span></label>
       </div>
       <div class="mdv-row is-between">
         <span class="mdv-mono" id="fileName"></span>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copiedFile" hidden>Copied</span>
+          <span class="mdv-badge is-accent" id="copiedFile" hidden><span data-t="86">Copied</span></span>
           <button class="mdv-btn is-sm is-quiet" type="button" id="showFile">Show</button>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyFile">Copy</button>
-          <button class="mdv-btn is-sm is-primary" type="button" id="saveFile">Save file</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyFile"><span data-t="87">Copy</span></button>
+          <button class="mdv-btn is-sm is-primary" type="button" id="saveFile"><span data-t="95">Save file</span></button>
         </span>
       </div>
       <div class="mdv-meter" id="meter" hidden><span id="bar"></span></div>
@@ -2338,9 +2450,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="96">How this works</summary>
     <div class="mdv-method-body">
-      <p><strong>Generate key</strong> makes a key pair with the browser's own WebCrypto: Ed25519, the default
+      <p data-t="97"><strong>Generate key</strong> makes a key pair with the browser's own WebCrypto: Ed25519, the default
         in current OpenSSH and the right choice for any server from the last decade; ECDSA on the NIST curves
         P-256, P-384 or P-521; or RSA at 2048, 3072 or 4096 bits with the public exponent 65537, for old
         systems that take nothing else. The public half is the line an OpenSSH server wants in
@@ -2348,11 +2460,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         SHA-256 fingerprint as <code>ssh-keygen -l</code> prints it, and the older MD5 form some consoles
         still show. The comment is a label: editing it changes the line and the files, not the key or its
         fingerprint.</p>
-      <p><strong>There is no mouse to wiggle.</strong> PuTTYgen asks you to move the pointer because it
+      <p data-t="98"><strong>There is no mouse to wiggle.</strong> PuTTYgen asks you to move the pointer because it
         gathers randomness of its own. A browser draws random numbers from the operating system's
         generator, the same source <code>ssh-keygen</code> uses; a page cannot add to it, and it does not
         need anything added. Each press makes a new key, and nothing is kept once the tab is closed.</p>
-      <p><strong>The files.</strong> PuTTY .ppk is version 3 unless you tick version 2, for PuTTY 0.74 and
+      <p data-t="99"><strong>The files.</strong> PuTTY .ppk is version 3 unless you tick version 2, for PuTTY 0.74 and
         older. With a passphrase it is encrypted with AES-256 under a key from Argon2id at 8 MiB and 13
         passes; PuTTYgen times its own pass count to a tenth of a second on its machine, this page uses a
         fixed count, and PuTTY reads either. Version 2 turns the passphrase into a key with one round of
@@ -2362,32 +2474,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         (Ed25519) block, and is written only without a passphrase. .pub is the authorized_keys line as a
         file; RFC 4716 is the <code>---- BEGIN SSH2 PUBLIC KEY ----</code> form PuTTYgen's Save public key
         writes.</p>
-      <p>Argon2, BLAKE2b, bcrypt_pbkdf, Blowfish — its starting tables worked out on the page from the digits
+      <p data-t="100">Argon2, BLAKE2b, bcrypt_pbkdf, Blowfish — its starting tables worked out on the page from the digits
         of pi — and MD5 are written out in this page; AES, SHA and the key arithmetic are the browser's. The
         .ppk writer reproduces PuTTY's own test files byte for byte, and <code>ssh-keygen</code> reads the
         OpenSSH and PEM files it writes.</p>
-      <p><strong>Keep the private key private.</strong> It is on screen only after you press Show, and Copy
+      <p data-t="101"><strong>Keep the private key private.</strong> It is on screen only after you press Show, and Copy
         puts it on the clipboard, where other programs can read it: saving the file is the safer route. The
         page makes no network requests; save it and run it with the network off if you want to be sure. It
         does not make DSA keys (switched off in OpenSSH 7.0), Ed448 keys, security-key (sk-) keys or
         certificates. To convert a key you already have, use the PPK converter.</p>
+      <p data-t="102">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Encoding &amp; Crypto">
-    <span class="mdv-tag">Also in Encoding &amp; Crypto</span>
-    <a href="./totp-generator.html">TOTP code generator</a>
-    <a href="./url-encode-decode.html">URL Encoder &amp; Decoder</a>
-    <a href="./uuid-generator.html">UUID generator</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Encoding &amp; Crypto"}'>Also in Encoding &amp; Crypto</span>
+    <a href="./totp-generator.html" data-t="26">TOTP code generator</a>
+    <a href="./url-encode-decode.html" data-t="27">URL Encoder &amp; Decoder</a>
+    <a href="./uuid-generator.html" data-t="28">UUID generator</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="103">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="104">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="105" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-22</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="106">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2398,6 +2512,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["SSH Key Generator — Ed25519, RSA, PuTTY .ppk and authorized_keys, offline — MDV","Generate an Ed25519, ECDSA or RSA key pair in the browser: the line for authorized_keys, and the private key as PuTTY .ppk, OpenSSH or PEM, with a passphrase. Nothing is sent anywhere.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Key type","Curve","RSA size","Save as","This browser cannot make Ed25519 keys (it arrived in Chrome 137, Firefox 129 and Safari 17). Update it, or choose ECDSA or RSA.","the two passphrases differ","type the passphrase again to confirm it","no passphrase: whoever gets the private key file can use it","passphrase set, {n} characters","This is a public key: there is no private half to save. Load the private key file to convert it.","Private key formats wait until both passphrase fields match.","PEM is written here without a passphrase. Clear both passphrase fields to save it, or choose OpenSSH, which keeps one.","Hide","Show","The browser stopped: {message}","{n} bits","public key only","Generating — RSA 4096 takes a moment","Generating","Generate key","The browser could not make the key: {message}.","Encoding & Crypto","2026-11-02"],"h":107,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Crea aquí un par de claves SSH: una línea para authorized_keys y una clave privada para PuTTY u OpenSSH.","En este dispositivo","Funciona sin conexión","4096 bits","elige un tipo de clave y genera","No se creó la clave","Clave pública para authorized_keys","Copiado","Copiar","Clave","Huella","Comentario","Frase de contraseña","Repite la frase","Guardar como","Versión 2, para PuTTY anterior a 0.75","Guardar archivo","Cómo funciona","\u003cstrong>Generate key\u003c/strong> crea un par de claves con el WebCrypto del propio navegador: Ed25519, el valor por defecto en el OpenSSH actual y la elección correcta para cualquier servidor de la última década; ECDSA en las curvas NIST P-256, P-384 o P-521; o RSA de 2048, 3072 o 4096 bits con exponente público 65537, para sistemas antiguos que no admiten otra cosa. La mitad pública es la línea que un servidor OpenSSH espera en \u003ccode>~/.ssh/authorized_keys\u003c/code> (el tipo, la clave en base64, el comentario), mostrada con su huella SHA-256 tal como la imprime \u003ccode>ssh-keygen -l\u003c/code> y con la forma MD5, más antigua, que algunas consolas aún muestran. El comentario es una etiqueta: editarlo cambia la línea y los archivos, no la clave ni su huella.","\u003cstrong>No hay ningún ratón que mover.\u003c/strong> PuTTYgen te pide mover el puntero porque reúne su propia aleatoriedad. Un navegador obtiene números aleatorios del generador del sistema operativo, la misma fuente que usa \u003ccode>ssh-keygen\u003c/code>; una página no puede añadirle nada, y no necesita que se le añada nada. Cada pulsación crea una clave nueva, y nada se conserva al cerrar la pestaña.","\u003cstrong>Los archivos.\u003c/strong> PuTTY .ppk es la versión 3 salvo que marques la versión 2, para PuTTY 0.74 y anteriores. Con frase de contraseña se cifra con AES-256 bajo una clave de Argon2id con 8 MiB y 13 pasadas; PuTTYgen ajusta su propio número de pasadas a una décima de segundo en su máquina, esta página usa un número fijo, y PuTTY lee ambos. La versión 2 convierte la frase en una clave con una sola ronda de SHA-1, que es rápida de atacar: prefiere la versión 3. OpenSSH es el archivo \u003ccode>openssh-key-v1\u003c/code> que escribe \u003ccode>ssh-keygen\u003c/code>, protegido como lo protege \u003ccode>ssh-keygen\u003c/code>: bcrypt_pbkdf con 16 rondas y AES-256 en modo contador. PEM es el bloque antiguo PKCS#1 (RSA), SEC1 (ECDSA) o PKCS#8 (Ed25519), y se escribe solo sin frase de contraseña. .pub es la línea de authorized_keys como archivo; RFC 4716 es la forma \u003ccode>---- BEGIN SSH2 PUBLIC KEY ----\u003c/code> que escribe Save public key de PuTTYgen.","Argon2, BLAKE2b, bcrypt_pbkdf, Blowfish (sus tablas iniciales se calculan en la página a partir de los dígitos de pi) y MD5 están escritos en esta página; AES, SHA y la aritmética de claves son las del navegador. El escritor de .ppk reproduce byte a byte los archivos de prueba del propio PuTTY, y \u003ccode>ssh-keygen\u003c/code> lee los archivos OpenSSH y PEM que escribe.","\u003cstrong>Mantén privada la clave privada.\u003c/strong> Solo aparece en pantalla después de pulsar Mostrar, y Copiar la pone en el portapapeles, donde otros programas pueden leerla: guardar el archivo es la vía más segura. La página no hace ninguna petición de red; guárdala y ejecútala sin conexión si quieres estar seguro. No crea claves DSA (desactivadas en OpenSSH 7.0), claves Ed448, claves de seguridad (sk-) ni certificados. Para convertir una clave que ya tienes, usa el convertidor de PPK.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Generador de claves SSH — Ed25519, RSA, PuTTY .ppk y authorized_keys, sin conexión — MDV","Genera en el navegador un par de claves Ed25519, ECDSA o RSA: la línea para authorized_keys y la clave privada como PuTTY .ppk, OpenSSH o PEM, con frase de contraseña. No se envía nada a ninguna parte.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Tipo de clave","Curva","Tamaño de RSA","Guardar como","Este navegador no puede crear claves Ed25519 (llegaron en Chrome 137, Firefox 129 y Safari 17). Actualízalo o elige ECDSA o RSA.","las dos frases de contraseña no coinciden","repite la frase de contraseña para confirmarla","sin frase de contraseña: quien consiga el archivo de la clave privada puede usarla","frase de contraseña establecida, {n} caracteres","Esta es una clave pública: no hay mitad privada que guardar. Carga el archivo de la clave privada para convertirla.","Los formatos de clave privada esperan a que coincidan los dos campos de frase de contraseña.","PEM se escribe aquí sin frase de contraseña. Vacía ambos campos de frase para guardarlo, o elige OpenSSH, que sí la conserva.","Ocultar","Mostrar","El navegador se detuvo: {message}","{n} bits","solo clave pública","Generando: RSA 4096 tarda un momento","Generando","Generar clave","El navegador no pudo crear la clave: {message}.","Codificación y criptografía",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Créez ici une paire de clés SSH : une ligne pour authorized_keys et une clé privée pour PuTTY ou OpenSSH.","Sur cet appareil","Fonctionne hors ligne","4096 bits","choisissez un type de clé, puis générez","Aucune clé créée","Clé publique pour authorized_keys","Copié","Copier","Clé","Empreinte","Commentaire","Phrase secrète","Phrase secrète à nouveau","Enregistrer sous","Version 2, pour PuTTY avant 0.75","Enregistrer le fichier","Comment ça marche","\u003cstrong>Generate key\u003c/strong> crée une paire de clés avec le WebCrypto du navigateur : Ed25519, la valeur par défaut d’OpenSSH actuel et le bon choix pour tout serveur de la dernière décennie ; ECDSA sur les courbes NIST P-256, P-384 ou P-521 ; ou RSA en 2048, 3072 ou 4096 bits avec l’exposant public 65537, pour les anciens systèmes qui n’acceptent rien d’autre. La moitié publique est la ligne qu’un serveur OpenSSH attend dans \u003ccode>~/.ssh/authorized_keys\u003c/code> (le type, la clé en base64, le commentaire), affichée avec son empreinte SHA-256 telle que la imprime \u003ccode>ssh-keygen -l\u003c/code>, et la forme MD5, plus ancienne, que certaines consoles montrent encore. Le commentaire est une étiquette : le modifier change la ligne et les fichiers, pas la clé ni son empreinte.","\u003cstrong>Pas de souris à agiter.\u003c/strong> PuTTYgen vous demande de bouger le pointeur parce qu’il rassemble son propre aléa. Un navigateur tire ses nombres aléatoires du générateur du système d’exploitation, la même source qu’utilise \u003ccode>ssh-keygen\u003c/code> ; une page ne peut rien y ajouter, et n’a pas besoin qu’on y ajoute quoi que ce soit. Chaque appui crée une nouvelle clé, et rien n’est conservé une fois l’onglet fermé.","\u003cstrong>Les fichiers.\u003c/strong> Le .ppk de PuTTY est en version 3 sauf si vous cochez la version 2, pour PuTTY 0.74 et antérieur. Avec une phrase secrète, il est chiffré en AES-256 sous une clé issue d’Argon2id à 8 MiB et 13 passes ; PuTTYgen règle son propre nombre de passes sur un dixième de seconde sur sa machine, cette page utilise un nombre fixe, et PuTTY lit les deux. La version 2 transforme la phrase secrète en clé avec un seul tour de SHA-1, ce qui est rapide à attaquer : préférez la version 3. OpenSSH est le fichier \u003ccode>openssh-key-v1\u003c/code> qu’écrit \u003ccode>ssh-keygen\u003c/code>, protégé comme \u003ccode>ssh-keygen\u003c/code> le protège : bcrypt_pbkdf à 16 tours et AES-256 en mode compteur. PEM est l’ancien bloc PKCS#1 (RSA), SEC1 (ECDSA) ou PKCS#8 (Ed25519), écrit uniquement sans phrase secrète. .pub est la ligne authorized_keys sous forme de fichier ; RFC 4716 est la forme \u003ccode>---- BEGIN SSH2 PUBLIC KEY ----\u003c/code> qu’écrit Save public key de PuTTYgen.","Argon2, BLAKE2b, bcrypt_pbkdf, Blowfish (ses tables initiales sont calculées dans la page à partir des décimales de pi) et MD5 sont écrits dans cette page ; AES, SHA et l’arithmétique des clés sont ceux du navigateur. L’écrivain de .ppk reproduit octet pour octet les fichiers de test de PuTTY, et \u003ccode>ssh-keygen\u003c/code> lit les fichiers OpenSSH et PEM qu’il écrit.","\u003cstrong>Gardez la clé privée privée.\u003c/strong> Elle n’apparaît à l’écran qu’après avoir appuyé sur Afficher, et Copier la place dans le presse-papiers, où d’autres programmes peuvent la lire : enregistrer le fichier est la voie la plus sûre. La page ne fait aucune requête réseau ; enregistrez-la et exécutez-la hors réseau si vous voulez en être sûr. Elle ne crée ni clés DSA (désactivées dans OpenSSH 7.0), ni clés Ed448, ni clés de sécurité (sk-), ni certificats. Pour convertir une clé que vous avez déjà, utilisez le convertisseur PPK.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Générateur de clés SSH — Ed25519, RSA, PuTTY .ppk et authorized_keys, hors ligne — MDV","Générez dans le navigateur une paire de clés Ed25519, ECDSA ou RSA : la ligne pour authorized_keys et la clé privée en PuTTY .ppk, OpenSSH ou PEM, avec phrase secrète. Rien n’est envoyé nulle part.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Type de clé","Courbe","Taille RSA","Enregistrer sous","Ce navigateur ne peut pas créer de clés Ed25519 (elles sont arrivées dans Chrome 137, Firefox 129 et Safari 17). Mettez-le à jour ou choisissez ECDSA ou RSA.","les deux phrases secrètes diffèrent","saisissez de nouveau la phrase secrète pour la confirmer","pas de phrase secrète : quiconque obtient le fichier de clé privée peut l’utiliser","phrase secrète définie, {n} caractères","Ceci est une clé publique : il n’y a pas de moitié privée à enregistrer. Chargez le fichier de clé privée pour la convertir.","Les formats de clé privée attendent que les deux champs de phrase secrète concordent.","Le PEM est écrit ici sans phrase secrète. Videz les deux champs de phrase secrète pour l’enregistrer, ou choisissez OpenSSH, qui en garde une.","Masquer","Afficher","Le navigateur s’est arrêté : {message}","{n} bits","clé publique uniquement","Génération : RSA 4096 prend un moment","Génération","Générer la clé","Le navigateur n’a pas pu créer la clé : {message}.","Encodage et cryptographie",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Erzeuge hier ein SSH-Schlüsselpaar: eine Zeile für authorized_keys und einen privaten Schlüssel für PuTTY oder OpenSSH.","Läuft auf diesem Gerät","Funktioniert offline","4096 Bit","Schlüsseltyp wählen, dann erzeugen","Kein Schlüssel erzeugt","Öffentlicher Schlüssel für authorized_keys","Kopiert","Kopieren","Schlüssel","Fingerabdruck","Kommentar","Passphrase","Passphrase erneut","Speichern als","Version 2, für PuTTY vor 0.75","Datei speichern","So funktioniert es","\u003cstrong>Generate key\u003c/strong> erzeugt ein Schlüsselpaar mit dem WebCrypto des Browsers selbst: Ed25519, der Standard im aktuellen OpenSSH und die richtige Wahl für jeden Server der letzten zehn Jahre; ECDSA auf den NIST-Kurven P-256, P-384 oder P-521; oder RSA mit 2048, 3072 oder 4096 Bit und dem öffentlichen Exponenten 65537, für alte Systeme, die nichts anderes nehmen. Die öffentliche Hälfte ist die Zeile, die ein OpenSSH-Server in \u003ccode>~/.ssh/authorized_keys\u003c/code> erwartet (der Typ, der Schlüssel in Base64, der Kommentar), angezeigt mit ihrem SHA-256-Fingerabdruck, wie \u003ccode>ssh-keygen -l\u003c/code> ihn ausgibt, und der älteren MD5-Form, die manche Konsolen noch zeigen. Der Kommentar ist eine Beschriftung: Ihn zu ändern ändert die Zeile und die Dateien, nicht den Schlüssel oder seinen Fingerabdruck.","\u003cstrong>Es gibt keine Maus zu bewegen.\u003c/strong> PuTTYgen bittet dich, den Zeiger zu bewegen, weil es eigene Zufallswerte sammelt. Ein Browser bezieht Zufallszahlen vom Zufallsgenerator des Betriebssystems, derselben Quelle, die \u003ccode>ssh-keygen\u003c/code> nutzt; eine Seite kann dazu nichts beitragen und braucht auch nichts Zusätzliches. Jeder Druck erzeugt einen neuen Schlüssel, und nichts bleibt erhalten, sobald der Tab geschlossen ist.","\u003cstrong>Die Dateien.\u003c/strong> PuTTY .ppk ist Version 3, außer du setzt Version 2 für PuTTY 0.74 und älter. Mit Passphrase wird es mit AES-256 unter einem Schlüssel aus Argon2id bei 8 MiB und 13 Durchgängen verschlüsselt; PuTTYgen stimmt seine eigene Durchgangszahl auf eine Zehntelsekunde auf seinem Rechner ab, diese Seite nimmt eine feste Zahl, und PuTTY liest beides. Version 2 macht aus der Passphrase mit einer einzigen SHA-1-Runde einen Schlüssel, was sich schnell angreifen lässt: Nimm lieber Version 3. OpenSSH ist die Datei \u003ccode>openssh-key-v1\u003c/code>, die \u003ccode>ssh-keygen\u003c/code> schreibt, geschützt wie \u003ccode>ssh-keygen\u003c/code> sie schützt: bcrypt_pbkdf mit 16 Runden und AES-256 im Zählermodus. PEM ist der ältere Block PKCS#1 (RSA), SEC1 (ECDSA) oder PKCS#8 (Ed25519) und wird nur ohne Passphrase geschrieben. .pub ist die authorized_keys-Zeile als Datei; RFC 4716 ist die Form \u003ccode>---- BEGIN SSH2 PUBLIC KEY ----\u003c/code>, die Save public key von PuTTYgen schreibt.","Argon2, BLAKE2b, bcrypt_pbkdf, Blowfish (seine Starttabellen werden auf der Seite aus den Ziffern von Pi berechnet) und MD5 sind in dieser Seite ausgeschrieben; AES, SHA und die Schlüsselarithmetik kommen vom Browser. Der .ppk-Schreiber reproduziert PuTTYs eigene Testdateien Byte für Byte, und \u003ccode>ssh-keygen\u003c/code> liest die OpenSSH- und PEM-Dateien, die er schreibt.","\u003cstrong>Halte den privaten Schlüssel privat.\u003c/strong> Er erscheint nur auf dem Bildschirm, nachdem du Anzeigen gedrückt hast, und Kopieren legt ihn in die Zwischenablage, wo andere Programme ihn lesen können: Die Datei zu speichern ist der sicherere Weg. Die Seite stellt keine Netzwerkanfragen; speichere sie und führe sie ohne Netzwerk aus, wenn du sicher sein willst. Sie erzeugt keine DSA-Schlüssel (in OpenSSH 7.0 abgeschaltet), keine Ed448-Schlüssel, keine Security-Key-Schlüssel (sk-) und keine Zertifikate. Um einen vorhandenen Schlüssel umzuwandeln, nutze den PPK-Konverter.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","SSH-Schlüssel-Generator — Ed25519, RSA, PuTTY .ppk und authorized_keys, offline — MDV","Erzeuge im Browser ein Ed25519-, ECDSA- oder RSA-Schlüsselpaar: die Zeile für authorized_keys und den privaten Schlüssel als PuTTY .ppk, OpenSSH oder PEM, mit Passphrase. Nichts wird irgendwohin gesendet.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Schlüsseltyp","Kurve","RSA-Größe","Speichern als","Dieser Browser kann keine Ed25519-Schlüssel erzeugen (sie kamen mit Chrome 137, Firefox 129 und Safari 17). Aktualisiere ihn oder wähle ECDSA oder RSA.","die beiden Passphrasen unterscheiden sich","gib die Passphrase zur Bestätigung erneut ein","keine Passphrase: Wer die Datei mit dem privaten Schlüssel bekommt, kann ihn benutzen","Passphrase gesetzt, {n} Zeichen","Das ist ein öffentlicher Schlüssel: Es gibt keine private Hälfte zu speichern. Lade die Datei mit dem privaten Schlüssel, um ihn umzuwandeln.","Die Formate für private Schlüssel warten, bis beide Passphrase-Felder übereinstimmen.","PEM wird hier ohne Passphrase geschrieben. Leere beide Passphrase-Felder, um es zu speichern, oder wähle OpenSSH, das eine beibehält.","Ausblenden","Anzeigen","Der Browser hat angehalten: {message}","{n} Bit","nur öffentlicher Schlüssel","Erzeuge … RSA 4096 braucht einen Moment","Erzeuge …","Schlüssel erzeugen","Der Browser konnte den Schlüssel nicht erzeugen: {message}.","Kodierung und Krypto",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Crea qui una coppia di chiavi SSH: una riga per authorized_keys e una chiave privata per PuTTY o OpenSSH.","Su questo dispositivo","Funziona offline","4096 bit","scegli un tipo di chiave, poi genera","Nessuna chiave creata","Chiave pubblica per authorized_keys","Copiato","Copia","Chiave","Impronta","Commento","Passphrase","Passphrase di nuovo","Salva come","Versione 2, per PuTTY precedente alla 0.75","Salva file","Come funziona","\u003cstrong>Generate key\u003c/strong> crea una coppia di chiavi con il WebCrypto del browser: Ed25519, il predefinito dell’OpenSSH attuale e la scelta giusta per qualsiasi server dell’ultimo decennio; ECDSA sulle curve NIST P-256, P-384 o P-521; oppure RSA a 2048, 3072 o 4096 bit con esponente pubblico 65537, per i sistemi vecchi che non accettano altro. La metà pubblica è la riga che un server OpenSSH vuole in \u003ccode>~/.ssh/authorized_keys\u003c/code> (il tipo, la chiave in base64, il commento), mostrata con la sua impronta SHA-256 come la stampa \u003ccode>ssh-keygen -l\u003c/code> e con la forma MD5, più vecchia, che alcune console mostrano ancora. Il commento è un’etichetta: modificarlo cambia la riga e i file, non la chiave né la sua impronta.","\u003cstrong>Non c’è nessun mouse da agitare.\u003c/strong> PuTTYgen ti chiede di muovere il puntatore perché raccoglie una casualità propria. Un browser ricava i numeri casuali dal generatore del sistema operativo, la stessa fonte che usa \u003ccode>ssh-keygen\u003c/code>; una pagina non può aggiungervi nulla, e non ha bisogno che gli si aggiunga nulla. Ogni pressione crea una chiave nuova, e nulla viene conservato alla chiusura della scheda.","\u003cstrong>I file.\u003c/strong> Il .ppk di PuTTY è versione 3 a meno che tu non spunti la versione 2, per PuTTY 0.74 e precedenti. Con una passphrase è cifrato con AES-256 sotto una chiave derivata da Argon2id a 8 MiB e 13 passate; PuTTYgen regola il proprio numero di passate su un decimo di secondo sulla sua macchina, questa pagina usa un numero fisso, e PuTTY legge entrambi. La versione 2 trasforma la passphrase in una chiave con un solo giro di SHA-1, veloce da attaccare: preferisci la versione 3. OpenSSH è il file \u003ccode>openssh-key-v1\u003c/code> che scrive \u003ccode>ssh-keygen\u003c/code>, protetto come lo protegge \u003ccode>ssh-keygen\u003c/code>: bcrypt_pbkdf a 16 round e AES-256 in modalità contatore. PEM è il vecchio blocco PKCS#1 (RSA), SEC1 (ECDSA) o PKCS#8 (Ed25519), e viene scritto solo senza passphrase. .pub è la riga di authorized_keys come file; RFC 4716 è la forma \u003ccode>---- BEGIN SSH2 PUBLIC KEY ----\u003c/code> che scrive Save public key di PuTTYgen.","Argon2, BLAKE2b, bcrypt_pbkdf, Blowfish (le sue tabelle iniziali sono calcolate nella pagina dalle cifre di pi greco) e MD5 sono scritti in questa pagina; AES, SHA e l’aritmetica delle chiavi sono quelli del browser. Lo scrittore di .ppk riproduce byte per byte i file di prova di PuTTY, e \u003ccode>ssh-keygen\u003c/code> legge i file OpenSSH e PEM che scrive.","\u003cstrong>Tieni privata la chiave privata.\u003c/strong> Compare sullo schermo solo dopo che premi Mostra, e Copia la mette negli appunti, dove altri programmi possono leggerla: salvare il file è la via più sicura. La pagina non fa richieste di rete; salvala ed eseguila senza rete se vuoi esserne certo. Non crea chiavi DSA (disattivate in OpenSSH 7.0), chiavi Ed448, chiavi di sicurezza (sk-) né certificati. Per convertire una chiave che hai già, usa il convertitore PPK.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Generatore di chiavi SSH — Ed25519, RSA, PuTTY .ppk e authorized_keys, offline — MDV","Genera nel browser una coppia di chiavi Ed25519, ECDSA o RSA: la riga per authorized_keys e la chiave privata come PuTTY .ppk, OpenSSH o PEM, con passphrase. Non viene inviato nulla da nessuna parte.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Tipo di chiave","Curva","Dimensione RSA","Salva come","Questo browser non può creare chiavi Ed25519 (sono arrivate con Chrome 137, Firefox 129 e Safari 17). Aggiornalo o scegli ECDSA o RSA.","le due passphrase sono diverse","digita di nuovo la passphrase per confermarla","nessuna passphrase: chiunque ottenga il file della chiave privata può usarla","passphrase impostata, {n} caratteri","Questa è una chiave pubblica: non c’è una metà privata da salvare. Carica il file della chiave privata per convertirla.","I formati della chiave privata aspettano che i due campi passphrase coincidano.","Il PEM qui viene scritto senza passphrase. Svuota entrambi i campi passphrase per salvarlo, oppure scegli OpenSSH, che ne mantiene una.","Nascondi","Mostra","Il browser si è fermato: {message}","{n} bit","solo chiave pubblica","Generazione: RSA 4096 richiede un momento","Generazione","Genera chiave","Il browser non è riuscito a creare la chiave: {message}.","Codifica e crittografia",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Crie aqui um par de chaves SSH: uma linha para o authorized_keys e uma chave privada para PuTTY ou OpenSSH.","Neste dispositivo","Funciona offline","4096 bits","escolha um tipo de chave e gere","Nenhuma chave criada","Chave pública para authorized_keys","Copiado","Copiar","Chave","Impressão digital","Comentário","Frase secreta","Frase secreta novamente","Salvar como","Versão 2, para PuTTY anterior à 0.75","Salvar arquivo","Como funciona","\u003cstrong>Generate key\u003c/strong> cria um par de chaves com o WebCrypto do próprio navegador: Ed25519, o padrão do OpenSSH atual e a escolha certa para qualquer servidor da última década; ECDSA nas curvas NIST P-256, P-384 ou P-521; ou RSA de 2048, 3072 ou 4096 bits com expoente público 65537, para sistemas antigos que não aceitam outra coisa. A metade pública é a linha que um servidor OpenSSH espera em \u003ccode>~/.ssh/authorized_keys\u003c/code> (o tipo, a chave em base64, o comentário), mostrada com sua impressão digital SHA-256 como o \u003ccode>ssh-keygen -l\u003c/code> a imprime, e a forma MD5, mais antiga, que alguns consoles ainda mostram. O comentário é um rótulo: editá-lo muda a linha e os arquivos, não a chave nem a impressão digital.","\u003cstrong>Não há mouse para balançar.\u003c/strong> O PuTTYgen pede que você mova o ponteiro porque reúne sua própria aleatoriedade. Um navegador obtém números aleatórios do gerador do sistema operacional, a mesma fonte que o \u003ccode>ssh-keygen\u003c/code> usa; uma página não pode acrescentar nada a ela, e não precisa que se acrescente nada. Cada clique cria uma chave nova, e nada é guardado depois que a aba é fechada.","\u003cstrong>Os arquivos.\u003c/strong> O .ppk do PuTTY é versão 3, a menos que você marque a versão 2, para PuTTY 0.74 e anteriores. Com frase secreta, é cifrado com AES-256 sob uma chave do Argon2id a 8 MiB e 13 passagens; o PuTTYgen ajusta seu próprio número de passagens a um décimo de segundo na sua máquina, esta página usa um número fixo, e o PuTTY lê ambos. A versão 2 transforma a frase secreta em chave com uma única rodada de SHA-1, que é rápida de atacar: prefira a versão 3. OpenSSH é o arquivo \u003ccode>openssh-key-v1\u003c/code> que o \u003ccode>ssh-keygen\u003c/code> escreve, protegido como o \u003ccode>ssh-keygen\u003c/code> o protege: bcrypt_pbkdf com 16 rodadas e AES-256 em modo contador. PEM é o bloco mais antigo PKCS#1 (RSA), SEC1 (ECDSA) ou PKCS#8 (Ed25519), e só é escrito sem frase secreta. .pub é a linha do authorized_keys como arquivo; RFC 4716 é a forma \u003ccode>---- BEGIN SSH2 PUBLIC KEY ----\u003c/code> que o Save public key do PuTTYgen escreve.","Argon2, BLAKE2b, bcrypt_pbkdf, Blowfish (suas tabelas iniciais são calculadas na página a partir dos dígitos de pi) e MD5 estão escritos nesta página; AES, SHA e a aritmética das chaves são os do navegador. O gravador de .ppk reproduz byte a byte os arquivos de teste do próprio PuTTY, e o \u003ccode>ssh-keygen\u003c/code> lê os arquivos OpenSSH e PEM que ele grava.","\u003cstrong>Mantenha a chave privada privada.\u003c/strong> Ela aparece na tela somente depois que você clica em Mostrar, e Copiar a coloca na área de transferência, onde outros programas podem lê-la: salvar o arquivo é o caminho mais seguro. A página não faz nenhuma requisição de rede; salve-a e execute-a sem rede se quiser ter certeza. Ela não cria chaves DSA (desativadas no OpenSSH 7.0), chaves Ed448, chaves de segurança (sk-) nem certificados. Para converter uma chave que você já tem, use o conversor de PPK.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Gerador de chaves SSH — Ed25519, RSA, PuTTY .ppk e authorized_keys, offline — MDV","Gere no navegador um par de chaves Ed25519, ECDSA ou RSA: a linha para o authorized_keys e a chave privada como PuTTY .ppk, OpenSSH ou PEM, com frase secreta. Nada é enviado a lugar nenhum.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Tipo de chave","Curva","Tamanho do RSA","Salvar como","Este navegador não consegue criar chaves Ed25519 (elas chegaram no Chrome 137, Firefox 129 e Safari 17). Atualize-o ou escolha ECDSA ou RSA.","as duas frases secretas são diferentes","digite a frase secreta novamente para confirmar","sem frase secreta: quem obtiver o arquivo da chave privada pode usá-la","frase secreta definida, {n} caracteres","Esta é uma chave pública: não há metade privada para salvar. Carregue o arquivo da chave privada para convertê-la.","Os formatos de chave privada aguardam até que os dois campos de frase secreta coincidam.","O PEM é escrito aqui sem frase secreta. Esvazie os dois campos de frase secreta para salvá-lo, ou escolha OpenSSH, que mantém uma.","Ocultar","Mostrar","O navegador parou: {message}","{n} bits","somente chave pública","Gerando: RSA 4096 leva um momento","Gerando","Gerar chave","O navegador não conseguiu criar a chave: {message}.","Codificação e criptografia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","ここで SSH 鍵ペアを作成します。authorized_keys 用の 1 行と、PuTTY または OpenSSH 用の秘密鍵が得られます。","この端末で動作","オフラインで動作","4096 ビット","鍵の種類を選んで生成","鍵を作成できませんでした","authorized_keys 用の公開鍵","コピーしました","コピー","鍵","フィンガープリント","コメント","パスフレーズ","パスフレーズ(再入力)","保存形式","バージョン 2(PuTTY 0.75 より前向け)","ファイルを保存","仕組み","\u003cstrong>Generate key\u003c/strong> は、ブラウザー自身の WebCrypto で鍵ペアを作成します。現行の OpenSSH の既定で、この 10 年のどのサーバーにも適した Ed25519、NIST 曲線 P-256・P-384・P-521 の ECDSA、そして他を受け付けない古いシステム向けに、公開指数 65537 の 2048・3072・4096 ビット RSA から選べます。公開鍵の側は、OpenSSH サーバーが \u003ccode>~/.ssh/authorized_keys\u003c/code> に求める 1 行(種類、base64 の鍵、コメント)で、\u003ccode>ssh-keygen -l\u003c/code> が出力するのと同じ SHA-256 フィンガープリントと、一部のコンソールがまだ表示する古い MD5 形式とともに表示されます。コメントはラベルです。編集すると行とファイルは変わりますが、鍵とそのフィンガープリントは変わりません。","\u003cstrong>マウスを動かす必要はありません。\u003c/strong>PuTTYgen はポインターの動きで独自に乱数を集めるため、動かすよう求めます。ブラウザーは、\u003ccode>ssh-keygen\u003c/code> と同じ、オペレーティングシステムの乱数生成器から乱数を得ます。ページがそこに何かを足すことはできず、足す必要もありません。押すたびに新しい鍵が作られ、タブを閉じると何も残りません。","\u003cstrong>ファイル。\u003c/strong>PuTTY の .ppk は、PuTTY 0.74 以前向けのバージョン 2 にチェックしない限りバージョン 3 です。パスフレーズを付けると、8 MiB・13 パスの Argon2id から得た鍵で AES-256 により暗号化されます。PuTTYgen は自分の環境で 0.1 秒になるようパス数を調整しますが、このページは固定値を使い、PuTTY はどちらも読めます。バージョン 2 は SHA-1 の 1 ラウンドだけでパスフレーズを鍵にするため、攻撃が高速です。バージョン 3 を選んでください。OpenSSH は \u003ccode>ssh-keygen\u003c/code> が書き出す \u003ccode>openssh-key-v1\u003c/code> ファイルで、\u003ccode>ssh-keygen\u003c/code> と同じく 16 ラウンドの bcrypt_pbkdf とカウンターモードの AES-256 で保護されます。PEM は古い PKCS#1(RSA)、SEC1(ECDSA)、PKCS#8(Ed25519)のブロックで、パスフレーズなしでのみ書き出されます。.pub は authorized_keys の行をファイルにしたもの、RFC 4716 は PuTTYgen の Save public key が書き出す \u003ccode>---- BEGIN SSH2 PUBLIC KEY ----\u003c/code> 形式です。","Argon2、BLAKE2b、bcrypt_pbkdf、Blowfish(初期テーブルは円周率の桁からページ内で計算)、MD5 はこのページ内に実装されています。AES、SHA、鍵の演算はブラウザーのものです。.ppk の書き出しは PuTTY 自身のテストファイルをバイト単位で再現し、\u003ccode>ssh-keygen\u003c/code> は書き出された OpenSSH および PEM ファイルを読み取れます。","\u003cstrong>秘密鍵は秘密のままにしてください。\u003c/strong>画面に表示されるのは「表示」を押した後だけで、「コピー」はクリップボードに入れるため、ほかのプログラムから読み取れてしまいます。ファイルとして保存するほうが安全です。このページはネットワークリクエストを一切行いません。確実にしたい場合は、保存してネットワークをオフにして実行してください。DSA 鍵(OpenSSH 7.0 で無効化)、Ed448 鍵、セキュリティキー(sk-)の鍵、証明書は作成しません。すでにある鍵を変換するには、PPK コンバーターを使ってください。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","SSH 鍵ジェネレーター — Ed25519、RSA、PuTTY .ppk、authorized_keys、オフライン対応 — MDV","ブラウザー内で Ed25519、ECDSA、RSA の鍵ペアを生成します。authorized_keys 用の 1 行と、PuTTY .ppk・OpenSSH・PEM 形式の秘密鍵(パスフレーズ付き可)が得られます。何も送信されません。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","鍵の種類","曲線","RSA のサイズ","保存形式","このブラウザーでは Ed25519 鍵を作成できません(Chrome 137、Firefox 129、Safari 17 で対応)。更新するか、ECDSA または RSA を選んでください。","2 つのパスフレーズが一致しません","確認のためパスフレーズをもう一度入力してください","パスフレーズなし: 秘密鍵ファイルを手に入れた人は誰でも使えます","パスフレーズを設定しました({n} 文字)","これは公開鍵です。保存する秘密鍵の側はありません。変換するには秘密鍵ファイルを読み込んでください。","秘密鍵の形式は、2 つのパスフレーズ欄が一致するまで待機します。","PEM はここではパスフレーズなしで書き出されます。保存するには 2 つのパスフレーズ欄を空にするか、パスフレーズを保持できる OpenSSH を選んでください。","非表示","表示","ブラウザーが停止しました: {message}","{n} ビット","公開鍵のみ","生成中: RSA 4096 は少し時間がかかります","生成中","鍵を生成","ブラウザーが鍵を作成できませんでした: {message}。","エンコードと暗号",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","여기서 SSH 키 쌍을 만드세요. authorized_keys용 한 줄과 PuTTY 또는 OpenSSH용 개인 키가 만들어집니다.","이 기기에서 실행","오프라인 작동","4096비트","키 종류를 고르고 생성","키를 만들지 못했습니다","authorized_keys용 공개 키","복사됨","복사","키","지문","주석","암호 문구","암호 문구 확인","저장 형식","버전 2, PuTTY 0.75 이전용","파일 저장","작동 방식","\u003cstrong>Generate key\u003c/strong>는 브라우저 자체의 WebCrypto로 키 쌍을 만듭니다. 현재 OpenSSH의 기본값이며 최근 10년 사이의 어떤 서버에도 알맞은 Ed25519, NIST 곡선 P-256, P-384, P-521의 ECDSA, 그리고 다른 것을 받지 않는 오래된 시스템을 위해 공개 지수 65537의 2048, 3072, 4096비트 RSA를 고를 수 있습니다. 공개 키 쪽은 OpenSSH 서버가 \u003ccode>~/.ssh/authorized_keys\u003c/code>에 요구하는 한 줄(종류, base64 키, 주석)이며, \u003ccode>ssh-keygen -l\u003c/code>이 출력하는 형태의 SHA-256 지문과 일부 콘솔에서 아직 보여 주는 이전 방식의 MD5 지문과 함께 표시됩니다. 주석은 라벨입니다. 수정하면 줄과 파일은 바뀌지만 키와 지문은 바뀌지 않습니다.","\u003cstrong>마우스를 흔들 필요는 없습니다.\u003c/strong> PuTTYgen은 자체적으로 무작위성을 모으기 때문에 포인터를 움직이라고 합니다. 브라우저는 \u003ccode>ssh-keygen\u003c/code>이 쓰는 것과 같은 운영 체제의 난수 생성기에서 난수를 가져옵니다. 페이지가 여기에 더할 수 있는 것은 없고, 더할 필요도 없습니다. 누를 때마다 새 키가 만들어지며, 탭을 닫으면 아무것도 남지 않습니다.","\u003cstrong>파일.\u003c/strong> PuTTY .ppk는 PuTTY 0.74 이하용 버전 2를 선택하지 않으면 버전 3입니다. 암호 문구를 쓰면 8 MiB, 13회의 Argon2id에서 얻은 키로 AES-256 암호화됩니다. PuTTYgen은 자기 컴퓨터에서 0.1초가 되도록 횟수를 맞추지만, 이 페이지는 고정된 횟수를 쓰고 PuTTY는 둘 다 읽습니다. 버전 2는 SHA-1 한 라운드만으로 암호 문구를 키로 만들기 때문에 공격이 빠릅니다. 버전 3을 권합니다. OpenSSH는 \u003ccode>ssh-keygen\u003c/code>이 쓰는 \u003ccode>openssh-key-v1\u003c/code> 파일이며, \u003ccode>ssh-keygen\u003c/code>과 같게 16라운드의 bcrypt_pbkdf와 카운터 모드 AES-256으로 보호됩니다. PEM은 이전 방식의 PKCS#1(RSA), SEC1(ECDSA), PKCS#8(Ed25519) 블록이며 암호 문구 없이만 저장됩니다. .pub는 authorized_keys 줄을 파일로 만든 것이고, RFC 4716은 PuTTYgen의 Save public key가 쓰는 \u003ccode>---- BEGIN SSH2 PUBLIC KEY ----\u003c/code> 형식입니다.","Argon2, BLAKE2b, bcrypt_pbkdf, Blowfish(초기 테이블은 페이지 안에서 원주율의 자릿수로부터 계산), MD5는 이 페이지에 직접 구현되어 있습니다. AES, SHA, 키 연산은 브라우저의 것입니다. .ppk 쓰기는 PuTTY 자체의 테스트 파일을 바이트 단위로 똑같이 재현하며, \u003ccode>ssh-keygen\u003c/code>은 여기서 저장한 OpenSSH 및 PEM 파일을 읽습니다.","\u003cstrong>개인 키는 비공개로 두세요.\u003c/strong> 표시를 누른 뒤에만 화면에 나타나며, 복사는 다른 프로그램이 읽을 수 있는 클립보드에 넣으므로 파일로 저장하는 편이 더 안전합니다. 이 페이지는 네트워크 요청을 하지 않습니다. 확실히 하고 싶다면 저장한 뒤 네트워크를 끄고 실행하세요. DSA 키(OpenSSH 7.0에서 비활성화됨), Ed448 키, 보안 키(sk-) 키, 인증서는 만들지 않습니다. 이미 가진 키를 변환하려면 PPK 변환기를 사용하세요.","다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","SSH 키 생성기 — Ed25519, RSA, PuTTY .ppk, authorized_keys, 오프라인 — MDV","브라우저에서 Ed25519, ECDSA, RSA 키 쌍을 생성합니다. authorized_keys용 한 줄과 PuTTY .ppk, OpenSSH, PEM 형식의 개인 키(암호 문구 가능)를 얻습니다. 어디로도 전송되지 않습니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","키 종류","곡선","RSA 크기","저장 형식","이 브라우저는 Ed25519 키를 만들 수 없습니다(Chrome 137, Firefox 129, Safari 17부터 지원). 브라우저를 업데이트하거나 ECDSA 또는 RSA를 고르세요.","두 암호 문구가 다릅니다","확인을 위해 암호 문구를 다시 입력하세요","암호 문구 없음: 개인 키 파일을 얻은 사람은 누구나 사용할 수 있습니다","암호 문구 설정됨, {n}자","공개 키이므로 저장할 개인 키 쪽이 없습니다. 변환하려면 개인 키 파일을 불러오세요.","개인 키 형식은 두 암호 문구 입력란이 일치할 때까지 기다립니다.","PEM은 여기서 암호 문구 없이 저장됩니다. 저장하려면 두 암호 문구 입력란을 비우거나, 암호 문구를 유지하는 OpenSSH를 고르세요.","숨기기","표시","브라우저가 멈췄습니다: {message}","{n}비트","공개 키만","생성 중: RSA 4096은 시간이 걸립니다","생성 중","키 생성","브라우저가 키를 만들지 못했습니다: {message}.","인코딩과 암호화",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","在此生成 SSH 密钥对:一行 authorized_keys 内容,以及供 PuTTY 或 OpenSSH 使用的私钥。","在此设备上运行","可离线使用","4096 位","选择密钥类型,然后生成","未生成密钥","用于 authorized_keys 的公钥","已复制","复制","密钥","指纹","注释","口令短语","再次输入口令短语","保存为","版本 2，适用于 0.75 之前的 PuTTY","保存文件","工作原理","\u003cstrong>Generate key\u003c/strong> 使用浏览器自带的 WebCrypto 生成密钥对:Ed25519，当前 OpenSSH 的默认选择,也是近十年内任何服务器的正确之选;NIST 曲线 P-256、P-384 或 P-521 上的 ECDSA;或公开指数为 65537 的 2048、3072、4096 位 RSA，供只接受 RSA 的旧系统使用。公钥部分是 OpenSSH 服务器在 \u003ccode>~/.ssh/authorized_keys\u003c/code> 中需要的那一行(类型、base64 编码的密钥、注释),并附上与 \u003ccode>ssh-keygen -l\u003c/code> 输出一致的 SHA-256 指纹,以及一些控制台仍会显示的较旧的 MD5 形式。注释只是标签:编辑它会改变这一行和文件,不会改变密钥及其指纹。","\u003cstrong>无需晃动鼠标。\u003c/strong>PuTTYgen 要你移动指针,是因为它自己收集随机性。浏览器从操作系统的随机数生成器获取随机数,与 \u003ccode>ssh-keygen\u003c/code> 使用的来源相同;页面无法再往里添加什么,也不需要添加。每次点击都会生成新密钥,关闭标签页后不会保留任何内容。","\u003cstrong>文件。\u003c/strong>PuTTY .ppk 为版本 3，除非勾选版本 2(适用于 PuTTY 0.74 及更早版本)。设置口令短语后,用来自 Argon2id(8 MiB、13 轮)的密钥以 AES-256 加密;PuTTYgen 会让自己的轮数在本机上耗时约十分之一秒,本页使用固定轮数,PuTTY 两种都能读取。版本 2 只用一轮 SHA-1 把口令短语变成密钥,攻击起来很快:请优先选择版本 3。OpenSSH 是 \u003ccode>ssh-keygen\u003c/code> 写出的 \u003ccode>openssh-key-v1\u003c/code> 文件,保护方式与 \u003ccode>ssh-keygen\u003c/code> 相同:16 轮 bcrypt_pbkdf 加计数器模式的 AES-256。PEM 是较旧的 PKCS#1(RSA)、SEC1(ECDSA)或 PKCS#8(Ed25519)块,只在没有口令短语时写出。.pub 是 authorized_keys 那一行存成的文件;RFC 4716 是 PuTTYgen 的 Save public key 写出的 \u003ccode>---- BEGIN SSH2 PUBLIC KEY ----\u003c/code> 形式。","Argon2、BLAKE2b、bcrypt_pbkdf、Blowfish(其初始表由页面根据圆周率的数字算出)和 MD5 都写在本页之中;AES、SHA 和密钥运算则来自浏览器。.ppk 写出器能逐字节复现 PuTTY 自己的测试文件,\u003ccode>ssh-keygen\u003c/code> 也能读取它写出的 OpenSSH 和 PEM 文件。","\u003cstrong>请保管好私钥。\u003c/strong>只有在你点击“显示”之后,它才会出现在屏幕上;“复制”会把它放进剪贴板,其他程序可以读取,所以保存为文件更安全。本页不发出任何网络请求;若想确认,可将其保存后在断网状态下运行。它不生成 DSA 密钥(OpenSSH 7.0 已禁用)、Ed448 密钥、安全密钥(sk-)密钥或证书。若要转换已有的密钥,请使用 PPK 转换器。","“深色”和“语言”按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被保存。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","SSH 密钥生成器 — Ed25519、RSA、PuTTY .ppk 和 authorized_keys，可离线使用 — MDV","在浏览器中生成 Ed25519、ECDSA 或 RSA 密钥对:authorized_keys 所需的一行,以及 PuTTY .ppk、OpenSSH 或 PEM 格式的私钥(可设口令短语)。不会向任何地方发送数据。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","密钥类型","曲线","RSA 位数","保存为","此浏览器无法生成 Ed25519 密钥(Chrome 137、Firefox 129 和 Safari 17 起支持)。请更新浏览器,或选择 ECDSA 或 RSA。","两个口令短语不一致","请再次输入口令短语以确认","没有口令短语:任何拿到私钥文件的人都能使用它","已设置口令短语,{n} 个字符","这是公钥:没有可保存的私钥部分。请载入私钥文件再转换。","在两个口令短语输入框一致之前,私钥格式不可用。","此处的 PEM 不带口令短语。要保存它,请清空两个口令短语输入框,或选择可保留口令短语的 OpenSSH。","隐藏","显示","浏览器已停止:{message}","{n} 位","仅公钥","生成中:RSA 4096 需要一点时间","生成中","生成密钥","浏览器无法生成密钥:{message}。","编码与加密",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2801,7 +3015,7 @@ var SshKeys = (function () {
     var jwk, k;
     if (kind === "ed25519") {
       var kp = await subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]).catch(function () {
-        fail("This browser cannot make Ed25519 keys (it arrived in Chrome 137, Firefox 129 and Safari 17). Update it, or choose ECDSA or RSA.");
+        fail(trk("This browser cannot make Ed25519 keys (it arrived in Chrome 137, Firefox 129 and Safari 17). Update it, or choose ECDSA or RSA."));
       });
       jwk = await subtle.exportKey("jwk", kp.privateKey);
       k = { kind: "ed25519", seed: unb64url(jwk.d), pub: unb64url(jwk.x) };
@@ -3216,16 +3430,16 @@ var SshKeys = (function () {
     function stem() { return { ed25519: "id_ed25519", ecdsa: "id_ecdsa", rsa: "id_rsa" }[key.kind]; }
     function passState() {
       var a = pass.value, b = pass2.value;
-      if (a !== b) return { ok: false, text: b ? "the two passphrases differ" : "type the passphrase again to confirm it", cls: "is-bad" };
-      if (!a) return { ok: true, pass: null, text: "no passphrase: whoever gets the private key file can use it", cls: "is-warn" };
-      return { ok: true, pass: a, text: "passphrase set, " + a.length + " characters", cls: "is-ok" };
+      if (a !== b) return { ok: false, text: b ? tr("the two passphrases differ") : tr("type the passphrase again to confirm it"), cls: "is-bad" };
+      if (!a) return { ok: true, pass: null, text: tr("no passphrase: whoever gets the private key file can use it"), cls: "is-warn" };
+      return { ok: true, pass: a, text: tr("passphrase set, {n} characters", { n: a.length }), cls: "is-ok" };
     }
     function blocked(f) {
       if (!FORMATS[f].secret) return null;
-      if (!key.private) return "This is a public key: there is no private half to save. Load the private key file to convert it.";
+      if (!key.private) return tr("This is a public key: there is no private half to save. Load the private key file to convert it.");
       var ps = passState();
-      if (!ps.ok) return "Private key formats wait until both passphrase fields match.";
-      if (f === "pem" && ps.pass) return "PEM is written here without a passphrase. Clear both passphrase fields to save it, or choose OpenSSH, which keeps one.";
+      if (!ps.ok) return tr("Private key formats wait until both passphrase fields match.");
+      if (f === "pem" && ps.pass) return tr("PEM is written here without a passphrase. Clear both passphrase fields to save it, or choose OpenSSH, which keeps one.");
       return null;
     }
     function cacheKey(f) { return [f, key.comment, passState().pass || "", $("v2") && $("v2").checked ? 2 : 3].join("\u0000"); }
@@ -3254,19 +3468,19 @@ var SshKeys = (function () {
       $("v2row").hidden = fmt !== "ppk";
       ["saveFile", "copyFile", "showFile"].forEach(function (id) { $(id).disabled = !!why; });
       $("showFile").hidden = !f.secret;
-      $("showFile").textContent = shown ? "Hide" : "Show";
+      $("showFile").textContent = shown ? tr("Hide") : tr("Show");
       saidFile.textContent = why || "";
       saidFile.hidden = !why;
       if (why || (f.secret && !shown)) { fileText.hidden = true; return; }
       var want = cacheKey(fmt);
       make(fmt).then(function (t) { if (cacheKey(fmt) === want) { fileText.textContent = t; fileText.hidden = false; } }, report);
     }
-    function report(e) { saidFile.textContent = e && e.mdv ? e.message : "The browser stopped: " + (e && e.message || e); saidFile.hidden = false; }
+    function report(e) { saidFile.textContent = e && e.mdv ? tr(e.message) : tr("The browser stopped: {message}", { message: e && e.message || e }); saidFile.hidden = false; }
     async function drawPublic() {
       pub.value = authorizedLine(key);
       fit();
       var fp = await fingerprints(key);
-      $("k-type").textContent = label(key) + " · " + bits(key) + " bits" + (key.private ? "" : " · public key only");
+      $("k-type").textContent = label(key) + " · " + tr("{n} bits", { n: bits(key) }) + (key.private ? "" : " · " + tr("public key only"));
       $("k-sha").textContent = fp.sha256;
       $("k-md5").textContent = fp.md5;
     }
@@ -3279,6 +3493,7 @@ var SshKeys = (function () {
       note.className = "mdv-dot-note " + ps.cls;
     }
     function changed() { shown = false; drawPass(); drawFile(); }
+    onLang(function () { if (key) { drawPass(); drawFile(); drawPublic(); } });
 
     segs.forEach(function (b) {
       b.addEventListener("click", function () {
@@ -3349,6 +3564,16 @@ var SshKeys = (function () {
   var $ = function (id) { return document.getElementById(id); };
   var kind = "ed25519", ec = 256, rsa = 3072, key = null, lastDefault = null;
   var out = SshKeys.panel();
+  var generating = false, lastErr = null;
+
+  function drawGen() {
+    $("gen").textContent = generating ? (kind === "rsa" && rsa === 4096 ? tr("Generating — RSA 4096 takes a moment") : tr("Generating")) : tr("Generate key");
+  }
+  function drawErr() {
+    if (!lastErr) return;
+    var e = lastErr;
+    $("errmsg").textContent = e && e.mdv ? tr(e.message) : tr("The browser could not make the key: {message}.", { message: e && e.message || e });
+  }
 
   function state(which) {
     $("empty").hidden = which !== "empty";
@@ -3371,25 +3596,32 @@ var SshKeys = (function () {
   $("gen").addEventListener("click", function () {
     var btn = $("gen");
     btn.disabled = true;
-    btn.textContent = kind === "rsa" && rsa === 4096 ? "Generating — RSA 4096 takes a moment" : "Generating";
+    generating = true;
+    drawGen();
     SshKeys.generate(kind, kind === "ecdsa" ? ec : kind === "rsa" ? rsa : null).then(function (k) {
       // a comment you typed for the last key carries over; the dated default does not
       var typed = $("comment").value;
       if (key && typed && typed !== lastDefault) k.comment = typed;
       lastDefault = SshKeys.defaultComment(k);
       key = k;
+      lastErr = null;
       state("ok");
       out.show(k);
     }, function (e) {
-      $("errmsg").textContent = e && e.mdv ? e.message : "The browser could not make the key: " + (e && e.message || e) + ".";
+      lastErr = e;
+      drawErr();
       state("error");
     }).then(function () {
       btn.disabled = false;
-      btn.textContent = "Generate key";
+      generating = false;
+      drawGen();
     });
   });
 
   state("empty");
+  drawGen();
+  onLang(function () { drawGen(); drawErr(); });
+  drawGen();
   $("gen").focus({ preventScroll: true });
 })();
 </script>

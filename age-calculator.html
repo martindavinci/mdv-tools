@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link is-here" href="./age-calculator.html" aria-current="page" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link is-here" href="./age-calculator.html" aria-current="page" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,88 +2353,89 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Age calculator</h1>
+      <h1 class="mdv-head-name" data-t="68">Age calculator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Give a date of birth and read the age it makes today, or on any other day.</p>
+    <p class="mdv-head-line" data-t="79">Give a date of birth and read the age it makes today, or on any other day.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-panel">
     <div class="mdv-cols">
       <div>
-        <label class="mdv-label" for="born">Date of birth</label>
+        <label class="mdv-label" for="born" data-t="82">Date of birth</label>
         <input class="mdv-input mdv-mono" id="born" type="date" min="0001-01-01" max="9999-12-31" style="width:100%">
       </div>
       <div>
-        <label class="mdv-label" for="on">Age on</label>
+        <label class="mdv-label" for="on" data-t="83">Age on</label>
         <div class="mdv-row" style="gap:var(--space-2)">
           <input class="mdv-input mdv-mono" id="on" type="date" min="0001-01-01" max="9999-12-31" style="flex:1">
-          <button class="mdv-btn is-sm is-quiet" type="button" id="todayBtn">Today</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="todayBtn"><span data-t="84">Today</span></button>
         </div>
       </div>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>pick a date of birth above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="85">pick a date of birth above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Cannot age that</span>
+      <span class="mdv-notice-title" data-t="86">Cannot age that</span>
       <span id="errmsg"></span>
     </div>
 
     <div class="mdv-readout" id="big" hidden><span id="bigText"></span></div>
     <div class="mdv-panel is-flush" id="result" hidden>
       <dl class="mdv-kv">
-        <dt>In months</dt><dd id="k-months"></dd>
-        <dt>In weeks</dt><dd id="k-weeks"></dd>
-        <dt>In days</dt><dd id="k-days"></dd>
-        <dt>Born on a</dt><dd id="k-dow"></dd>
+        <dt data-t="87">In months</dt><dd id="k-months"></dd>
+        <dt data-t="88">In weeks</dt><dd id="k-weeks"></dd>
+        <dt data-t="89">In days</dt><dd id="k-days"></dd>
+        <dt data-t="90">Born on a</dt><dd id="k-dow"></dd>
         <dt id="t-next">Next birthday</dt><dd id="k-next"></dd>
       </dl>
     </div>
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="91">How this works</summary>
     <div class="mdv-method-body">
-      <p>Age is counted the way a birthday is counted, not by dividing days. Whole years are added to the
+      <p data-t="92">Age is counted the way a birthday is counted, not by dividing days. Whole years are added to the
         date of birth while they still fit, then whole months, then the days left over. So someone born on
         31 March is one month old on 30 April and 1 month 1 day old on 1 May: a month that has no 31st ends
         on its last day. Someone born on 29 February has a birthday on 28 February in common years, which is
         the rule most registries use; February 29 itself returns every fourth year, and the next-birthday
         line names the real date it falls on.</p>
-      <p>Both dates are turned into day counts on the proleptic Gregorian calendar with integer arithmetic,
+      <p data-t="93">Both dates are turned into day counts on the proleptic Gregorian calendar with integer arithmetic,
         so every year from 1 to 9999 counts alike, leap years included. Clock times, birth hours and time
         zones are not part of it: a day is a day wherever it is spent, and a page that asked for your hour
         of birth could not tell you anything more exact. In days is the plain difference between the two
         dates; in weeks is that divided by seven with the remainder; in months counts whole months the same
         way the years do. A date of birth after the second date is refused rather than shown as a negative
         age — swap the two fields to count towards a birth.</p>
-      <p>Nothing is uploaded and nothing is remembered: there is no server in this file, and the dates you
-        type are gone when the tab closes. The Dark button remembers its own setting in this browser's local
+      <p data-t="94">Nothing is uploaded and nothing is remembered: there is no server in this file, and the dates you
+        type are gone when the tab closes. The Dark and language buttons remember their own settings in this browser's local
         storage, and nothing else is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Time &amp; Date">
-    <span class="mdv-tag">Also in Time &amp; Date</span>
-    <a href="./date-difference.html">Date difference</a>
-    <a href="./discord-timestamp.html">Discord timestamp</a>
-    <a href="./timezone-converter.html">Time zone converter</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Time &amp; Date"}'>Also in Time &amp; Date</span>
+    <a href="./date-difference.html" data-t="69">Date difference</a>
+    <a href="./discord-timestamp.html" data-t="70">Discord timestamp</a>
+    <a href="./timezone-converter.html" data-t="71">Time zone converter</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="95">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="96">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="97" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="98">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2333,6 +2446,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Age Calculator — exact age in years, months and days, and the next birthday — MDV","Enter a date of birth and read the exact age in years, months and days, the total in months, weeks and days, the weekday you were born on, and how long until the next birthday. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday","January","February","March","April","May","June","July","August","September","October","November","December","{a}, {b}","{day} {month} {year}","“{value}” is not a date between 0001-01-01 and 9999-12-31. Pick one with the field's own picker.","The date of birth is after {date}, so there is no age to count yet. Put the later date in Age on.","{weekday}, {date}","Birthday","Next birthday","today — turning {age}","{away} away, on {weekday} {date} — turning {age}, the 28th in a common year","{away} away, on {weekday} {date} — turning {age}","{n} year","{n} years","{n} month","{n} months","{n} week","{n} weeks","{n} day","{n} days","Time & Date","2026-11-02"],"h":99,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Indica una fecha de nacimiento y lee la edad que da hoy, o en cualquier otro día.","En este dispositivo","Funciona sin conexión","Fecha de nacimiento","Edad el","Hoy","elige arriba una fecha de nacimiento","No se puede calcular esa edad","En meses","En semanas","En días","Día de nacimiento","Cómo funciona","La edad se cuenta como se cuenta un cumpleaños, no dividiendo días. Se suman a la fecha de nacimiento años completos mientras quepan, luego meses completos y después los días que sobran. Así, quien nació un 31 de marzo tiene un mes el 30 de abril y 1 mes y 1 día el 1 de mayo: un mes que no tiene día 31 termina en su último día. Quien nació un 29 de febrero cumple años el 28 de febrero en los años comunes, que es la regla que usan la mayoría de los registros; el propio 29 de febrero vuelve cada cuatro años, y la línea del próximo cumpleaños indica la fecha real en que cae.","Las dos fechas se convierten en recuentos de días del calendario gregoriano proléptico con aritmética de enteros, así que todos los años del 1 al 9999 cuentan igual, incluidos los bisiestos. Las horas del reloj, las horas de nacimiento y las zonas horarias no intervienen: un día es un día dondequiera que se pase, y una página que pidiera tu hora de nacimiento no podría decirte nada más exacto. En días es la diferencia simple entre las dos fechas; en semanas es eso dividido entre siete con el resto; en meses cuenta meses completos del mismo modo que los años. Una fecha de nacimiento posterior a la segunda fecha se rechaza en lugar de mostrarse como una edad negativa: intercambia los dos campos para contar hacia un nacimiento.","Nada se sube y nada se recuerda: este archivo no tiene servidor, y las fechas que escribes desaparecen al cerrar la pestaña. Los botones de modo oscuro e idioma recuerdan su propio ajuste en el almacenamiento local de este navegador, y nada más se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Calculadora de edad — edad exacta en años, meses y días, y el próximo cumpleaños — MDV","Introduce una fecha de nacimiento y lee la edad exacta en años, meses y días, el total en meses, semanas y días, el día de la semana en que naciste y cuánto falta para el próximo cumpleaños. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","lunes","martes","miércoles","jueves","viernes","sábado","domingo","enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre","{a}, {b}","{day} de {month} de {year}","“{value}” no es una fecha entre 0001-01-01 y 9999-12-31. Elige una con el selector del propio campo.","La fecha de nacimiento es posterior a {date}, así que aún no hay edad que contar. Pon la fecha posterior en Edad el.","{weekday}, {date}","Cumpleaños","Próximo cumpleaños","hoy: cumple {age}","faltan {away}, el {weekday} {date}: cumple {age}, el 28 en un año común","faltan {away}, el {weekday} {date}: cumple {age}","{n} año","{n} años","{n} mes","{n} meses","{n} semana","{n} semanas","{n} día","{n} días","Hora y fecha",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Indiquez une date de naissance et lisez l’âge qu’elle donne aujourd’hui, ou à n’importe quelle autre date.","Sur cet appareil","Fonctionne hors ligne","Date de naissance","Âge au","Aujourd’hui","choisissez une date de naissance ci-dessus","Impossible de calculer cet âge","En mois","En semaines","En jours","Jour de naissance","Comment ça marche","L’âge se compte comme on compte un anniversaire, pas en divisant des jours. On ajoute à la date de naissance des années entières tant qu’elles tiennent, puis des mois entiers, puis les jours restants. Ainsi, quelqu’un né un 31 mars a un mois le 30 avril et 1 mois 1 jour le 1er mai : un mois qui n’a pas de 31 se termine à son dernier jour. Quelqu’un né un 29 février fête son anniversaire le 28 février les années communes, ce qui est la règle de la plupart des registres ; le 29 février lui-même revient tous les quatre ans, et la ligne du prochain anniversaire indique la vraie date où il tombe.","Les deux dates sont converties en nombres de jours du calendrier grégorien proleptique par une arithmétique entière, si bien que chaque année de 1 à 9999 compte pareillement, années bissextiles comprises. Les heures, les heures de naissance et les fuseaux horaires n’y entrent pas : un jour est un jour où qu’on le passe, et une page qui demanderait votre heure de naissance ne pourrait rien vous dire de plus exact. En jours est la simple différence entre les deux dates ; en semaines, c’est cela divisé par sept avec le reste ; en mois compte les mois entiers de la même façon que les années. Une date de naissance postérieure à la seconde date est refusée plutôt qu’affichée comme un âge négatif : échangez les deux champs pour compter vers une naissance.","Rien n’est envoyé et rien n’est retenu : ce fichier n’a pas de serveur, et les dates que vous saisissez disparaissent à la fermeture de l’onglet. Les boutons Sombre et Langue mémorisent leur propre réglage dans le stockage local de ce navigateur, et rien d’autre n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Calculateur d’âge — âge exact en années, mois et jours, et prochain anniversaire — MDV","Saisissez une date de naissance et lisez l’âge exact en années, mois et jours, le total en mois, semaines et jours, le jour de la semaine de votre naissance et le temps restant avant le prochain anniversaire. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche","janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre","{a}, {b}","{day} {month} {year}","« {value} » n’est pas une date comprise entre 0001-01-01 et 9999-12-31. Choisissez-en une avec le sélecteur du champ.","La date de naissance est postérieure au {date}, il n’y a donc pas encore d’âge à compter. Mettez la date la plus tardive dans Âge au.","{weekday}, {date}","Anniversaire","Prochain anniversaire","aujourd’hui : {age}","dans {away}, le {weekday} {date} : {age}, le 28 les années communes","dans {away}, le {weekday} {date} : {age}","{n} an","{n} ans","{n} mois","{n} mois","{n} semaine","{n} semaines","{n} jour","{n} jours","Heure et date",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Gib ein Geburtsdatum an und lies das Alter ab, das sich heute oder an einem anderen Tag ergibt.","Läuft auf diesem Gerät","Funktioniert offline","Geburtsdatum","Alter am","Heute","oben ein Geburtsdatum wählen","Dieses Alter lässt sich nicht berechnen","In Monaten","In Wochen","In Tagen","Geboren an einem","So funktioniert es","Das Alter wird so gezählt, wie man einen Geburtstag zählt, nicht durch Teilen von Tagen. Zum Geburtsdatum werden ganze Jahre addiert, solange sie noch passen, dann ganze Monate, dann die übrigen Tage. Wer am 31. März geboren ist, ist am 30. April einen Monat alt und am 1. Mai 1 Monat 1 Tag alt: Ein Monat ohne 31. endet an seinem letzten Tag. Wer am 29. Februar geboren ist, hat in normalen Jahren am 28. Februar Geburtstag, so wie es die meisten Register handhaben; der 29. Februar selbst kehrt alle vier Jahre wieder, und die Zeile zum nächsten Geburtstag nennt das tatsächliche Datum.","Beide Daten werden mit Ganzzahlarithmetik in Tageszahlen des proleptischen gregorianischen Kalenders umgewandelt, sodass jedes Jahr von 1 bis 9999 gleich zählt, Schaltjahre eingeschlossen. Uhrzeiten, Geburtsstunden und Zeitzonen spielen keine Rolle: Ein Tag ist ein Tag, wo auch immer er verbracht wird, und eine Seite, die nach deiner Geburtsstunde fragte, könnte dir nichts Genaueres sagen. In Tagen ist die einfache Differenz zwischen den beiden Daten; in Wochen ist diese durch sieben geteilt mit Rest; in Monaten zählt ganze Monate auf dieselbe Weise wie die Jahre. Ein Geburtsdatum nach dem zweiten Datum wird abgelehnt, statt als negatives Alter angezeigt zu werden – tausche die beiden Felder, um auf eine Geburt hin zu zählen.","Nichts wird hochgeladen und nichts gemerkt: Diese Datei hat keinen Server, und die Daten, die du eingibst, sind weg, wenn der Tab geschlossen wird. Die Schaltflächen für Dunkel und Sprache merken sich ihre eigene Einstellung im lokalen Speicher dieses Browsers, und sonst wird nichts gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Altersrechner — genaues Alter in Jahren, Monaten und Tagen und der nächste Geburtstag — MDV","Gib ein Geburtsdatum ein und lies das genaue Alter in Jahren, Monaten und Tagen ab, die Summe in Monaten, Wochen und Tagen, den Wochentag deiner Geburt und die Zeit bis zum nächsten Geburtstag. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag","Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember","{a}, {b}","{day}. {month} {year}","„{value}“ ist kein Datum zwischen 0001-01-01 und 9999-12-31. Wähle eines mit der Auswahl des Feldes.","Das Geburtsdatum liegt nach dem {date}, es gibt also noch kein Alter zu zählen. Trage das spätere Datum in Alter am ein.","{weekday}, {date}","Geburtstag","Nächster Geburtstag","heute: wird {age} alt","in {away}, am {weekday}, {date}: wird {age} alt, am 28. in einem normalen Jahr","in {away}, am {weekday}, {date}: wird {age} alt","{n} Jahr","{n} Jahre","{n} Monat","{n} Monate","{n} Woche","{n} Wochen","{n} Tag","{n} Tage","Zeit und Datum",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Indica una data di nascita e leggi l’età che ne risulta oggi, o in qualsiasi altro giorno.","Su questo dispositivo","Funziona offline","Data di nascita","Età al","Oggi","scegli sopra una data di nascita","Impossibile calcolare questa età","In mesi","In settimane","In giorni","Giorno di nascita","Come funziona","L’età si conta come si conta un compleanno, non dividendo giorni. Alla data di nascita si sommano anni interi finché ci stanno, poi mesi interi, poi i giorni che avanzano. Così chi è nato il 31 marzo ha un mese il 30 aprile e 1 mese e 1 giorno il 1° maggio: un mese che non ha il 31 finisce nel suo ultimo giorno. Chi è nato il 29 febbraio festeggia il 28 febbraio negli anni comuni, che è la regola usata dalla maggior parte dei registri; il 29 febbraio in sé torna ogni quattro anni, e la riga del prossimo compleanno indica la data reale in cui cade.","Le due date vengono convertite in conteggi di giorni del calendario gregoriano prolettico con aritmetica intera, quindi ogni anno da 1 a 9999 conta allo stesso modo, bisestili compresi. Orari, ore di nascita e fusi orari non c’entrano: un giorno è un giorno ovunque sia trascorso, e una pagina che chiedesse la tua ora di nascita non potrebbe dirti nulla di più preciso. In giorni è la semplice differenza tra le due date; in settimane è quella divisa per sette con il resto; in mesi conta mesi interi allo stesso modo degli anni. Una data di nascita successiva alla seconda data viene rifiutata invece di essere mostrata come età negativa: scambia i due campi per contare verso una nascita.","Non viene caricato nulla e non si ricorda nulla: questo file non ha un server, e le date che scrivi spariscono alla chiusura della scheda. I pulsanti Scuro e Lingua ricordano la propria impostazione nell’archivio locale di questo browser, e nient’altro viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Calcolatore di età — età esatta in anni, mesi e giorni, e prossimo compleanno — MDV","Inserisci una data di nascita e leggi l’età esatta in anni, mesi e giorni, il totale in mesi, settimane e giorni, il giorno della settimana in cui sei nato e quanto manca al prossimo compleanno. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","lunedì","martedì","mercoledì","giovedì","venerdì","sabato","domenica","gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre","{a}, {b}","{day} {month} {year}","“{value}” non è una data compresa tra 0001-01-01 e 9999-12-31. Sceglierne una con il selettore del campo.","La data di nascita è successiva al {date}, quindi non c’è ancora un’età da contare. Metti la data successiva in Età al.","{weekday}, {date}","Compleanno","Prossimo compleanno","oggi: compie {age}","tra {away}, {weekday} {date}: compie {age}, il 28 negli anni comuni","tra {away}, {weekday} {date}: compie {age}","{n} anno","{n} anni","{n} mese","{n} mesi","{n} settimana","{n} settimane","{n} giorno","{n} giorni","Ora e data",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Informe uma data de nascimento e veja a idade que ela dá hoje, ou em qualquer outro dia.","Neste dispositivo","Funciona offline","Data de nascimento","Idade em","Hoje","escolha acima uma data de nascimento","Não é possível calcular essa idade","Em meses","Em semanas","Em dias","Dia do nascimento","Como funciona","A idade é contada como se conta um aniversário, não dividindo dias. Somam-se à data de nascimento anos inteiros enquanto couberem, depois meses inteiros, depois os dias que sobram. Assim, quem nasceu em 31 de março tem um mês em 30 de abril e 1 mês e 1 dia em 1º de maio: um mês que não tem dia 31 termina no último dia. Quem nasceu em 29 de fevereiro faz aniversário em 28 de fevereiro nos anos comuns, que é a regra da maioria dos registros; o próprio 29 de fevereiro volta a cada quatro anos, e a linha do próximo aniversário informa a data real em que ele cai.","As duas datas são convertidas em contagens de dias do calendário gregoriano proléptico com aritmética de inteiros, então todos os anos de 1 a 9999 contam igual, inclusive os bissextos. Horários, horas de nascimento e fusos horários não entram: um dia é um dia onde quer que seja vivido, e uma página que pedisse sua hora de nascimento não poderia dizer nada mais exato. Em dias é a diferença simples entre as duas datas; em semanas é isso dividido por sete com o resto; em meses conta meses inteiros do mesmo modo que os anos. Uma data de nascimento posterior à segunda data é recusada em vez de mostrada como idade negativa: troque os dois campos para contar em direção a um nascimento.","Nada é enviado e nada é lembrado: este arquivo não tem servidor, e as datas que você digita somem quando a aba é fechada. Os botões Escuro e Idioma lembram a própria configuração no armazenamento local deste navegador, e nada mais é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Calculadora de idade — idade exata em anos, meses e dias, e o próximo aniversário — MDV","Informe uma data de nascimento e veja a idade exata em anos, meses e dias, o total em meses, semanas e dias, o dia da semana em que você nasceu e quanto falta para o próximo aniversário. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado","domingo","janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro","{a}, {b}","{day} de {month} de {year}","“{value}” não é uma data entre 0001-01-01 e 9999-12-31. Escolha uma com o seletor do próprio campo.","A data de nascimento é posterior a {date}, então ainda não há idade para contar. Coloque a data posterior em Idade em.","{weekday}, {date}","Aniversário","Próximo aniversário","hoje: completa {age}","faltam {away}, em {weekday}, {date}: completa {age}, dia 28 em ano comum","faltam {away}, em {weekday}, {date}: completa {age}","{n} ano","{n} anos","{n} mês","{n} meses","{n} semana","{n} semanas","{n} dia","{n} dias","Hora e data",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","生年月日を入力すると、今日またはほかの任意の日の年齢がわかります。","この端末で動作","オフラインで動作","生年月日","基準日","今日","上で生年月日を選択","この年齢は計算できません","月数","週数","日数","生まれた曜日","仕組み","年齢は、日数を割るのではなく、誕生日を数えるのと同じ方法で数えます。生年月日に、収まる限り満年数を加え、次に満月数、最後に残りの日数を加えます。そのため、3 月 31 日生まれの人は 4 月 30 日に 1 か月、5 月 1 日に 1 か月 1 日になります。31 日のない月は、その月の末日で満了とします。2 月 29 日生まれの人は、平年は 2 月 28 日が誕生日になります。これは多くの登録制度の規則です。2 月 29 日そのものは 4 年ごとに巡ってくるので、次の誕生日の行には実際の日付が表示されます。","2 つの日付は、整数演算で先発グレゴリオ暦の日数に変換されます。そのため、閏年を含め、1 年から 9999 年までのどの年も同じように数えられます。時刻、出生時刻、タイムゾーンは関係しません。日はどこで過ごしても 1 日であり、出生時刻を尋ねるページでもこれ以上正確なことは言えません。「日数」は 2 つの日付の単純な差、「週数」はそれを 7 で割った商と余り、「月数」は年と同じ方法で数えた満月数です。生年月日が 2 つ目の日付より後の場合は、負の年齢として表示せずに拒否します。誕生に向かって数えたいときは、2 つの欄を入れ替えてください。","何もアップロードされず、何も記憶されません。このファイルにはサーバーがなく、入力した日付はタブを閉じると消えます。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存し、それ以外は何も保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","年齢計算 — 年・月・日の正確な年齢と次の誕生日 — MDV","生年月日を入力すると、年・月・日の正確な年齢、月・週・日の合計、生まれた曜日、次の誕生日までの日数がわかります。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","月曜日","火曜日","水曜日","木曜日","金曜日","土曜日","日曜日","1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月","{a} {b}","{year}年{month}{day}日","“{value}” は 0001-01-01 から 9999-12-31 の間の日付ではありません。欄の日付ピッカーで選んでください。","生年月日が {date} より後なので、まだ数えられる年齢がありません。後の日付は「基準日」に入力してください。","{date}({weekday})","誕生日","次の誕生日","今日: {age}になります","あと {away}、{weekday} {date}: {age}になります(平年は 28 日)","あと {away}、{weekday} {date}: {age}になります","{n} 年","{n} 年","{n} か月","{n} か月","{n} 週間","{n} 週間","{n} 日","{n} 日","日時",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","생년월일을 입력하면 오늘이나 다른 날의 나이를 알 수 있습니다.","이 기기에서 실행","오프라인 작동","생년월일","기준일","오늘","위에서 생년월일을 선택","이 나이는 계산할 수 없습니다","개월 수","주 수","일 수","태어난 요일","작동 방식","나이는 날수를 나누는 방식이 아니라 생일을 세는 방식으로 계산합니다. 생년월일에 들어갈 수 있는 한 온전한 연수를 더하고, 그다음 온전한 개월 수, 마지막으로 남은 일수를 더합니다. 그래서 3월 31일에 태어난 사람은 4월 30일에 1개월, 5월 1일에 1개월 1일이 됩니다. 31일이 없는 달은 마지막 날에 끝납니다. 2월 29일에 태어난 사람은 평년에는 2월 28일이 생일이며, 이는 대부분의 등록 제도가 쓰는 규칙입니다. 2월 29일 자체는 4년마다 돌아오고, 다음 생일 줄에는 실제 날짜가 표시됩니다.","두 날짜는 정수 연산으로 선발 그레고리력의 일수로 변환됩니다. 그래서 윤년을 포함해 1년부터 9999년까지 모든 해가 같은 방식으로 계산됩니다. 시각, 출생 시각, 시간대는 관여하지 않습니다. 하루는 어디서 보내든 하루이며, 출생 시각을 묻는 페이지라 해도 더 정확한 것을 알려 줄 수는 없습니다. “일 수”는 두 날짜의 단순한 차이이고, “주 수”는 이를 7로 나눈 몫과 나머지이며, “개월 수”는 연수와 같은 방식으로 센 온전한 개월 수입니다. 생년월일이 두 번째 날짜보다 뒤이면 음수 나이로 보여 주지 않고 거부합니다. 출생을 향해 세려면 두 입력란을 서로 바꾸세요.","아무것도 업로드되거나 기억되지 않습니다. 이 파일에는 서버가 없고, 입력한 날짜는 탭을 닫으면 사라집니다. 다크와 언어 버튼은 각자의 설정을 이 브라우저의 로컬 저장소에 기억하며, 그 밖에는 아무것도 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","나이 계산기 — 연·월·일 단위의 정확한 나이와 다음 생일 — MDV","생년월일을 입력하면 연·월·일 단위의 정확한 나이, 개월·주·일 단위의 합계, 태어난 요일, 다음 생일까지 남은 기간을 알 수 있습니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","월요일","화요일","수요일","목요일","금요일","토요일","일요일","1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월","{a} {b}","{year}년 {month} {day}일","“{value}”은(는) 0001-01-01부터 9999-12-31 사이의 날짜가 아닙니다. 입력란의 날짜 선택기로 고르세요.","생년월일이 {date}보다 뒤라서 아직 셀 나이가 없습니다. 더 늦은 날짜를 기준일에 넣으세요.","{date} ({weekday})","생일","다음 생일","오늘: {age}이(가) 됩니다","{away} 남음, {weekday} {date}: {age}이(가) 됩니다(평년에는 28일)","{away} 남음, {weekday} {date}: {age}이(가) 됩니다","{n}년","{n}년","{n}개월","{n}개월","{n}주","{n}주","{n}일","{n}일","시간과 날짜",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","输入出生日期,即可得知今天或其他任意一天的年龄。","在此设备上运行","可离线使用","出生日期","计算日期","今天","在上方选择出生日期","无法计算该年龄","月数","周数","天数","出生于","工作原理","年龄的计算方式与计算生日相同,而不是用天数去除。在出生日期上先加上能容纳的整年,再加整月,最后加剩余的天数。因此 3 月 31 日出生的人,在 4 月 30 日是 1 个月,在 5 月 1 日是 1 个月 1 天:没有 31 日的月份以最后一天为止。2 月 29 日出生的人在平年以 2 月 28 日为生日,这是大多数登记机构采用的规则;2 月 29 日本身每四年出现一次,下一个生日一行会写出它实际落在的日期。","两个日期都用整数运算转换为外推格里高利历的天数,因此从 1 年到 9999 年的每一年都按同样方式计算,包括闰年。钟表时间、出生时刻和时区都不参与:一天无论在哪里度过都是一天,而一个询问你出生时刻的页面也不可能告诉你更精确的结果。“天数”是两个日期的直接差;“周数”是该差除以七,并带余数;“月数”按与年相同的方式统计整月。出生日期晚于第二个日期时会被拒绝,而不是显示为负年龄:请交换这两个输入框,以向出生日倒数。","不上传任何内容,也不记住任何内容:此文件中没有服务器,你输入的日期在关闭标签页后就没了。“深色”和“语言”按钮会把各自的设置记在此浏览器的本地存储中,除此之外不保存任何内容。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","年龄计算器 — 精确到年、月、日的年龄及下一个生日 — MDV","输入出生日期,即可得到精确到年、月、日的年龄,以月、周、天表示的总数,出生那天是星期几,以及距下一个生日还有多久。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","星期一","星期二","星期三","星期四","星期五","星期六","星期日","1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月","{a} {b}","{year}年{month}{day}日","“{value}”不是 0001-01-01 到 9999-12-31 之间的日期。请使用输入框自带的选择器选择。","出生日期晚于 {date},还没有可计算的年龄。请把较晚的日期填在“计算日期”中。","{date} {weekday}","生日","下一个生日","今天:满 {age}","还有 {away},{weekday} {date}:满 {age}(平年为 28 日)","还有 {away},{weekday} {date}:满 {age}","{n} 年","{n} 年","{n} 个月","{n} 个月","{n} 周","{n} 周","{n} 天","{n} 天","时间与日期",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2368,9 +2581,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // The birthday in year y: the same day, or the last day of that month when it has no such day.
   function birthdayIn(born, y) { return { y: y, m: born.m, d: Math.min(born.d, daysIn(y, born.m)) }; }
 
-  var DOW = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  function weekdayName(n) { return DOW[((n + 3) % 7 + 7) % 7]; }                       // 1970-01-01 was a Thursday
-  var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  var DOW = [trk("Monday"), trk("Tuesday"), trk("Wednesday"), trk("Thursday"), trk("Friday"), trk("Saturday"), trk("Sunday")];
+  function weekdayName(n) { return tr(DOW[((n + 3) % 7 + 7) % 7]); }                   // 1970-01-01 was a Thursday
+  var MONTHS = [trk("January"), trk("February"), trk("March"), trk("April"), trk("May"), trk("June"), trk("July"), trk("August"), trk("September"), trk("October"), trk("November"), trk("December")];
 
   function readDate(v) {
     var m = /^(\d{4,6})-(\d{2})-(\d{2})$/.exec(v || "");
@@ -2379,9 +2592,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (y < 1 || y > 9999 || mo < 1 || mo > 12 || d < 1 || d > daysIn(y, mo)) return { bad: v };
     return { y: y, m: mo, d: d };
   }
-  function plural(k, word) { return k.toLocaleString() + " " + word + (Math.abs(k) === 1 ? "" : "s"); }
+  function nYears(k) { return trn(k, "{n} year", "{n} years"); }
+  function nMonths(k) { return trn(k, "{n} month", "{n} months"); }
+  function nWeeks(k) { return trn(k, "{n} week", "{n} weeks"); }
+  function nDays(k) { return trn(k, "{n} day", "{n} days"); }
+  function joinList(parts) { return parts.reduce(function (a, b) { return tr("{a}, {b}", { a: a, b: b }); }); }
   function iso(x) { return String(x.y).padStart(4, "0") + "-" + String(x.m).padStart(2, "0") + "-" + String(x.d).padStart(2, "0"); }
-  function longDate(x) { return x.d + " " + MONTHS[x.m - 1] + " " + x.y; }
+  function longDate(x) { return tr("{day} {month} {year}", { day: x.d, month: tr(MONTHS[x.m - 1]), year: x.y }); }
 
   /* ---------- page ---------- */
 
@@ -2400,34 +2617,38 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!born.value) { state("empty"); return; }
     var a = readDate(born.value), b = readDate(on.value) || readDate(today());
     if (!a || a.bad || !b || b.bad) {
-      errmsg.textContent = "“" + ((a && a.bad) || (b && b.bad) || born.value) + "” is not a date between 0001-01-01 and 9999-12-31. Pick one with the field's own picker.";
+      errmsg.textContent = tr("“{value}” is not a date between 0001-01-01 and 9999-12-31. Pick one with the field's own picker.", { value: (a && a.bad) || (b && b.bad) || born.value });
       state("error");
       return;
     }
     if (num(a) > num(b)) {
-      errmsg.textContent = "The date of birth is after " + iso(b) + ", so there is no age to count yet. Put the later date in Age on.";
+      errmsg.textContent = tr("The date of birth is after {date}, so there is no age to count yet. Put the later date in Age on.", { date: iso(b) });
       state("error");
       return;
     }
 
     var gap = gapOf(a, b), years = Math.floor(gap.months / 12), months = gap.months - years * 12, days = num(b) - num(a);
-    var parts = [plural(years, "year")];
-    if (months) parts.push(plural(months, "month"));
-    if (gap.days) parts.push(plural(gap.days, "day"));
-    bigText.textContent = parts.join(", ");
+    var parts = [nYears(years)];
+    if (months) parts.push(nMonths(months));
+    if (gap.days) parts.push(nDays(gap.days));
+    bigText.textContent = joinList(parts);
 
-    set("k-months", plural(gap.months, "month") + (gap.days ? ", " + plural(gap.days, "day") : ""));
-    set("k-weeks", plural(Math.floor(days / 7), "week") + (days % 7 ? ", " + plural(days % 7, "day") : ""));
-    set("k-days", plural(days, "day"));
-    set("k-dow", weekdayName(num(a)) + ", " + longDate(a));
+    set("k-months", gap.days ? joinList([nMonths(gap.months), nDays(gap.days)]) : nMonths(gap.months));
+    set("k-weeks", days % 7 ? joinList([nWeeks(Math.floor(days / 7)), nDays(days % 7)]) : nWeeks(Math.floor(days / 7)));
+    set("k-days", nDays(days));
+    set("k-dow", tr("{weekday}, {date}", { weekday: weekdayName(num(a)), date: longDate(a) }));
 
     var next = birthdayIn(a, b.y);
     if (num(next) < num(b)) next = birthdayIn(a, b.y + 1);
     var away = num(next) - num(b);
-    $("t-next").textContent = away === 0 ? "Birthday" : "Next birthday";
-    if (away === 0) set("k-next", "today — turning " + plural(years, "year"));
-    else set("k-next", plural(away, "day") + " away, on " + weekdayName(num(next)) + " " + longDate(next) +
-      " — turning " + plural((next.y - a.y), "year") + (a.m === 2 && a.d === 29 && next.d === 28 ? ", the 28th in a common year" : ""));
+    $("t-next").textContent = away === 0 ? tr("Birthday") : tr("Next birthday");
+    if (away === 0) set("k-next", tr("today — turning {age}", { age: nYears(years) }));
+    else {
+      var nv = { away: nDays(away), weekday: weekdayName(num(next)), date: longDate(next), age: nYears(next.y - a.y) };
+      set("k-next", a.m === 2 && a.d === 29 && next.d === 28
+        ? tr("{away} away, on {weekday} {date} — turning {age}, the 28th in a common year", nv)
+        : tr("{away} away, on {weekday} {date} — turning {age}", nv));
+    }
 
     state("result");
   }
@@ -2442,6 +2663,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   on.value = today();
   born.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

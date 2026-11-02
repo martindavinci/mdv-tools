@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link is-here" href="./circle-crop.html" aria-current="page" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link is-here" href="./circle-crop.html" aria-current="page" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,39 +2353,39 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Circle crop</h1>
+      <h1 class="mdv-head-name" data-t="48">Circle crop</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Round off a picture for an avatar, and keep the corners transparent or fill them.</p>
+    <p class="mdv-head-line" data-t="79">Round off a picture for an avatar, and keep the corners transparent or fill them.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
-  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose a picture to crop">
+  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose a picture to crop" data-t-attrs="aria-label">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
-    <span class="mdv-tag">Drop a JPEG, PNG or WebP — up to 30 MB</span>
+    <span class="mdv-tag" data-t="82">Drop a JPEG, PNG or WebP — up to 30 MB</span>
     <input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/avif" class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>drop a picture above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="83">drop a picture above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title" id="errtitle">Cannot crop that</span>
+      <span class="mdv-notice-title" id="errtitle" data-t="84">Cannot crop that</span>
       <span id="errmsg"></span>
     </div>
 
     <div id="ok" hidden>
       <div class="mdv-row is-between">
-        <div class="mdv-seg" role="group" aria-label="Shape">
-          <button type="button" data-shape="circle" class="is-on" aria-pressed="true">Circle</button>
-          <button type="button" data-shape="rounded" aria-pressed="false">Rounded square</button>
-          <button type="button" data-shape="square" aria-pressed="false">Square</button>
+        <div class="mdv-seg" role="group" aria-label="Shape" data-t-attrs="aria-label">
+          <button type="button" data-shape="circle" class="is-on" aria-pressed="true" data-t="85">Circle</button>
+          <button type="button" data-shape="rounded" aria-pressed="false" data-t="86">Rounded square</button>
+          <button type="button" data-shape="square" aria-pressed="false" data-t="87">Square</button>
         </div>
         <div class="mdv-row" style="gap:var(--space-2)">
-          <label class="mdv-tag" for="size">Size</label>
+          <label class="mdv-tag" for="size" data-t="88">Size</label>
           <input class="mdv-input mdv-mono is-num" id="size" type="number" min="16" max="4096" step="1" value="400" style="width:7em">
           <span class="mdv-tag">px</span>
         </div>
@@ -2281,22 +2393,22 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
       <div class="mdv-cols">
         <div class="mdv-stage" id="stage">
-          <img id="preview" alt="Your picture, with the round frame over it">
+          <img id="preview" alt="Your picture, with the round frame over it" data-t-attrs="alt">
           <div class="mdv-marquee" id="marquee">
             <span class="mdv-handle" data-grip="nw"></span><span class="mdv-handle" data-grip="ne"></span>
             <span class="mdv-handle" data-grip="se"></span><span class="mdv-handle" data-grip="sw"></span>
           </div>
         </div>
         <div class="mdv-stack is-tight">
-          <span class="mdv-label">Result</span>
+          <span class="mdv-label" data-t="89">Result</span>
           <canvas id="out" style="max-width:100%;border:1px solid var(--border-hair)"></canvas>
           <div class="mdv-row is-between">
-            <label class="mdv-check"><input type="checkbox" id="fill"> Fill the corners</label>
-            <input id="colour" type="color" value="#f4efe6" aria-label="Corner colour" disabled>
+            <label class="mdv-check"><input type="checkbox" id="fill"> <span data-t="90">Fill the corners</span></label>
+            <input id="colour" type="color" value="#f4efe6" aria-label="Corner colour" data-t-attrs="aria-label" disabled>
           </div>
           <div class="mdv-row" id="radiusRow" hidden>
-            <label class="mdv-tag" for="radius">Corner radius</label>
-            <input id="radius" type="range" min="2" max="50" step="1" value="22" style="flex:1" aria-label="Corner radius per cent">
+            <label class="mdv-tag" for="radius" data-t="91">Corner radius</label>
+            <input id="radius" type="range" min="2" max="50" step="1" value="22" style="flex:1" aria-label="Corner radius per cent" data-t-attrs="aria-label">
             <span class="mdv-mono" id="radiusOut">22%</span>
           </div>
         </div>
@@ -2305,19 +2417,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-row is-between">
         <p class="mdv-dot-note" id="note">drag the frame to choose what is in the circle</p>
         <div class="mdv-btn-row">
-          <div class="mdv-seg" role="group" aria-label="Output format">
+          <div class="mdv-seg" role="group" aria-label="Output format" data-t-attrs="aria-label">
             <button type="button" data-fmt="png" class="is-on" aria-pressed="true">PNG</button>
             <button type="button" data-fmt="jpeg" aria-pressed="false">JPEG</button>
           </div>
-          <button class="mdv-btn" type="button" id="save">Download</button>
+          <button class="mdv-btn" type="button" id="save"><span data-t="92">Download</span></button>
         </div>
       </div>
 
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Source</dt><dd id="k-src"></dd>
-          <dt>Frame</dt><dd id="k-frame"></dd>
-          <dt>Output</dt><dd id="k-out"></dd>
+          <dt data-t="93">Source</dt><dd id="k-src"></dd>
+          <dt data-t="94">Frame</dt><dd id="k-frame"></dd>
+          <dt data-t="95">Output</dt><dd id="k-out"></dd>
         </dl>
       </div>
       <p class="mdv-hint" id="said" hidden></p>
@@ -2325,41 +2437,42 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="96">How this works</summary>
     <div class="mdv-method-body">
-      <p>The square you drag is scaled to the size you asked for, and then the shape is cut out of it: the
+      <p data-t="97">The square you drag is scaled to the size you asked for, and then the shape is cut out of it: the
         canvas keeps what falls inside the circle and clears the rest, so the corners are genuinely empty
         rather than painted the colour of the page. That is why the file is a PNG by default — PNG carries
         transparency and JPEG does not. Choosing JPEG with transparent corners would give you black
         corners, so the page fills them with a colour instead and says so.</p>
-      <p>The shape is drawn at four times the size and scaled down, which is what keeps the edge of the
+      <p data-t="98">The shape is drawn at four times the size and scaled down, which is what keeps the edge of the
         circle smooth rather than jagged; at the sizes avatars are used, that is the difference between a
         clean rim and a staircase. The rounded square uses a radius given as a percentage of the side, so
         it stays proportional at any size — 50% is a circle, which is why the slider stops there.</p>
-      <p>Most places that take a round avatar want a square file and do the rounding themselves, so a
+      <p data-t="99">Most places that take a round avatar want a square file and do the rounding themselves, so a
         transparent circle is only needed when you are placing the picture yourself — a website, a slide, a
         document. If you are uploading to a profile, a plain square usually travels better, and the Square
         button is there for exactly that.</p>
-      <p>The crop is re-encoded, so no EXIF, GPS or colour profile survives. The file is read in this tab
-        with <code>FileReader</code>, the page makes no network requests, and nothing you drop is stored;
-        the Dark button keeps its own setting in this browser's local storage.</p>
+      <p data-t="100">The crop is re-encoded, so no EXIF, GPS or colour profile survives. The file is read in this tab
+        with <code>FileReader</code>, the page makes no network requests, and nothing you drop is stored.</p>
+      <p data-t="101">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Image &amp; Media">
-    <span class="mdv-tag">Also in Image &amp; Media</span>
-    <a href="./exif-remover.html">EXIF viewer and remover</a>
-    <a href="./favicon-from-image.html">Favicon maker</a>
-    <a href="./image-compressor.html">Image compressor</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Image &amp; Media"}'>Also in Image &amp; Media</span>
+    <a href="./exif-remover.html" data-t="49">EXIF viewer and remover</a>
+    <a href="./favicon-from-image.html" data-t="50">Favicon maker</a>
+    <a href="./image-compressor.html" data-t="51">Image compressor</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="102">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="103">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="104" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="105">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2370,6 +2483,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Circle Crop — round profile pictures with a transparent corner — MDV","Crop a picture to a circle or a rounded square for an avatar, with transparent corners or a colour behind, at the size you need. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Choose a picture to crop","Shape","Your picture, with the round frame over it","Corner colour","Corner radius per cent","Output format","Too large","{name} is {size}. This page crops up to {limit}.","Not a picture","{name} is {type}. Drop a JPEG, PNG or WebP.","That file","Could not read that","The browser stopped reading {name}.","Could not decode that","{name} did not decode as a picture.","{side} × {side2} px of the picture, from {x}, {y}","{w} × {h} px · written as {name}, {size}","{w} × {h} px · {shape} · {format}","circle","rounded square, {radius}%","square","Enlarging to {percent}%: the frame holds fewer pixels than {size} px, so the avatar will be soft. Frame a smaller area or start from a bigger picture.","JPEG cannot hold transparency, so the corners are filled with the colour beside the tick box rather than left empty.","The corners are transparent, which is what you want when you place the picture yourself. Most profile uploads round the picture themselves and would rather have the plain square.","the picture is being enlarged","drag the frame to choose what is in the circle","drag the frame to choose what is in the frame","Could not encode that","This browser did not produce a {format}.","Image & Media","2026-11-02"],"h":106,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Redondea una imagen para un avatar y deja las esquinas transparentes o rellénalas.","En este dispositivo","Funciona sin conexión","Suelta un JPEG, PNG o WebP — hasta 30 MB","suelta una imagen arriba","No se puede recortar","Círculo","Cuadrado redondeado","Cuadrado","Tamaño","Resultado","Rellenar esquinas","Radio de esquina","Descargar","Origen","Marco","Salida","Cómo funciona","El cuadrado que arrastras se escala al tamaño que pediste y de él se recorta la forma: el lienzo conserva lo que cae dentro del círculo y borra el resto, así que las esquinas quedan realmente vacías y no pintadas del color de la página. Por eso el archivo es PNG por defecto: PNG admite transparencia y JPEG no. Elegir JPEG con esquinas transparentes daría esquinas negras, así que la página las rellena con un color y lo indica.","La forma se dibuja al cuádruple del tamaño y se reduce, lo que mantiene suave el borde del círculo en lugar de dentado; en los tamaños que se usan para avatares, esa es la diferencia entre un borde limpio y una escalera. El cuadrado redondeado usa un radio dado como porcentaje del lado, así que se mantiene proporcional a cualquier tamaño: el 50 % es un círculo, y por eso el control deslizante se detiene ahí.","La mayoría de sitios que aceptan un avatar redondo quieren un archivo cuadrado y hacen el redondeo ellos mismos, así que un círculo transparente solo hace falta cuando colocas la imagen tú (un sitio web, una diapositiva, un documento). Si la subes a un perfil, un cuadrado simple suele funcionar mejor, y el botón Cuadrado está justo para eso.","El recorte se vuelve a codificar, así que no sobrevive ningún EXIF, GPS ni perfil de color. El archivo se lee en esta pestaña con \u003ccode>FileReader\u003c/code>, la página no hace peticiones de red y nada de lo que sueltas se guarda.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Recorte circular: fotos de perfil redondas con esquinas transparentes — MDV","Recorta una imagen en círculo o cuadrado redondeado para un avatar, con esquinas transparentes o un color detrás, al tamaño que necesites. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elegir una imagen para recortar","Forma","Tu imagen, con el marco redondo encima","Color de las esquinas","Radio de esquina en porcentaje","Formato de salida","Demasiado grande","{name} pesa {size}. Esta página recorta hasta {limit}.","No es una imagen","{name} es {type}. Suelta un JPEG, PNG o WebP.","Ese archivo","No se pudo leer","El navegador dejó de leer {name}.","No se pudo decodificar","{name} no se decodificó como imagen.","{side} × {side2} px de la imagen, desde {x}, {y}","{w} × {h} px · escrito como {name}, {size}","{w} × {h} px · {shape} · {format}","círculo","cuadrado redondeado, {radius} %","cuadrado","Ampliando al {percent} %: el marco contiene menos píxeles que {size} px, así que el avatar se verá borroso. Encuadra un área menor o parte de una imagen más grande.","JPEG no admite transparencia, así que las esquinas se rellenan con el color junto a la casilla en lugar de quedar vacías.","Las esquinas son transparentes, que es lo que quieres cuando colocas la imagen tú. La mayoría de las subidas de perfil redondean la imagen por su cuenta y prefieren el cuadrado liso.","la imagen se está ampliando","arrastra el marco para elegir qué entra en el círculo","arrastra el marco para elegir qué entra en el marco","No se pudo codificar","Este navegador no generó un {format}.","Imagen y multimedia",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Arrondissez une image pour un avatar, et laissez les coins transparents ou remplissez-les.","Sur cet appareil","Fonctionne hors ligne","Déposez un JPEG, PNG ou WebP — jusqu’à 30 Mo","déposez une image ci-dessus","Recadrage impossible","Cercle","Carré arrondi","Carré","Taille","Résultat","Remplir les coins","Rayon des coins","Télécharger","Source","Cadre","Sortie","Comment ça marche","Le carré que vous faites glisser est mis à l’échelle de la taille demandée, puis la forme y est découpée : le canevas garde ce qui tombe dans le cercle et efface le reste, de sorte que les coins sont réellement vides et non peints de la couleur de la page. C’est pourquoi le fichier est un PNG par défaut : le PNG gère la transparence, pas le JPEG. Choisir JPEG avec des coins transparents donnerait des coins noirs ; la page les remplit donc d’une couleur et le signale.","La forme est dessinée à quatre fois la taille puis réduite, ce qui garde le bord du cercle lisse plutôt que dentelé ; aux tailles d’usage des avatars, c’est la différence entre un contour net et un escalier. Le carré arrondi utilise un rayon donné en pourcentage du côté, il reste donc proportionnel à toutes les tailles : 50 % donne un cercle, c’est pourquoi le curseur s’arrête là.","La plupart des endroits qui acceptent un avatar rond veulent un fichier carré et font l’arrondi eux-mêmes ; un cercle transparent n’est donc utile que lorsque vous placez l’image vous-même (site web, diapositive, document). Si vous l’envoyez vers un profil, un simple carré passe en général mieux, et le bouton Carré est là pour cela.","Le recadrage est réencodé : aucun EXIF, GPS ni profil colorimétrique ne survit. Le fichier est lu dans cet onglet avec \u003ccode>FileReader\u003c/code>, la page ne fait aucune requête réseau et rien de ce que vous déposez n’est stocké.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Recadrage rond : photos de profil rondes à coins transparents — MDV","Recadrez une image en cercle ou en carré arrondi pour un avatar, avec des coins transparents ou une couleur derrière, à la taille voulue. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisir une image à recadrer","Forme","Votre image, avec le cadre rond par-dessus","Couleur des coins","Rayon des coins en pourcentage","Format de sortie","Trop volumineux","{name} pèse {size}. Cette page recadre jusqu’à {limit}.","Pas une image","{name} est de type {type}. Déposez un JPEG, PNG ou WebP.","Ce fichier","Lecture impossible","Le navigateur a cessé de lire {name}.","Décodage impossible","{name} n’a pas pu être décodé comme une image.","{side} × {side2} px de l’image, à partir de {x}, {y}","{w} × {h} px · écrit sous {name}, {size}","{w} × {h} px · {shape} · {format}","cercle","carré arrondi, {radius} %","carré","Agrandissement à {percent} % : le cadre contient moins de pixels que {size} px, l’avatar sera donc flou. Cadrez une zone plus petite ou partez d’une image plus grande.","Le JPEG ne gère pas la transparence : les coins sont donc remplis avec la couleur à côté de la case plutôt que laissés vides.","Les coins sont transparents, ce que vous voulez quand vous placez l’image vous-même. La plupart des envois de profil arrondissent eux-mêmes l’image et préfèrent le carré simple.","l’image est agrandie","faites glisser le cadre pour choisir ce qui entre dans le cercle","faites glisser le cadre pour choisir ce qui entre dans le cadre","Encodage impossible","Ce navigateur n’a pas produit de {format}.","Image et médias",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Runde ein Bild für einen Avatar ab und lass die Ecken transparent oder fülle sie.","Läuft auf diesem Gerät","Funktioniert offline","JPEG, PNG oder WebP ablegen — bis 30 MB","Bild oben ablegen","Zuschneiden nicht möglich","Kreis","Abgerundet","Quadrat","Größe","Ergebnis","Ecken füllen","Eckenradius","Herunterladen","Quelle","Rahmen","Ausgabe","So funktioniert es","Das Quadrat, das du ziehst, wird auf die gewünschte Größe skaliert, und daraus wird die Form ausgeschnitten: Die Zeichenfläche behält, was im Kreis liegt, und löscht den Rest, sodass die Ecken wirklich leer sind und nicht in der Seitenfarbe gemalt. Deshalb ist die Datei standardmäßig ein PNG: PNG kann Transparenz, JPEG nicht. JPEG mit transparenten Ecken würde schwarze Ecken ergeben, deshalb füllt die Seite sie stattdessen mit einer Farbe und sagt das.","Die Form wird in vierfacher Größe gezeichnet und verkleinert, wodurch der Rand des Kreises glatt statt gezackt bleibt; bei den üblichen Avatar-Größen ist das der Unterschied zwischen sauberem Rand und Treppe. Das abgerundete Quadrat nutzt einen Radius als Prozentsatz der Seitenlänge und bleibt so bei jeder Größe proportional: 50 % ist ein Kreis, weshalb der Regler dort endet.","Die meisten Stellen, die einen runden Avatar annehmen, wollen eine quadratische Datei und runden selbst ab; ein transparenter Kreis ist daher nur nötig, wenn du das Bild selbst platzierst, etwa auf einer Website, in einer Folie oder in einem Dokument. Beim Hochladen in ein Profil kommt ein schlichtes Quadrat meist besser an, und genau dafür gibt es die Schaltfläche Quadrat.","Der Ausschnitt wird neu kodiert, daher überlebt kein EXIF, GPS oder Farbprofil. Die Datei wird in diesem Tab mit \u003ccode>FileReader\u003c/code> gelesen, die Seite stellt keine Netzwerkanfragen, und nichts, was du ablegst, wird gespeichert.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Kreisausschnitt: runde Profilbilder mit transparenten Ecken — MDV","Schneide ein Bild für einen Avatar als Kreis oder abgerundetes Quadrat zu, mit transparenten Ecken oder einer Farbe dahinter, in der Größe, die du brauchst. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Bild zum Zuschneiden wählen","Form","Dein Bild mit dem runden Rahmen darüber","Eckenfarbe","Eckenradius in Prozent","Ausgabeformat","Zu groß","{name} ist {size} groß. Diese Seite schneidet bis zu {limit} zu.","Kein Bild","{name} ist {type}. Lege ein JPEG, PNG oder WebP ab.","Diese Datei","Lesen nicht möglich","Der Browser hat das Lesen von {name} abgebrochen.","Dekodieren nicht möglich","{name} ließ sich nicht als Bild dekodieren.","{side} × {side2} px des Bildes, ab {x}, {y}","{w} × {h} px · geschrieben als {name}, {size}","{w} × {h} px · {shape} · {format}","Kreis","abgerundetes Quadrat, {radius} %","Quadrat","Vergrößerung auf {percent} %: Der Rahmen enthält weniger Pixel als {size} px, der Avatar wird daher weich. Wähle einen kleineren Ausschnitt oder starte mit einem größeren Bild.","JPEG kann keine Transparenz speichern, daher werden die Ecken mit der Farbe neben dem Kästchen gefüllt, statt leer zu bleiben.","Die Ecken sind transparent, was du willst, wenn du das Bild selbst platzierst. Die meisten Profil-Uploads runden das Bild selbst ab und wollen lieber das schlichte Quadrat.","das Bild wird vergrößert","Rahmen ziehen, um zu wählen, was im Kreis liegt","Rahmen ziehen, um zu wählen, was im Rahmen liegt","Kodieren nicht möglich","Dieser Browser hat kein {format} erzeugt.","Bild und Medien",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Arrotonda un’immagine per un avatar e lascia gli angoli trasparenti oppure riempili.","Su questo dispositivo","Funziona offline","Trascina un JPEG, PNG o WebP — fino a 30 MB","trascina un’immagine qui sopra","Impossibile ritagliare","Cerchio","Quadrato arrotondato","Quadrato","Dimensione","Risultato","Riempi gli angoli","Raggio degli angoli","Scarica","Origine","Riquadro","Output","Come funziona","Il quadrato che trascini viene scalato alla dimensione richiesta e da esso si ritaglia la forma: il canvas tiene ciò che cade dentro il cerchio e cancella il resto, quindi gli angoli sono davvero vuoti e non dipinti del colore della pagina. Per questo il file è PNG per impostazione predefinita: il PNG supporta la trasparenza, il JPEG no. Scegliere JPEG con angoli trasparenti darebbe angoli neri, quindi la pagina li riempie con un colore e lo segnala.","La forma viene disegnata a quattro volte la dimensione e poi ridotta, il che mantiene liscio il bordo del cerchio invece che frastagliato; alle dimensioni in cui si usano gli avatar, è la differenza tra un bordo pulito e una scalinata. Il quadrato arrotondato usa un raggio dato come percentuale del lato, quindi resta proporzionale a qualsiasi dimensione: il 50% è un cerchio, ed ecco perché il cursore si ferma lì.","La maggior parte dei posti che accettano un avatar rotondo vuole un file quadrato e fa l’arrotondamento da sé, quindi un cerchio trasparente serve solo quando posizioni l’immagine tu stesso (un sito web, una slide, un documento). Se la carichi su un profilo, un semplice quadrato di solito funziona meglio, e il pulsante Quadrato serve proprio a questo.","Il ritaglio viene ricodificato, quindi non sopravvive nessun EXIF, GPS o profilo colore. Il file viene letto in questa scheda con \u003ccode>FileReader\u003c/code>, la pagina non fa richieste di rete e nulla di ciò che trascini viene salvato.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Ritaglio circolare: foto profilo rotonde con angoli trasparenti — MDV","Ritaglia un’immagine in un cerchio o in un quadrato arrotondato per un avatar, con angoli trasparenti o un colore dietro, alla dimensione che ti serve. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli un’immagine da ritagliare","Forma","La tua immagine, con il riquadro rotondo sopra","Colore degli angoli","Raggio degli angoli in percentuale","Formato di output","Troppo grande","{name} pesa {size}. Questa pagina ritaglia fino a {limit}.","Non è un’immagine","{name} è {type}. Trascina un JPEG, PNG o WebP.","Quel file","Impossibile leggere","Il browser ha smesso di leggere {name}.","Impossibile decodificare","{name} non è stato decodificato come immagine.","{side} × {side2} px dell’immagine, a partire da {x}, {y}","{w} × {h} px · scritto come {name}, {size}","{w} × {h} px · {shape} · {format}","cerchio","quadrato arrotondato, {radius}%","quadrato","Ingrandimento al {percent}%: il riquadro contiene meno pixel di {size} px, quindi l’avatar sarà sfocato. Inquadra un’area più piccola o parti da un’immagine più grande.","Il JPEG non supporta la trasparenza, quindi gli angoli vengono riempiti con il colore accanto alla casella invece di restare vuoti.","Gli angoli sono trasparenti, che è ciò che vuoi quando posizioni l’immagine tu stesso. La maggior parte dei caricamenti di profilo arrotonda l’immagine da sé e preferisce il quadrato semplice.","l’immagine viene ingrandita","trascina il riquadro per scegliere cosa entra nel cerchio","trascina il riquadro per scegliere cosa entra nel riquadro","Impossibile codificare","Questo browser non ha prodotto un {format}.","Immagini e media",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Arredonde uma imagem para um avatar e deixe os cantos transparentes ou preencha-os.","Neste dispositivo","Funciona offline","Solte um JPEG, PNG ou WebP — até 30 MB","solte uma imagem acima","Não é possível recortar","Círculo","Quadrado arredondado","Quadrado","Tamanho","Resultado","Preencher cantos","Raio dos cantos","Baixar","Origem","Moldura","Saída","Como funciona","O quadrado que você arrasta é redimensionado para o tamanho pedido, e dele se recorta a forma: o canvas mantém o que cai dentro do círculo e apaga o resto, então os cantos ficam realmente vazios, e não pintados da cor da página. Por isso o arquivo é PNG por padrão: PNG guarda transparência e JPEG não. Escolher JPEG com cantos transparentes daria cantos pretos, então a página os preenche com uma cor e avisa.","A forma é desenhada em quatro vezes o tamanho e reduzida, o que mantém a borda do círculo suave em vez de serrilhada; nos tamanhos em que avatares são usados, essa é a diferença entre uma borda limpa e uma escada. O quadrado arredondado usa um raio dado como porcentagem do lado, então fica proporcional em qualquer tamanho: 50% é um círculo, e por isso o controle deslizante para ali.","A maioria dos lugares que aceitam um avatar redondo quer um arquivo quadrado e faz o arredondamento por conta própria, então um círculo transparente só é necessário quando você mesmo posiciona a imagem (um site, um slide, um documento). Se for enviar para um perfil, um quadrado simples costuma funcionar melhor, e o botão Quadrado existe exatamente para isso.","O recorte é recodificado, então nenhum EXIF, GPS ou perfil de cor sobrevive. O arquivo é lido nesta aba com \u003ccode>FileReader\u003c/code>, a página não faz requisições de rede e nada do que você solta é armazenado.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Recorte circular: fotos de perfil redondas com cantos transparentes — MDV","Recorte uma imagem em círculo ou quadrado arredondado para um avatar, com cantos transparentes ou uma cor atrás, no tamanho que você precisa. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolher uma imagem para recortar","Forma","Sua imagem, com a moldura redonda por cima","Cor dos cantos","Raio dos cantos em porcentagem","Formato de saída","Grande demais","{name} tem {size}. Esta página recorta até {limit}.","Não é uma imagem","{name} é {type}. Solte um JPEG, PNG ou WebP.","Esse arquivo","Não foi possível ler","O navegador parou de ler {name}.","Não foi possível decodificar","{name} não foi decodificado como imagem.","{side} × {side2} px da imagem, a partir de {x}, {y}","{w} × {h} px · gravado como {name}, {size}","{w} × {h} px · {shape} · {format}","círculo","quadrado arredondado, {radius}%","quadrado","Ampliando para {percent}%: a moldura tem menos pixels que {size} px, então o avatar ficará borrado. Enquadre uma área menor ou comece de uma imagem maior.","JPEG não guarda transparência, então os cantos são preenchidos com a cor ao lado da caixa em vez de ficarem vazios.","Os cantos são transparentes, que é o que você quer quando posiciona a imagem por conta própria. A maioria dos envios de perfil arredonda a imagem sozinha e prefere o quadrado simples.","a imagem está sendo ampliada","arraste a moldura para escolher o que entra no círculo","arraste a moldura para escolher o que entra na moldura","Não foi possível codificar","Este navegador não gerou um {format}.","Imagem e mídia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","画像をアバター用に丸く切り抜き、角は透明のままにするか塗りつぶします。","この端末で動作","オフラインで動作","JPEG、PNG、WebP をドロップ — 30 MB まで","上に画像をドロップ","切り抜けません","円","角丸四角形","正方形","サイズ","結果","角を塗りつぶす","角の半径","ダウンロード","元画像","枠","出力","仕組み","ドラッグした正方形は、指定したサイズに拡大縮小され、そこから形が切り抜かれます。キャンバスは円の内側に入る部分を残してそれ以外を消すので、角はページの色で塗られているのではなく、本当に空になります。そのためファイルは既定で PNG です。PNG は透明を保持できますが、JPEG はできません。角が透明のまま JPEG を選ぶと角が黒くなるため、ページはその角を色で塗りつぶし、その旨を表示します。","形は 4 倍のサイズで描かれてから縮小されます。これにより円の縁がギザギザにならず滑らかになります。アバターで使われるサイズでは、きれいな縁か階段状かの違いになります。角丸四角形は辺に対する割合で半径を指定するので、どのサイズでも比率が保たれます。50% は円になるため、スライダーはそこで止まります。","丸いアバターを受け付ける多くの場所は、正方形のファイルを求めて丸め処理を自分で行います。そのため透明な円が必要なのは、ウェブサイト、スライド、文書など、自分で画像を配置するときだけです。プロフィールにアップロードする場合は、通常は正方形のままのほうがうまく扱われ、「正方形」ボタンはそのためにあります。","切り抜きは再エンコードされるため、EXIF、GPS、カラープロファイルは残りません。ファイルはこのタブで \u003ccode>FileReader\u003c/code> によって読み込まれ、ページはネットワークリクエストを行わず、ドロップした内容は保存されません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","円形切り抜き — 角が透明な丸いプロフィール画像 — MDV","画像を円または角丸四角形に切り抜いてアバターにします。角は透明にするか色で埋め、必要なサイズで出力できます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","切り抜く画像を選択","形","丸い枠をかぶせた画像","角の色","角の半径(パーセント)","出力形式","大きすぎます","{name} は {size} です。このページは {limit} まで切り抜けます。","画像ではありません","{name} は {type} です。JPEG、PNG、WebP をドロップしてください。","そのファイル","読み込めませんでした","ブラウザーが {name} の読み込みを中止しました。","デコードできませんでした","{name} は画像としてデコードできませんでした。","画像の {side} × {side2} px、位置 {x}、 {y}","{w} × {h} px · {name} として書き出し、{size}","{w} × {h} px · {shape} · {format}","円","角丸四角形、{radius}%","正方形","{percent}% に拡大しています。枠内のピクセル数が {size} px より少ないため、アバターはぼやけます。枠を小さくするか、大きな画像から始めてください。","JPEG は透明を保持できないため、角は空のままにせず、チェックボックスの横の色で塗りつぶされます。","角は透明です。自分で画像を配置するときはこれが望ましい状態です。多くのプロフィール用アップロードは画像を自分で丸めるため、正方形のままのほうが好まれます。","画像を拡大しています","枠をドラッグして円に入れる範囲を選択","枠をドラッグして枠に入れる範囲を選択","エンコードできませんでした","このブラウザーは {format} を生成しませんでした。","画像とメディア",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","그림을 아바타용으로 둥글게 자르고 모서리를 투명하게 두거나 채웁니다.","이 기기에서 실행","오프라인 작동","JPEG, PNG, WebP를 놓으세요 — 최대 30 MB","위에 그림을 놓으세요","자를 수 없음","원","둥근 사각형","정사각형","크기","결과","모서리 채우기","모서리 반경","다운로드","원본","프레임","출력","작동 방식","끌어 놓은 정사각형은 요청한 크기로 조정된 다음 그 안에서 모양이 잘려 나옵니다. 캔버스는 원 안에 들어오는 부분을 남기고 나머지를 지우므로, 모서리는 페이지 색으로 칠해진 것이 아니라 실제로 비어 있습니다. 그래서 파일은 기본적으로 PNG입니다. PNG는 투명도를 담을 수 있지만 JPEG는 그럴 수 없습니다. 모서리가 투명한 상태로 JPEG를 고르면 모서리가 검게 되므로, 페이지가 대신 색으로 채우고 그 사실을 알려 줍니다.","모양은 4배 크기로 그린 뒤 줄이므로 원의 가장자리가 들쭉날쭉하지 않고 매끄럽게 유지됩니다. 아바타에 쓰는 크기에서는 깔끔한 테두리와 계단 모양의 차이입니다. 둥근 사각형은 한 변에 대한 비율로 반경을 지정하므로 어떤 크기에서도 비율이 유지됩니다. 50%는 원이며, 그래서 슬라이더가 거기서 멈춥니다.","둥근 아바타를 받는 대부분의 곳은 정사각형 파일을 원하고 둥글게 만드는 일은 직접 합니다. 따라서 투명한 원은 웹사이트, 슬라이드, 문서처럼 그림을 직접 배치할 때만 필요합니다. 프로필에 올린다면 보통 평범한 정사각형이 더 잘 전달되며, 정사각형 버튼이 바로 그 용도입니다.","잘라 낸 결과는 다시 인코딩되므로 EXIF, GPS, 색상 프로필은 남지 않습니다. 파일은 이 탭에서 \u003ccode>FileReader\u003c/code>로 읽으며, 페이지는 네트워크 요청을 하지 않고, 놓은 내용은 저장되지 않습니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","원형 자르기 — 모서리가 투명한 둥근 프로필 사진 — MDV","그림을 아바타용 원 또는 둥근 사각형으로 자릅니다. 모서리는 투명하게 두거나 뒤에 색을 깔 수 있고, 필요한 크기로 만들 수 있습니다. 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","자를 그림 선택","모양","둥근 프레임을 씌운 내 그림","모서리 색","모서리 반경(퍼센트)","출력 형식","너무 큼","{name}의 크기는 {size}입니다. 이 페이지는 {limit}까지 자를 수 있습니다.","그림이 아님","{name}은(는) {type}입니다. JPEG, PNG, WebP를 놓으세요.","그 파일","읽을 수 없음","브라우저가 {name} 읽기를 중단했습니다.","디코딩할 수 없음","{name}을(를) 그림으로 디코딩하지 못했습니다.","그림의 {side} × {side2} px, 위치 {x}, {y}","{w} × {h} px · {name}(으)로 저장, {size}","{w} × {h} px · {shape} · {format}","원","둥근 사각형, {radius}%","정사각형","{percent}%로 확대 중: 프레임에 {size} px보다 적은 픽셀이 있어 아바타가 흐릿해집니다. 더 작은 영역을 잡거나 더 큰 그림으로 시작하세요.","JPEG는 투명도를 담을 수 없으므로, 모서리는 비워 두지 않고 체크 상자 옆의 색으로 채웁니다.","모서리는 투명합니다. 그림을 직접 배치할 때 원하는 상태입니다. 대부분의 프로필 업로드는 그림을 직접 둥글게 만들므로 평범한 정사각형을 더 선호합니다.","그림이 확대되고 있음","프레임을 끌어 원 안에 들어갈 부분을 선택하세요","프레임을 끌어 프레임 안에 들어갈 부분을 선택하세요","인코딩할 수 없음","이 브라우저는 {format}을(를) 만들지 못했습니다.","이미지와 미디어",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","把图片裁成头像用的圆形,角落保持透明或填上颜色。","在此设备上运行","可离线使用","拖入 JPEG、PNG 或 WebP — 最大 30 MB","请把图片拖到上方","无法裁剪","圆形","圆角方形","方形","尺寸","结果","填充角落","圆角半径","下载","来源","裁剪框","输出","工作原理","你拖动的方形会缩放到所要求的尺寸,然后从中裁出形状:画布保留圆内的部分并清除其余部分,所以角落是真正的空白,而不是涂成页面的颜色。这就是文件默认为 PNG 的原因:PNG 支持透明,JPEG 不支持。在角落透明的情况下选择 JPEG 会得到黑色角落,所以页面会改用一种颜色填充,并加以说明。","形状以四倍尺寸绘制后再缩小,这使圆的边缘保持平滑而不是锯齿状;在头像常用的尺寸下,这就是干净边缘与阶梯状边缘的区别。圆角方形使用以边长百分比表示的半径,因此在任何尺寸下都保持比例:50% 就是圆形,滑块因此停在那里。","大多数接受圆形头像的地方想要的是方形文件,并自行完成圆角处理,所以只有在你自己放置图片时(网站、幻灯片、文档)才需要透明圆形。如果是上传到个人资料,普通方形通常更合适,“方形”按钮就是为此而设。","裁剪结果会重新编码,因此不会保留 EXIF、GPS 或色彩配置文件。文件在此标签页中用 \u003ccode>FileReader\u003c/code> 读取,页面不发出任何网络请求,你拖入的内容不会被存储。","深色和语言按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","圆形裁剪:带透明角落的圆形头像 — MDV","把图片裁成圆形或圆角方形作头像,角落透明或衬一种颜色,尺寸随你需要。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择要裁剪的图片","形状","带圆形裁剪框的图片","角落颜色","圆角半径(百分比)","输出格式","太大","{name} 大小为 {size}。此页面最多可裁剪 {limit}。","不是图片","{name} 的类型是 {type}。请拖入 JPEG、PNG 或 WebP。","该文件","无法读取","浏览器停止读取 {name}。","无法解码","{name} 无法解码为图片。","图片的 {side} × {side2} px，起点 {x}, {y}","{w} × {h} px · 已写为 {name},{size}","{w} × {h} px · {shape} · {format}","圆形","圆角方形,{radius}%","方形","正在放大到 {percent}%:裁剪框内的像素少于 {size} px，头像会发虚。请框选更小的区域,或从更大的图片开始。","JPEG 无法保存透明度,所以角落会用复选框旁的颜色填充,而不是留空。","角落是透明的,这正是你自己放置图片时想要的。大多数个人资料上传会自行把图片处理成圆形,更希望得到普通方形。","图片正在被放大","拖动裁剪框,选择圆内的内容","拖动裁剪框,选择框内的内容","无法编码","此浏览器没有生成 {format}。","图像与媒体",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2405,32 +2618,36 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var ok = $("ok"), stage = $("stage"), preview = $("preview"), marquee = $("marquee"), said = $("said"), note = $("note");
   var out = $("out"), sizeInput = $("size"), fillBox = $("fill"), colour = $("colour"), radius = $("radius"), radiusOut = $("radiusOut");
   var image = null, current = null, box = null, shape = "circle", fmt = "png";
+  var view = null, written = null, errFn = null;   // what the words are drawn from; the pixels are not redone on a language change
 
   function state(which) {
     empty.hidden = which !== "empty";
     err.hidden = which !== "error";
     ok.hidden = which !== "ok";
   }
-  function bad(title, message) { errtitle.textContent = title; errmsg.textContent = message; state("error"); }
+  // fn returns [title, message], translated; it is kept so a language change can write them again
+  function bad(fn) { errFn = fn; showError(); state("error"); }
+  function showError() { var t = errFn(); errtitle.textContent = t[0]; errmsg.textContent = t[1]; }
 
   function take(files) {
     if (!files || !files.length) return;
     var f = files[0];
-    if (f.size > MAX_BYTES) { bad("Too large", f.name + " is " + bytes(f.size) + ". This page crops up to " + bytes(MAX_BYTES) + "."); return; }
-    if (f.type && f.type.indexOf("image/") !== 0) { bad("Not a picture", (f.name || "That file") + " is " + f.type + ". Drop a JPEG, PNG or WebP."); return; }
+    if (f.size > MAX_BYTES) { bad(function () { return [tr("Too large"), tr("{name} is {size}. This page crops up to {limit}.", { name: f.name, size: bytes(f.size), limit: bytes(MAX_BYTES) })]; }); return; }
+    if (f.type && f.type.indexOf("image/") !== 0) { bad(function () { return [tr("Not a picture"), tr("{name} is {type}. Drop a JPEG, PNG or WebP.", { name: f.name || tr("That file"), type: f.type })]; }); return; }
     var reader = new FileReader();
-    reader.onerror = function () { bad("Could not read that", "The browser stopped reading " + f.name + "."); };
+    reader.onerror = function () { bad(function () { return [tr("Could not read that"), tr("The browser stopped reading {name}.", { name: f.name })]; }); };
     reader.onload = function () {
       var img = new Image();
       img.onload = function () {
         image = { w: img.naturalWidth, h: img.naturalHeight };
         current = { file: f, img: img };
+        written = null;
         preview.src = String(reader.result);
         var side = Math.min(image.w, image.h);
         setBox({ x: (image.w - side) / 2, y: (image.h - side) / 2, side: side });
         state("ok");
       };
-      img.onerror = function () { bad("Could not decode that", (f.name || "That file") + " did not decode as a picture."); };
+      img.onerror = function () { bad(function () { return [tr("Could not decode that"), tr("{name} did not decode as a picture.", { name: f.name || tr("That file") })]; }); };
       img.src = String(reader.result);
     };
     reader.readAsDataURL(f);
@@ -2470,22 +2687,35 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     small.imageSmoothingQuality = "high";
     small.drawImage(canvas, 0, 0, size, size);
 
-    $("k-src").textContent = current.file.name + " · " + image.w + " × " + image.h + " px · " + bytes(current.file.size);
-    $("k-frame").textContent = box.side + " × " + box.side + " px of the picture, from " + box.x + ", " + box.y;
-    $("k-out").textContent = size + " × " + size + " px · " + (shape === "circle" ? "circle" : shape === "rounded" ? "rounded square, " + radius.value + "%" : "square") + " · " + fmt.toUpperCase();
-
-    var notes = [];
-    var percent = Math.round(size / box.side * 100);
-    if (percent > 100) notes.push("Enlarging to " + percent + "%: the frame holds fewer pixels than " + size + " px, so the avatar will be soft. Frame a smaller area or start from a bigger picture.");
-    if (fmt === "jpeg" && shape !== "square") notes.push("JPEG cannot hold transparency, so the corners are filled with the colour beside the tick box rather than left empty.");
-    if (fmt === "png" && !fillBox.checked && shape !== "square") notes.push("The corners are transparent, which is what you want when you place the picture yourself. Most profile uploads round the picture themselves and would rather have the plain square.");
-    said.textContent = notes.join(" ");
-    said.hidden = !notes.length;
-    note.textContent = percent > 100 ? "the picture is being enlarged" : "drag the frame to choose what is in the " + (shape === "circle" ? "circle" : "frame");
-    note.className = "mdv-dot-note" + (percent > 100 ? " is-warn" : " is-ok");
+    view = { size: size, percent: Math.round(size / box.side * 100) };
+    written = null;
+    words();
 
     colour.disabled = !(fillBox.checked || fmt === "jpeg");
     $("radiusRow").hidden = shape !== "rounded";
+  }
+
+  // Everything the page says about the current crop, drawn from the kept state.
+  function words() {
+    if (!view || !current) return;
+    var size = view.size, percent = view.percent;
+    $("k-src").textContent = current.file.name + " · " + image.w + " × " + image.h + " px · " + bytes(current.file.size);
+    $("k-frame").textContent = tr("{side} × {side2} px of the picture, from {x}, {y}", { side: box.side, side2: box.side, x: box.x, y: box.y });
+    if (written) {
+      $("k-out").textContent = tr("{w} × {h} px · written as {name}, {size}", { w: written.size, h: written.size, name: written.name, size: bytes(written.bytes) });
+    } else {
+      $("k-out").textContent = tr("{w} × {h} px · {shape} · {format}", { w: size, h: size,
+        shape: shape === "circle" ? tr("circle") : shape === "rounded" ? tr("rounded square, {radius}%", { radius: radius.value }) : tr("square"), format: fmt.toUpperCase() });
+    }
+
+    var notes = [];
+    if (percent > 100) notes.push(tr("Enlarging to {percent}%: the frame holds fewer pixels than {size} px, so the avatar will be soft. Frame a smaller area or start from a bigger picture.", { percent: percent, size: size }));
+    if (fmt === "jpeg" && shape !== "square") notes.push(tr("JPEG cannot hold transparency, so the corners are filled with the colour beside the tick box rather than left empty."));
+    if (fmt === "png" && !fillBox.checked && shape !== "square") notes.push(tr("The corners are transparent, which is what you want when you place the picture yourself. Most profile uploads round the picture themselves and would rather have the plain square."));
+    said.textContent = notes.join(" ");
+    said.hidden = !notes.length;
+    note.textContent = percent > 100 ? tr("the picture is being enlarged") : shape === "circle" ? tr("drag the frame to choose what is in the circle") : tr("drag the frame to choose what is in the frame");
+    note.className = "mdv-dot-note" + (percent > 100 ? " is-warn" : " is-ok");
   }
 
   /* dragging: move, or resize a square from the corners */
@@ -2538,7 +2768,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   $("save").addEventListener("click", function () {
     out.toBlob(function (blob) {
-      if (!blob) { bad("Could not encode that", "This browser did not produce a " + fmt.toUpperCase() + "."); return; }
+      if (!blob) { var wanted = fmt.toUpperCase(); bad(function () { return [tr("Could not encode that"), tr("This browser did not produce a {format}.", { format: wanted })]; }); return; }
       var size = out.width;
       var name = current.file.name.replace(/\.[a-z0-9]+$/i, "") + "-" + (shape === "circle" ? "circle" : shape === "rounded" ? "rounded" : "square") + "-" + size + "." + (fmt === "jpeg" ? "jpg" : "png");
       var url = URL.createObjectURL(blob), a = document.createElement("a");
@@ -2548,7 +2778,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       a.click();
       document.body.removeChild(a);
       setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-      $("k-out").textContent = size + " × " + size + " px · written as " + name + ", " + bytes(blob.size);
+      written = { size: size, name: name, bytes: blob.size };
+      words();
     }, "image/" + fmt, fmt === "png" ? undefined : 0.92);
   });
 
@@ -2559,6 +2790,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   ["dragleave", "drop"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove("is-over"); }); });
   drop.addEventListener("drop", function (e) { if (e.dataTransfer && e.dataTransfer.files) take(e.dataTransfer.files); });
 
+  onLang(function () { if (!err.hidden && errFn) showError(); words(); });
   drop.focus({ preventScroll: true });
   state("empty");
 })();

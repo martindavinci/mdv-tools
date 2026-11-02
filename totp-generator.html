@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link is-here" href="./totp-generator.html" aria-current="page" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link is-here" href="./totp-generator.html" aria-current="page" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,22 +2353,22 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">TOTP code generator</h1>
+      <h1 class="mdv-head-name" data-t="26">TOTP code generator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Paste a two-factor secret and read the code an authenticator app would show.</p>
+    <p class="mdv-head-line" data-t="79">Paste a two-factor secret and read the code an authenticator app would show.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
     <div class="mdv-row is-between">
-      <label class="mdv-label" style="margin:0" for="secret">Secret or otpauth:// link</label>
+      <label class="mdv-label" style="margin:0" for="secret" data-t="82">Secret or otpauth:// link</label>
       <span class="mdv-row" style="gap:var(--space-3)">
-        <label class="mdv-check"><input type="checkbox" id="hide"> Hide it</label>
-        <button class="mdv-btn is-sm is-quiet" type="button" id="newSecret">New secret</button>
+        <label class="mdv-check"><input type="checkbox" id="hide"> <span data-t="83">Hide it</span></label>
+        <button class="mdv-btn is-sm is-quiet" type="button" id="newSecret" data-t="84">New secret</button>
       </span>
     </div>
     <input class="mdv-input mdv-mono" id="secret" type="text" spellcheck="false" autocomplete="off" autocapitalize="characters"
@@ -2264,17 +2376,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <div class="mdv-row is-between">
-    <div class="mdv-seg" role="group" aria-label="Hash">
+    <div class="mdv-seg" role="group" aria-label="Hash" data-t-attrs="aria-label">
       <button type="button" data-algo="SHA-1" class="is-on" aria-pressed="true">SHA-1</button>
       <button type="button" data-algo="SHA-256" aria-pressed="false">SHA-256</button>
       <button type="button" data-algo="SHA-512" aria-pressed="false">SHA-512</button>
     </div>
     <div class="mdv-row" style="gap:var(--space-3)">
-      <div class="mdv-seg" role="group" aria-label="Digits">
-        <button type="button" data-digits="6" class="is-on" aria-pressed="true">6 digits</button>
+      <div class="mdv-seg" role="group" aria-label="Digits" data-t-attrs="aria-label">
+        <button type="button" data-digits="6" class="is-on" aria-pressed="true" data-t="85">6 digits</button>
         <button type="button" data-digits="8" aria-pressed="false">8</button>
       </div>
-      <div class="mdv-seg" role="group" aria-label="Period">
+      <div class="mdv-seg" role="group" aria-label="Period" data-t-attrs="aria-label">
         <button type="button" data-period="30" class="is-on" aria-pressed="true">30 s</button>
         <button type="button" data-period="60" aria-pressed="false">60 s</button>
       </div>
@@ -2282,7 +2394,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>paste a secret above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="86">paste a secret above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Not a secret this page can read</span>
@@ -2293,20 +2405,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-row is-between">
         <div class="mdv-readout"><span id="code"></span></div>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyLink">Copy setup link</button>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy code</button>
+          <span class="mdv-badge is-accent" id="copied" hidden><span data-t="87">Copied</span></span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyLink" data-t="88">Copy setup link</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn" data-t="89">Copy code</button>
         </span>
       </div>
       <div class="mdv-meter"><span id="bar" style="width:100%"></span></div>
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Changes in</dt><dd id="k-left"></dd>
-          <dt>Next code</dt><dd id="k-next"></dd>
-          <dt>For</dt><dd id="k-for"></dd>
-          <dt>Secret</dt><dd id="k-secret"></dd>
-          <dt>Setup link</dt><dd id="k-link" style="word-break:break-all"></dd>
-          <dt>This device's clock</dt><dd id="k-clock"></dd>
+          <dt data-t="90">Changes in</dt><dd id="k-left"></dd>
+          <dt data-t="91">Next code</dt><dd id="k-next"></dd>
+          <dt data-t="92">For</dt><dd id="k-for"></dd>
+          <dt data-t="93">Secret</dt><dd id="k-secret"></dd>
+          <dt data-t="94">Setup link</dt><dd id="k-link" style="word-break:break-all"></dd>
+          <dt data-t="95">This device's clock</dt><dd id="k-clock"></dd>
         </dl>
       </div>
       <p class="mdv-hint" id="said" hidden></p>
@@ -2314,48 +2426,50 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="96">How this works</summary>
     <div class="mdv-method-body">
-      <p>This is RFC 6238, the scheme behind every authenticator app. The secret is base32 text; the page
+      <p data-t="97">This is RFC 6238, the scheme behind every authenticator app. The secret is base32 text; the page
         decodes it to bytes, counts how many 30-second steps have passed since 1 January 1970 on this
         device's clock, and signs that count with HMAC using the browser's own
         <code>crypto.subtle</code> — SHA-1 unless the service asked for SHA-256 or SHA-512. Four bytes are
         picked out of the signature by the rule in RFC 4226 and cut down to six or eight digits. An
         <code>otpauth://totp/…</code> link, the text inside a setup QR code, is read whole: its secret, hash,
         digits, period and the issuer and account it names all set the page for you.</p>
-      <p><strong>The secret is the second factor.</strong> Anyone who holds it can make your codes for as long
+      <p data-t="98"><strong>The secret is the second factor.</strong> Anyone who holds it can make your codes for as long
         as the account keeps it, so treat it like a password. This page makes no network requests and keeps
         nothing — close the tab and the secret is gone — but it is still text on a screen, readable by
         anything else running in this browser, extensions included. Use it to recover a code when your phone
         is out of reach, to check that a secret you saved is the right one, or to test a login you are
         building; keep the secret itself somewhere you would keep a password.</p>
-      <p>The code depends on the clock. If this device is more than about half a minute out, the codes will
+      <p data-t="99">The code depends on the clock. If this device is more than about half a minute out, the codes will
         not match the service's, and no setting here fixes that — set the clock. Most services accept the
         code from one step either side, which is why a code that has just changed often still works. A
         secret shorter than 128 bits is accepted, since many services issue 80-bit ones, and the page names
         its length.</p>
-      <p><strong>New secret</strong> is for building or testing a login of your own: it draws 160 bits from
+      <p data-t="100"><strong>New secret</strong> is for building or testing a login of your own: it draws 160 bits from
         <code>crypto.getRandomValues</code> — the length RFC 4226 recommends — writes them as base32, and
         builds the setup link to go with it under the placeholder name Test. Turn that link into a QR code
         with the QR code page and scan it into an authenticator app, and the app and this page will show the
         same codes. A secret made here exists only in this tab until you copy it somewhere.</p>
+      <p data-t="101">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Encoding &amp; Crypto">
-    <span class="mdv-tag">Also in Encoding &amp; Crypto</span>
-    <a href="./url-encode-decode.html">URL Encoder &amp; Decoder</a>
-    <a href="./uuid-generator.html">UUID generator</a>
-    <a href="./wifi-qr-code.html">Wi-Fi QR code</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Encoding &amp; Crypto"}'>Also in Encoding &amp; Crypto</span>
+    <a href="./url-encode-decode.html" data-t="27">URL Encoder &amp; Decoder</a>
+    <a href="./uuid-generator.html" data-t="28">UUID generator</a>
+    <a href="./wifi-qr-code.html" data-t="29">Wi-Fi QR code</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="102">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="103">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="104" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-22</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="105">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2366,6 +2480,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["TOTP Code Generator — two-factor codes from a secret, offline — MDV","Paste a two-factor secret or an otpauth link and read the current six-digit code and the next, the way an authenticator app does. The secret never leaves the device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Hash","Digits","Period","“{ch}” at position {pos} is not a base32 character — base32 has no 0; it is usually the letter O. Base32 uses A to Z and 2 to 7.","“{ch}” at position {pos} is not a base32 character — base32 has no 1; it is usually the letter I or L. Base32 uses A to Z and 2 to 7.","“{ch}” at position {pos} is not a base32 character — base32 has no 8; it is usually the letter B. Base32 uses A to Z and 2 to 7.","“{ch}” at position {pos} is not a base32 character. Base32 uses A to Z and 2 to 7.","That starts like an otpauth link but is not one. It should look like otpauth://totp/Name?secret=…","This is an otpauth link of type “{type}”. This page makes time-based (totp) codes; counter-based hotp codes need the counter, which lives on the server.","The link has no secret= part, so there is nothing to make codes from.","The link asks for {algo}; TOTP uses SHA1, SHA256 or SHA512.","Not a link this page can read","This browser will not sign here","crypto.subtle is only available on a secure page — https, or a file opened from this device.","Not a secret this page can read","Too short to be a secret","That decodes to {bits} bits. Real TOTP secrets are 80 bits or more — usually 16 or 32 characters of base32.","The link asks for {digits} digits; TOTP codes are 6, 7 or 8 long.","The link asks for a {period}-second period, which is outside what any service uses.","{date} UTC — codes are only as right as this","the link names no account","a pasted secret","{bits} bits · {algo} · {digits} digits every {period} s","Hash, digits and period were read from the link.","The settings the last link set are back to SHA-1, 6 digits, 30 seconds — what nearly every service uses. Change them if yours says otherwise.","This secret is {bits} bits, below the 128 RFC 4226 recommends; many services still issue 80-bit ones.","The browser refused to sign","{message}","{n} second","{n} seconds","Encoding & Crypto","2026-11-02"],"h":106,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Pega un secreto de doble factor y lee el código que mostraría una app de autenticación.","En este dispositivo","Funciona sin conexión","Secreto o enlace otpauth://","Ocultar","Nuevo secreto","6 dígitos","pega un secreto arriba","Copiado","Copiar enlace","Copiar código","Cambia en","Código siguiente","Para","Secreto","Enlace de configuración","Reloj de este dispositivo","Cómo funciona","Esto es la RFC 6238, el esquema que hay detrás de toda app de autenticación. El secreto es texto en base32; la página lo decodifica a bytes, cuenta cuántos intervalos de 30 segundos han pasado desde el 1 de enero de 1970 según el reloj de este dispositivo y firma ese número con HMAC mediante el propio \u003ccode>crypto.subtle\u003c/code> del navegador: SHA-1, salvo que el servicio pida SHA-256 o SHA-512. De la firma se toman cuatro bytes según la regla de la RFC 4226 y se reducen a seis u ocho dígitos. Un enlace \u003ccode>otpauth://totp/…\u003c/code>, el texto que va dentro de un QR de configuración, se lee entero: su secreto, hash, dígitos, periodo y el emisor y la cuenta que nombra configuran la página por ti.","\u003cstrong>El secreto es el segundo factor.\u003c/strong> Quien lo tenga puede generar tus códigos mientras la cuenta lo conserve, así que trátalo como una contraseña. Esta página no hace peticiones de red y no guarda nada: al cerrar la pestaña, el secreto desaparece. Aun así, es texto en una pantalla y puede leerlo cualquier otra cosa que se ejecute en este navegador, extensiones incluidas. Úsala para recuperar un código cuando no tienes el teléfono a mano, para comprobar que un secreto guardado es el correcto o para probar un inicio de sesión que estás construyendo; guarda el secreto en un lugar donde guardarías una contraseña.","El código depende del reloj. Si este dispositivo se desvía más de unos treinta segundos, los códigos no coincidirán con los del servicio y ningún ajuste de aquí lo arregla: pon el reloj en hora. La mayoría de los servicios aceptan el código de un intervalo anterior o posterior, por eso un código que acaba de cambiar a menudo sigue funcionando. Se acepta un secreto de menos de 128 bits, porque muchos servicios emiten secretos de 80 bits, y la página indica su longitud.","\u003cstrong>Nuevo secreto\u003c/strong> sirve para construir o probar un inicio de sesión propio: toma 160 bits de \u003ccode>crypto.getRandomValues\u003c/code> —la longitud que recomienda la RFC 4226—, los escribe en base32 y crea el enlace de configuración correspondiente con el nombre provisional Test. Convierte ese enlace en un código QR con la página de códigos QR y escanéalo en una app de autenticación: la app y esta página mostrarán los mismos códigos. Un secreto creado aquí solo existe en esta pestaña hasta que lo copies a otro sitio.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Generador de códigos TOTP: códigos de doble factor desde un secreto, sin conexión — MDV","Pega un secreto de doble factor o un enlace otpauth y lee el código de seis dígitos actual y el siguiente, como lo hace una app de autenticación. El secreto nunca sale del dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Hash","Dígitos","Periodo","«{ch}» en la posición {pos} no es un carácter base32: base32 no tiene 0, suele ser la letra O. Base32 usa de la A a la Z y del 2 al 7.","«{ch}» en la posición {pos} no es un carácter base32: base32 no tiene 1, suele ser la letra I o L. Base32 usa de la A a la Z y del 2 al 7.","«{ch}» en la posición {pos} no es un carácter base32: base32 no tiene 8, suele ser la letra B. Base32 usa de la A a la Z y del 2 al 7.","«{ch}» en la posición {pos} no es un carácter base32. Base32 usa de la A a la Z y del 2 al 7.","Empieza como un enlace otpauth pero no lo es. Debería tener la forma otpauth://totp/Name?secret=…","Es un enlace otpauth de tipo «{type}». Esta página genera códigos basados en tiempo (totp); los códigos hotp basados en contador necesitan el contador, que está en el servidor.","El enlace no tiene la parte secret=, así que no hay nada de lo que generar códigos.","El enlace pide {algo}; TOTP usa SHA1, SHA256 o SHA512.","Un enlace que esta página no puede leer","Este navegador no firmará aquí","crypto.subtle solo está disponible en una página segura: https, o un archivo abierto desde este dispositivo.","Un secreto que esta página no puede leer","Demasiado corto para ser un secreto","Eso se decodifica a {bits} bits. Los secretos TOTP reales tienen 80 bits o más, normalmente 16 o 32 caracteres en base32.","El enlace pide {digits} dígitos; los códigos TOTP tienen 6, 7 u 8.","El enlace pide un periodo de {period} segundos, fuera de lo que usa cualquier servicio.","{date} UTC — los códigos solo son tan correctos como esto","el enlace no indica ninguna cuenta","un secreto pegado","{bits} bits · {algo} · {digits} dígitos cada {period} s","El hash, los dígitos y el periodo se han leído del enlace.","Los ajustes que fijó el último enlace vuelven a SHA-1, 6 dígitos, 30 segundos, lo que usan casi todos los servicios. Cámbialos si el tuyo indica otra cosa.","Este secreto tiene {bits} bits, menos de los 128 que recomienda la RFC 4226; muchos servicios aún emiten secretos de 80 bits.","El navegador se negó a firmar","{message}","{n} segundo","{n} segundos","Codificación y criptografía",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Collez un secret à deux facteurs et lisez le code qu’afficherait une appli d’authentification.","Sur cet appareil","Fonctionne hors ligne","Secret ou lien otpauth://","Masquer","Nouveau secret","6 chiffres","collez un secret ci-dessus","Copié","Copier le lien","Copier le code","Change dans","Code suivant","Pour","Secret","Lien de configuration","Horloge de cet appareil","Comment ça marche","C’est la RFC 6238, le schéma qui se cache derrière toute appli d’authentification. Le secret est un texte en base32 ; la page le décode en octets, compte combien de pas de 30 secondes se sont écoulés depuis le 1er janvier 1970 d’après l’horloge de cet appareil, et signe ce compteur en HMAC avec le \u003ccode>crypto.subtle\u003c/code> du navigateur — SHA-1, sauf si le service demande SHA-256 ou SHA-512. Quatre octets sont prélevés dans la signature selon la règle de la RFC 4226 et réduits à six ou huit chiffres. Un lien \u003ccode>otpauth://totp/…\u003c/code>, le texte contenu dans un QR code de configuration, est lu en entier : son secret, son hash, ses chiffres, sa période, ainsi que l’émetteur et le compte qu’il nomme règlent la page pour vous.","\u003cstrong>Le secret est le second facteur.\u003c/strong> Quiconque le détient peut produire vos codes tant que le compte le conserve : traitez-le comme un mot de passe. Cette page ne fait aucune requête réseau et ne garde rien — fermez l’onglet et le secret disparaît — mais ce n’en est pas moins du texte à l’écran, lisible par tout ce qui s’exécute d’autre dans ce navigateur, extensions comprises. Servez-vous-en pour récupérer un code quand votre téléphone est hors de portée, pour vérifier qu’un secret enregistré est le bon, ou pour tester une connexion que vous développez ; conservez le secret lui-même là où vous conserveriez un mot de passe.","Le code dépend de l’horloge. Si cet appareil est décalé de plus d’une demi-minute environ, les codes ne correspondront pas à ceux du service, et aucun réglage ici n’y changera rien — remettez l’horloge à l’heure. La plupart des services acceptent le code d’un pas avant ou après, c’est pourquoi un code qui vient de changer fonctionne souvent encore. Un secret de moins de 128 bits est accepté, car beaucoup de services en émettent de 80 bits, et la page indique sa longueur.","\u003cstrong>Nouveau secret\u003c/strong> sert à construire ou tester une connexion de votre cru : il tire 160 bits de \u003ccode>crypto.getRandomValues\u003c/code> — la longueur que recommande la RFC 4226 —, les écrit en base32 et construit le lien de configuration correspondant sous le nom provisoire Test. Transformez ce lien en QR code avec la page des QR codes et scannez-le dans une appli d’authentification : l’appli et cette page afficheront les mêmes codes. Un secret créé ici n’existe que dans cet onglet tant que vous ne l’avez pas copié ailleurs.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Générateur de codes TOTP : codes à deux facteurs depuis un secret, hors ligne — MDV","Collez un secret à deux facteurs ou un lien otpauth et lisez le code à six chiffres actuel et le suivant, comme le fait une appli d’authentification. Le secret ne quitte jamais l’appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Hash","Chiffres","Période","« {ch} » à la position {pos} n’est pas un caractère base32 : base32 n’a pas de 0, c’est généralement la lettre O. Base32 utilise A à Z et 2 à 7.","« {ch} » à la position {pos} n’est pas un caractère base32 : base32 n’a pas de 1, c’est généralement la lettre I ou L. Base32 utilise A à Z et 2 à 7.","« {ch} » à la position {pos} n’est pas un caractère base32 : base32 n’a pas de 8, c’est généralement la lettre B. Base32 utilise A à Z et 2 à 7.","« {ch} » à la position {pos} n’est pas un caractère base32. Base32 utilise A à Z et 2 à 7.","Cela commence comme un lien otpauth mais n’en est pas un. Il devrait ressembler à otpauth://totp/Name?secret=…","C’est un lien otpauth de type « {type} ». Cette page produit des codes basés sur le temps (totp) ; les codes hotp basés sur un compteur ont besoin du compteur, qui se trouve sur le serveur.","Le lien n’a pas de partie secret=, il n’y a donc rien à partir de quoi produire des codes.","Le lien demande {algo} ; TOTP utilise SHA1, SHA256 ou SHA512.","Un lien que cette page ne peut pas lire","Ce navigateur ne signera pas ici","crypto.subtle n’est disponible que sur une page sécurisée : https, ou un fichier ouvert depuis cet appareil.","Un secret que cette page ne peut pas lire","Trop court pour être un secret","Cela se décode en {bits} bits. Les vrais secrets TOTP font 80 bits ou plus — en général 16 ou 32 caractères en base32.","Le lien demande {digits} chiffres ; les codes TOTP font 6, 7 ou 8 chiffres.","Le lien demande une période de {period} secondes, hors de ce qu’utilise tout service.","{date} UTC — les codes ne sont aussi justes que cela","le lien ne nomme aucun compte","un secret collé","{bits} bits · {algo} · {digits} chiffres toutes les {period} s","Le hash, les chiffres et la période ont été lus dans le lien.","Les réglages fixés par le dernier lien reviennent à SHA-1, 6 chiffres, 30 secondes — ce qu’utilisent presque tous les services. Modifiez-les si le vôtre indique autre chose.","Ce secret fait {bits} bits, sous les 128 que recommande la RFC 4226 ; beaucoup de services en émettent encore de 80 bits.","Le navigateur a refusé de signer","{message}","{n} seconde","{n} secondes","Encodage et cryptographie",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Füge ein Zwei-Faktor-Geheimnis ein und lies den Code, den eine Authenticator-App anzeigen würde.","Läuft auf diesem Gerät","Funktioniert offline","Geheimnis oder otpauth://-Link","Verbergen","Neues Geheimnis","6 Ziffern","Geheimnis oben einfügen","Kopiert","Link kopieren","Code kopieren","Wechselt in","Nächster Code","Für","Geheimnis","Einrichtungslink","Uhr dieses Geräts","So funktioniert es","Das ist RFC 6238, das Verfahren hinter jeder Authenticator-App. Das Geheimnis ist Base32-Text; die Seite dekodiert es zu Bytes, zählt, wie viele 30-Sekunden-Schritte seit dem 1. Januar 1970 nach der Uhr dieses Geräts vergangen sind, und signiert diesen Zähler mit HMAC über das \u003ccode>crypto.subtle\u003c/code> des Browsers — SHA-1, sofern der Dienst nicht SHA-256 oder SHA-512 verlangt. Aus der Signatur werden nach der Regel in RFC 4226 vier Bytes entnommen und auf sechs oder acht Ziffern gekürzt. Ein \u003ccode>otpauth://totp/…\u003c/code>-Link, der Text im Einrichtungs-QR-Code, wird ganz gelesen: Geheimnis, Hash, Ziffern, Periode sowie der genannte Aussteller und das Konto stellen die Seite für dich ein.","\u003cstrong>Das Geheimnis ist der zweite Faktor.\u003c/strong> Wer es besitzt, kann deine Codes erzeugen, solange das Konto es behält – behandle es wie ein Passwort. Diese Seite stellt keine Netzwerkanfragen und speichert nichts – schließt du den Tab, ist das Geheimnis weg –, aber es ist trotzdem Text auf einem Bildschirm, den alles andere in diesem Browser lesen kann, Erweiterungen eingeschlossen. Nutze die Seite, um einen Code zu holen, wenn dein Handy außer Reichweite ist, um zu prüfen, ob ein gespeichertes Geheimnis das richtige ist, oder um einen Login zu testen, den du baust; bewahre das Geheimnis selbst dort auf, wo du auch ein Passwort aufbewahren würdest.","Der Code hängt von der Uhr ab. Geht dieses Gerät mehr als etwa eine halbe Minute falsch, stimmen die Codes nicht mit denen des Dienstes überein, und keine Einstellung hier ändert das – stelle die Uhr. Die meisten Dienste akzeptieren den Code eines Schritts davor oder danach, weshalb ein gerade gewechselter Code oft noch funktioniert. Ein Geheimnis unter 128 Bit wird akzeptiert, da viele Dienste 80-Bit-Geheimnisse ausgeben, und die Seite nennt seine Länge.","\u003cstrong>Neues Geheimnis\u003c/strong> dient zum Bauen oder Testen eines eigenen Logins: Es zieht 160 Bit aus \u003ccode>crypto.getRandomValues\u003c/code> – die Länge, die RFC 4226 empfiehlt –, schreibt sie als Base32 und baut dazu den Einrichtungslink unter dem Platzhalternamen Test. Wandle diesen Link mit der QR-Code-Seite in einen QR-Code um und scanne ihn in eine Authenticator-App, dann zeigen App und diese Seite dieselben Codes. Ein hier erzeugtes Geheimnis existiert nur in diesem Tab, bis du es irgendwohin kopierst.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","TOTP-Code-Generator: Zwei-Faktor-Codes aus einem Geheimnis, offline — MDV","Füge ein Zwei-Faktor-Geheimnis oder einen otpauth-Link ein und lies den aktuellen sechsstelligen Code und den nächsten, wie es eine Authenticator-App tut. Das Geheimnis verlässt das Gerät nie.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Hash","Ziffern","Periode","„{ch}“ an Position {pos} ist kein Base32-Zeichen: Base32 hat keine 0, meist ist es der Buchstabe O. Base32 verwendet A bis Z und 2 bis 7.","„{ch}“ an Position {pos} ist kein Base32-Zeichen: Base32 hat keine 1, meist ist es der Buchstabe I oder L. Base32 verwendet A bis Z und 2 bis 7.","„{ch}“ an Position {pos} ist kein Base32-Zeichen: Base32 hat keine 8, meist ist es der Buchstabe B. Base32 verwendet A bis Z und 2 bis 7.","„{ch}“ an Position {pos} ist kein Base32-Zeichen. Base32 verwendet A bis Z und 2 bis 7.","Das beginnt wie ein otpauth-Link, ist aber keiner. Er sollte so aussehen: otpauth://totp/Name?secret=…","Das ist ein otpauth-Link vom Typ „{type}“. Diese Seite erzeugt zeitbasierte Codes (totp); zählerbasierte hotp-Codes brauchen den Zähler, der auf dem Server liegt.","Der Link hat keinen secret=-Teil, daher gibt es nichts, woraus Codes erzeugt werden könnten.","Der Link verlangt {algo}; TOTP verwendet SHA1, SHA256 oder SHA512.","Kein Link, den diese Seite lesen kann","Dieser Browser signiert hier nicht","crypto.subtle gibt es nur auf einer sicheren Seite – https oder einer von diesem Gerät geöffneten Datei.","Kein Geheimnis, das diese Seite lesen kann","Zu kurz für ein Geheimnis","Das dekodiert zu {bits} Bit. Echte TOTP-Geheimnisse haben 80 Bit oder mehr – meist 16 oder 32 Base32-Zeichen.","Der Link verlangt {digits} Ziffern; TOTP-Codes haben 6, 7 oder 8.","Der Link verlangt eine Periode von {period} Sekunden, was kein Dienst verwendet.","{date} UTC — die Codes sind nur so richtig wie dies","der Link nennt kein Konto","ein eingefügtes Geheimnis","{bits} Bit · {algo} · {digits} Ziffern alle {period} s","Hash, Ziffern und Periode wurden aus dem Link gelesen.","Die vom letzten Link gesetzten Einstellungen sind wieder SHA-1, 6 Ziffern, 30 Sekunden – was fast jeder Dienst nutzt. Ändere sie, wenn deiner etwas anderes angibt.","Dieses Geheimnis hat {bits} Bit, weniger als die 128, die RFC 4226 empfiehlt; viele Dienste geben noch 80-Bit-Geheimnisse aus.","Der Browser hat das Signieren verweigert","{message}","{n} Sekunde","{n} Sekunden","Kodierung und Krypto",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Incolla un segreto a due fattori e leggi il codice che mostrerebbe un’app di autenticazione.","Su questo dispositivo","Funziona offline","Segreto o link otpauth://","Nascondi","Nuovo segreto","6 cifre","incolla un segreto qui sopra","Copiato","Copia link","Copia codice","Cambia tra","Codice successivo","Per","Segreto","Link di configurazione","Orologio di questo dispositivo","Come funziona","Questa è la RFC 6238, lo schema dietro ogni app di autenticazione. Il segreto è un testo in base32; la pagina lo decodifica in byte, conta quanti intervalli di 30 secondi sono passati dal 1° gennaio 1970 secondo l’orologio di questo dispositivo e firma quel conteggio con HMAC usando il \u003ccode>crypto.subtle\u003c/code> del browser — SHA-1, a meno che il servizio chieda SHA-256 o SHA-512. Dalla firma si prelevano quattro byte secondo la regola della RFC 4226 e li si riduce a sei o otto cifre. Un link \u003ccode>otpauth://totp/…\u003c/code>, il testo dentro un QR code di configurazione, viene letto per intero: segreto, hash, cifre, periodo e l’emittente e l’account che indica impostano la pagina al posto tuo.","\u003cstrong>Il segreto è il secondo fattore.\u003c/strong> Chiunque lo possieda può generare i tuoi codici finché l’account lo conserva, quindi trattalo come una password. Questa pagina non fa richieste di rete e non conserva nulla: chiudi la scheda e il segreto scompare. Resta comunque testo su uno schermo, leggibile da qualsiasi altra cosa in esecuzione in questo browser, estensioni comprese. Usala per recuperare un codice quando il telefono non è a portata di mano, per verificare che un segreto salvato sia quello giusto o per provare un login che stai costruendo; conserva il segreto stesso dove conserveresti una password.","Il codice dipende dall’orologio. Se questo dispositivo è sfasato di più di circa mezzo minuto, i codici non coincideranno con quelli del servizio e nessuna impostazione qui può rimediare: sistema l’orologio. La maggior parte dei servizi accetta il codice di un intervallo prima o dopo, ed è per questo che un codice appena cambiato spesso funziona ancora. Un segreto più corto di 128 bit viene accettato, perché molti servizi ne emettono da 80 bit, e la pagina ne indica la lunghezza.","\u003cstrong>Nuovo segreto\u003c/strong> serve a costruire o provare un login tutto tuo: estrae 160 bit da \u003ccode>crypto.getRandomValues\u003c/code> — la lunghezza raccomandata dalla RFC 4226 —, li scrive in base32 e costruisce il link di configurazione corrispondente con il nome segnaposto Test. Trasforma quel link in un QR code con la pagina dei QR code e scansionalo in un’app di autenticazione: l’app e questa pagina mostreranno gli stessi codici. Un segreto creato qui esiste solo in questa scheda finché non lo copi altrove.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Generatore di codici TOTP: codici a due fattori da un segreto, offline — MDV","Incolla un segreto a due fattori o un link otpauth e leggi il codice a sei cifre attuale e il successivo, come fa un’app di autenticazione. Il segreto non lascia mai il dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Hash","Cifre","Periodo","«{ch}» alla posizione {pos} non è un carattere base32: base32 non ha lo 0, di solito è la lettera O. Base32 usa da A a Z e da 2 a 7.","«{ch}» alla posizione {pos} non è un carattere base32: base32 non ha l’1, di solito è la lettera I o L. Base32 usa da A a Z e da 2 a 7.","«{ch}» alla posizione {pos} non è un carattere base32: base32 non ha l’8, di solito è la lettera B. Base32 usa da A a Z e da 2 a 7.","«{ch}» alla posizione {pos} non è un carattere base32. Base32 usa da A a Z e da 2 a 7.","Inizia come un link otpauth ma non lo è. Dovrebbe avere la forma otpauth://totp/Name?secret=…","È un link otpauth di tipo «{type}». Questa pagina genera codici basati sul tempo (totp); i codici hotp basati su contatore richiedono il contatore, che si trova sul server.","Il link non ha la parte secret=, quindi non c’è nulla da cui generare codici.","Il link richiede {algo}; TOTP usa SHA1, SHA256 o SHA512.","Un link che questa pagina non sa leggere","Questo browser non firmerà qui","crypto.subtle è disponibile solo su una pagina sicura: https, o un file aperto da questo dispositivo.","Un segreto che questa pagina non sa leggere","Troppo corto per essere un segreto","Si decodifica in {bits} bit. I veri segreti TOTP hanno 80 bit o più — di solito 16 o 32 caratteri in base32.","Il link richiede {digits} cifre; i codici TOTP sono di 6, 7 o 8 cifre.","Il link richiede un periodo di {period} secondi, fuori da quanto usa qualsiasi servizio.","{date} UTC — i codici sono corretti solo quanto questo","il link non indica alcun account","un segreto incollato","{bits} bit · {algo} · {digits} cifre ogni {period} s","Hash, cifre e periodo sono stati letti dal link.","Le impostazioni fissate dall’ultimo link sono tornate a SHA-1, 6 cifre, 30 secondi, ciò che usano quasi tutti i servizi. Cambiale se il tuo indica altro.","Questo segreto è di {bits} bit, meno dei 128 raccomandati dalla RFC 4226; molti servizi ne emettono ancora da 80 bit.","Il browser ha rifiutato di firmare","{message}","{n} secondo","{n} secondi","Codifica e crittografia",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Cole um segredo de dois fatores e veja o código que um app autenticador mostraria.","Neste dispositivo","Funciona offline","Segredo ou link otpauth://","Ocultar","Novo segredo","6 dígitos","cole um segredo acima","Copiado","Copiar link","Copiar código","Muda em","Próximo código","Para","Segredo","Link de configuração","Relógio deste dispositivo","Como funciona","Esta é a RFC 6238, o esquema por trás de todo app autenticador. O segredo é um texto em base32; a página o decodifica em bytes, conta quantos intervalos de 30 segundos se passaram desde 1º de janeiro de 1970 pelo relógio deste dispositivo e assina essa contagem com HMAC usando o próprio \u003ccode>crypto.subtle\u003c/code> do navegador — SHA-1, a menos que o serviço peça SHA-256 ou SHA-512. Quatro bytes são extraídos da assinatura pela regra da RFC 4226 e reduzidos a seis ou oito dígitos. Um link \u003ccode>otpauth://totp/…\u003c/code>, o texto dentro de um QR code de configuração, é lido por inteiro: o segredo, o hash, os dígitos, o período e o emissor e a conta que ele nomeia configuram a página por você.","\u003cstrong>O segredo é o segundo fator.\u003c/strong> Quem o tiver pode gerar seus códigos enquanto a conta o mantiver, então trate-o como uma senha. Esta página não faz requisições de rede e não guarda nada: feche a aba e o segredo some. Ainda assim, é texto em uma tela, legível por qualquer outra coisa em execução neste navegador, extensões incluídas. Use-a para recuperar um código quando o celular estiver fora de alcance, para conferir se um segredo salvo é o certo ou para testar um login que você está construindo; guarde o segredo em um lugar onde guardaria uma senha.","O código depende do relógio. Se este dispositivo estiver errado por mais de cerca de meio minuto, os códigos não vão coincidir com os do serviço, e nenhuma configuração aqui resolve isso: acerte o relógio. A maioria dos serviços aceita o código de um intervalo antes ou depois, e por isso um código que acabou de mudar muitas vezes ainda funciona. Um segredo menor que 128 bits é aceito, já que muitos serviços emitem segredos de 80 bits, e a página informa o tamanho.","\u003cstrong>Novo segredo\u003c/strong> serve para construir ou testar um login seu: ele sorteia 160 bits de \u003ccode>crypto.getRandomValues\u003c/code> — o tamanho que a RFC 4226 recomenda —, escreve-os em base32 e monta o link de configuração correspondente com o nome provisório Test. Transforme esse link em um QR code com a página de QR code e escaneie em um app autenticador: o app e esta página mostrarão os mesmos códigos. Um segredo criado aqui existe só nesta aba até você copiá-lo para outro lugar.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Gerador de códigos TOTP: códigos de dois fatores a partir de um segredo, offline — MDV","Cole um segredo de dois fatores ou um link otpauth e veja o código de seis dígitos atual e o próximo, como um app autenticador faz. O segredo nunca sai do dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Hash","Dígitos","Período","«{ch}» na posição {pos} não é um caractere base32: base32 não tem 0, geralmente é a letra O. Base32 usa de A a Z e de 2 a 7.","«{ch}» na posição {pos} não é um caractere base32: base32 não tem 1, geralmente é a letra I ou L. Base32 usa de A a Z e de 2 a 7.","«{ch}» na posição {pos} não é um caractere base32: base32 não tem 8, geralmente é a letra B. Base32 usa de A a Z e de 2 a 7.","«{ch}» na posição {pos} não é um caractere base32. Base32 usa de A a Z e de 2 a 7.","Isso começa como um link otpauth, mas não é um. Deveria ter a forma otpauth://totp/Name?secret=…","É um link otpauth do tipo «{type}». Esta página gera códigos baseados em tempo (totp); códigos hotp baseados em contador precisam do contador, que fica no servidor.","O link não tem a parte secret=, então não há nada a partir do qual gerar códigos.","O link pede {algo}; o TOTP usa SHA1, SHA256 ou SHA512.","Um link que esta página não consegue ler","Este navegador não vai assinar aqui","crypto.subtle só está disponível em uma página segura: https, ou um arquivo aberto neste dispositivo.","Um segredo que esta página não consegue ler","Curto demais para ser um segredo","Isso decodifica para {bits} bits. Segredos TOTP reais têm 80 bits ou mais — geralmente 16 ou 32 caracteres em base32.","O link pede {digits} dígitos; os códigos TOTP têm 6, 7 ou 8.","O link pede um período de {period} segundos, fora do que qualquer serviço usa.","{date} UTC — os códigos só são tão certos quanto isto","o link não nomeia nenhuma conta","um segredo colado","{bits} bits · {algo} · {digits} dígitos a cada {period} s","O hash, os dígitos e o período foram lidos do link.","As configurações definidas pelo último link voltaram a SHA-1, 6 dígitos, 30 segundos — o que quase todo serviço usa. Altere-as se o seu indicar outra coisa.","Este segredo tem {bits} bits, abaixo dos 128 que a RFC 4226 recomenda; muitos serviços ainda emitem segredos de 80 bits.","O navegador se recusou a assinar","{message}","{n} segundo","{n} segundos","Codificação e criptografia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","2 要素認証のシークレットを貼り付けると、認証アプリが表示するのと同じコードを確認できます。","この端末で動作","オフラインで動作","シークレットまたは otpauth:// リンク","隠す","新規シークレット","6 桁","上にシークレットを貼り付け","コピーしました","リンクをコピー","コードをコピー","切り替わりまで","次のコード","対象","シークレット","設定リンク","この端末の時計","仕組み","これは RFC 6238 で、あらゆる認証アプリの背後にある方式です。シークレットは base32 のテキストで、ページはそれをバイト列にデコードし、この端末の時計で 1970 年 1 月 1 日から何回 30 秒が経過したかを数え、その値をブラウザー標準の \u003ccode>crypto.subtle\u003c/code> による HMAC で署名します。サービスが SHA-256 や SHA-512 を求めない限り SHA-1 です。署名から RFC 4226 の規則で 4 バイトを取り出し、6 桁または 8 桁に切り詰めます。設定用 QR コードの中身である \u003ccode>otpauth://totp/…\u003c/code> リンクは丸ごと読み込まれ、そのシークレット、ハッシュ、桁数、周期、そして記載された発行元とアカウントがページに反映されます。","\u003cstrong>シークレットは第 2 要素そのものです。\u003c/strong>これを持つ人は、アカウントがそれを保持している間、あなたのコードを作れます。パスワードと同じように扱ってください。このページはネットワークリクエストを行わず、何も保存しません。タブを閉じればシークレットは消えます。ただし画面上のテキストであることに変わりはなく、このブラウザーで動いている他のもの(拡張機能を含む)から読める可能性があります。スマートフォンが手元にないときにコードを取り出す、保存したシークレットが正しいか確かめる、開発中のログインを試す、といった用途に使ってください。シークレット自体は、パスワードを保管する場所に保管してください。","コードは時計に依存します。この端末が約 30 秒以上ずれていると、コードがサービス側と一致せず、ここでの設定では直せません。時計を合わせてください。ほとんどのサービスは前後 1 ステップ分のコードを受け付けるため、切り替わったばかりのコードでも通ることがよくあります。128 ビット未満のシークレットも、80 ビットのものを発行するサービスが多いため受け付け、ページはその長さを表示します。","\u003cstrong>新規シークレット\u003c/strong>は、自分で作るログインの構築やテスト用です。\u003ccode>crypto.getRandomValues\u003c/code> から 160 ビット(RFC 4226 が推奨する長さ)を取り出して base32 で書き出し、仮の名前 Test で対応する設定リンクを作ります。そのリンクを QR コードのページで QR コードにして認証アプリでスキャンすると、アプリとこのページに同じコードが表示されます。ここで作ったシークレットは、どこかにコピーするまでこのタブの中にしか存在しません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","TOTP コード生成: シークレットから 2 要素認証コードをオフラインで — MDV","2 要素認証のシークレットまたは otpauth リンクを貼り付けると、認証アプリと同じように現在の 6 桁コードと次のコードを確認できます。シークレットは端末の外に出ません。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","ハッシュ","桁数","周期","{pos} 文字目の「{ch}」は base32 の文字ではありません。base32 に 0 はなく、たいていはアルファベットの O です。Base32 で使えるのは A〜Z と 2〜7 です。","{pos} 文字目の「{ch}」は base32 の文字ではありません。base32 に 1 はなく、たいていはアルファベットの I か L です。Base32 で使えるのは A〜Z と 2〜7 です。","{pos} 文字目の「{ch}」は base32 の文字ではありません。base32 に 8 はなく、たいていはアルファベットの B です。Base32 で使えるのは A〜Z と 2〜7 です。","{pos} 文字目の「{ch}」は base32 の文字ではありません。Base32 で使えるのは A〜Z と 2〜7 です。","otpauth リンクのように始まっていますが、リンクとして正しくありません。otpauth://totp/Name?secret=… の形式にしてください。","種類が「{type}」の otpauth リンクです。このページが作るのは時間ベース(totp)のコードで、カウンターベースの hotp コードにはサーバー側にあるカウンターが必要です。","リンクに secret= の部分がないため、コードを作る元がありません。","リンクは {algo} を指定していますが、TOTP で使えるのは SHA1、SHA256、SHA512 です。","このページで読めないリンクです","このブラウザーではここで署名できません","crypto.subtle は安全なページ(https、またはこの端末から開いたファイル)でのみ利用できます。","このページで読めないシークレットです","シークレットとしては短すぎます","デコードすると {bits} ビットです。実際の TOTP シークレットは 80 ビット以上で、通常は base32 の 16 文字か 32 文字です。","リンクは {digits} 桁を指定していますが、TOTP コードは 6、7、8 桁です。","リンクは {period} 秒の周期を指定していますが、これはどのサービスでも使われない範囲です。","{date} UTC — コードの正しさはこの時刻次第です","リンクにアカウント名がありません","貼り付けたシークレット","{bits} ビット · {algo} · {digits} 桁、{period} 秒ごと","ハッシュ、桁数、周期はリンクから読み取りました。","直前のリンクで設定された項目は、ほぼすべてのサービスが使う SHA-1、6 桁、30 秒に戻りました。お使いのサービスが異なる場合は変更してください。","このシークレットは {bits} ビットで、RFC 4226 が推奨する 128 ビットに満たないものです。80 ビットのものを発行するサービスも多くあります。","ブラウザーが署名を拒否しました","{message}","{n} 秒","{n} 秒","エンコードと暗号",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","2단계 인증 비밀키를 붙여넣으면 인증 앱이 보여 줄 코드를 확인할 수 있습니다.","이 기기에서 실행","오프라인 작동","비밀키 또는 otpauth:// 링크","숨기기","새 비밀키","6자리","위에 비밀키 붙여넣기","복사됨","링크 복사","코드 복사","변경까지","다음 코드","대상","비밀키","설정 링크","이 기기의 시계","작동 방식","이것은 모든 인증 앱의 바탕이 되는 방식인 RFC 6238입니다. 비밀키는 base32 텍스트이며, 페이지는 이를 바이트로 디코딩하고, 이 기기의 시계를 기준으로 1970년 1월 1일 이후 30초 단위가 몇 번 지났는지 센 뒤, 그 값을 브라우저 자체의 \u003ccode>crypto.subtle\u003c/code>을 사용해 HMAC으로 서명합니다. 서비스가 SHA-256이나 SHA-512를 요구하지 않으면 SHA-1입니다. 서명에서 RFC 4226의 규칙에 따라 4바이트를 골라 6자리 또는 8자리로 줄입니다. 설정용 QR 코드 안의 텍스트인 \u003ccode>otpauth://totp/…\u003c/code> 링크는 통째로 읽으며, 비밀키, 해시, 자릿수, 주기와 그 링크가 지정한 발급자와 계정이 모두 페이지에 자동으로 설정됩니다.","\u003cstrong>비밀키가 곧 두 번째 인증 요소입니다.\u003c/strong> 계정이 이를 유지하는 동안 비밀키를 가진 사람은 누구나 코드를 만들 수 있으므로 비밀번호처럼 다루세요. 이 페이지는 네트워크 요청을 하지 않고 아무것도 저장하지 않습니다. 탭을 닫으면 비밀키도 사라집니다. 다만 화면에 표시된 텍스트이므로 이 브라우저에서 실행되는 다른 모든 것, 확장 프로그램을 포함해 읽을 수 있습니다. 휴대폰이 없을 때 코드를 확인하거나, 저장해 둔 비밀키가 맞는지 점검하거나, 개발 중인 로그인을 테스트할 때 사용하세요. 비밀키 자체는 비밀번호를 보관하는 곳에 보관하세요.","코드는 시계에 좌우됩니다. 이 기기의 시계가 약 30초 넘게 어긋나면 코드가 서비스와 맞지 않으며, 여기서는 어떤 설정으로도 해결할 수 없으니 시계를 맞추세요. 대부분의 서비스는 앞뒤 한 단계의 코드를 받아 주므로 방금 바뀐 코드도 종종 통합니다. 128비트보다 짧은 비밀키도 허용합니다. 많은 서비스가 80비트 키를 발급하기 때문이며, 페이지는 그 길이를 표시합니다.","\u003cstrong>새 비밀키\u003c/strong>는 직접 만드는 로그인을 구축하거나 테스트할 때 쓰는 기능입니다. \u003ccode>crypto.getRandomValues\u003c/code>에서 160비트(RFC 4226이 권장하는 길이)를 뽑아 base32로 쓰고, 임시 이름 Test로 해당 설정 링크를 만듭니다. 그 링크를 QR 코드 페이지에서 QR 코드로 만들어 인증 앱으로 스캔하면 앱과 이 페이지에 같은 코드가 표시됩니다. 여기서 만든 비밀키는 다른 곳에 복사하기 전까지 이 탭에만 존재합니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","TOTP 코드 생성기: 비밀키로 2단계 인증 코드를 오프라인에서 — MDV","2단계 인증 비밀키나 otpauth 링크를 붙여넣으면 인증 앱처럼 현재 6자리 코드와 다음 코드를 확인할 수 있습니다. 비밀키는 기기 밖으로 나가지 않습니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","해시","자릿수","주기","{pos}번째 위치의 \"{ch}\"은(는) base32 문자가 아닙니다. base32에는 0이 없으며, 보통 알파벳 O입니다. Base32는 A~Z와 2~7을 사용합니다.","{pos}번째 위치의 \"{ch}\"은(는) base32 문자가 아닙니다. base32에는 1이 없으며, 보통 알파벳 I 또는 L입니다. Base32는 A~Z와 2~7을 사용합니다.","{pos}번째 위치의 \"{ch}\"은(는) base32 문자가 아닙니다. base32에는 8이 없으며, 보통 알파벳 B입니다. Base32는 A~Z와 2~7을 사용합니다.","{pos}번째 위치의 \"{ch}\"은(는) base32 문자가 아닙니다. Base32는 A~Z와 2~7을 사용합니다.","otpauth 링크처럼 시작하지만 올바른 링크가 아닙니다. otpauth://totp/Name?secret=… 형식이어야 합니다.","\"{type}\" 유형의 otpauth 링크입니다. 이 페이지는 시간 기반(totp) 코드를 만들며, 카운터 기반 hotp 코드는 서버에 있는 카운터가 필요합니다.","링크에 secret= 부분이 없어 코드를 만들 근거가 없습니다.","링크가 {algo}을(를) 요청하지만 TOTP는 SHA1, SHA256 또는 SHA512를 사용합니다.","이 페이지에서 읽을 수 없는 링크","이 브라우저에서는 여기서 서명할 수 없습니다","crypto.subtle은 보안 페이지(https 또는 이 기기에서 연 파일)에서만 사용할 수 있습니다.","이 페이지에서 읽을 수 없는 비밀키","비밀키로는 너무 짧습니다","디코딩하면 {bits}비트입니다. 실제 TOTP 비밀키는 80비트 이상이며, 보통 base32 16자 또는 32자입니다.","링크가 {digits}자리를 요청하지만 TOTP 코드는 6, 7 또는 8자리입니다.","링크가 {period}초 주기를 요청하는데, 이는 어떤 서비스도 쓰지 않는 범위입니다.","{date} UTC — 코드는 이 시각만큼만 정확합니다","링크에 계정 이름이 없습니다","붙여넣은 비밀키","{bits}비트 · {algo} · {digits}자리, {period}초마다","해시, 자릿수, 주기를 링크에서 읽었습니다.","마지막 링크가 설정한 항목이 대부분의 서비스가 쓰는 SHA-1, 6자리, 30초로 돌아갔습니다. 사용하는 서비스가 다르다면 변경하세요.","이 비밀키는 {bits}비트로, RFC 4226이 권장하는 128비트보다 짧습니다. 여전히 80비트 키를 발급하는 서비스도 많습니다.","브라우저가 서명을 거부했습니다","{message}","{n}초","{n}초","인코딩과 암호화",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","粘贴双重验证密钥,即可看到验证器应用会显示的验证码。","在此设备上运行","可离线使用","密钥或 otpauth:// 链接","隐藏","新密钥","6 位","在上方粘贴密钥","已复制","复制设置链接","复制验证码","剩余时间","下一个验证码","用于","密钥","设置链接","此设备的时钟","工作原理","这是 RFC 6238，所有验证器应用背后的方案。密钥是 base32 文本;本页将其解码为字节,按此设备的时钟计算自 1970 年 1 月 1 日以来经过了多少个 30 秒步长,并用浏览器自带的 \u003ccode>crypto.subtle\u003c/code> 以 HMAC 对该计数签名——除非服务要求 SHA-256 或 SHA-512，否则使用 SHA-1。按 RFC 4226 的规则从签名中取出四个字节,截取为六位或八位数字。\u003ccode>otpauth://totp/…\u003c/code> 链接(即设置二维码中的文本)会被完整读取:其中的密钥、哈希、位数、周期,以及它所指明的发行方和账户,都会自动设置到本页。","\u003cstrong>密钥就是第二重验证因素。\u003c/strong>只要账户还保留着它,持有者就能生成你的验证码,所以请像对待密码一样对待它。本页不发出任何网络请求,也不保存任何内容——关闭标签页,密钥就消失了——但它仍然是屏幕上的文本,此浏览器中运行的其他任何东西(包括扩展程序)都可能读取。可在手机不在身边时用它找回验证码,检查已保存的密钥是否正确,或测试你正在开发的登录功能;密钥本身请存放在你存放密码的地方。","验证码取决于时钟。如果此设备的时间偏差超过约半分钟,验证码就会与服务端不一致,而这里的任何设置都无法解决——请校准时钟。大多数服务接受前后各一个步长内的验证码,所以刚刚变化的验证码往往仍然有效。短于 128 位的密钥也会被接受,因为许多服务签发的是 80 位密钥,本页会注明其长度。","\u003cstrong>新密钥\u003c/strong>用于构建或测试你自己的登录功能:它从 \u003ccode>crypto.getRandomValues\u003c/code> 取 160 位(RFC 4226 推荐的长度),写成 base32，并用占位名称 Test 生成配套的设置链接。用二维码页面把该链接转成二维码,再用验证器应用扫描,应用和本页就会显示相同的验证码。在这里生成的密钥只存在于此标签页中,直到你把它复制到别处。","“深色”和“语言”按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的任何内容都不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","TOTP 验证码生成器:用密钥离线生成双重验证码 — MDV","粘贴双重验证密钥或 otpauth 链接,即可像验证器应用一样查看当前的六位验证码和下一个验证码。密钥不会离开设备。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","哈希","位数","周期","第 {pos} 位的“{ch}”不是 base32 字符:base32 没有 0，通常是字母 O。Base32 使用 A 到 Z 和 2 到 7。","第 {pos} 位的“{ch}”不是 base32 字符:base32 没有 1，通常是字母 I 或 L。Base32 使用 A 到 Z 和 2 到 7。","第 {pos} 位的“{ch}”不是 base32 字符:base32 没有 8，通常是字母 B。Base32 使用 A 到 Z 和 2 到 7。","第 {pos} 位的“{ch}”不是 base32 字符。Base32 使用 A 到 Z 和 2 到 7。","这以 otpauth 链接的形式开头,但并不是有效链接。它应当形如 otpauth://totp/Name?secret=…","这是类型为“{type}”的 otpauth 链接。本页生成基于时间的(totp)验证码;基于计数器的 hotp 验证码需要计数器,而计数器保存在服务器上。","链接中没有 secret= 部分,因此无法生成验证码。","链接要求 {algo};TOTP 使用 SHA1、SHA256 或 SHA512。","本页无法读取此链接","此浏览器在这里无法签名","crypto.subtle 仅在安全页面(https，或从此设备打开的文件)中可用。","本页无法读取此密钥","太短,不可能是密钥","解码后只有 {bits} 位。真正的 TOTP 密钥至少 80 位——通常是 16 或 32 个 base32 字符。","链接要求 {digits} 位;TOTP 验证码为 6、7 或 8 位。","链接要求 {period} 秒的周期,超出了任何服务会使用的范围。","{date} UTC — 验证码的准确度取决于这个时间","链接未指明账户","粘贴的密钥","{bits} 位 · {algo} · {digits} 位数字,每 {period} 秒","哈希、位数和周期均读取自链接。","上一个链接设置的项目已恢复为 SHA-1、6 位、30 秒——几乎所有服务都使用这组值。如果你的服务不同,请自行更改。","此密钥为 {bits} 位,低于 RFC 4226 推荐的 128 位;许多服务仍在签发 80 位密钥。","浏览器拒绝签名","{message}","{n} 秒","{n} 秒","编码与加密",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2385,9 +2599,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     for (var i = 0; i < s.length; i++) {
       var v = ALPHABET.indexOf(s[i]);
       if (v < 0) {
-        var hint = s[i] === "0" ? " — base32 has no 0; it is usually the letter O" : s[i] === "1" ? " — base32 has no 1; it is usually the letter I or L" :
-          s[i] === "8" ? " — base32 has no 8; it is usually the letter B" : "";
-        return { error: "“" + s[i] + "” at position " + (i + 1) + " is not a base32 character" + hint + ". Base32 uses A to Z and 2 to 7." };
+        return { error: { v: { ch: s[i], pos: i + 1 }, m: s[i] === "0" ? trk("“{ch}” at position {pos} is not a base32 character — base32 has no 0; it is usually the letter O. Base32 uses A to Z and 2 to 7.") :
+          s[i] === "1" ? trk("“{ch}” at position {pos} is not a base32 character — base32 has no 1; it is usually the letter I or L. Base32 uses A to Z and 2 to 7.") :
+          s[i] === "8" ? trk("“{ch}” at position {pos} is not a base32 character — base32 has no 8; it is usually the letter B. Base32 uses A to Z and 2 to 7.") :
+          trk("“{ch}” at position {pos} is not a base32 character. Base32 uses A to Z and 2 to 7.") } };
       }
       value = (value << 5) | v;
       bits += 5;
@@ -2402,19 +2617,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!s) return null;
     if (!/^otpauth:/i.test(s)) return { secret: s };
     var m = /^otpauth:\/\/([a-z]+)\/([^?]*)\??(.*)$/i.exec(s);
-    if (!m) return { error: "That starts like an otpauth link but is not one. It should look like otpauth://totp/Name?secret=…" };
-    if (m[1].toLowerCase() !== "totp") return { error: "This is an otpauth link of type “" + m[1] + "”. This page makes time-based (totp) codes; counter-based hotp codes need the counter, which lives on the server." };
+    if (!m) return { error: { m: trk("That starts like an otpauth link but is not one. It should look like otpauth://totp/Name?secret=…") } };
+    if (m[1].toLowerCase() !== "totp") return { error: { m: trk("This is an otpauth link of type “{type}”. This page makes time-based (totp) codes; counter-based hotp codes need the counter, which lives on the server."), v: { type: m[1] } } };
     var params = {};
     m[3].split("&").forEach(function (pair) {
       if (!pair) return;
       var eq = pair.indexOf("="), k = decodeURIComponent((eq < 0 ? pair : pair.slice(0, eq)).replace(/\+/g, " ")).toLowerCase();
       params[k] = eq < 0 ? "" : decodeURIComponent(pair.slice(eq + 1).replace(/\+/g, " "));
     });
-    if (!params.secret) return { error: "The link has no secret= part, so there is nothing to make codes from." };
+    if (!params.secret) return { error: { m: trk("The link has no secret= part, so there is nothing to make codes from.") } };
     var label = decodeURIComponent(m[2]), issuer = params.issuer || (label.indexOf(":") > 0 ? label.split(":")[0] : "");
     var account = label.indexOf(":") > 0 ? label.split(":").slice(1).join(":") : label;
     var algo = (params.algorithm || "SHA1").toUpperCase().replace(/^SHA-?/, "SHA-");
-    if (["SHA-1", "SHA-256", "SHA-512"].indexOf(algo) < 0) return { error: "The link asks for " + params.algorithm + "; TOTP uses SHA1, SHA256 or SHA512." };
+    if (["SHA-1", "SHA-256", "SHA-512"].indexOf(algo) < 0) return { error: { m: trk("The link asks for {algo}; TOTP uses SHA1, SHA256 or SHA512."), v: { algo: params.algorithm } } };
     return { secret: params.secret, fromLink: true, issuer: issuer.trim(), account: account.trim(), algo: algo,
       digits: params.digits ? Number(params.digits) : 6, period: params.period ? Number(params.period) : 30 };
   }
@@ -2461,6 +2676,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var secretInput = $("secret"), empty = $("empty"), err = $("err"), errtitle = $("errtitle"), errmsg = $("errmsg"), ok = $("ok"), said = $("said"), copied = $("copied");
   var settings = { algo: "SHA-1", digits: 6, period: 30 };
   var current = null, lastStep = null, lastKey = "", ticket = 0;
+  var badNow = null;
   var linkSet = false, reverted = false;   // settings a link imposed must not outlive the link
 
   function state(which) {
@@ -2469,7 +2685,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     ok.hidden = which !== "ok";
     if (which !== "ok") copied.hidden = true;
   }
-  function bad(title, message) { errtitle.textContent = title; errmsg.textContent = message; state("error"); current = null; }
+  function bad(title, message, vars) { badNow = { t: title, m: message, v: vars }; showBad(); state("error"); current = null; }
+  function showBad() { errtitle.textContent = tr(badNow.t); errmsg.textContent = tr(badNow.m, badNow.v); }
   function select(attr, value) {
     Array.prototype.forEach.call(document.querySelectorAll("[" + attr + "]"), function (b) {
       var on = b.getAttribute(attr) === String(value);
@@ -2482,14 +2699,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     lastStep = null;
     var got = readInput(secretInput.value);
     if (!got) { state("empty"); current = null; return; }
-    if (got.error) { bad("Not a link this page can read", got.error); return; }
-    if (!window.crypto || !crypto.subtle) { bad("This browser will not sign here", "crypto.subtle is only available on a secure page — https, or a file opened from this device."); return; }
+    if (got.error) { bad(trk("Not a link this page can read"), got.error.m, got.error.v); return; }
+    if (!window.crypto || !crypto.subtle) { bad(trk("This browser will not sign here"), trk("crypto.subtle is only available on a secure page — https, or a file opened from this device.")); return; }
     var decoded = base32(got.secret);
-    if (decoded.error) { bad("Not a secret this page can read", decoded.error); return; }
-    if (decoded.bytes.length < 5) { bad("Too short to be a secret", "That decodes to " + decoded.bytes.length * 8 + " bits. Real TOTP secrets are 80 bits or more — usually 16 or 32 characters of base32."); return; }
+    if (decoded.error) { bad(trk("Not a secret this page can read"), decoded.error.m, decoded.error.v); return; }
+    if (decoded.bytes.length < 5) { bad(trk("Too short to be a secret"), trk("That decodes to {bits} bits. Real TOTP secrets are 80 bits or more — usually 16 or 32 characters of base32."), { bits: decoded.bytes.length * 8 }); return; }
     if (got.fromLink) {
-      if ([6, 7, 8].indexOf(got.digits) < 0) { bad("Not a link this page can read", "The link asks for " + got.digits + " digits; TOTP codes are 6, 7 or 8 long."); return; }
-      if (!(got.period >= 5 && got.period <= 300)) { bad("Not a link this page can read", "The link asks for a " + got.period + "-second period, which is outside what any service uses."); return; }
+      if ([6, 7, 8].indexOf(got.digits) < 0) { bad(trk("Not a link this page can read"), trk("The link asks for {digits} digits; TOTP codes are 6, 7 or 8 long."), { digits: got.digits }); return; }
+      if (!(got.period >= 5 && got.period <= 300)) { bad(trk("Not a link this page can read"), trk("The link asks for a {period}-second period, which is outside what any service uses."), { period: got.period }); return; }
       settings = { algo: got.algo, digits: got.digits, period: got.period };
       select("data-algo", got.algo);
       select("data-digits", got.digits);
@@ -2513,11 +2730,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!current) return;
     var now = Date.now(), step = Math.floor(now / 1000 / settings.period);
     var left = settings.period - Math.floor(now / 1000) % settings.period;
-    $("k-left").textContent = left + (left === 1 ? " second" : " seconds");
+    $("k-left").textContent = trn(left, "{n} second", "{n} seconds");
     $("bar").style.width = (left / settings.period * 100).toFixed(1) + "%";
     var d = new Date(now);
-    $("k-clock").textContent = d.getUTCFullYear() + "-" + two(d.getUTCMonth() + 1) + "-" + two(d.getUTCDate()) + " " + two(d.getUTCHours()) + ":" +
-      two(d.getUTCMinutes()) + ":" + two(d.getUTCSeconds()) + " UTC — codes are only as right as this";
+    $("k-clock").textContent = tr("{date} UTC — codes are only as right as this", { date: d.getUTCFullYear() + "-" + two(d.getUTCMonth() + 1) + "-" + two(d.getUTCDate()) + " " + two(d.getUTCHours()) + ":" +
+      two(d.getUTCMinutes()) + ":" + two(d.getUTCSeconds()) });
     var key = settings.algo + "/" + settings.digits + "/" + settings.period;
     if (step === lastStep && key === lastKey) return;
     lastStep = step;
@@ -2527,19 +2744,19 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       if (mine !== ticket) return;
       $("code").textContent = grouped(codes[0]);
       $("k-next").textContent = grouped(codes[1]);
-      $("k-for").textContent = c.got.fromLink ? [c.got.issuer, c.got.account].filter(Boolean).join(" · ") || "the link names no account" : "a pasted secret";
-      $("k-secret").textContent = c.bits + " bits · " + settings.algo + " · " + settings.digits + " digits every " + settings.period + " s";
+      $("k-for").textContent = c.got.fromLink ? [c.got.issuer, c.got.account].filter(Boolean).join(" · ") || tr("the link names no account") : tr("a pasted secret");
+      $("k-secret").textContent = tr("{bits} bits · {algo} · {digits} digits every {period} s", { bits: c.bits, algo: settings.algo, digits: settings.digits, period: settings.period });
       $("k-link").textContent = c.got.fromLink ? secretInput.value.trim()
         : setupLink(c.got.secret.replace(/[\s=-]/g, "").toUpperCase(), settings, "Test", "test@example.com");
       var notes = [];
-      if (c.got.fromLink) notes.push("Hash, digits and period were read from the link.");
-      else if (reverted) notes.push("The settings the last link set are back to SHA-1, 6 digits, 30 seconds — what nearly every service uses. Change them if yours says otherwise.");
-      if (c.bits < 128) notes.push("This secret is " + c.bits + " bits, below the 128 RFC 4226 recommends; many services still issue 80-bit ones.");
+      if (c.got.fromLink) notes.push(tr("Hash, digits and period were read from the link."));
+      else if (reverted) notes.push(tr("The settings the last link set are back to SHA-1, 6 digits, 30 seconds — what nearly every service uses. Change them if yours says otherwise."));
+      if (c.bits < 128) notes.push(tr("This secret is {bits} bits, below the 128 RFC 4226 recommends; many services still issue 80-bit ones.", { bits: c.bits }));
       said.textContent = notes.join(" ");
       said.hidden = !notes.length;
       state("ok");
     }, function (e) {
-      if (mine === ticket) bad("The browser refused to sign", String(e && e.message || e));
+      if (mine === ticket) bad(trk("The browser refused to sign"), trk("{message}"), { message: String(e && e.message || e) });
     });
   }
 
@@ -2574,6 +2791,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     setTimeout(function () { copied.hidden = true; }, 1200);
   }
 
+  onLang(function () {
+    if (badNow && !err.hidden) showBad();
+    else if (current) { lastStep = null; tick(); }
+  });
   setInterval(tick, 250);
   secretInput.focus({ preventScroll: true });
   read();

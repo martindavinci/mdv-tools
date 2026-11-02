@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link is-here" href="./lorem-ipsum.html" aria-current="page" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link is-here" href="./lorem-ipsum.html" aria-current="page" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,45 +2353,45 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Lorem ipsum</h1>
+      <h1 class="mdv-head-name" data-t="8">Lorem ipsum</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Placeholder text in the shape you need it, and nothing else on the page.</p>
+    <p class="mdv-head-line" data-t="79">Placeholder text in the shape you need it, and nothing else on the page.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-panel">
     <div class="mdv-row is-between">
-      <div class="mdv-seg" role="group" aria-label="What to generate">
-        <button type="button" data-unit="paragraphs" class="is-on" aria-pressed="true">Paragraphs</button>
-        <button type="button" data-unit="sentences" aria-pressed="false">Sentences</button>
-        <button type="button" data-unit="words" aria-pressed="false">Words</button>
-        <button type="button" data-unit="list" aria-pressed="false">List items</button>
+      <div class="mdv-seg" role="group" aria-label="What to generate" data-t-attrs="aria-label">
+        <button type="button" data-unit="paragraphs" class="is-on" aria-pressed="true" data-t="82">Paragraphs</button>
+        <button type="button" data-unit="sentences" aria-pressed="false" data-t="83">Sentences</button>
+        <button type="button" data-unit="words" aria-pressed="false" data-t="84">Words</button>
+        <button type="button" data-unit="list" aria-pressed="false" data-t="85">List items</button>
       </div>
       <div class="mdv-row" style="gap:var(--space-2)">
-        <label class="mdv-tag" for="count">How many</label>
+        <label class="mdv-tag" for="count" data-t="86">How many</label>
         <input class="mdv-input mdv-mono is-num" id="count" type="number" min="1" max="500" step="1" value="3" style="width:6.5em">
       </div>
     </div>
     <div class="mdv-row is-between" style="margin-top:var(--space-3)">
-      <div class="mdv-seg" role="group" aria-label="Shape of the output">
-        <button type="button" data-shape="text" class="is-on" aria-pressed="true">Plain</button>
+      <div class="mdv-seg" role="group" aria-label="Shape of the output" data-t-attrs="aria-label">
+        <button type="button" data-shape="text" class="is-on" aria-pressed="true" data-t="87">Plain</button>
         <button type="button" data-shape="html" aria-pressed="false">HTML</button>
         <button type="button" data-shape="markdown" aria-pressed="false">Markdown</button>
       </div>
       <div class="mdv-row" style="gap:var(--space-4)">
-        <label class="mdv-check"><input type="checkbox" id="classic" checked> Start with “Lorem ipsum”</label>
-        <label class="mdv-check"><input type="checkbox" id="english"> Use English words</label>
+        <label class="mdv-check"><input type="checkbox" id="classic" checked> <span data-t="88">Start with “Lorem ipsum”</span></label>
+        <label class="mdv-check"><input type="checkbox" id="english"> <span data-t="89">Use English words</span></label>
       </div>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Cannot generate that</span>
+      <span class="mdv-notice-title" data-t="90">Cannot generate that</span>
       <span id="errmsg"></span>
     </div>
 
@@ -2288,9 +2400,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <span class="mdv-label" style="margin:0" id="outLabel">Text</span>
         <span class="mdv-btn-row">
           <span class="mdv-hint mdv-mono" style="margin:0" id="stats"></span>
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="again">Again</button>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy</button>
+          <span class="mdv-badge is-accent" id="copied" hidden data-t="91">Copied</span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="again" data-t="92">Again</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn" data-t="93">Copy</button>
         </span>
       </div>
       <pre class="mdv-out" id="out"></pre>
@@ -2298,45 +2410,46 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="94">How this works</summary>
     <div class="mdv-method-body">
-      <p>The words are the real ones: the Latin of Cicero's <em>De finibus bonorum et malorum</em>, as
+      <p data-t="95">The words are the real ones: the Latin of Cicero's <em>De finibus bonorum et malorum</em>, as
         garbled by a fifteenth-century typesetter and used as filler ever since. Sentences are built by
         drawing words at random, four to sixteen of them, with commas dropped in at plausible places and a
         full stop at the end; paragraphs hold three to seven sentences. <strong>Start with “Lorem
         ipsum”</strong> opens the first paragraph with the traditional first line, which is what most
         people expect to see and what makes filler recognisable as filler.</p>
-      <p>That last point is the reason to use Latin at all. Placeholder text is meant to look like text
+      <p data-t="96">That last point is the reason to use Latin at all. Placeholder text is meant to look like text
         without being read: Latin gives the right texture of word lengths while making it obvious that
         nothing here means anything. <strong>Use English words</strong> is there for the times you need to
         show a client something in their own language — but it is the more dangerous choice, because
         English filler has a way of surviving into production, and nobody notices until a customer reads
         it.</p>
-      <p>Plain gives paragraphs separated by a blank line. HTML wraps them in <code>&lt;p&gt;</code>, or in
+      <p data-t="97">Plain gives paragraphs separated by a blank line. HTML wraps them in <code>&lt;p&gt;</code>, or in
         a <code>&lt;ul&gt;</code> for list items. Markdown separates paragraphs by blank lines and writes
         list items with a leading dash. Nothing is escaped because nothing in the text needs escaping — the
         wordlist holds letters only.</p>
-      <p>Every press of Again draws again: the text is random, not stored, and there is no seed, so the
+      <p data-t="98">Every press of Again draws again: the text is random, not stored, and there is no seed, so the
         same settings give different words each time. It is generated in this tab, the page makes no
-        network requests, and nothing is kept; the Dark button keeps its own setting in this browser's
-        local storage.</p>
+        network requests, and nothing is kept; the Dark and language buttons keep their own settings in this
+        browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Text &amp; Writing">
-    <span class="mdv-tag">Also in Text &amp; Writing</span>
-    <a href="./remove-duplicate-lines.html">Remove duplicate lines</a>
-    <a href="./remove-whitespace.html">Remove whitespace</a>
-    <a href="./slugify.html">Slugify</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Text &amp; Writing"}'>Also in Text &amp; Writing</span>
+    <a href="./remove-duplicate-lines.html" data-t="6">Remove duplicate lines</a>
+    <a href="./remove-whitespace.html" data-t="13">Remove whitespace</a>
+    <a href="./slugify.html" data-t="10">Slugify</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="99">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="100">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="101" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="102">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2347,6 +2460,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Lorem Ipsum Generator — paragraphs, sentences, words or list items — MDV","Generate placeholder text in paragraphs, sentences, words or list items, as plain text, HTML or Markdown, from the real Cicero wordlist. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","What to generate","Shape of the output","Ask for at least one paragraph.","Ask for at least one sentence.","Ask for at least one word.","Ask for at least one list.","That is more than this page makes at once: {max} is the limit, and a page that needs 500 paragraphs of filler has a bigger problem.","Text","{n} word","{n} words","{n} character","{n} characters","Text & Writing","2026-11-02"],"h":103,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Texto de relleno con la forma que necesitas, y nada más en la página.","En este dispositivo","Funciona sin conexión","Párrafos","Frases","Palabras","Elementos de lista","Cuántos","Simple","Empezar con «Lorem ipsum»","Usar palabras en inglés","No se puede generar eso","Copiado","Otra vez","Copiar","Cómo funciona","Las palabras son las auténticas: el latín de \u003cem>De finibus bonorum et malorum\u003c/em>, de Cicerón, estropeado por un tipógrafo del siglo XV y usado como relleno desde entonces. Las frases se construyen sacando palabras al azar, de cuatro a dieciséis, con comas puestas en lugares plausibles y un punto final; los párrafos tienen de tres a siete frases. \u003cstrong>Empezar con «Lorem ipsum»\u003c/strong> abre el primer párrafo con la primera línea tradicional, que es lo que la mayoría espera ver y lo que hace reconocible el relleno como relleno.","Esa última idea es la razón para usar latín. El texto de relleno debe parecer texto sin que se lea: el latín da la textura correcta de longitudes de palabra y deja claro que nada de lo que hay aquí significa algo. \u003cstrong>Usar palabras en inglés\u003c/strong> sirve para cuando necesitas mostrar a un cliente algo en su propio idioma, pero es la opción más peligrosa, porque el relleno en inglés tiene tendencia a sobrevivir hasta producción, y nadie se da cuenta hasta que un cliente lo lee.","Simple da párrafos separados por una línea en blanco. HTML los envuelve en \u003ccode>&lt;p&gt;\u003c/code>, o en un \u003ccode>&lt;ul&gt;\u003c/code> para elementos de lista. Markdown separa los párrafos con líneas en blanco y escribe los elementos de lista con un guion al inicio. No se escapa nada porque nada en el texto necesita escape: la lista de palabras solo contiene letras.","Cada pulsación de Otra vez vuelve a sortear: el texto es aleatorio, no se guarda y no hay semilla, así que los mismos ajustes dan palabras distintas cada vez. Se genera en esta pestaña, la página no hace ninguna petición de red y no se conserva nada; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Generador de Lorem ipsum — párrafos, frases, palabras o elementos de lista — MDV","Genera texto de relleno en párrafos, frases, palabras o elementos de lista, como texto simple, HTML o Markdown, a partir de la lista de palabras real de Cicerón. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Qué generar","Forma de la salida","Pide al menos un párrafo.","Pide al menos una frase.","Pide al menos una palabra.","Pide al menos una lista.","Eso supera lo que esta página genera de una vez: el límite es {max}, y una página que necesita 500 párrafos de relleno tiene un problema mayor.","Texto","{n} palabra","{n} palabras","{n} carácter","{n} caracteres","Texto y escritura",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Du faux texte dans la forme dont vous avez besoin, et rien d’autre sur la page.","Sur cet appareil","Fonctionne hors ligne","Paragraphes","Phrases","Mots","Éléments de liste","Combien","Brut","Commencer par « Lorem ipsum »","Utiliser des mots anglais","Génération impossible","Copié","Encore","Copier","Comment ça marche","Les mots sont les vrais : le latin du \u003cem>De finibus bonorum et malorum\u003c/em> de Cicéron, déformé par un typographe du XVe siècle et employé comme remplissage depuis. Les phrases sont construites en tirant des mots au hasard, de quatre à seize, avec des virgules placées à des endroits plausibles et un point final ; les paragraphes comptent de trois à sept phrases. \u003cstrong>Commencer par « Lorem ipsum »\u003c/strong> ouvre le premier paragraphe avec la première ligne traditionnelle, celle que la plupart des gens s’attendent à voir et qui rend le remplissage reconnaissable comme tel.","Ce dernier point est la raison d’utiliser du latin. Un texte de remplissage doit ressembler à du texte sans être lu : le latin donne la bonne texture de longueurs de mots tout en rendant évident que rien ici ne veut rien dire. \u003cstrong>Utiliser des mots anglais\u003c/strong> sert quand vous devez montrer à un client quelque chose dans sa propre langue, mais c’est le choix le plus dangereux, car le remplissage en anglais a tendance à survivre jusqu’en production, et personne ne le remarque avant qu’un client le lise.","Brut donne des paragraphes séparés par une ligne vide. HTML les enveloppe dans \u003ccode>&lt;p&gt;\u003c/code>, ou dans un \u003ccode>&lt;ul&gt;\u003c/code> pour les éléments de liste. Markdown sépare les paragraphes par des lignes vides et écrit les éléments de liste avec un tiret en tête. Rien n’est échappé, car rien dans le texte n’a besoin de l’être : la liste de mots ne contient que des lettres.","Chaque clic sur Encore tire de nouveau : le texte est aléatoire, non stocké, et il n’y a pas de graine ; les mêmes réglages donnent donc des mots différents à chaque fois. Il est généré dans cet onglet, la page ne fait aucune requête réseau et rien n’est conservé ; les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Générateur de Lorem ipsum — paragraphes, phrases, mots ou éléments de liste — MDV","Générez du faux texte en paragraphes, phrases, mots ou éléments de liste, en texte brut, HTML ou Markdown, à partir de la vraie liste de mots de Cicéron. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Quoi générer","Forme de la sortie","Demandez au moins un paragraphe.","Demandez au moins une phrase.","Demandez au moins un mot.","Demandez au moins une liste.","C’est plus que ce que cette page produit d’un coup : la limite est de {max}, et une page qui réclame 500 paragraphes de remplissage a un problème plus grand.","Texte","{n} mot","{n} mots","{n} caractère","{n} caractères","Texte et écriture",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Platzhaltertext in der Form, die du brauchst, und sonst nichts auf der Seite.","Läuft auf diesem Gerät","Funktioniert offline","Absätze","Sätze","Wörter","Listenpunkte","Wie viele","Einfach","Mit „Lorem ipsum“ beginnen","Englische Wörter verwenden","Das lässt sich nicht erzeugen","Kopiert","Nochmal","Kopieren","So funktioniert es","Die Wörter sind die echten: das Latein aus Ciceros \u003cem>De finibus bonorum et malorum\u003c/em>, von einem Setzer des 15. Jahrhunderts verstümmelt und seither als Füllmaterial verwendet. Sätze entstehen, indem zufällig Wörter gezogen werden, vier bis sechzehn, mit Kommas an plausiblen Stellen und einem Punkt am Ende; Absätze enthalten drei bis sieben Sätze. \u003cstrong>Mit „Lorem ipsum“ beginnen\u003c/strong> eröffnet den ersten Absatz mit der traditionellen ersten Zeile, die die meisten erwarten und die Füllmaterial als solches erkennbar macht.","Dieser letzte Punkt ist der Grund, überhaupt Latein zu verwenden. Platzhaltertext soll wie Text aussehen, ohne gelesen zu werden: Latein liefert die richtige Textur der Wortlängen und macht zugleich deutlich, dass hier nichts etwas bedeutet. \u003cstrong>Englische Wörter verwenden\u003c/strong> gibt es für die Fälle, in denen du einem Kunden etwas in seiner eigenen Sprache zeigen musst, aber es ist die gefährlichere Wahl, denn englischer Füllstoff überlebt gern bis in die Produktion, und niemand merkt es, bis ein Kunde ihn liest.","Einfach gibt Absätze durch eine Leerzeile getrennt. HTML packt sie in \u003ccode>&lt;p&gt;\u003c/code> oder für Listenpunkte in ein \u003ccode>&lt;ul&gt;\u003c/code>. Markdown trennt Absätze durch Leerzeilen und schreibt Listenpunkte mit einem Bindestrich am Anfang. Nichts wird maskiert, weil nichts im Text eine Maskierung braucht: Die Wortliste enthält nur Buchstaben.","Jeder Klick auf Nochmal zieht neu: Der Text ist zufällig, wird nicht gespeichert und hat keinen Seed, sodass dieselben Einstellungen jedes Mal andere Wörter ergeben. Er wird in diesem Tab erzeugt, die Seite stellt keine Netzwerkanfragen und nichts wird aufbewahrt; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Lorem-ipsum-Generator — Absätze, Sätze, Wörter oder Listenpunkte — MDV","Erzeuge Platzhaltertext in Absätzen, Sätzen, Wörtern oder Listenpunkten, als reinen Text, HTML oder Markdown, aus der echten Wortliste von Cicero. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Was erzeugt wird","Form der Ausgabe","Fordere mindestens einen Absatz an.","Fordere mindestens einen Satz an.","Fordere mindestens ein Wort an.","Fordere mindestens eine Liste an.","Das ist mehr, als diese Seite auf einmal erzeugt: Die Grenze liegt bei {max}, und eine Seite, die 500 Absätze Füllmaterial braucht, hat ein größeres Problem.","Text","{n} Wort","{n} Wörter","{n} Zeichen","{n} Zeichen","Text und Schreiben",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Testo segnaposto nella forma che ti serve, e nient’altro nella pagina.","Su questo dispositivo","Funziona offline","Paragrafi","Frasi","Parole","Voci di elenco","Quanti","Semplice","Inizia con «Lorem ipsum»","Usa parole inglesi","Impossibile generarlo","Copiato","Ancora","Copia","Come funziona","Le parole sono quelle vere: il latino del \u003cem>De finibus bonorum et malorum\u003c/em> di Cicerone, storpiato da un tipografo del Quattrocento e usato come riempitivo da allora. Le frasi si costruiscono pescando parole a caso, da quattro a sedici, con virgole inserite in punti plausibili e un punto finale; i paragrafi contengono da tre a sette frasi. \u003cstrong>Inizia con «Lorem ipsum»\u003c/strong> apre il primo paragrafo con la prima riga tradizionale, quella che la maggior parte delle persone si aspetta di vedere e che rende il riempitivo riconoscibile come tale.","Quest’ultimo punto è il motivo per cui si usa il latino. Il testo segnaposto deve sembrare testo senza essere letto: il latino dà la giusta consistenza delle lunghezze delle parole rendendo evidente che nulla qui significa qualcosa. \u003cstrong>Usa parole inglesi\u003c/strong> serve quando devi mostrare a un cliente qualcosa nella sua lingua, ma è la scelta più pericolosa, perché il riempitivo in inglese ha il vizio di sopravvivere fino alla produzione, e nessuno se ne accorge finché un cliente non lo legge.","Semplice dà paragrafi separati da una riga vuota. HTML li racchiude in \u003ccode>&lt;p&gt;\u003c/code>, o in un \u003ccode>&lt;ul&gt;\u003c/code> per le voci di elenco. Markdown separa i paragrafi con righe vuote e scrive le voci di elenco con un trattino iniziale. Nulla viene sottoposto a escape perché nulla nel testo ne ha bisogno: l’elenco di parole contiene solo lettere.","Ogni pressione di Ancora estrae di nuovo: il testo è casuale, non viene memorizzato e non c’è alcun seme, quindi le stesse impostazioni danno parole diverse ogni volta. Viene generato in questa scheda, la pagina non fa richieste di rete e non viene conservato nulla; i pulsanti Scuro e Lingua mantengono la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Generatore di Lorem ipsum — paragrafi, frasi, parole o voci di elenco — MDV","Genera testo segnaposto in paragrafi, frasi, parole o voci di elenco, come testo semplice, HTML o Markdown, dalla vera lista di parole di Cicerone. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Cosa generare","Forma dell’output","Chiedi almeno un paragrafo.","Chiedi almeno una frase.","Chiedi almeno una parola.","Chiedi almeno un elenco.","È più di quanto questa pagina generi in una volta: il limite è {max}, e una pagina che richiede 500 paragrafi di riempitivo ha un problema più grande.","Testo","{n} parola","{n} parole","{n} carattere","{n} caratteri","Testo e scrittura",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Texto de preenchimento na forma que você precisa, e nada mais na página.","Neste dispositivo","Funciona offline","Parágrafos","Frases","Palavras","Itens de lista","Quantos","Simples","Começar com “Lorem ipsum”","Usar palavras em inglês","Não é possível gerar isso","Copiado","De novo","Copiar","Como funciona","As palavras são as de verdade: o latim de \u003cem>De finibus bonorum et malorum\u003c/em>, de Cícero, deturpado por um tipógrafo do século XV e usado como preenchimento desde então. As frases são montadas sorteando palavras, de quatro a dezesseis, com vírgulas colocadas em pontos plausíveis e um ponto final; os parágrafos têm de três a sete frases. \u003cstrong>Começar com “Lorem ipsum”\u003c/strong> abre o primeiro parágrafo com a primeira linha tradicional, que é o que a maioria espera ver e o que torna o preenchimento reconhecível como preenchimento.","Esse último ponto é o motivo de usar latim. O texto de preenchimento deve parecer texto sem ser lido: o latim dá a textura certa de tamanhos de palavra e deixa claro que nada ali significa nada. \u003cstrong>Usar palavras em inglês\u003c/strong> serve para quando você precisa mostrar algo a um cliente no idioma dele, mas é a escolha mais perigosa, porque preenchimento em inglês tem o hábito de sobreviver até a produção, e ninguém percebe até um cliente ler.","Simples dá parágrafos separados por uma linha em branco. HTML os envolve em \u003ccode>&lt;p&gt;\u003c/code>, ou em um \u003ccode>&lt;ul&gt;\u003c/code> para itens de lista. Markdown separa parágrafos com linhas em branco e escreve itens de lista com um hífen no início. Nada é escapado porque nada no texto precisa de escape: a lista de palavras contém apenas letras.","Cada clique em De novo sorteia outra vez: o texto é aleatório, não é armazenado e não há semente, então as mesmas configurações dão palavras diferentes a cada vez. Ele é gerado nesta aba, a página não faz nenhuma requisição de rede e nada é guardado; os botões Escuro e Idioma guardam sua própria configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Gerador de Lorem ipsum — parágrafos, frases, palavras ou itens de lista — MDV","Gere texto de preenchimento em parágrafos, frases, palavras ou itens de lista, como texto simples, HTML ou Markdown, a partir da lista de palavras real de Cícero. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","O que gerar","Formato da saída","Peça pelo menos um parágrafo.","Peça pelo menos uma frase.","Peça pelo menos uma palavra.","Peça pelo menos uma lista.","Isso é mais do que esta página gera de uma vez: o limite é {max}, e uma página que precisa de 500 parágrafos de preenchimento tem um problema maior.","Texto","{n} palavra","{n} palavras","{n} caractere","{n} caracteres","Texto e escrita",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","必要な形のダミーテキストだけを出力します。ページにほかのものはありません。","この端末で動作","オフラインで動作","段落","文","単語","リスト項目","個数","プレーン","「Lorem ipsum」で始める","英単語を使う","生成できません","コピーしました","再生成","コピー","仕組み","単語は本物です。キケロの『\u003cem>De finibus bonorum et malorum\u003c/em>』のラテン語を、15 世紀の植字工が崩したもので、以来ずっと詰め物として使われてきました。文は単語を 4 〜 16 個ランダムに引いて作り、もっともらしい位置にカンマを入れ、最後にピリオドを付けます。段落は 3 〜 7 文で構成されます。\u003cstrong>「Lorem ipsum」で始める\u003c/strong>を選ぶと、最初の段落が伝統的な冒頭の一文で始まります。多くの人がそれを期待しており、ダミーテキストだとひと目で分かるからです。","ラテン語を使う理由はこの点にあります。ダミーテキストは、読まれることなく文章らしく見えるべきものです。ラテン語は単語の長さの適切な質感を与えつつ、ここに意味のあるものが何もないことをはっきり示します。\u003cstrong>英単語を使う\u003c/strong>は、顧客に自分たちの言語で何かを見せたいときのためにありますが、より危険な選択です。英語のダミーテキストは本番まで残りがちで、顧客が読むまで誰も気づかないからです。","プレーンは、空行で区切った段落を出力します。HTML では段落を \u003ccode>&lt;p&gt;\u003c/code> で、リスト項目を \u003ccode>&lt;ul&gt;\u003c/code> で囲みます。Markdown では段落を空行で区切り、リスト項目は先頭にハイフンを付けて書きます。テキストにエスケープが必要なものはないため、何もエスケープしません。単語リストには文字しか含まれていません。","再生成を押すたびに引き直します。テキストはランダムで、保存されず、シードもないため、同じ設定でも毎回違う単語になります。生成はこのタブの中で行われ、ページはネットワークリクエストを一切行わず、何も保持しません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","Lorem ipsum ジェネレーター — 段落、文、単語、リスト項目 — MDV","本物のキケロの単語リストから、段落、文、単語、リスト項目のダミーテキストを、プレーンテキスト、HTML、Markdown で生成します。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","生成する単位","出力の形式","少なくとも 1 つの段落を指定してください。","少なくとも 1 つの文を指定してください。","少なくとも 1 つの単語を指定してください。","少なくとも 1 つのリストを指定してください。","このページが一度に作れる数を超えています。上限は {max} です。ダミーテキストが 500 段落も必要なページには、もっと大きな問題があります。","テキスト","{n} 語","{n} 語","{n} 文字","{n} 文字","テキストと文章",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","필요한 형태의 자리 표시 텍스트만 만들어 줍니다. 페이지에 다른 것은 없습니다.","이 기기에서 실행","오프라인 작동","문단","문장","단어","목록 항목","개수","일반","“Lorem ipsum”으로 시작","영어 단어 사용","생성할 수 없습니다","복사됨","다시","복사","작동 방식","단어는 진짜입니다. 키케로의 \u003cem>De finibus bonorum et malorum\u003c/em>에 나오는 라틴어를 15세기 식자공이 뒤섞은 것으로, 그 뒤로 줄곧 채우기 텍스트로 쓰여 왔습니다. 문장은 단어를 4~16개 무작위로 뽑아 그럴듯한 자리에 쉼표를 넣고 끝에 마침표를 붙여 만들며, 문단은 문장 3~7개로 이루어집니다. \u003cstrong>“Lorem ipsum”으로 시작\u003c/strong>은 첫 문단을 전통적인 첫 줄로 시작하는 옵션이며, 대부분의 사람이 기대하는 모습이고 채우기 텍스트임을 알아보게 해 줍니다.","이 점이 라틴어를 쓰는 이유입니다. 자리 표시 텍스트는 읽히지 않으면서 텍스트처럼 보여야 합니다. 라틴어는 단어 길이의 알맞은 질감을 주면서 여기에 의미 있는 것이 아무것도 없음을 분명히 보여 줍니다. \u003cstrong>영어 단어 사용\u003c/strong>은 고객에게 그들의 언어로 무언가를 보여 줘야 할 때를 위한 것이지만 더 위험한 선택입니다. 영어 채우기 텍스트는 실제 서비스까지 살아남는 경향이 있고, 고객이 읽기 전까지는 아무도 알아채지 못하기 때문입니다.","일반은 빈 줄로 구분된 문단을 만듭니다. HTML은 문단을 \u003ccode>&lt;p&gt;\u003c/code>로, 목록 항목은 \u003ccode>&lt;ul&gt;\u003c/code>로 감쌉니다. Markdown은 문단을 빈 줄로 구분하고 목록 항목 앞에 하이픈을 붙여 씁니다. 텍스트에 이스케이프가 필요한 것이 없으므로 아무것도 이스케이프하지 않습니다. 단어 목록에는 글자만 들어 있습니다.","다시를 누를 때마다 새로 뽑습니다. 텍스트는 무작위이고 저장되지 않으며 시드도 없으므로, 같은 설정이라도 매번 다른 단어가 나옵니다. 이 탭 안에서 생성되고, 페이지는 네트워크 요청을 하지 않으며, 아무것도 보관되지 않습니다. 다크와 언어 버튼은 각자의 설정을 이 브라우저의 로컬 저장소에 기억합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","Lorem ipsum 생성기 — 문단, 문장, 단어, 목록 항목 — MDV","키케로의 실제 단어 목록으로 문단, 문장, 단어, 목록 항목 형태의 자리 표시 텍스트를 일반 텍스트, HTML, Markdown으로 생성합니다. 내 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","생성 단위","출력 형태","문단을 하나 이상 요청하세요.","문장을 하나 이상 요청하세요.","단어를 하나 이상 요청하세요.","목록을 하나 이상 요청하세요.","이 페이지가 한 번에 만드는 양을 넘었습니다. 한도는 {max}이며, 채우기 텍스트가 500문단이나 필요한 페이지에는 더 큰 문제가 있습니다.","텍스트","{n}단어","{n}단어","{n}자","{n}자","텍스트와 글쓰기",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","按你需要的形式生成占位文本,页面上没有别的内容。","在此设备上运行","可离线使用","段落","句子","单词","列表项","数量","纯文本","以“Lorem ipsum”开头","使用英文单词","无法生成","已复制","再来一次","复制","工作原理","这些词是真的:取自西塞罗《\u003cem>De finibus bonorum et malorum\u003c/em>》的拉丁文,经十五世纪一位排字工人打乱,此后一直被用作填充文字。句子通过随机抽取 4 到 16 个单词构成,在合理的位置加入逗号,结尾加句号;段落包含 3 到 7 个句子。\u003cstrong>以“Lorem ipsum”开头\u003c/strong>会用传统的第一行作为第一段的开头,这是大多数人期待看到的,也让填充文字一眼就能认出是填充文字。","最后这一点正是使用拉丁文的原因。占位文本应该看起来像文字,却不被人阅读:拉丁文提供了恰当的词长质感,同时明确表示这里的一切都没有含义。\u003cstrong>使用英文单词\u003c/strong>用于需要用客户自己的语言向其展示内容的场合,但这是更危险的选择,因为英文填充文字往往会一直留到正式上线,直到客户读到时才有人发现。","纯文本给出以空行分隔的段落。HTML 把它们包在 \u003ccode>&lt;p&gt;\u003c/code> 中,列表项则包在 \u003ccode>&lt;ul&gt;\u003c/code> 中。Markdown 用空行分隔段落,列表项以短横线开头。不做任何转义,因为文本中没有需要转义的内容:词表只含字母。","每次点击“再来一次”都会重新抽取:文本是随机的,不会保存,也没有种子,所以相同设置每次都会得到不同的单词。文本在此标签页中生成,页面不发出任何网络请求,也不保留任何内容;深色和语言按钮各自把设置记在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","Lorem ipsum 生成器 — 段落、句子、单词或列表项 — MDV","用真实的西塞罗词表生成占位文本,可按段落、句子、单词或列表项,输出为纯文本、HTML 或 Markdown。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","生成什么","输出形式","请至少要求一个段落。","请至少要求一个句子。","请至少要求一个单词。","请至少要求一个列表。","这超过了本页一次能生成的数量:上限是 {max},而需要 500 个段落填充文字的页面,问题更大。","文本","{n} 个单词","{n} 个单词","{n} 个字符","{n} 个字符","文本与写作",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2433,7 +2646,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   function count(text) {
     var words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    return words.toLocaleString() + (words === 1 ? " word" : " words") + " · " + text.length.toLocaleString() + " characters";
+    return trn(words, "{n} word", "{n} words") + " · " + trn(text.length, "{n} character", "{n} characters");
   }
 
   /* ---------- page ---------- */
@@ -2442,28 +2655,44 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var out = $("out"), err = $("err"), errmsg = $("errmsg"), ok = $("ok"), countInput = $("count");
   var classic = $("classic"), english = $("english"), copied = $("copied");
   var unit = "paragraphs", shape = "text";
+  var shown = "";          // the text on screen; a language change redraws its words, never the text
+  var problem = null;      // the error on screen, if any
+  var ASK = { paragraphs: trk("Ask for at least one paragraph."), sentences: trk("Ask for at least one sentence."),
+              words: trk("Ask for at least one word."), list: trk("Ask for at least one list.") };
+
+  function paint() {
+    if (problem) {
+      errmsg.textContent = problem === "max"
+        ? tr("That is more than this page makes at once: {max} is the limit, and a page that needs 500 paragraphs of filler has a bigger problem.", { max: MAX })
+        : tr(ASK[problem]);
+      return;
+    }
+    $("stats").textContent = count(shown);
+    $("outLabel").textContent = shape === "html" ? "HTML" : shape === "markdown" ? "Markdown" : tr("Text");
+  }
 
   function run() {
     var wanted = Number(countInput.value);
     if (!countInput.value.trim() || !isFinite(wanted) || wanted < 1) {
-      errmsg.textContent = "Ask for at least one " + unit.replace(/s$/, "") + ".";
+      problem = unit; paint();
       err.hidden = false;
       ok.hidden = true;
       return;
     }
     if (wanted > MAX) {
-      errmsg.textContent = "That is more than this page makes at once: " + MAX + " is the limit, and a page that needs 500 paragraphs of filler has a bigger problem.";
+      problem = "max"; paint();
       err.hidden = false;
       ok.hidden = true;
       return;
     }
     err.hidden = true;
     ok.hidden = false;
+    problem = null;
     var words = english.checked ? ENGLISH : LATIN;
     var text = shapeIt(make(unit, Math.floor(wanted), words, classic.checked), unit, shape);
     out.textContent = text;
-    $("stats").textContent = count(text);
-    $("outLabel").textContent = shape === "html" ? "HTML" : shape === "markdown" ? "Markdown" : "Text";
+    shown = text;
+    paint();
     classic.disabled = english.checked;
   }
 
@@ -2495,6 +2724,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   countInput.focus({ preventScroll: true });
+  onLang(paint);
   run();
 })();
 </script>

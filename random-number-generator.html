@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link is-here" href="./random-number-generator.html" aria-current="page" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link is-here" href="./random-number-generator.html" aria-current="page" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,13 +2353,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Random number generator</h1>
+      <h1 class="mdv-head-name" data-t="66">Random number generator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Whole numbers from any range, as many as you need, drawn fairly.</p>
+    <p class="mdv-head-line" data-t="79">Whole numbers from any range, as many as you need, drawn fairly.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
@@ -2255,46 +2367,46 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <div class="mdv-cols">
       <div class="mdv-row" style="gap:var(--space-2)">
         <div style="flex:1">
-          <label class="mdv-label" for="min">From</label>
+          <label class="mdv-label" for="min" data-t="82">From</label>
           <input class="mdv-input mdv-mono is-num" id="min" type="text" inputmode="numeric" value="1" style="width:100%">
         </div>
         <div style="flex:1">
-          <label class="mdv-label" for="max">To</label>
+          <label class="mdv-label" for="max" data-t="83">To</label>
           <input class="mdv-input mdv-mono is-num" id="max" type="text" inputmode="numeric" value="100" style="width:100%">
         </div>
       </div>
       <div class="mdv-row" style="gap:var(--space-2)">
         <div style="flex:1">
-          <label class="mdv-label" for="count">How many</label>
+          <label class="mdv-label" for="count" data-t="84">How many</label>
           <input class="mdv-input mdv-mono is-num" id="count" type="text" inputmode="numeric" value="1" style="width:100%">
         </div>
         <div style="flex:1">
-          <label class="mdv-label" for="seed">Seed, to repeat a draw</label>
-          <input class="mdv-input mdv-mono" id="seed" type="text" spellcheck="false" autocomplete="off" placeholder="leave empty" style="width:100%">
+          <label class="mdv-label" for="seed" data-t="85">Seed, to repeat a draw</label>
+          <input class="mdv-input mdv-mono" id="seed" type="text" spellcheck="false" autocomplete="off" placeholder="leave empty" data-t-attrs="placeholder" style="width:100%">
         </div>
       </div>
     </div>
     <div class="mdv-row is-between" style="margin-top:var(--space-3)">
       <div class="mdv-row" style="gap:var(--space-4)">
-        <label class="mdv-check"><input type="checkbox" id="unique"> No repeats</label>
-        <label class="mdv-check"><input type="checkbox" id="sort"> Sort</label>
+        <label class="mdv-check"><input type="checkbox" id="unique"> <span data-t="86">No repeats</span></label>
+        <label class="mdv-check"><input type="checkbox" id="sort"> <span data-t="87">Sort</span></label>
       </div>
       <div class="mdv-btn-row">
-        <div class="mdv-seg" role="group" aria-label="Separator">
-          <button type="button" data-sep="line" class="is-on" aria-pressed="true">Lines</button>
-          <button type="button" data-sep="comma" aria-pressed="false">Commas</button>
-          <button type="button" data-sep="space" aria-pressed="false">Spaces</button>
+        <div class="mdv-seg" role="group" aria-label="Separator" data-t-attrs="aria-label">
+          <button type="button" data-sep="line" class="is-on" aria-pressed="true" data-t="88">Lines</button>
+          <button type="button" data-sep="comma" aria-pressed="false" data-t="89">Commas</button>
+          <button type="button" data-sep="space" aria-pressed="false" data-t="90">Spaces</button>
         </div>
-        <button class="mdv-btn is-primary" type="button" id="draw">Draw</button>
+        <button class="mdv-btn is-primary" type="button" id="draw" data-t="91">Draw</button>
       </div>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>set a range and press draw</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="92">set a range and press draw</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Cannot draw that</span>
+      <span class="mdv-notice-title" data-t="93">Cannot draw that</span>
       <span id="errmsg"></span>
     </div>
 
@@ -2302,8 +2414,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-row is-between">
         <div class="mdv-readout"><span id="big"></span></div>
         <span class="mdv-btn-row">
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn">Copy</button>
+          <span class="mdv-badge is-accent" id="copied" hidden data-t="94">Copied</span>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="copyBtn" data-t="95">Copy</button>
         </span>
       </div>
       <pre class="mdv-out" id="out" hidden></pre>
@@ -2312,43 +2424,44 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="96">How this works</summary>
     <div class="mdv-method-body">
-      <p>Without a seed, every number comes from <code>crypto.getRandomValues</code>. To land in a range of
+      <p data-t="97">Without a seed, every number comes from <code>crypto.getRandomValues</code>. To land in a range of
         size <em>n</em> the page takes a 32-bit draw — or a 53-bit one for ranges past four billion — and
         discards it if it falls in the short leftover stretch beyond the last whole multiple of
         <em>n</em>, so every number in the range has exactly the same chance. Ranges run to about nine
         quadrillion either side of zero, the largest whole numbers JavaScript holds exactly.</p>
-      <p><strong>No repeats</strong> draws without putting anything back: the page runs a partial
+      <p data-t="98"><strong>No repeats</strong> draws without putting anything back: the page runs a partial
         Fisher–Yates shuffle over the range without ever writing the whole range out, so ten numbers from
         a billion cost the same as ten from a hundred. Asking for more numbers than the range holds is
         refused, since there are not that many to give. <strong>Sort</strong> orders the result after the
         draw; it never changes which numbers came out.</p>
-      <p>A <strong>seed</strong> makes the draw repeatable: the same seed with the same settings gives the
+      <p data-t="99">A <strong>seed</strong> makes the draw repeatable: the same seed with the same settings gives the
         same numbers on any device, which is how a raffle or a sample can be checked afterwards by someone
         who was not there. The seed is hashed into a small generator, sfc32, which is statistically sound but
         not secret — anyone who knows the seed knows the numbers, so publish the seed after the draw, not
         before, and never use a seeded draw for a password or a key. Without a seed, nothing can reproduce
         a draw, not even this page.</p>
-      <p>Draws are capped at 10,000 numbers at a time. Nothing is sent and nothing is stored; the Dark
-        button keeps its own setting in this browser's local storage.</p>
+      <p data-t="100">Draws are capped at 10,000 numbers at a time. Nothing is sent and nothing is stored; the Dark
+        and language buttons keep their own settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Math &amp; Units">
-    <span class="mdv-tag">Also in Math &amp; Units</span>
-    <a href="./unit-converter.html">Unit converter</a>
-    <a href="./aspect-ratio-calculator.html">Aspect ratio</a>
-    <a href="./percentage-calculator.html">Percentage calculator</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Math &amp; Units"}'>Also in Math &amp; Units</span>
+    <a href="./unit-converter.html" data-t="64">Unit converter</a>
+    <a href="./aspect-ratio-calculator.html" data-t="63">Aspect ratio</a>
+    <a href="./percentage-calculator.html" data-t="65">Percentage calculator</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="101">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="102">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="103" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-22</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="104">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2359,6 +2472,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Random Number Generator — any range, no repeats, repeatable with a seed — MDV","Draw random whole numbers in any range, one or thousands at once, with or without repeats, sorted or not, and repeatable from a seed when a draw has to be checked. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","leave empty","Separator","“{text}” is not a whole number. {name} takes whole numbers only, such as 1 or -50.","{name} is past ±9,007,199,254,740,991, the largest whole number this page holds exactly.","From","To","How many","Ask for at least one number.","That is {n} numbers; this page draws up to {max} at a time.","From ({from}) is above To ({to}). Swap them, or check for a stray minus sign.","That range holds more whole numbers than this page can count exactly; keep it under nine quadrillion wide.","There are only {size} whole numbers from {lo} to {hi}, so {count} without repeats cannot be drawn.","no repeats","repeats allowed","seed “{seed}”: the same seed and settings give these numbers again, on any device — so it is not secret","no seed: this draw cannot be repeated, by anyone","{n} number","{n} numbers","{n} number from {lo} to {hi}, each of the {size} equally likely","{n} numbers from {lo} to {hi}, each of the {size} equally likely","{n} repeat came up","{n} repeats came up","Math & Units","2026-11-02"],"h":105,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Números enteros de cualquier rango, tantos como necesites, sorteados con equidad.","En este dispositivo","Funciona sin conexión","Desde","Hasta","Cuántos","Semilla, para repetir un sorteo","Sin repetidos","Ordenar","Líneas","Comas","Espacios","Sortear","fija un rango y pulsa sortear","No se puede sortear","Copiado","Copiar","Cómo funciona","Sin semilla, cada número sale de \u003ccode>crypto.getRandomValues\u003c/code>. Para caer en un rango de tamaño \u003cem>n\u003c/em>, la página toma un sorteo de 32 bits (o de 53 bits para rangos de más de cuatro mil millones) y lo descarta si cae en el breve tramo sobrante más allá del último múltiplo entero de \u003cem>n\u003c/em>, de modo que cada número del rango tiene exactamente la misma probabilidad. Los rangos llegan a unos nueve mil billones a cada lado del cero, los mayores números enteros que JavaScript guarda con exactitud.","\u003cstrong>Sin repetidos\u003c/strong> sortea sin devolver nada: la página ejecuta una mezcla parcial de Fisher–Yates sobre el rango sin escribirlo nunca entero, así que diez números de mil millones cuestan lo mismo que diez de cien. Pedir más números de los que contiene el rango se rechaza, porque no hay tantos que dar. \u003cstrong>Ordenar\u003c/strong> ordena el resultado después del sorteo; nunca cambia qué números salieron.","Una \u003cstrong>semilla\u003c/strong> hace repetible el sorteo: la misma semilla con los mismos ajustes da los mismos números en cualquier dispositivo, que es como un sorteo o una muestra puede comprobarse después por alguien que no estuvo presente. La semilla se convierte mediante un hash en un pequeño generador, sfc32, estadísticamente sólido pero no secreto: quien conoce la semilla conoce los números, así que publica la semilla después del sorteo, no antes, y no uses nunca un sorteo con semilla para una contraseña o una clave. Sin semilla, nada puede reproducir un sorteo, ni siquiera esta página.","Los sorteos están limitados a 10.000 números por vez. No se envía nada y no se guarda nada; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Generador de números aleatorios — cualquier rango, sin repetidos, repetible con una semilla — MDV","Sortea números enteros aleatorios de cualquier rango, uno o miles a la vez, con o sin repetidos, ordenados o no, y repetibles desde una semilla cuando hay que comprobar un sorteo. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","déjalo vacío","Separador","“{text}” no es un número entero. {name} solo admite números enteros, como 1 o -50.","{name} supera ±9.007.199.254.740.991, el mayor número entero que esta página guarda con exactitud.","Desde","Hasta","Cuántos","Pide al menos un número.","Son {n} números; esta página sortea hasta {max} a la vez.","Desde ({from}) es mayor que Hasta ({to}). Cámbialos, o comprueba si sobra un signo menos.","Ese rango contiene más números enteros de los que esta página puede contar con exactitud; mantenlo por debajo de nueve mil billones de ancho.","Solo hay {size} números enteros de {lo} a {hi}, así que no se pueden sortear {count} sin repetidos.","sin repetidos","se permiten repetidos","semilla “{seed}”: la misma semilla y los mismos ajustes vuelven a dar estos números, en cualquier dispositivo, así que no es secreta","sin semilla: nadie puede repetir este sorteo","{n} número","{n} números","{n} número de {lo} a {hi}, cada uno de los {size} con la misma probabilidad","{n} números de {lo} a {hi}, cada uno de los {size} con la misma probabilidad","salió {n} repetido","salieron {n} repetidos","Matemáticas y unidades",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Des nombres entiers de n’importe quelle plage, autant qu’il en faut, tirés équitablement.","Sur cet appareil","Fonctionne hors ligne","De","À","Combien","Graine, pour répéter un tirage","Sans doublons","Trier","Lignes","Virgules","Espaces","Tirer","réglez une plage et appuyez sur tirer","Tirage impossible","Copié","Copier","Comment ça marche","Sans graine, chaque nombre vient de \u003ccode>crypto.getRandomValues\u003c/code>. Pour tomber dans une plage de taille \u003cem>n\u003c/em>, la page effectue un tirage sur 32 bits (ou sur 53 bits pour les plages de plus de quatre milliards) et le rejette s’il tombe dans le court reste au-delà du dernier multiple entier de \u003cem>n\u003c/em>, si bien que chaque nombre de la plage a exactement la même chance. Les plages vont jusqu’à environ neuf milliards de milliards de chaque côté de zéro, les plus grands nombres entiers que JavaScript représente exactement.","\u003cstrong>Sans doublons\u003c/strong> tire sans remettre : la page exécute un mélange de Fisher–Yates partiel sur la plage sans jamais l’écrire en entier, si bien que dix nombres parmi un milliard coûtent autant que dix parmi cent. Demander plus de nombres que la plage n’en contient est refusé, puisqu’il n’y en a pas autant à donner. \u003cstrong>Trier\u003c/strong> ordonne le résultat après le tirage ; cela ne change jamais quels nombres sont sortis.","Une \u003cstrong>graine\u003c/strong> rend le tirage reproductible : la même graine avec les mêmes réglages donne les mêmes nombres sur n’importe quel appareil, ce qui permet de vérifier après coup une tombola ou un échantillon par quelqu’un qui n’y était pas. La graine est transformée par hachage en un petit générateur, sfc32, statistiquement sain mais pas secret : quiconque connaît la graine connaît les nombres, donc publiez la graine après le tirage, pas avant, et n’utilisez jamais un tirage à graine pour un mot de passe ou une clé. Sans graine, rien ne peut reproduire un tirage, pas même cette page.","Les tirages sont plafonnés à 10 000 nombres à la fois. Rien n’est envoyé et rien n’est stocké ; les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Générateur de nombres aléatoires — toute plage, sans doublons, reproductible avec une graine — MDV","Tirez des nombres entiers aléatoires dans n’importe quelle plage, un ou des milliers à la fois, avec ou sans doublons, triés ou non, et reproductibles à partir d’une graine quand un tirage doit être vérifié. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","laissez vide","Séparateur","« {text} » n’est pas un nombre entier. {name} n’accepte que des nombres entiers, comme 1 ou -50.","{name} dépasse ±9 007 199 254 740 991, le plus grand nombre entier que cette page représente exactement.","De","À","Combien","Demandez au moins un nombre.","Cela fait {n} nombres ; cette page en tire jusqu’à {max} à la fois.","De ({from}) est supérieur à À ({to}). Échangez-les, ou vérifiez qu’il n’y a pas un signe moins en trop.","Cette plage contient plus de nombres entiers que cette page ne peut en compter exactement ; gardez-la sous neuf millions de milliards de largeur.","Il n’y a que {size} nombres entiers de {lo} à {hi}, donc {count} sans doublons ne peuvent pas être tirés.","sans doublons","doublons permis","graine « {seed} » : la même graine et les mêmes réglages redonnent ces nombres, sur n’importe quel appareil, elle n’est donc pas secrète","sans graine : ce tirage ne peut être répété par personne","{n} nombre","{n} nombres","{n} nombre de {lo} à {hi}, chacun des {size} également probable","{n} nombres de {lo} à {hi}, chacun des {size} également probable","{n} doublon est sorti","{n} doublons sont sortis","Maths et unités",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Ganze Zahlen aus jedem Bereich, so viele du brauchst, fair gezogen.","Läuft auf diesem Gerät","Funktioniert offline","Von","Bis","Wie viele","Seed, um eine Ziehung zu wiederholen","Ohne Wiederholung","Sortieren","Zeilen","Kommas","Leerzeichen","Ziehen","bereich festlegen und ziehen drücken","Ziehung nicht möglich","Kopiert","Kopieren","So funktioniert es","Ohne Seed stammt jede Zahl aus \u003ccode>crypto.getRandomValues\u003c/code>. Um in einen Bereich der Größe \u003cem>n\u003c/em> zu fallen, zieht die Seite 32 Bit (bei Bereichen über vier Milliarden 53 Bit) und verwirft den Wert, wenn er in den kurzen Rest hinter dem letzten ganzen Vielfachen von \u003cem>n\u003c/em> fällt, sodass jede Zahl im Bereich genau dieselbe Chance hat. Bereiche reichen bis etwa neun Billiarden zu beiden Seiten der Null, den größten ganzen Zahlen, die JavaScript exakt darstellt.","\u003cstrong>Ohne Wiederholung\u003c/strong> zieht ohne Zurücklegen: Die Seite führt eine partielle Fisher–Yates-Mischung über den Bereich aus, ohne den ganzen Bereich je aufzuschreiben, sodass zehn Zahlen aus einer Milliarde dasselbe kosten wie zehn aus hundert. Mehr Zahlen anzufordern, als der Bereich enthält, wird abgelehnt, weil es nicht so viele gibt. \u003cstrong>Sortieren\u003c/strong> ordnet das Ergebnis nach der Ziehung; es ändert nie, welche Zahlen herauskamen.","Ein \u003cstrong>Seed\u003c/strong> macht die Ziehung wiederholbar: Derselbe Seed mit denselben Einstellungen liefert auf jedem Gerät dieselben Zahlen, so lassen sich eine Verlosung oder eine Stichprobe nachträglich von jemandem prüfen, der nicht dabei war. Der Seed wird zu einem kleinen Generator namens sfc32 verhasht, der statistisch solide, aber nicht geheim ist: Wer den Seed kennt, kennt die Zahlen, also veröffentliche den Seed nach der Ziehung, nicht davor, und nutze eine Ziehung mit Seed nie für ein Passwort oder einen Schlüssel. Ohne Seed kann nichts eine Ziehung reproduzieren, nicht einmal diese Seite.","Ziehungen sind auf 10.000 Zahlen auf einmal begrenzt. Nichts wird gesendet und nichts gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Zufallszahlengenerator — beliebiger Bereich, ohne Wiederholung, mit Seed wiederholbar — MDV","Ziehe zufällige ganze Zahlen aus jedem Bereich, eine oder tausende auf einmal, mit oder ohne Wiederholung, sortiert oder nicht, und wiederholbar per Seed, wenn eine Ziehung nachprüfbar sein muss. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","leer lassen","Trennzeichen","„{text}“ ist keine ganze Zahl. {name} akzeptiert nur ganze Zahlen, etwa 1 oder -50.","{name} liegt jenseits von ±9.007.199.254.740.991, der größten ganzen Zahl, die diese Seite exakt darstellt.","Von","Bis","Wie viele","Fordere mindestens eine Zahl an.","Das sind {n} Zahlen; diese Seite zieht bis zu {max} auf einmal.","Von ({from}) liegt über Bis ({to}). Vertausche sie oder prüfe, ob ein Minuszeichen zu viel dasteht.","Dieser Bereich enthält mehr ganze Zahlen, als diese Seite exakt zählen kann; halte ihn unter neun Billiarden Breite.","Es gibt nur {size} ganze Zahlen von {lo} bis {hi}, daher lassen sich {count} ohne Wiederholung nicht ziehen.","ohne Wiederholung","Wiederholung erlaubt","Seed „{seed}“: Derselbe Seed und dieselben Einstellungen liefern diese Zahlen erneut, auf jedem Gerät – er ist also nicht geheim","kein Seed: Diese Ziehung kann von niemandem wiederholt werden","{n} Zahl","{n} Zahlen","{n} Zahl von {lo} bis {hi}, jede der {size} gleich wahrscheinlich","{n} Zahlen von {lo} bis {hi}, jede der {size} gleich wahrscheinlich","{n} Wiederholung kam vor","{n} Wiederholungen kamen vor","Mathe und Einheiten",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Numeri interi da qualsiasi intervallo, quanti ne servono, estratti in modo equo.","Su questo dispositivo","Funziona offline","Da","A","Quanti","Seed, per ripetere un’estrazione","Senza ripetizioni","Ordina","Righe","Virgole","Spazi","Estrai","imposta un intervallo e premi estrai","Impossibile estrarre","Copiato","Copia","Come funziona","Senza seed, ogni numero proviene da \u003ccode>crypto.getRandomValues\u003c/code>. Per cadere in un intervallo di dimensione \u003cem>n\u003c/em>, la pagina estrae 32 bit (o 53 bit per intervalli oltre quattro miliardi) e li scarta se cadono nel breve resto oltre l’ultimo multiplo intero di \u003cem>n\u003c/em>, così ogni numero dell’intervallo ha esattamente la stessa probabilità. Gli intervalli arrivano a circa nove biliardi per lato dello zero, i numeri interi più grandi che JavaScript rappresenta esattamente.","\u003cstrong>Senza ripetizioni\u003c/strong> estrae senza reinserire: la pagina esegue un rimescolamento parziale di Fisher–Yates sull’intervallo senza mai scriverlo per intero, quindi dieci numeri da un miliardo costano come dieci da cento. Chiedere più numeri di quelli contenuti nell’intervallo viene rifiutato, perché non ce ne sono tanti da dare. \u003cstrong>Ordina\u003c/strong> ordina il risultato dopo l’estrazione; non cambia mai quali numeri sono usciti.","Un \u003cstrong>seed\u003c/strong> rende ripetibile l’estrazione: lo stesso seed con le stesse impostazioni dà gli stessi numeri su qualsiasi dispositivo, ed è così che un’estrazione a premi o un campione si possono verificare dopo da qualcuno che non c’era. Il seed viene trasformato con un hash in un piccolo generatore, sfc32, statisticamente solido ma non segreto: chi conosce il seed conosce i numeri, quindi pubblica il seed dopo l’estrazione, non prima, e non usare mai un’estrazione con seed per una password o una chiave. Senza seed, nulla può riprodurre un’estrazione, nemmeno questa pagina.","Le estrazioni sono limitate a 10.000 numeri alla volta. Non viene inviato nulla e non viene salvato nulla; i pulsanti Scuro e Lingua conservano la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Generatore di numeri casuali — qualsiasi intervallo, senza ripetizioni, ripetibile con un seed — MDV","Estrai numeri interi casuali da qualsiasi intervallo, uno o migliaia alla volta, con o senza ripetizioni, ordinati o no, e ripetibili da un seed quando un’estrazione va verificata. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","lascia vuoto","Separatore","“{text}” non è un numero intero. {name} accetta solo numeri interi, come 1 o -50.","{name} supera ±9.007.199.254.740.991, il numero intero più grande che questa pagina rappresenta esattamente.","Da","A","Quanti","Chiedi almeno un numero.","Sono {n} numeri; questa pagina ne estrae fino a {max} alla volta.","Da ({from}) è maggiore di A ({to}). Scambiali, o controlla se c’è un segno meno di troppo.","Quell’intervallo contiene più numeri interi di quanti questa pagina possa contarne esattamente; mantienilo sotto nove biliardi di ampiezza.","Ci sono solo {size} numeri interi da {lo} a {hi}, quindi non se ne possono estrarre {count} senza ripetizioni.","senza ripetizioni","ripetizioni consentite","seed “{seed}”: lo stesso seed e le stesse impostazioni danno di nuovo questi numeri, su qualsiasi dispositivo, quindi non è segreto","nessun seed: questa estrazione non può essere ripetuta da nessuno","{n} numero","{n} numeri","{n} numero da {lo} a {hi}, ciascuno dei {size} ugualmente probabile","{n} numeri da {lo} a {hi}, ciascuno dei {size} ugualmente probabile","è uscita {n} ripetizione","sono uscite {n} ripetizioni","Matematica e unità",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Números inteiros de qualquer intervalo, quantos você precisar, sorteados com equidade.","Neste dispositivo","Funciona offline","De","Até","Quantos","Semente, para repetir um sorteio","Sem repetições","Ordenar","Linhas","Vírgulas","Espaços","Sortear","defina um intervalo e pressione sortear","Não foi possível sortear","Copiado","Copiar","Como funciona","Sem semente, cada número vem de \u003ccode>crypto.getRandomValues\u003c/code>. Para cair em um intervalo de tamanho \u003cem>n\u003c/em>, a página faz um sorteio de 32 bits (ou de 53 bits para intervalos acima de quatro bilhões) e o descarta se cair no curto trecho sobrando além do último múltiplo inteiro de \u003cem>n\u003c/em>, de modo que cada número do intervalo tem exatamente a mesma chance. Os intervalos vão até cerca de nove quatrilhões de cada lado do zero, os maiores números inteiros que o JavaScript guarda com exatidão.","\u003cstrong>Sem repetições\u003c/strong> sorteia sem devolver nada: a página executa um embaralhamento parcial de Fisher–Yates sobre o intervalo sem nunca escrevê-lo inteiro, então dez números de um bilhão custam o mesmo que dez de cem. Pedir mais números do que o intervalo contém é recusado, pois não há tantos para dar. \u003cstrong>Ordenar\u003c/strong> ordena o resultado depois do sorteio; nunca muda quais números saíram.","Uma \u003cstrong>semente\u003c/strong> torna o sorteio repetível: a mesma semente com as mesmas configurações dá os mesmos números em qualquer dispositivo, que é como um sorteio ou uma amostra pode ser conferido depois por alguém que não estava lá. A semente passa por um hash e vira um pequeno gerador, o sfc32, estatisticamente sólido mas não secreto: quem conhece a semente conhece os números, então publique a semente depois do sorteio, não antes, e nunca use um sorteio com semente para uma senha ou chave. Sem semente, nada pode reproduzir um sorteio, nem esta página.","Os sorteios são limitados a 10.000 números por vez. Nada é enviado e nada é armazenado; os botões Escuro e Idioma guardam a própria configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Gerador de números aleatórios — qualquer intervalo, sem repetições, repetível com uma semente — MDV","Sorteie números inteiros aleatórios de qualquer intervalo, um ou milhares de uma vez, com ou sem repetições, ordenados ou não, e repetíveis a partir de uma semente quando um sorteio precisa ser conferido. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","deixe vazio","Separador","“{text}” não é um número inteiro. {name} aceita apenas números inteiros, como 1 ou -50.","{name} passa de ±9.007.199.254.740.991, o maior número inteiro que esta página guarda com exatidão.","De","Até","Quantos","Peça pelo menos um número.","São {n} números; esta página sorteia até {max} por vez.","De ({from}) é maior que Até ({to}). Troque-os, ou verifique se sobrou um sinal de menos.","Esse intervalo contém mais números inteiros do que esta página consegue contar com exatidão; mantenha-o abaixo de nove quatrilhões de largura.","Há apenas {size} números inteiros de {lo} a {hi}, então não é possível sortear {count} sem repetições.","sem repetições","repetições permitidas","semente “{seed}”: a mesma semente e as mesmas configurações dão estes números de novo, em qualquer dispositivo, então não é secreta","sem semente: este sorteio não pode ser repetido por ninguém","{n} número","{n} números","{n} número de {lo} a {hi}, cada um dos {size} com a mesma probabilidade","{n} números de {lo} a {hi}, cada um dos {size} com a mesma probabilidade","saiu {n} repetição","saíram {n} repetições","Matemática e unidades",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","任意の範囲の整数を、必要な数だけ、公平に抽選します。","この端末で動作","オフラインで動作","最小","最大","個数","シード(抽選の再現用)","重複なし","並べ替え","改行","カンマ","スペース","抽選","範囲を設定して「抽選」を押してください","抽選できません","コピーしました","コピー","仕組み","シードなしの場合、すべての数は \u003ccode>crypto.getRandomValues\u003c/code> から得られます。大きさ \u003cem>n\u003c/em> の範囲に収めるため、ページは 32 ビットの値(40 億を超える範囲では 53 ビットの値)を取り、\u003cem>n\u003c/em> の最後の整数倍を超えるわずかな余りの区間に入った場合はそれを捨てます。これにより、範囲内のどの数も正確に同じ確率になります。範囲は 0 の両側にそれぞれ約 9 千兆まで、JavaScript が正確に保持できる最大の整数までです。","\u003cstrong>重複なし\u003c/strong>は、引いたものを戻さずに抽選します。ページは範囲全体を書き出すことなく、範囲に対して部分的な Fisher–Yates シャッフルを行うため、10 億から 10 個選んでも、100 から 10 個選んでも同じ手間です。範囲に含まれる数より多く求めると、渡せる数がないため拒否されます。\u003cstrong>並べ替え\u003c/strong>は抽選後に結果を並べ替えるだけで、どの数が出たかは変わりません。","\u003cstrong>シード\u003c/strong>を指定すると抽選を再現できます。同じシードと同じ設定なら、どの端末でも同じ数が出るため、くじ引きや標本抽出を、その場にいなかった人があとから検証できます。シードはハッシュされて小さな生成器 sfc32 になります。統計的には良好ですが秘密ではありません。シードを知っている人は数も知っているので、シードは抽選の前ではなく後に公開し、シード付きの抽選をパスワードや鍵に使わないでください。シードなしの場合は、このページを含め、誰も抽選を再現できません。","抽選は一度に 10,000 個までです。何も送信されず、何も保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","乱数ジェネレーター — 任意の範囲、重複なし、シードで再現可能 — MDV","任意の範囲から、1 個でも数千個でも一度に乱数の整数を抽選します。重複あり・なし、並べ替えの有無を選べ、抽選を検証する必要があるときはシードで再現できます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","空のままにする","区切り","「{text}」は整数ではありません。{name} には 1 や -50 のような整数のみ指定できます。","{name} が ±9,007,199,254,740,991 を超えています。これはこのページが正確に保持できる最大の整数です。","最小","最大","個数","少なくとも 1 個は指定してください。","{n} 個です。このページが一度に抽選できるのは {max} 個までです。","最小 ({from}) が最大 ({to}) より大きくなっています。入れ替えるか、余分なマイナス記号がないか確認してください。","この範囲には、このページが正確に数えられる以上の整数が含まれています。幅を 9 千兆未満にしてください。","{lo} から {hi} までの整数は {size} 個しかないため、重複なしで {count} 個を抽選することはできません。","重複なし","重複あり","シード「{seed}」: 同じシードと設定なら、どの端末でもこの数が再び出ます。そのため秘密ではありません","シードなし: この抽選は誰にも再現できません","{n} 個","{n} 個","{lo} から {hi} までの {n} 個、{size} 通りのどれも同じ確率","{lo} から {hi} までの {n} 個、{size} 通りのどれも同じ確率","重複が {n} 件出ました","重複が {n} 件出ました","数学と単位",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","원하는 범위의 정수를 필요한 만큼, 공정하게 뽑습니다.","이 기기에서 실행","오프라인 작동","최솟값","최댓값","개수","시드(추첨 재현용)","중복 없음","정렬","줄","쉼표","공백","추첨","범위를 정하고 추첨을 누르세요","추첨할 수 없습니다","복사됨","복사","작동 방식","시드가 없으면 모든 숫자는 \u003ccode>crypto.getRandomValues\u003c/code>에서 나옵니다. 크기 \u003cem>n\u003c/em>의 범위에 들어가도록 페이지는 32비트 값(40억을 넘는 범위에서는 53비트 값)을 뽑고, \u003cem>n\u003c/em>의 마지막 정수배를 넘는 짧은 나머지 구간에 떨어지면 그 값을 버립니다. 그래서 범위 안의 모든 숫자가 정확히 같은 확률을 갖습니다. 범위는 0을 기준으로 양쪽으로 각각 약 9천조까지이며, 이는 JavaScript가 정확히 담을 수 있는 가장 큰 정수입니다.","\u003cstrong>중복 없음\u003c/strong>은 뽑은 것을 되돌리지 않고 추첨합니다. 페이지는 범위 전체를 쓰지 않고 범위에 대해 부분 Fisher–Yates 셔플을 수행하므로, 10억 개 중 10개를 뽑는 비용이 100개 중 10개를 뽑는 비용과 같습니다. 범위에 든 수보다 많이 요청하면 줄 수 있는 수가 없으므로 거부합니다. \u003cstrong>정렬\u003c/strong>은 추첨 후 결과를 정렬할 뿐, 어떤 숫자가 나왔는지는 바꾸지 않습니다.","\u003cstrong>시드\u003c/strong>는 추첨을 재현할 수 있게 합니다. 같은 시드와 같은 설정이면 어떤 기기에서나 같은 숫자가 나오므로, 경품 추첨이나 표본을 현장에 없던 사람이 나중에 확인할 수 있습니다. 시드는 해시되어 작은 생성기 sfc32가 되며, 통계적으로는 양호하지만 비밀이 아닙니다. 시드를 아는 사람은 숫자도 알기 때문에, 시드는 추첨 전이 아니라 후에 공개하고, 시드를 쓴 추첨을 비밀번호나 키에 쓰지 마세요. 시드가 없으면 이 페이지를 포함해 아무도 추첨을 재현할 수 없습니다.","추첨은 한 번에 최대 10,000개입니다. 아무것도 전송되거나 저장되지 않습니다. 다크 모드와 언어 버튼은 각자의 설정을 이 브라우저의 로컬 저장소에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","난수 생성기 — 임의의 범위, 중복 없음, 시드로 재현 가능 — MDV","임의의 범위에서 정수 난수를 하나든 수천 개든 한 번에 뽑습니다. 중복 허용 여부와 정렬 여부를 고를 수 있고, 추첨을 검증해야 할 때는 시드로 재현할 수 있습니다. 사용 중인 기기에서 작동합니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","비워 두세요","구분자","“{text}”은(는) 정수가 아닙니다. {name}에는 1이나 -50 같은 정수만 쓸 수 있습니다.","{name}이(가) ±9,007,199,254,740,991을 넘습니다. 이는 이 페이지가 정확히 담을 수 있는 가장 큰 정수입니다.","최솟값","최댓값","개수","최소 하나는 요청하세요.","{n}개입니다. 이 페이지는 한 번에 최대 {max}개까지 추첨합니다.","최솟값 ({from})이 최댓값 ({to})보다 큽니다. 서로 바꾸거나 불필요한 마이너스 기호가 없는지 확인하세요.","이 범위에는 이 페이지가 정확히 셀 수 있는 것보다 많은 정수가 들어 있습니다. 폭을 9천조 미만으로 하세요.","{lo}부터 {hi}까지의 정수는 {size}개뿐이라, 중복 없이 {count}개를 추첨할 수 없습니다.","중복 없음","중복 허용","시드 “{seed}”: 같은 시드와 설정이면 어떤 기기에서나 이 숫자가 다시 나오므로 비밀이 아닙니다","시드 없음: 이 추첨은 누구도 재현할 수 없습니다","{n}개","{n}개","{lo}부터 {hi}까지 {n}개, {size}개 각각이 같은 확률","{lo}부터 {hi}까지 {n}개, {size}개 각각이 같은 확률","중복 {n}건이 나왔습니다","중복 {n}건이 나왔습니다","수학과 단위",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","任意范围内的整数,想要多少有多少,公平抽取。","在此设备上运行","可离线使用","最小值","最大值","数量","种子,用于重现抽取","不重复","排序","换行","逗号","空格","抽取","设定范围并点击“抽取”","无法抽取","已复制","复制","工作原理","没有种子时,每个数都来自 \u003ccode>crypto.getRandomValues\u003c/code>。为了落入大小为 \u003cem>n\u003c/em> 的范围,页面取一个 32 位随机值(范围超过四十亿时取 53 位),如果它落在最后一个 \u003cem>n\u003c/em> 的整数倍之后的那段短余数区间里,就丢弃重取,这样范围内每个数的概率完全相同。范围在零的两侧各可达约九千万亿,这是 JavaScript 能精确表示的最大整数。","\u003cstrong>不重复\u003c/strong>表示抽出后不放回:页面对范围执行部分 Fisher–Yates 洗牌,而不会把整个范围写出来,所以从十亿个数里抽十个与从一百个数里抽十个开销相同。要求的数量超过范围所含数量时会被拒绝,因为没有那么多可给。\u003cstrong>排序\u003c/strong>只在抽取之后对结果排序,绝不改变抽出了哪些数。","\u003cstrong>种子\u003c/strong>能让抽取可重现:相同的种子和相同的设置,在任何设备上都会得到相同的数,这样抽奖或抽样就可以由不在场的人事后核对。种子经哈希后变成一个小型生成器 sfc32，统计上可靠但并不保密——知道种子的人就知道这些数,所以请在抽取之后而不是之前公布种子,并且绝不要把带种子的抽取用于密码或密钥。没有种子时,任何人(包括本页)都无法重现一次抽取。","每次最多抽取 10,000 个数。不会发送或保存任何内容;“深色”和“语言”按钮各自把设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","随机数生成器 — 任意范围,不重复,可用种子重现 — MDV","在任意范围内抽取随机整数,一次一个或数千个,可选是否重复、是否排序,需要核对抽取结果时可用种子重现。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","留空","分隔符","“{text}”不是整数。{name}只能填整数,例如 1 或 -50。","{name}超过了 ±9,007,199,254,740,991，这是本页能精确表示的最大整数。","最小值","最大值","数量","请至少要求一个数。","共 {n} 个;本页一次最多抽取 {max} 个。","最小值 ({from}) 大于最大值 ({to})。请对调两者,或检查是否多了负号。","该范围包含的整数多于本页能精确计数的数量;请把宽度控制在九千万亿以内。","从 {lo} 到 {hi} 只有 {size} 个整数,因此无法不重复地抽取 {count} 个。","不重复","允许重复","种子“{seed}”:相同的种子和设置在任何设备上都会再次得到这些数,所以它并不保密","无种子:这次抽取任何人都无法重现","{n} 个数","{n} 个数","{lo} 到 {hi} 之间的 {n} 个数,{size} 个数的概率均等","{lo} 到 {hi} 之间的 {n} 个数,{size} 个数的概率均等","出现了 {n} 次重复","出现了 {n} 次重复","数学与单位",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2440,9 +2653,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function readInt(text, name) {
     var s = String(text).trim().replace(/[\s,_']/g, "").replace(/−/g, "-");
     if (!s) return { empty: true };
-    if (!/^-?\d+$/.test(s)) return { error: "“" + String(text).trim() + "” is not a whole number. " + name + " takes whole numbers only, such as 1 or -50." };
+    if (!/^-?\d+$/.test(s)) return { error: trk("“{text}” is not a whole number. {name} takes whole numbers only, such as 1 or -50."), vars: { text: String(text).trim(), name: name } };
     var n = Number(s);
-    if (Math.abs(n) > SAFE) return { error: name + " is past ±9,007,199,254,740,991, the largest whole number this page holds exactly." };
+    if (Math.abs(n) > SAFE) return { error: trk("{name} is past ±9,007,199,254,740,991, the largest whole number this page holds exactly."), vars: { name: name } };
     return { value: n };
   }
 
@@ -2450,7 +2663,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   var $ = function (id) { return document.getElementById(id); };
   var empty = $("empty"), err = $("err"), errmsg = $("errmsg"), ok = $("ok"), out = $("out"), said = $("said"), copied = $("copied");
-  var sep = "line", last = null;
+  var sep = "line", last = null, info = null, lastBad = null;
 
   function state(which) {
     empty.hidden = which !== "empty";
@@ -2458,40 +2671,50 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     ok.hidden = which !== "ok";
     if (which !== "ok") copied.hidden = true;
   }
-  function bad(message) { errmsg.textContent = message; state("error"); }
+  // a failure is kept as its key and values, so it can be worded again in another language
+  function showBad() {
+    var v = {};
+    for (var k in lastBad.vars) v[k] = lastBad.vars[k];
+    if (v.name) v.name = tr(v.name);
+    errmsg.textContent = tr(lastBad.key, v);
+  }
+  function bad(key, vars) { lastBad = { key: key, vars: vars }; showBad(); state("error"); }
   function fmt(n) { return n.toLocaleString("en-GB").replace(/,/g, ","); }
   function joined(list) { return list.join(sep === "line" ? "\n" : sep === "comma" ? ", " : " "); }
 
   function run() {
-    var lo = readInt($("min").value, "From"), hi = readInt($("max").value, "To"), n = readInt($("count").value, "How many");
+    var lo = readInt($("min").value, trk("From")), hi = readInt($("max").value, trk("To")), n = readInt($("count").value, trk("How many"));
     if (lo.empty || hi.empty) { state("empty"); return; }
-    if (lo.error || hi.error || n.error) { bad(lo.error || hi.error || n.error); return; }
+    if (lo.error || hi.error || n.error) { var e = lo.error ? lo : hi.error ? hi : n; bad(e.error, e.vars); return; }
     var count = n.empty ? 1 : n.value;
-    if (count < 1) { bad("Ask for at least one number."); return; }
-    if (count > MAX_COUNT) { bad("That is " + fmt(count) + " numbers; this page draws up to " + fmt(MAX_COUNT) + " at a time."); return; }
-    if (lo.value > hi.value) { bad("From (" + fmt(lo.value) + ") is above To (" + fmt(hi.value) + "). Swap them, or check for a stray minus sign."); return; }
+    if (count < 1) { bad(trk("Ask for at least one number.")); return; }
+    if (count > MAX_COUNT) { bad(trk("That is {n} numbers; this page draws up to {max} at a time."), { n: fmt(count), max: fmt(MAX_COUNT) }); return; }
+    if (lo.value > hi.value) { bad(trk("From ({from}) is above To ({to}). Swap them, or check for a stray minus sign."), { from: fmt(lo.value), to: fmt(hi.value) }); return; }
     var size = hi.value - lo.value + 1;
-    if (size > 9007199254740992) { bad("That range holds more whole numbers than this page can count exactly; keep it under nine quadrillion wide."); return; }
+    if (size > 9007199254740992) { bad(trk("That range holds more whole numbers than this page can count exactly; keep it under nine quadrillion wide.")); return; }
     var unique = $("unique").checked;
-    if (unique && count > size) { bad("There are only " + fmt(size) + " whole numbers from " + fmt(lo.value) + " to " + fmt(hi.value) + ", so " + fmt(count) + " without repeats cannot be drawn."); return; }
+    if (unique && count > size) { bad(trk("There are only {size} whole numbers from {lo} to {hi}, so {count} without repeats cannot be drawn."), { size: fmt(size), lo: fmt(lo.value), hi: fmt(hi.value), count: fmt(count) }); return; }
 
     var seed = $("seed").value;
     var list = draw({ min: lo.value, max: hi.value, count: count, unique: unique, sort: $("sort").checked, seed: seed });
     last = list;
-    $("big").textContent = count === 1 ? String(list[0]) : fmt(count) + " numbers";
     out.hidden = count === 1;
     out.textContent = count === 1 ? "" : joined(list);
-
-    var bits = [fmt(count) + (count === 1 ? " number" : " numbers") + " from " + fmt(lo.value) + " to " + fmt(hi.value) + ", each of the " + fmt(size) + " equally likely",
-      unique ? "no repeats" : count > 1 ? "repeats allowed" : ""];
-    if (!unique && count > 1) {
-      var seen = new Set(list);
-      if (seen.size < list.length) bits.push((list.length - seen.size) + (list.length - seen.size === 1 ? " repeat came up" : " repeats came up"));
-    }
-    bits.push(seed ? "seed “" + seed + "”: the same seed and settings give these numbers again, on any device — so it is not secret"
-      : "no seed: this draw cannot be repeated, by anyone");
-    said.textContent = bits.filter(Boolean).join(" · ") + ".";
+    info = { count: count, lo: lo.value, hi: hi.value, size: size, unique: unique, seed: seed, repeats: 0 };
+    if (!unique && count > 1) info.repeats = list.length - new Set(list).size;
+    words();
     state("ok");
+  }
+  // the sentences around the numbers, written from the kept draw: a language change never draws again
+  function words() {
+    var count = info.count, v = { lo: fmt(info.lo), hi: fmt(info.hi), size: fmt(info.size) };
+    $("big").textContent = count === 1 ? String(last[0]) : trn(count, "{n} number", "{n} numbers");
+    var bits = [trn(count, "{n} number from {lo} to {hi}, each of the {size} equally likely", "{n} numbers from {lo} to {hi}, each of the {size} equally likely", v),
+      info.unique ? tr("no repeats") : count > 1 ? tr("repeats allowed") : ""];
+    if (info.repeats) bits.push(trn(info.repeats, "{n} repeat came up", "{n} repeats came up"));
+    bits.push(info.seed ? tr("seed “{seed}”: the same seed and settings give these numbers again, on any device — so it is not secret", { seed: info.seed })
+      : tr("no seed: this draw cannot be repeated, by anyone"));
+    said.textContent = bits.filter(Boolean).join(" · ") + ".";
   }
 
   Array.prototype.forEach.call(document.querySelectorAll("[data-sep]"), function (b) {
@@ -2519,6 +2742,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     setTimeout(function () { copied.hidden = true; }, 1200);
   }
 
+  onLang(function () {
+    if (!err.hidden && lastBad) showBad();
+    if (!ok.hidden && info) words();
+  });
   $("draw").focus({ preventScroll: true });
   state("empty");
 })();

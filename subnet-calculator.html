@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link is-here" href="./subnet-calculator.html" aria-current="page" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link is-here" href="./subnet-calculator.html" aria-current="page" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,30 +2353,30 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Subnet calculator</h1>
+      <h1 class="mdv-head-name" data-t="37">Subnet calculator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Give an IPv4 address with a prefix or a netmask and read the whole block.</p>
+    <p class="mdv-head-line" data-t="79">Give an IPv4 address with a prefix or a netmask and read the whole block.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
-    <label class="mdv-label" for="cidr">Address and prefix</label>
+    <label class="mdv-label" for="cidr" data-t="82">Address and prefix</label>
     <input class="mdv-input mdv-mono" id="cidr" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" value="192.168.1.130/26">
-    <div class="mdv-row mdv-btn-row" role="group" aria-label="Examples">
+    <div class="mdv-row mdv-btn-row" role="group" aria-label="Examples" data-t-attrs="aria-label">
       <button class="mdv-btn is-sm is-quiet" type="button" data-set="10.0.0.0/8">10.0.0.0/8</button>
       <button class="mdv-btn is-sm is-quiet" type="button" data-set="192.168.1.130/26">/26</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="172.16.5.1 255.255.255.0">netmask</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="10.1.1.1/31">/31 link</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="203.0.113.7/32">/32 host</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="172.16.5.1 255.255.255.0" data-t="83">netmask</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="10.1.1.1/31">/31 <span data-t="84">link</span></button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="203.0.113.7/32">/32 <span data-t="85">host</span></button>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>type an address such as 10.0.0.1/24</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="86">type an address such as 10.0.0.1/24</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Cannot read that</span>
@@ -2277,20 +2389,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-cols">
         <div class="mdv-panel is-flush">
           <dl class="mdv-kv">
-            <dt>Network</dt><dd id="k-net"></dd>
-            <dt>Broadcast</dt><dd id="k-bcast"></dd>
-            <dt>First host</dt><dd id="k-first"></dd>
-            <dt>Last host</dt><dd id="k-last"></dd>
-            <dt>Usable hosts</dt><dd id="k-hosts"></dd>
+            <dt data-t="87">Network</dt><dd id="k-net"></dd>
+            <dt data-t="88">Broadcast</dt><dd id="k-bcast"></dd>
+            <dt data-t="89">First host</dt><dd id="k-first"></dd>
+            <dt data-t="90">Last host</dt><dd id="k-last"></dd>
+            <dt data-t="91">Usable hosts</dt><dd id="k-hosts"></dd>
           </dl>
         </div>
         <div class="mdv-panel is-flush">
           <dl class="mdv-kv">
-            <dt>Netmask</dt><dd id="k-mask"></dd>
-            <dt>Wildcard</dt><dd id="k-wild"></dd>
-            <dt>Addresses</dt><dd id="k-total"></dd>
-            <dt>Kind</dt><dd id="k-kind"></dd>
-            <dt>Network in binary</dt><dd id="k-bin"></dd>
+            <dt data-t="92">Netmask</dt><dd id="k-mask"></dd>
+            <dt data-t="93">Wildcard</dt><dd id="k-wild"></dd>
+            <dt data-t="94">Addresses</dt><dd id="k-total"></dd>
+            <dt data-t="95">Kind</dt><dd id="k-kind"></dd>
+            <dt data-t="96">Network in binary</dt><dd id="k-bin"></dd>
           </dl>
         </div>
       </div>
@@ -2298,47 +2410,48 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="97">How this works</summary>
     <div class="mdv-method-body">
-      <p>An IPv4 address is one 32-bit number written as four bytes. The prefix says how many leading bits
+      <p data-t="98">An IPv4 address is one 32-bit number written as four bytes. The prefix says how many leading bits
         name the network: <code>/26</code> keeps 26 bits, so the mask is
         <code>255.255.255.192</code>, the block holds 2<sup>6</sup> = 64 addresses, and the address you typed
         is somewhere inside it. The page ANDs the address with the mask for the network, ORs it with the
         wildcard for the broadcast, and counts the rest. A netmask may be typed instead of a prefix
         (<code>10.0.0.1 255.255.255.0</code>), but only a contiguous one: <code>255.0.255.0</code> is
         refused, because no prefix means that and the result would be a guess.</p>
-      <p>Usable hosts are the block minus the network and broadcast addresses, which is why a /24 carries 254
+      <p data-t="99">Usable hosts are the block minus the network and broadcast addresses, which is why a /24 carries 254
         and not 256. Two prefixes break that rule and the page follows the standards rather than the
         arithmetic: a <strong>/31</strong> has no network or broadcast address — both of its two addresses
         are usable, which is what RFC 3021 defines for point-to-point links — and a <strong>/32</strong> is
         a single host with no range at all. Leading zeros in an octet are refused too: <code>010</code> is
         octal 8 to some tools and decimal 10 to others, and a subnet calculator that picks one silently is
         worse than one that asks.</p>
-      <p>The kind line names the block the address belongs to from the registries: private ranges
+      <p data-t="100">The kind line names the block the address belongs to from the registries: private ranges
         (10/8, 172.16/12, 192.168/16), carrier-grade NAT (100.64/10), loopback (127/8), link-local
         (169.254/16), multicast (224/4), the documentation ranges used in examples, and otherwise public
         address space. That is about the address itself, not about your network: whether it is reachable
         depends on routing, and no page can see that. IPv6 is a different address format and is refused
         here rather than half-handled.</p>
-      <p>Everything is worked out in this tab with plain 32-bit integer arithmetic. Nothing is uploaded and
-        nothing you type is stored; the Dark button keeps its setting in this browser's local storage.</p>
+      <p data-t="101">Everything is worked out in this tab with plain 32-bit integer arithmetic. Nothing is uploaded and
+        nothing you type is stored; the Dark and language buttons keep their settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Developer">
-    <span class="mdv-tag">Also in Developer</span>
-    <a href="./xml-formatter.html">XML formatter</a>
-    <a href="./chmod-calculator.html">Chmod calculator</a>
-    <a href="./cron-generator.html">Cron expression</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Developer"}'>Also in Developer</span>
+    <a href="./xml-formatter.html" data-t="41">XML formatter</a>
+    <a href="./chmod-calculator.html" data-t="35">Chmod calculator</a>
+    <a href="./cron-generator.html" data-t="36">Cron expression</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="102">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="103">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="104" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="105">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2351,6 +2464,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   window.addEventListener("load", count);
 })();
 </script>
+<script type="application/json" id="mdv-i18n">{"k":["Subnet Calculator — CIDR to range, mask, broadcast and host count — MDV","Type an IPv4 address with a prefix or a netmask and read the network, broadcast, first and last host, usable count, wildcard mask and what kind of address it is. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Examples","this network (only valid as a source)","private (RFC 1918)","carrier-grade NAT (RFC 6598)","loopback","link-local, self-assigned","documentation (TEST-NET-1)","benchmarking","documentation (TEST-NET-2)","documentation (TEST-NET-3)","multicast","reserved","limited broadcast","public address space","Too long","That is {n} characters; an address with a prefix is at most 18.","IPv6, not IPv4","This page works in 32-bit IPv4 addresses. An IPv6 prefix is a different format and would need a different page rather than a rough answer.","Cannot read that","“{text}” is not an IPv4 address. Write four numbers separated by dots, such as 192.168.1.10.","“{text}” has an octet above 255. Each of the four is one byte, 0 to 255.","“{text}” has an octet with a leading zero. Some tools read 010 as octal 8 and others as decimal 10, so write it without the zero.","“{text}” is not a netmask. Write it as four numbers, such as 255.255.255.0, or use a prefix such as /24.","Not a contiguous mask","“{text}” has a gap in its bits. A netmask is a run of ones followed by a run of zeros; {mask} is neither, and no prefix matches it.","No prefix was given, so this is read as a single host, /32.","“{text}” is not a prefix length. Write /0 to /32, or give a netmask instead.","/{prefix} is longer than an IPv4 address. The prefix runs from 0 to 32.","—, a single address","—, a /31 has none","A /31 has no network or broadcast address: both addresses carry traffic, which is what RFC 3021 defines for point-to-point links.","A /32 is one address — a host route, not a range.","The address you typed is the network address itself, so it is not usable by a host.","The address you typed is the broadcast address, so it is not usable by a host.","/0 is every IPv4 address there is — the default route, not a network you can put hosts on.","{n} host","{n} hosts","{n} address","{n} addresses","Developer","2026-11-02"],"h":106,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Indica una dirección IPv4 con un prefijo o una máscara de red y lee el bloque entero.","En este dispositivo","Funciona sin conexión","Dirección y prefijo","máscara","enlace","host","escribe una dirección como 10.0.0.1/24","Red","Broadcast","Primer host","Último host","Hosts utilizables","Máscara de red","Comodín","Direcciones","Tipo","Red en binario","Cómo funciona","Una dirección IPv4 es un número de 32 bits escrito como cuatro bytes. El prefijo indica cuántos bits iniciales nombran la red: \u003ccode>/26\u003c/code> conserva 26 bits, así que la máscara es \u003ccode>255.255.255.192\u003c/code>, el bloque contiene 2\u003csup>6\u003c/sup> = 64 direcciones y la dirección que escribiste está en algún punto de él. La página hace un AND de la dirección con la máscara para obtener la red, un OR con el comodín para obtener el broadcast, y cuenta el resto. Se puede escribir una máscara de red en lugar de un prefijo (\u003ccode>10.0.0.1 255.255.255.0\u003c/code>), pero solo si es contigua: \u003ccode>255.0.255.0\u003c/code> se rechaza, porque ningún prefijo significa eso y el resultado sería una conjetura.","Los hosts utilizables son el bloque menos las direcciones de red y de broadcast, por eso un /24 tiene 254 y no 256. Dos prefijos rompen esa regla y la página sigue los estándares en lugar de la aritmética: un \u003cstrong>/31\u003c/strong> no tiene dirección de red ni de broadcast (sus dos direcciones son utilizables, como define la RFC 3021 para los enlaces punto a punto) y un \u003cstrong>/32\u003c/strong> es un único host sin ningún rango. También se rechazan los ceros a la izquierda en un octeto: \u003ccode>010\u003c/code> es el octal 8 para algunas herramientas y el decimal 10 para otras, y una calculadora de subredes que elige una en silencio es peor que una que pregunta.","La línea de tipo nombra el bloque al que pertenece la dirección según los registros: rangos privados (10/8, 172.16/12, 192.168/16), NAT de operador (100.64/10), loopback (127/8), enlace local (169.254/16), multicast (224/4), los rangos de documentación usados en ejemplos y, en cualquier otro caso, espacio de direcciones público. Eso se refiere a la propia dirección, no a tu red: que sea alcanzable depende del enrutamiento, y ninguna página puede verlo. IPv6 es otro formato de dirección y se rechaza aquí en lugar de tratarse a medias.","Todo se calcula en esta pestaña con aritmética de enteros de 32 bits. No se sube nada y nada de lo que escribas se guarda; los botones de modo oscuro e idioma guardan su ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Calculadora de subredes: de CIDR a rango, máscara, broadcast y hosts — MDV","Escribe una dirección IPv4 con un prefijo o una máscara de red y lee la red, el broadcast, el primer y el último host, el número de hosts utilizables, la máscara comodín y el tipo de dirección. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Ejemplos","esta red (solo válida como origen)","privada (RFC 1918)","NAT de operador (RFC 6598)","loopback","enlace local, autoasignada","documentación (TEST-NET-1)","pruebas de rendimiento","documentación (TEST-NET-2)","documentación (TEST-NET-3)","multicast","reservada","broadcast limitado","espacio de direcciones público","Demasiado largo","Son {n} caracteres; una dirección con prefijo tiene como máximo 18.","IPv6, no IPv4","Esta página trabaja con direcciones IPv4 de 32 bits. Un prefijo IPv6 es otro formato y necesitaría otra página, en lugar de una respuesta aproximada.","No se puede leer","«{text}» no es una dirección IPv4. Escribe cuatro números separados por puntos, como 192.168.1.10.","«{text}» tiene un octeto superior a 255. Cada uno de los cuatro es un byte, de 0 a 255.","«{text}» tiene un octeto con un cero a la izquierda. Algunas herramientas leen 010 como octal 8 y otras como decimal 10, así que escríbelo sin el cero.","«{text}» no es una máscara de red. Escríbela como cuatro números, como 255.255.255.0, o usa un prefijo como /24.","Máscara no contigua","«{text}» tiene un hueco en sus bits. Una máscara de red es una racha de unos seguida de una racha de ceros; {mask} no es ninguna de las dos cosas, y ningún prefijo le corresponde.","No se indicó prefijo, así que se interpreta como un único host, /32.","«{text}» no es una longitud de prefijo. Escribe de /0 a /32, o indica una máscara de red.","/{prefix} es más largo que una dirección IPv4. El prefijo va de 0 a 32.","—, una sola dirección","—, un /31 no tiene","Un /31 no tiene dirección de red ni de broadcast: ambas direcciones transportan tráfico, como define la RFC 3021 para los enlaces punto a punto.","Un /32 es una sola dirección: una ruta de host, no un rango.","La dirección que escribiste es la propia dirección de red, así que ningún host puede usarla.","La dirección que escribiste es la dirección de broadcast, así que ningún host puede usarla.","/0 es todas las direcciones IPv4 que existen: la ruta por defecto, no una red en la que puedas poner hosts.","{n} host","{n} hosts","{n} dirección","{n} direcciones","Desarrollo",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Indiquez une adresse IPv4 avec un préfixe ou un masque de réseau et lisez le bloc entier.","Sur cet appareil","Fonctionne hors ligne","Adresse et préfixe","masque","lien","hôte","saisissez une adresse comme 10.0.0.1/24","Réseau","Broadcast","Premier hôte","Dernier hôte","Hôtes utilisables","Masque de réseau","Masque inverse","Adresses","Type","Réseau en binaire","Comment ça marche","Une adresse IPv4 est un nombre de 32 bits écrit sous forme de quatre octets. Le préfixe indique combien de bits de tête désignent le réseau : \u003ccode>/26\u003c/code> en garde 26, donc le masque est \u003ccode>255.255.255.192\u003c/code>, le bloc contient 2\u003csup>6\u003c/sup> = 64 adresses et l’adresse saisie se trouve quelque part à l’intérieur. La page fait un ET entre l’adresse et le masque pour obtenir le réseau, un OU avec le masque inverse pour obtenir le broadcast, et compte le reste. On peut saisir un masque de réseau au lieu d’un préfixe (\u003ccode>10.0.0.1 255.255.255.0\u003c/code>), mais seulement un masque contigu : \u003ccode>255.0.255.0\u003c/code> est refusé, car aucun préfixe ne correspond et le résultat serait une supposition.","Les hôtes utilisables sont le bloc moins les adresses de réseau et de broadcast, d’où les 254 d’un /24 et non 256. Deux préfixes font exception à cette règle et la page suit les normes plutôt que l’arithmétique : un \u003cstrong>/31\u003c/strong> n’a ni adresse de réseau ni adresse de broadcast (ses deux adresses sont utilisables, ce que la RFC 3021 définit pour les liaisons point à point) et un \u003cstrong>/32\u003c/strong> est un hôte unique, sans plage. Les zéros initiaux dans un octet sont aussi refusés : \u003ccode>010\u003c/code> vaut 8 en octal pour certains outils et 10 en décimal pour d’autres, et un calculateur de sous-réseau qui en choisit un en silence est pire qu’un qui pose la question.","La ligne Type nomme le bloc auquel l’adresse appartient d’après les registres : plages privées (10/8, 172.16/12, 192.168/16), NAT de niveau opérateur (100.64/10), boucle locale (127/8), lien local (169.254/16), multicast (224/4), les plages de documentation utilisées dans les exemples, et sinon espace d’adressage public. Cela concerne l’adresse elle-même, pas votre réseau : son accessibilité dépend du routage, qu’aucune page ne peut voir. IPv6 est un autre format d’adresse et il est refusé ici plutôt que traité à moitié.","Tout est calculé dans cet onglet avec de l’arithmétique entière sur 32 bits. Rien n’est envoyé et rien de ce que vous saisissez n’est stocké ; les boutons Sombre et Langue conservent leur réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Calculateur de sous-réseau : de CIDR à plage, masque, broadcast et hôtes — MDV","Saisissez une adresse IPv4 avec un préfixe ou un masque de réseau et lisez le réseau, le broadcast, le premier et le dernier hôte, le nombre d’hôtes utilisables, le masque inverse et le type d’adresse. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Exemples","ce réseau (valide uniquement comme source)","privée (RFC 1918)","NAT de niveau opérateur (RFC 6598)","boucle locale","lien local, auto-attribuée","documentation (TEST-NET-1)","évaluation de performances","documentation (TEST-NET-2)","documentation (TEST-NET-3)","multicast","réservée","broadcast limité","espace d’adressage public","Trop long","Cela fait {n} caractères ; une adresse avec préfixe en compte au plus 18.","IPv6, pas IPv4","Cette page travaille sur des adresses IPv4 de 32 bits. Un préfixe IPv6 est d’un autre format et demanderait une autre page plutôt qu’une réponse approximative.","Lecture impossible","« {text} » n’est pas une adresse IPv4. Écrivez quatre nombres séparés par des points, comme 192.168.1.10.","« {text} » a un octet supérieur à 255. Chacun des quatre est un octet, de 0 à 255.","« {text} » a un octet avec un zéro initial. Certains outils lisent 010 comme l’octal 8 et d’autres comme le décimal 10 : écrivez-le sans le zéro.","« {text} » n’est pas un masque de réseau. Écrivez-le sous forme de quatre nombres, comme 255.255.255.0, ou utilisez un préfixe comme /24.","Masque non contigu","« {text} » a un trou dans ses bits. Un masque de réseau est une suite de uns suivie d’une suite de zéros ; {mask} n’est ni l’un ni l’autre, et aucun préfixe ne lui correspond.","Aucun préfixe n’a été donné : l’adresse est donc lue comme un hôte unique, /32.","« {text} » n’est pas une longueur de préfixe. Écrivez de /0 à /32, ou donnez plutôt un masque de réseau.","/{prefix} est plus long qu’une adresse IPv4. Le préfixe va de 0 à 32.","—, une seule adresse","—, un /31 n’en a pas","Un /31 n’a ni adresse de réseau ni adresse de broadcast : les deux adresses transportent du trafic, ce que la RFC 3021 définit pour les liaisons point à point.","Un /32 est une seule adresse : une route d’hôte, pas une plage.","L’adresse saisie est l’adresse de réseau elle-même : aucun hôte ne peut donc l’utiliser.","L’adresse saisie est l’adresse de broadcast : aucun hôte ne peut donc l’utiliser.","/0 couvre toutes les adresses IPv4 existantes : c’est la route par défaut, pas un réseau où placer des hôtes.","{n} hôte","{n} hôtes","{n} adresse","{n} adresses","Développement",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Gib eine IPv4-Adresse mit Präfix oder Netzmaske an und lies den ganzen Block ab.","Läuft auf diesem Gerät","Funktioniert offline","Adresse und Präfix","Netzmaske","Link","Host","Adresse wie 10.0.0.1/24 eingeben","Netzwerk","Broadcast","Erster Host","Letzter Host","Nutzbare Hosts","Netzmaske","Wildcard","Adressen","Art","Netzwerk binär","So funktioniert es","Eine IPv4-Adresse ist eine 32-Bit-Zahl, geschrieben als vier Bytes. Das Präfix gibt an, wie viele führende Bits das Netzwerk bezeichnen: \u003ccode>/26\u003c/code> behält 26 Bits, die Maske ist also \u003ccode>255.255.255.192\u003c/code>, der Block umfasst 2\u003csup>6\u003c/sup> = 64 Adressen, und die eingegebene Adresse liegt irgendwo darin. Die Seite verknüpft die Adresse per UND mit der Maske für das Netzwerk, per ODER mit der Wildcard für den Broadcast und zählt den Rest. Statt eines Präfixes kann eine Netzmaske eingegeben werden (\u003ccode>10.0.0.1 255.255.255.0\u003c/code>), aber nur eine zusammenhängende: \u003ccode>255.0.255.0\u003c/code> wird abgelehnt, weil kein Präfix das bedeutet und das Ergebnis geraten wäre.","Nutzbare Hosts sind der Block abzüglich Netzwerk- und Broadcast-Adresse, weshalb ein /24 254 trägt und nicht 256. Zwei Präfixe brechen diese Regel, und die Seite folgt den Standards statt der Arithmetik: Ein \u003cstrong>/31\u003c/strong> hat weder Netzwerk- noch Broadcast-Adresse (beide Adressen sind nutzbar, wie RFC 3021 es für Punkt-zu-Punkt-Verbindungen festlegt), und ein \u003cstrong>/32\u003c/strong> ist ein einzelner Host ganz ohne Bereich. Auch führende Nullen in einem Oktett werden abgelehnt: \u003ccode>010\u003c/code> ist für manche Werkzeuge das Oktal 8 und für andere das Dezimal 10, und ein Subnetz-Rechner, der stillschweigend eines wählt, ist schlechter als einer, der nachfragt.","Die Zeile Art nennt den Block, zu dem die Adresse laut Registern gehört: private Bereiche (10/8, 172.16/12, 192.168/16), Carrier-Grade NAT (100.64/10), Loopback (127/8), Link-Local (169.254/16), Multicast (224/4), die in Beispielen verwendeten Dokumentationsbereiche und sonst öffentlicher Adressraum. Das betrifft die Adresse selbst, nicht dein Netz: Ob sie erreichbar ist, hängt vom Routing ab, und das kann keine Seite sehen. IPv6 ist ein anderes Adressformat und wird hier abgelehnt, statt es halb zu behandeln.","Alles wird in diesem Tab mit einfacher 32-Bit-Ganzzahlarithmetik berechnet. Nichts wird hochgeladen, und nichts, was du eintippst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Subnetz-Rechner: von CIDR zu Bereich, Maske, Broadcast und Hostanzahl — MDV","Gib eine IPv4-Adresse mit Präfix oder Netzmaske ein und lies Netzwerk, Broadcast, ersten und letzten Host, Anzahl nutzbarer Hosts, Wildcard-Maske und Adressart ab. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Beispiele","dieses Netzwerk (nur als Quelle gültig)","privat (RFC 1918)","Carrier-Grade NAT (RFC 6598)","Loopback","Link-Local, selbst zugewiesen","Dokumentation (TEST-NET-1)","Benchmarking","Dokumentation (TEST-NET-2)","Dokumentation (TEST-NET-3)","Multicast","reserviert","Limited Broadcast","öffentlicher Adressraum","Zu lang","Das sind {n} Zeichen; eine Adresse mit Präfix hat höchstens 18.","IPv6, nicht IPv4","Diese Seite arbeitet mit 32-Bit-IPv4-Adressen. Ein IPv6-Präfix hat ein anderes Format und bräuchte eine andere Seite statt einer ungefähren Antwort.","Nicht lesbar","„{text}“ ist keine IPv4-Adresse. Schreibe vier durch Punkte getrennte Zahlen, etwa 192.168.1.10.","„{text}“ hat ein Oktett über 255. Jedes der vier ist ein Byte, 0 bis 255.","„{text}“ hat ein Oktett mit führender Null. Manche Werkzeuge lesen 010 als Oktal 8, andere als Dezimal 10; schreibe es daher ohne die Null.","„{text}“ ist keine Netzmaske. Schreibe sie als vier Zahlen, etwa 255.255.255.0, oder nimm ein Präfix wie /24.","Keine zusammenhängende Maske","„{text}“ hat eine Lücke in seinen Bits. Eine Netzmaske ist eine Folge von Einsen, gefolgt von einer Folge von Nullen; {mask} ist nichts davon, und kein Präfix passt dazu.","Es wurde kein Präfix angegeben, daher wird dies als einzelner Host gelesen, /32.","„{text}“ ist keine Präfixlänge. Schreibe /0 bis /32 oder gib stattdessen eine Netzmaske an.","/{prefix} ist länger als eine IPv4-Adresse. Das Präfix reicht von 0 bis 32.","—, eine einzelne Adresse","—, ein /31 hat keinen","Ein /31 hat weder Netzwerk- noch Broadcast-Adresse: Beide Adressen tragen Verkehr, wie RFC 3021 es für Punkt-zu-Punkt-Verbindungen festlegt.","Ein /32 ist eine einzelne Adresse: eine Host-Route, kein Bereich.","Die eingegebene Adresse ist die Netzwerkadresse selbst und daher für einen Host nicht nutzbar.","Die eingegebene Adresse ist die Broadcast-Adresse und daher für einen Host nicht nutzbar.","/0 ist jede existierende IPv4-Adresse: die Standardroute, kein Netzwerk, in das du Hosts setzen kannst.","{n} Host","{n} Hosts","{n} Adresse","{n} Adressen","Entwicklung",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Inserisci un indirizzo IPv4 con un prefisso o una netmask e leggi l’intero blocco.","Su questo dispositivo","Funziona offline","Indirizzo e prefisso","netmask","link","host","scrivi un indirizzo come 10.0.0.1/24","Rete","Broadcast","Primo host","Ultimo host","Host utilizzabili","Netmask","Wildcard","Indirizzi","Tipo","Rete in binario","Come funziona","Un indirizzo IPv4 è un numero a 32 bit scritto come quattro byte. Il prefisso indica quanti bit iniziali identificano la rete: \u003ccode>/26\u003c/code> ne mantiene 26, quindi la maschera è \u003ccode>255.255.255.192\u003c/code>, il blocco contiene 2\u003csup>6\u003c/sup> = 64 indirizzi e l’indirizzo digitato si trova da qualche parte al suo interno. La pagina fa un AND dell’indirizzo con la maschera per ottenere la rete, un OR con la wildcard per il broadcast, e conta il resto. Si può digitare una netmask al posto di un prefisso (\u003ccode>10.0.0.1 255.255.255.0\u003c/code>), ma solo se contigua: \u003ccode>255.0.255.0\u003c/code> viene rifiutata, perché nessun prefisso significa questo e il risultato sarebbe una supposizione.","Gli host utilizzabili sono il blocco meno gli indirizzi di rete e di broadcast, ed è per questo che un /24 ne ha 254 e non 256. Due prefissi rompono questa regola e la pagina segue gli standard anziché l’aritmetica: un \u003cstrong>/31\u003c/strong> non ha indirizzo di rete né di broadcast (entrambi i suoi indirizzi sono utilizzabili, come la RFC 3021 definisce per i collegamenti punto a punto) e un \u003cstrong>/32\u003c/strong> è un singolo host senza alcun intervallo. Vengono rifiutati anche gli zeri iniziali in un ottetto: \u003ccode>010\u003c/code> è l’ottale 8 per alcuni strumenti e il decimale 10 per altri, e un calcolatore di subnet che ne sceglie uno in silenzio è peggio di uno che lo chiede.","La riga Tipo indica il blocco a cui l’indirizzo appartiene secondo i registri: intervalli privati (10/8, 172.16/12, 192.168/16), NAT carrier-grade (100.64/10), loopback (127/8), link-local (169.254/16), multicast (224/4), gli intervalli di documentazione usati negli esempi e, in ogni altro caso, spazio di indirizzi pubblico. Riguarda l’indirizzo in sé, non la tua rete: se sia raggiungibile dipende dal routing, che nessuna pagina può vedere. IPv6 è un altro formato di indirizzo e qui viene rifiutato anziché gestito a metà.","Tutto viene calcolato in questa scheda con semplice aritmetica intera a 32 bit. Non viene caricato nulla e nulla di ciò che scrivi viene salvato; i pulsanti Scuro e Lingua conservano la loro impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Calcolatore di subnet: da CIDR a intervallo, maschera, broadcast e host — MDV","Digita un indirizzo IPv4 con un prefisso o una netmask e leggi rete, broadcast, primo e ultimo host, numero di host utilizzabili, wildcard mask e tipo di indirizzo. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Esempi","questa rete (valida solo come origine)","privata (RFC 1918)","NAT carrier-grade (RFC 6598)","loopback","link-local, autoassegnato","documentazione (TEST-NET-1)","benchmarking","documentazione (TEST-NET-2)","documentazione (TEST-NET-3)","multicast","riservata","broadcast limitato","spazio di indirizzi pubblico","Troppo lungo","Sono {n} caratteri; un indirizzo con prefisso ne ha al massimo 18.","IPv6, non IPv4","Questa pagina lavora con indirizzi IPv4 a 32 bit. Un prefisso IPv6 ha un altro formato e richiederebbe un’altra pagina anziché una risposta approssimativa.","Impossibile leggere","«{text}» non è un indirizzo IPv4. Scrivi quattro numeri separati da punti, come 192.168.1.10.","«{text}» ha un ottetto superiore a 255. Ciascuno dei quattro è un byte, da 0 a 255.","«{text}» ha un ottetto con uno zero iniziale. Alcuni strumenti leggono 010 come ottale 8 e altri come decimale 10, quindi scrivilo senza lo zero.","«{text}» non è una netmask. Scrivila come quattro numeri, come 255.255.255.0, oppure usa un prefisso come /24.","Maschera non contigua","«{text}» ha un buco nei suoi bit. Una netmask è una serie di uno seguita da una serie di zeri; {mask} non è né l’una né l’altra cosa, e nessun prefisso le corrisponde.","Non è stato indicato alcun prefisso, quindi viene letto come un singolo host, /32.","«{text}» non è una lunghezza di prefisso. Scrivi da /0 a /32, oppure indica una netmask.","/{prefix} è più lungo di un indirizzo IPv4. Il prefisso va da 0 a 32.","—, un solo indirizzo","—, un /31 non ne ha","Un /31 non ha indirizzo di rete né di broadcast: entrambi gli indirizzi trasportano traffico, come la RFC 3021 definisce per i collegamenti punto a punto.","Un /32 è un solo indirizzo: una route di host, non un intervallo.","L’indirizzo digitato è l’indirizzo di rete stesso, quindi non è utilizzabile da un host.","L’indirizzo digitato è l’indirizzo di broadcast, quindi non è utilizzabile da un host.","/0 è ogni indirizzo IPv4 esistente: la route predefinita, non una rete in cui mettere host.","{n} host","{n} host","{n} indirizzo","{n} indirizzi","Sviluppo",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Informe um endereço IPv4 com um prefixo ou uma máscara de rede e leia o bloco inteiro.","Neste dispositivo","Funciona offline","Endereço e prefixo","máscara","link","host","digite um endereço como 10.0.0.1/24","Rede","Broadcast","Primeiro host","Último host","Hosts utilizáveis","Máscara de rede","Wildcard","Endereços","Tipo","Rede em binário","Como funciona","Um endereço IPv4 é um número de 32 bits escrito como quatro bytes. O prefixo diz quantos bits iniciais nomeiam a rede: \u003ccode>/26\u003c/code> mantém 26 bits, então a máscara é \u003ccode>255.255.255.192\u003c/code>, o bloco contém 2\u003csup>6\u003c/sup> = 64 endereços e o endereço digitado está em algum lugar dentro dele. A página faz um AND do endereço com a máscara para obter a rede, um OR com o wildcard para obter o broadcast, e conta o restante. Uma máscara de rede pode ser digitada no lugar de um prefixo (\u003ccode>10.0.0.1 255.255.255.0\u003c/code>), mas só uma contígua: \u003ccode>255.0.255.0\u003c/code> é recusada, porque nenhum prefixo significa isso e o resultado seria um palpite.","Os hosts utilizáveis são o bloco menos os endereços de rede e de broadcast, por isso um /24 tem 254 e não 256. Dois prefixos quebram essa regra e a página segue os padrões em vez da aritmética: um \u003cstrong>/31\u003c/strong> não tem endereço de rede nem de broadcast (seus dois endereços são utilizáveis, como a RFC 3021 define para links ponto a ponto) e um \u003cstrong>/32\u003c/strong> é um único host sem nenhum intervalo. Zeros à esquerda em um octeto também são recusados: \u003ccode>010\u003c/code> é o octal 8 para algumas ferramentas e o decimal 10 para outras, e uma calculadora de sub-rede que escolhe um em silêncio é pior que uma que pergunta.","A linha Tipo nomeia o bloco ao qual o endereço pertence segundo os registros: faixas privadas (10/8, 172.16/12, 192.168/16), NAT de operadora (100.64/10), loopback (127/8), link-local (169.254/16), multicast (224/4), as faixas de documentação usadas em exemplos e, nos demais casos, espaço de endereços público. Isso diz respeito ao endereço em si, não à sua rede: se ele é alcançável depende do roteamento, e nenhuma página consegue ver isso. IPv6 é outro formato de endereço e é recusado aqui em vez de tratado pela metade.","Tudo é calculado nesta aba com aritmética simples de inteiros de 32 bits. Nada é enviado e nada do que você digita é armazenado; os botões Escuro e Idioma guardam sua configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Calculadora de sub-rede: de CIDR a faixa, máscara, broadcast e hosts — MDV","Digite um endereço IPv4 com um prefixo ou uma máscara de rede e leia a rede, o broadcast, o primeiro e o último host, a contagem de utilizáveis, a máscara wildcard e o tipo de endereço. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Exemplos","esta rede (válida apenas como origem)","privado (RFC 1918)","NAT de operadora (RFC 6598)","loopback","link-local, autoatribuído","documentação (TEST-NET-1)","benchmarking","documentação (TEST-NET-2)","documentação (TEST-NET-3)","multicast","reservado","broadcast limitado","espaço de endereços público","Longo demais","São {n} caracteres; um endereço com prefixo tem no máximo 18.","IPv6, não IPv4","Esta página trabalha com endereços IPv4 de 32 bits. Um prefixo IPv6 é outro formato e exigiria outra página, em vez de uma resposta aproximada.","Não foi possível ler","“{text}” não é um endereço IPv4. Escreva quatro números separados por pontos, como 192.168.1.10.","“{text}” tem um octeto acima de 255. Cada um dos quatro é um byte, de 0 a 255.","“{text}” tem um octeto com zero à esquerda. Algumas ferramentas leem 010 como octal 8 e outras como decimal 10, então escreva sem o zero.","“{text}” não é uma máscara de rede. Escreva-a como quatro números, como 255.255.255.0, ou use um prefixo como /24.","Máscara não contígua","“{text}” tem uma lacuna nos bits. Uma máscara de rede é uma sequência de uns seguida de uma sequência de zeros; {mask} não é nenhuma das duas, e nenhum prefixo corresponde a ela.","Nenhum prefixo foi informado, então isto é lido como um único host, /32.","“{text}” não é um comprimento de prefixo. Escreva de /0 a /32 ou informe uma máscara de rede.","/{prefix} é maior que um endereço IPv4. O prefixo vai de 0 a 32.","—, um único endereço","—, um /31 não tem","Um /31 não tem endereço de rede nem de broadcast: os dois endereços transportam tráfego, como a RFC 3021 define para links ponto a ponto.","Um /32 é um único endereço: uma rota de host, não uma faixa.","O endereço digitado é o próprio endereço de rede, então não pode ser usado por um host.","O endereço digitado é o endereço de broadcast, então não pode ser usado por um host.","/0 é todo endereço IPv4 que existe: a rota padrão, não uma rede onde você possa colocar hosts.","{n} host","{n} hosts","{n} endereço","{n} endereços","Desenvolvimento",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","IPv4 アドレスとプレフィックスまたはネットマスクを入力すると、ブロック全体が分かります。","この端末で動作","オフラインで動作","アドレスとプレフィックス","ネットマスク","リンク","ホスト","10.0.0.1/24 のようなアドレスを入力","ネットワーク","ブロードキャスト","最初のホスト","最後のホスト","使用可能なホスト","ネットマスク","ワイルドカード","アドレス数","種別","ネットワーク(2 進)","仕組み","IPv4 アドレスは、4 バイトで表される 1 つの 32 ビット数です。プレフィックスは、先頭の何ビットがネットワークを表すかを示します。\u003ccode>/26\u003c/code> は 26 ビットを保持するので、マスクは \u003ccode>255.255.255.192\u003c/code>、ブロックには 2\u003csup>6\u003c/sup> = 64 個のアドレスが含まれ、入力したアドレスはその中のどこかにあります。このページは、アドレスとマスクの AND でネットワークを、ワイルドカードとの OR でブロードキャストを求め、残りを数えます。プレフィックスの代わりにネットマスクも入力できますが(\u003ccode>10.0.0.1 255.255.255.0\u003c/code>)、連続したものに限ります。\u003ccode>255.0.255.0\u003c/code> はそれを意味するプレフィックスがなく、結果が推測になってしまうため拒否されます。","使用可能なホストは、ブロックからネットワークアドレスとブロードキャストアドレスを引いたものです。/24 が 256 ではなく 254 なのはそのためです。2 つのプレフィックスはこの規則から外れ、このページは計算ではなく標準に従います。\u003cstrong>/31\u003c/strong> にはネットワークアドレスもブロードキャストアドレスもなく(2 つのアドレスとも使用可能で、RFC 3021 がポイントツーポイントのリンク用に定めています)、\u003cstrong>/32\u003c/strong> は範囲を持たない単一のホストです。オクテットの先頭のゼロも拒否します。\u003ccode>010\u003c/code> は、ツールによって 8 進数の 8 と読むものも 10 進数の 10 と読むものもあり、黙ってどちらかを選ぶサブネット計算機より、確認する計算機のほうがよいからです。","「種別」の行には、レジストリに基づいてそのアドレスが属するブロックが示されます。プライベート範囲(10/8、172.16/12、192.168/16)、キャリアグレード NAT(100.64/10)、ループバック(127/8)、リンクローカル(169.254/16)、マルチキャスト(224/4)、例で使われるドキュメント用範囲、それ以外はパブリックなアドレス空間です。これはアドレス自体についての情報で、お使いのネットワークについてのものではありません。到達できるかどうかはルーティング次第で、ページからは分かりません。IPv6 はアドレス形式が異なるため、中途半端に扱わずここでは拒否します。","すべてこのタブの中で、32 ビット整数の単純な演算で計算されます。何もアップロードされず、入力した内容は保存されません。ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保持します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","サブネット計算機: CIDR から範囲、マスク、ブロードキャスト、ホスト数まで — MDV","IPv4 アドレスとプレフィックスまたはネットマスクを入力すると、ネットワーク、ブロードキャスト、最初と最後のホスト、使用可能数、ワイルドカードマスク、アドレスの種別が分かります。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","例","このネットワーク(送信元としてのみ有効)","プライベート(RFC 1918)","キャリアグレード NAT(RFC 6598)","ループバック","リンクローカル(自動割り当て)","ドキュメント用(TEST-NET-1)","ベンチマーク用","ドキュメント用(TEST-NET-2)","ドキュメント用(TEST-NET-3)","マルチキャスト","予約済み","限定ブロードキャスト","パブリックなアドレス空間","長すぎます","{n} 文字あります。プレフィックス付きのアドレスは最大 18 文字です。","IPv4 ではなく IPv6 です","このページは 32 ビットの IPv4 アドレスを扱います。IPv6 のプレフィックスは形式が異なり、大まかな答えではなく別のページが必要になります。","読み取れません","「{text}」は IPv4 アドレスではありません。192.168.1.10 のように、ドットで区切った 4 つの数字で書いてください。","「{text}」に 255 を超えるオクテットがあります。4 つはそれぞれ 1 バイトで、0 から 255 です。","「{text}」に先頭がゼロのオクテットがあります。010 を 8 進数の 8 と読むツールも 10 進数の 10 と読むツールもあるため、ゼロを付けずに書いてください。","「{text}」はネットマスクではありません。255.255.255.0 のように 4 つの数字で書くか、/24 のようなプレフィックスを使ってください。","連続していないマスク","「{text}」はビットの途中に隙間があります。ネットマスクは 1 の連続のあとに 0 の連続が続くものです。{mask} はそのどちらでもなく、一致するプレフィックスもありません。","プレフィックスが指定されていないため、単一のホスト(/32)として扱います。","「{text}」はプレフィックス長ではありません。/0 から /32 で書くか、代わりにネットマスクを指定してください。","/{prefix} は IPv4 アドレスより長くなっています。プレフィックスは 0 から 32 です。","—、単一のアドレス","—、/31 にはありません","/31 にはネットワークアドレスもブロードキャストアドレスもなく、両方のアドレスがトラフィックを運びます。これは RFC 3021 がポイントツーポイントのリンク用に定めたものです。","/32 は 1 つのアドレスで、範囲ではなくホストルートです。","入力したアドレスはネットワークアドレスそのものなので、ホストには使えません。","入力したアドレスはブロードキャストアドレスなので、ホストには使えません。","/0 は存在するすべての IPv4 アドレスで、デフォルトルートです。ホストを置けるネットワークではありません。","{n} ホスト","{n} ホスト","{n} アドレス","{n} アドレス","開発",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","IPv4 주소와 프리픽스 또는 넷마스크를 입력하면 블록 전체를 볼 수 있습니다.","이 기기에서 실행","오프라인 작동","주소와 프리픽스","넷마스크","링크","호스트","10.0.0.1/24 같은 주소를 입력","네트워크","브로드캐스트","첫 호스트","마지막 호스트","사용 가능 호스트","넷마스크","와일드카드","주소 수","종류","네트워크(2진)","작동 방식","IPv4 주소는 4바이트로 표기하는 32비트 숫자 하나입니다. 프리픽스는 앞쪽 몇 비트가 네트워크를 나타내는지 알려 줍니다. \u003ccode>/26\u003c/code>은 26비트를 유지하므로 마스크는 \u003ccode>255.255.255.192\u003c/code>이고, 블록에는 2\u003csup>6\u003c/sup> = 64개의 주소가 들어 있으며, 입력한 주소는 그 안 어딘가에 있습니다. 이 페이지는 주소와 마스크를 AND하여 네트워크를, 와일드카드와 OR하여 브로드캐스트를 구하고 나머지를 셉니다. 프리픽스 대신 넷마스크를 입력할 수도 있지만(\u003ccode>10.0.0.1 255.255.255.0\u003c/code>), 연속된 것만 됩니다. \u003ccode>255.0.255.0\u003c/code>은 그에 해당하는 프리픽스가 없어 결과가 추측이 되므로 거부됩니다.","사용 가능한 호스트는 블록에서 네트워크 주소와 브로드캐스트 주소를 뺀 것입니다. /24가 256이 아니라 254인 이유입니다. 두 프리픽스는 이 규칙에서 벗어나며, 이 페이지는 계산이 아니라 표준을 따릅니다. \u003cstrong>/31\u003c/strong>에는 네트워크 주소도 브로드캐스트 주소도 없고(두 주소 모두 사용 가능하며, RFC 3021이 점대점 링크용으로 정의함), \u003cstrong>/32\u003c/strong>는 범위가 전혀 없는 단일 호스트입니다. 옥텟의 앞자리 0도 거부합니다. \u003ccode>010\u003c/code>은 어떤 도구에서는 8진수 8이고 다른 도구에서는 10진수 10이며, 말없이 하나를 고르는 서브넷 계산기보다 되묻는 계산기가 낫기 때문입니다.","「종류」 줄은 레지스트리 기준으로 그 주소가 속한 블록을 알려 줍니다. 사설 대역(10/8, 172.16/12, 192.168/16), 통신사급 NAT(100.64/10), 루프백(127/8), 링크 로컬(169.254/16), 멀티캐스트(224/4), 예시에 쓰이는 문서용 대역, 그 외에는 공인 주소 공간입니다. 이는 주소 자체에 대한 것이지 사용 중인 네트워크에 대한 것이 아닙니다. 도달 가능 여부는 라우팅에 달려 있으며 어떤 페이지도 이를 볼 수 없습니다. IPv6는 주소 형식이 달라 어설프게 처리하지 않고 여기서는 거부합니다.","모든 계산은 이 탭 안에서 32비트 정수 연산으로 이루어집니다. 아무것도 업로드되지 않고 입력한 내용도 저장되지 않으며, 다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 보관합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","서브넷 계산기: CIDR에서 범위, 마스크, 브로드캐스트, 호스트 수까지 — MDV","IPv4 주소와 프리픽스 또는 넷마스크를 입력하면 네트워크, 브로드캐스트, 첫·마지막 호스트, 사용 가능 호스트 수, 와일드카드 마스크, 주소 종류를 볼 수 있습니다. 내 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","예시","이 네트워크(출발지로만 유효)","사설(RFC 1918)","통신사급 NAT(RFC 6598)","루프백","링크 로컬, 자동 할당","문서용(TEST-NET-1)","벤치마크용","문서용(TEST-NET-2)","문서용(TEST-NET-3)","멀티캐스트","예약됨","제한된 브로드캐스트","공인 주소 공간","너무 깁니다","{n}자입니다. 프리픽스가 붙은 주소는 최대 18자입니다.","IPv4가 아닌 IPv6","이 페이지는 32비트 IPv4 주소를 다룹니다. IPv6 프리픽스는 형식이 달라 어림짐작한 답이 아니라 별도의 페이지가 필요합니다.","읽을 수 없습니다","“{text}”은(는) IPv4 주소가 아닙니다. 192.168.1.10처럼 점으로 구분한 숫자 네 개로 쓰세요.","“{text}”에 255를 넘는 옥텟이 있습니다. 네 개는 각각 1바이트로 0에서 255 사이입니다.","“{text}”에 앞자리가 0인 옥텟이 있습니다. 010을 8진수 8로 읽는 도구도, 10진수 10으로 읽는 도구도 있으니 0 없이 쓰세요.","“{text}”은(는) 넷마스크가 아닙니다. 255.255.255.0처럼 숫자 네 개로 쓰거나 /24 같은 프리픽스를 사용하세요.","연속되지 않은 마스크","“{text}”은(는) 비트 중간에 빈틈이 있습니다. 넷마스크는 1이 이어진 뒤 0이 이어지는 형태인데 {mask}은(는) 그렇지 않으며, 대응하는 프리픽스도 없습니다.","프리픽스가 없어 단일 호스트(/32)로 읽습니다.","“{text}”은(는) 프리픽스 길이가 아닙니다. /0에서 /32 사이로 쓰거나 넷마스크를 지정하세요.","/{prefix}은(는) IPv4 주소보다 깁니다. 프리픽스는 0에서 32 사이입니다.","—, 주소 하나","—, /31에는 없음","/31에는 네트워크 주소도 브로드캐스트 주소도 없으며 두 주소 모두 트래픽을 전달합니다. RFC 3021이 점대점 링크용으로 정의한 방식입니다.","/32는 주소 하나로, 범위가 아니라 호스트 경로입니다.","입력한 주소는 네트워크 주소 자체이므로 호스트가 사용할 수 없습니다.","입력한 주소는 브로드캐스트 주소이므로 호스트가 사용할 수 없습니다.","/0은 존재하는 모든 IPv4 주소로, 기본 경로이지 호스트를 둘 수 있는 네트워크가 아닙니다.","호스트 {n}개","호스트 {n}개","주소 {n}개","주소 {n}개","개발",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","给出 IPv4 地址以及前缀或子网掩码,即可读出整个地址块。","在此设备上运行","可离线使用","地址和前缀","掩码","链路","主机","输入类似 10.0.0.1/24 的地址","网络","广播","首个主机","末个主机","可用主机","子网掩码","反掩码","地址数","类型","网络(二进制)","工作原理","IPv4 地址是一个 32 位数,写成四个字节。前缀表示前面多少位用来标识网络:\u003ccode>/26\u003c/code> 保留 26 位,因此掩码是 \u003ccode>255.255.255.192\u003c/code>,该地址块包含 2\u003csup>6\u003c/sup> = 64 个地址,你输入的地址就在其中某处。本页把地址与掩码做 AND 得到网络地址,与反掩码做 OR 得到广播地址,再数出其余部分。可以输入子网掩码来代替前缀(\u003ccode>10.0.0.1 255.255.255.0\u003c/code>),但必须是连续的:\u003ccode>255.0.255.0\u003c/code> 会被拒绝,因为没有任何前缀对应它,结果只能是猜测。","可用主机数是地址块减去网络地址和广播地址,所以 /24 有 254 个而不是 256 个。有两个前缀打破了这条规则,本页遵循标准而非算术:\u003cstrong>/31\u003c/strong> 没有网络地址和广播地址(它的两个地址都可用,这是 RFC 3021 为点对点链路定义的),\u003cstrong>/32\u003c/strong> 是没有任何范围的单个主机。八位组中的前导零也会被拒绝:\u003ccode>010\u003c/code> 在一些工具中是八进制的 8，在另一些工具中是十进制的 10，悄悄选一个的子网计算器不如会询问的计算器。","“类型”一行根据注册信息给出该地址所属的地址块:私有范围(10/8、172.16/12、192.168/16)、运营商级 NAT(100.64/10)、环回(127/8)、链路本地(169.254/16)、组播(224/4)、示例中使用的文档范围,其余则是公网地址空间。这说的是地址本身,而不是你的网络:能否到达取决于路由,而任何网页都看不到这一点。IPv6 是另一种地址格式,这里会直接拒绝,而不是只处理一半。","所有计算都在此标签页内用简单的 32 位整数运算完成。不会上传任何内容,你输入的内容也不会被存储;深色和语言按钮会把各自的设置保存在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","子网计算器:从 CIDR 得到范围、掩码、广播地址和主机数 — MDV","输入 IPv4 地址以及前缀或子网掩码,即可读出网络地址、广播地址、首末主机、可用主机数、反掩码以及地址类型。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","示例","本网络(仅可作为源地址)","私有(RFC 1918)","运营商级 NAT(RFC 6598)","环回","链路本地,自动分配","文档用(TEST-NET-1)","基准测试","文档用(TEST-NET-2)","文档用(TEST-NET-3)","组播","保留","受限广播","公网地址空间","过长","共 {n} 个字符;带前缀的地址最多 18 个字符。","是 IPv6，不是 IPv4","本页处理的是 32 位 IPv4 地址。IPv6 前缀格式不同,需要另一个页面,而不是给出粗略的答案。","无法读取","“{text}”不是 IPv4 地址。请写成用点分隔的四个数字,例如 192.168.1.10。","“{text}”中有一个八位组大于 255。四个八位组各占一个字节,范围是 0 到 255。","“{text}”中有一个八位组带前导零。有些工具把 010 当作八进制的 8，有些当作十进制的 10，所以请不要写前导零。","“{text}”不是子网掩码。请写成四个数字,例如 255.255.255.0，或使用 /24 这样的前缀。","掩码不连续","“{text}”的位中间有空隙。子网掩码是一串 1 后面接一串 0;{mask} 并非如此,也没有任何前缀与之对应。","未给出前缀,因此按单个主机 /32 处理。","“{text}”不是前缀长度。请写 /0 到 /32，或改用子网掩码。","/{prefix} 比 IPv4 地址还长。前缀范围是 0 到 32。","—,单个地址","—,/31 没有","/31 没有网络地址和广播地址:两个地址都用于传输流量,这是 RFC 3021 为点对点链路定义的。","/32 是单个地址:一条主机路由,而不是一个范围。","你输入的地址就是网络地址本身,因此主机无法使用。","你输入的地址是广播地址,因此主机无法使用。","/0 是所有存在的 IPv4 地址:它是默认路由,不是可以放置主机的网络。","{n} 台主机","{n} 台主机","{n} 个地址","{n} 个地址","开发",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
+})();
+</script>
 
 </main>
 
@@ -2360,7 +2573,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   /* ---------- pure: 32-bit address maths ---------- */
 
-  function fail(title, message) { return { error: { title: title, message: message } }; }
+  function fail(title, message, vars) { return { error: { title: title, message: message, vars: vars } }; }
 
   function readOctets(text) {
     var parts = String(text).split(".");
@@ -2388,57 +2601,57 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
 
   var KINDS = [
-    ["0.0.0.0/8", "this network (only valid as a source)"],
-    ["10.0.0.0/8", "private (RFC 1918)"],
-    ["100.64.0.0/10", "carrier-grade NAT (RFC 6598)"],
-    ["127.0.0.0/8", "loopback"],
-    ["169.254.0.0/16", "link-local, self-assigned"],
-    ["172.16.0.0/12", "private (RFC 1918)"],
-    ["192.0.2.0/24", "documentation (TEST-NET-1)"],
-    ["192.168.0.0/16", "private (RFC 1918)"],
-    ["198.18.0.0/15", "benchmarking"],
-    ["198.51.100.0/24", "documentation (TEST-NET-2)"],
-    ["203.0.113.0/24", "documentation (TEST-NET-3)"],
-    ["224.0.0.0/4", "multicast"],
-    ["240.0.0.0/4", "reserved"],
-    ["255.255.255.255/32", "limited broadcast"]
+    ["0.0.0.0/8", trk("this network (only valid as a source)")],
+    ["10.0.0.0/8", trk("private (RFC 1918)")],
+    ["100.64.0.0/10", trk("carrier-grade NAT (RFC 6598)")],
+    ["127.0.0.0/8", trk("loopback")],
+    ["169.254.0.0/16", trk("link-local, self-assigned")],
+    ["172.16.0.0/12", trk("private (RFC 1918)")],
+    ["192.0.2.0/24", trk("documentation (TEST-NET-1)")],
+    ["192.168.0.0/16", trk("private (RFC 1918)")],
+    ["198.18.0.0/15", trk("benchmarking")],
+    ["198.51.100.0/24", trk("documentation (TEST-NET-2)")],
+    ["203.0.113.0/24", trk("documentation (TEST-NET-3)")],
+    ["224.0.0.0/4", trk("multicast")],
+    ["240.0.0.0/4", trk("reserved")],
+    ["255.255.255.255/32", trk("limited broadcast")]
   ];
   function kindOf(addr) {
     for (var i = 0; i < KINDS.length; i++) {
       var parts = KINDS[i][0].split("/"), base = readOctets(parts[0]), prefix = Number(parts[1]);
       if ((addr & maskOf(prefix)) >>> 0 === base) return KINDS[i][1];
     }
-    return "public address space";
+    return trk("public address space");
   }
 
   function parse(text) {
     var line = String(text).trim().replace(/\s+/g, " ");
     if (!line) return null;
-    if (line.length > 100) return fail("Too long", "That is " + line.length + " characters; an address with a prefix is at most 18.");
-    if (line.indexOf(":") >= 0) return fail("IPv6, not IPv4", "This page works in 32-bit IPv4 addresses. An IPv6 prefix is a different format and would need a different page rather than a rough answer.");
+    if (line.length > 100) return fail(trk("Too long"), trk("That is {n} characters; an address with a prefix is at most 18."), { n: line.length });
+    if (line.indexOf(":") >= 0) return fail(trk("IPv6, not IPv4"), trk("This page works in 32-bit IPv4 addresses. An IPv6 prefix is a different format and would need a different page rather than a rough answer."));
 
     var addrText = line, prefix = null, maskText = null, slash = line.indexOf("/");
     if (slash >= 0) { addrText = line.slice(0, slash); prefix = line.slice(slash + 1); }
     else if (line.indexOf(" ") > 0) { addrText = line.slice(0, line.indexOf(" ")); maskText = line.slice(line.indexOf(" ") + 1); }
 
     var addr = readOctets(addrText);
-    if (addr === null) return fail("Cannot read that", "“" + addrText + "” is not an IPv4 address. Write four numbers separated by dots, such as 192.168.1.10.");
-    if (addr === "range") return fail("Cannot read that", "“" + addrText + "” has an octet above 255. Each of the four is one byte, 0 to 255.");
-    if (addr === "leading-zero") return fail("Cannot read that", "“" + addrText + "” has an octet with a leading zero. Some tools read 010 as octal 8 and others as decimal 10, so write it without the zero.");
+    if (addr === null) return fail(trk("Cannot read that"), trk("“{text}” is not an IPv4 address. Write four numbers separated by dots, such as 192.168.1.10."), { text: addrText });
+    if (addr === "range") return fail(trk("Cannot read that"), trk("“{text}” has an octet above 255. Each of the four is one byte, 0 to 255."), { text: addrText });
+    if (addr === "leading-zero") return fail(trk("Cannot read that"), trk("“{text}” has an octet with a leading zero. Some tools read 010 as octal 8 and others as decimal 10, so write it without the zero."), { text: addrText });
 
     if (maskText !== null) {
       var mask = readOctets(maskText);
-      if (typeof mask !== "number") return fail("Cannot read that", "“" + maskText + "” is not a netmask. Write it as four numbers, such as 255.255.255.0, or use a prefix such as /24.");
+      if (typeof mask !== "number") return fail(trk("Cannot read that"), trk("“{text}” is not a netmask. Write it as four numbers, such as 255.255.255.0, or use a prefix such as /24."), { text: maskText });
       var got = prefixOfMask(mask);
-      if (got < 0) return fail("Not a contiguous mask", "“" + maskText + "” has a gap in its bits. A netmask is a run of ones followed by a run of zeros; " + dotted(mask) + " is neither, and no prefix matches it.");
+      if (got < 0) return fail(trk("Not a contiguous mask"), trk("“{text}” has a gap in its bits. A netmask is a run of ones followed by a run of zeros; {mask} is neither, and no prefix matches it."), { text: maskText, mask: dotted(mask) });
       prefix = got;
     } else if (prefix === null) {
       prefix = 32;
-      return build(addr, 32, "No prefix was given, so this is read as a single host, /32.");
+      return build(addr, 32, trk("No prefix was given, so this is read as a single host, /32."));
     } else {
-      if (!/^\d{1,2}$/.test(prefix)) return fail("Cannot read that", "“" + prefix + "” is not a prefix length. Write /0 to /32, or give a netmask instead.");
+      if (!/^\d{1,2}$/.test(prefix)) return fail(trk("Cannot read that"), trk("“{text}” is not a prefix length. Write /0 to /32, or give a netmask instead."), { text: prefix });
       prefix = Number(prefix);
-      if (prefix > 32) return fail("Cannot read that", "/" + prefix + " is longer than an IPv4 address. The prefix runs from 0 to 32.");
+      if (prefix > 32) return fail(trk("Cannot read that"), trk("/{prefix} is longer than an IPv4 address. The prefix runs from 0 to 32."), { prefix: prefix });
     }
     return build(addr, prefix, null);
   }
@@ -2473,27 +2686,27 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function run() {
     var got = parse(cidr.value);
     if (!got) { state("empty"); return; }
-    if (got.error) { errtitle.textContent = got.error.title; errmsg.textContent = got.error.message; state("error"); return; }
+    if (got.error) { errtitle.textContent = tr(got.error.title); errmsg.textContent = tr(got.error.message, got.error.vars); state("error"); return; }
 
     big.textContent = dotted(got.network) + "/" + got.prefix;
-    $("k-net").textContent = got.single ? "—, a single address" : dotted(got.network);
-    $("k-bcast").textContent = got.single ? "—, a single address" : got.pair ? "—, a /31 has none" : dotted(got.broadcast);
+    $("k-net").textContent = got.single ? tr("—, a single address") : dotted(got.network);
+    $("k-bcast").textContent = got.single ? tr("—, a single address") : got.pair ? tr("—, a /31 has none") : dotted(got.broadcast);
     $("k-first").textContent = dotted(got.first);
     $("k-last").textContent = dotted(got.last);
-    $("k-hosts").textContent = got.hosts.toLocaleString() + (got.hosts === 1 ? " host" : " hosts");
+    $("k-hosts").textContent = trn(got.hosts, "{n} host", "{n} hosts");
     $("k-mask").textContent = dotted(got.mask) + "  (/" + got.prefix + ")";
     $("k-wild").textContent = dotted(got.wildcard);
-    $("k-total").textContent = got.total.toLocaleString() + (got.total === 1 ? " address" : " addresses");
-    $("k-kind").textContent = kindOf(got.addr);
+    $("k-total").textContent = trn(got.total, "{n} address", "{n} addresses");
+    $("k-kind").textContent = tr(kindOf(got.addr));
     $("k-bin").textContent = binary(got.network);
 
     var notes = [];
-    if (got.note) notes.push(got.note);
-    if (got.pair) notes.push("A /31 has no network or broadcast address: both addresses carry traffic, which is what RFC 3021 defines for point-to-point links.");
-    if (got.single) notes.push("A /32 is one address — a host route, not a range.");
-    if (!got.single && !got.pair && got.addr === got.network) notes.push("The address you typed is the network address itself, so it is not usable by a host.");
-    if (!got.single && !got.pair && got.addr === got.broadcast) notes.push("The address you typed is the broadcast address, so it is not usable by a host.");
-    if (got.prefix === 0) notes.push("/0 is every IPv4 address there is — the default route, not a network you can put hosts on.");
+    if (got.note) notes.push(tr(got.note));
+    if (got.pair) notes.push(tr("A /31 has no network or broadcast address: both addresses carry traffic, which is what RFC 3021 defines for point-to-point links."));
+    if (got.single) notes.push(tr("A /32 is one address — a host route, not a range."));
+    if (!got.single && !got.pair && got.addr === got.network) notes.push(tr("The address you typed is the network address itself, so it is not usable by a host."));
+    if (!got.single && !got.pair && got.addr === got.broadcast) notes.push(tr("The address you typed is the broadcast address, so it is not usable by a host."));
+    if (got.prefix === 0) notes.push(tr("/0 is every IPv4 address there is — the default route, not a network you can put hosts on."));
     said.textContent = notes.join(" ");
     said.hidden = !notes.length;
     state("ok");
@@ -2505,6 +2718,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   });
 
   cidr.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

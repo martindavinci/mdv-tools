@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link is-here" href="./exif-remover.html" aria-current="page" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link is-here" href="./exif-remover.html" aria-current="page" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,24 +2353,24 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">EXIF viewer and remover</h1>
+      <h1 class="mdv-head-name" data-t="49">EXIF viewer and remover</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">See what a photo carries — camera, serial number, time, place — and download it without.</p>
+    <p class="mdv-head-line" data-t="79">See what a photo carries — camera, serial number, time, place — and download it without.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
-  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose a photo to inspect">
+  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose a photo to inspect" data-t-attrs="aria-label">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
-    <span class="mdv-tag">Drop a JPEG, PNG or WebP — up to 30 MB</span>
+    <span class="mdv-tag" data-t="82">Drop a JPEG, PNG or WebP — up to 30 MB</span>
     <input type="file" id="file" accept="image/jpeg,image/png,image/webp" class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>drop a photo above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="83">drop a photo above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Cannot read that</span>
@@ -2273,7 +2385,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         </span>
       </div>
       <div class="mdv-notice is-warn" id="gpsWarn" hidden>
-        <span class="mdv-notice-title">This photo says where it was taken</span>
+        <span class="mdv-notice-title" data-t="84">This photo says where it was taken</span>
         <span id="gpsMsg"></span>
       </div>
       <div class="mdv-cols">
@@ -2289,46 +2401,47 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="85">How this works</summary>
     <div class="mdv-method-body">
-      <p>A photo file is a sequence of blocks: the pixels, and beside them whatever the camera or the app
+      <p data-t="86">A photo file is a sequence of blocks: the pixels, and beside them whatever the camera or the app
         wrote down. This page reads those blocks itself — the JPEG APP segments, the PNG chunks, the WebP
         RIFF chunks — and decodes the EXIF inside as TIFF directories, which is the format cameras have
         used since the 1990s. It shows the fields people care about (camera, lens, exposure, the original
         timestamp, the serial number, the GPS position) and counts the rest, including the maker note, the
         private block where manufacturers keep things they never documented.</p>
-      <p><strong>Removing is not re-saving.</strong> The usual trick — draw the photo on a canvas and
+      <p data-t="87"><strong>Removing is not re-saving.</strong> The usual trick — draw the photo on a canvas and
         export it — throws away the metadata but also re-compresses every pixel, so the file gets worse and
         often bigger. This page instead rewrites the container and drops only the blocks that carry
         metadata: EXIF, XMP, IPTC and Photoshop blocks, comments, and the PNG text and timestamp chunks.
         The compressed image data is copied across byte for byte, so the result is pixel-identical to what
         you dropped. The colour profile (ICC) is kept, because dropping it visibly changes the colours on a
         wide-gamut screen; it names no person and no place.</p>
-      <p>Two things worth knowing. Orientation lives in EXIF, so a photo that was shown upright because of
+      <p data-t="88">Two things worth knowing. Orientation lives in EXIF, so a photo that was shown upright because of
         an orientation tag may appear rotated once the tag is gone — the page warns when that tag is set,
         and browsers and viewers differ in how they handle it. And a file with no EXIF is not proof of
         nothing: a service may have stripped it on upload and kept a copy, and the pixels themselves can
         still identify a place. This page only reports what is in the file in front of it.</p>
-      <p>The file is read in this tab with <code>FileReader</code>, and the page makes no network requests:
+      <p data-t="89">The file is read in this tab with <code>FileReader</code>, and the page makes no network requests:
         nothing is uploaded, and the download is assembled in the browser. Nothing you drop is stored; the
-        Dark button keeps its own setting in this browser's local storage.</p>
+        Dark and language buttons keep their own settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Image &amp; Media">
-    <span class="mdv-tag">Also in Image &amp; Media</span>
-    <a href="./favicon-from-image.html">Favicon maker</a>
-    <a href="./image-compressor.html">Image compressor</a>
-    <a href="./image-converter.html">Image converter</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Image &amp; Media"}'>Also in Image &amp; Media</span>
+    <a href="./favicon-from-image.html" data-t="50">Favicon maker</a>
+    <a href="./image-compressor.html" data-t="51">Image compressor</a>
+    <a href="./image-converter.html" data-t="53">Image converter</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="90">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="91">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="92" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="93">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2339,6 +2452,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["EXIF Viewer and Remover — see what a photo leaks, then strip it — MDV","Read the camera, lens, timestamp and GPS hidden in a photo, then download a copy with the metadata removed and the pixels untouched. The file never leaves the device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Choose a photo to inspect","Camera make","Camera model","Orientation","Software","File changed","Artist","Copyright","Taken","Exposure","Aperture","ISO","Focal length","Lens","Lens make","Lens model","Body serial number","Camera owner","User comment","Maker note","Too large","{name} is {size}. This page reads up to {max}.","Could not read that","The browser stopped reading {name}.","Not a photo this page reads","{name} is not a JPEG, PNG or WebP. Those three keep their metadata in blocks this page can rewrite.","That file","colour profile","APP1 block","IPTC / Photoshop","comment","{name} block","timestamp","text chunk","File","Location inside","Metadata inside","Nothing to remove","Download without metadata","Nothing to strip","Latitude {lat}, longitude {lon}, about {alt} m up. That is a street, not a city: anyone with the file can put it on a map.","Latitude {lat}, longitude {lon}. That is a street, not a city: anyone with the file can put it on a map.","{size} the manufacturer never documented","Metadata","{carriers} — no EXIF directory to decode","none found","Blocks carrying data","Kept","{kept} — it changes how the colours look and names nobody","EXIF fields","{n} in all, including a {size} maker note","{n} in all","Written","{name} · {size} · {dropped} of metadata dropped","This photo is shown upright because of its orientation tag. Remove the metadata and some viewers will show it rotated; re-save it from an editor if that matters.","Either it never had any, or something stripped it already — which is not the same as it never having existed.","upright (1)","mirrored (2)","upside down (3)","mirrored, upside down (4)","mirrored, quarter turn (5)","quarter turn clockwise (6)","mirrored, quarter turn back (7)","quarter turn anticlockwise (8)","({n} value)","({n} values)","{n} field, none of them named ones","{n} fields, none of them named ones","Image & Media","2026-11-02"],"h":94,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Mira lo que lleva una foto —cámara, número de serie, hora, lugar— y descárgala sin ello.","En este dispositivo","Funciona sin conexión","Suelta un JPEG, PNG o WebP — hasta 30 MB","suelta una foto arriba","Esta foto dice dónde se tomó","Cómo funciona","Un archivo de foto es una secuencia de bloques: los píxeles y, junto a ellos, lo que la cámara o la aplicación anotó. Esta página lee esos bloques por sí misma —los segmentos APP de JPEG, los chunks de PNG, los chunks RIFF de WebP— y decodifica el EXIF que contienen como directorios TIFF, el formato que usan las cámaras desde los años noventa. Muestra los campos que importan (cámara, objetivo, exposición, la marca de tiempo original, el número de serie, la posición GPS) y cuenta el resto, incluida la nota del fabricante, el bloque privado donde los fabricantes guardan cosas que nunca documentaron.","\u003cstrong>Eliminar no es volver a guardar.\u003c/strong> El truco habitual —dibujar la foto en un canvas y exportarla— descarta los metadatos pero también recomprime cada píxel, de modo que el archivo empeora y suele pesar más. Esta página, en cambio, reescribe el contenedor y descarta solo los bloques que llevan metadatos: EXIF, XMP, IPTC y bloques de Photoshop, comentarios y los chunks de texto y de marca de tiempo de PNG. Los datos comprimidos de la imagen se copian byte a byte, de modo que el resultado es idéntico en píxeles a lo que soltaste. El perfil de color (ICC) se conserva, porque quitarlo cambia visiblemente los colores en una pantalla de gama amplia; no nombra a ninguna persona ni lugar.","Dos cosas que conviene saber. La orientación vive en EXIF, así que una foto que se veía derecha por una etiqueta de orientación puede aparecer girada cuando la etiqueta desaparece: la página avisa cuando esa etiqueta está presente, y los navegadores y visores la tratan de forma distinta. Y un archivo sin EXIF no prueba que no hubiera nada: un servicio puede haberlo eliminado al subirlo y haber conservado una copia, y los propios píxeles pueden seguir identificando un lugar. Esta página solo informa de lo que hay en el archivo que tiene delante.","El archivo se lee en esta pestaña con \u003ccode>FileReader\u003c/code>, y la página no hace ninguna petición de red: no se sube nada y la descarga se ensambla en el navegador. Nada de lo que sueltes se guarda; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Visor y eliminador de EXIF — mira lo que filtra una foto y luego bórralo — MDV","Lee la cámara, el objetivo, la marca de tiempo y el GPS ocultos en una foto y descarga una copia sin metadatos y con los píxeles intactos. El archivo nunca sale del dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elegir una foto para inspeccionar","Marca de la cámara","Modelo de la cámara","Orientación","Software","Archivo modificado","Artista","Copyright","Tomada","Exposición","Apertura","ISO","Distancia focal","Objetivo","Marca del objetivo","Modelo del objetivo","Número de serie del cuerpo","Propietario de la cámara","Comentario del usuario","Nota del fabricante","Demasiado grande","{name} pesa {size}. Esta página lee hasta {max}.","No se pudo leer","El navegador dejó de leer {name}.","No es una foto que esta página lea","{name} no es un JPEG, PNG ni WebP. Esos tres guardan sus metadatos en bloques que esta página puede reescribir.","Ese archivo","perfil de color","bloque APP1","IPTC / Photoshop","comentario","bloque {name}","marca de tiempo","chunk de texto","Archivo","Ubicación dentro","Metadatos dentro","Nada que eliminar","Descargar sin metadatos","Nada que quitar","Latitud {lat}, longitud {lon}, a unos {alt} m de altura. Eso es una calle, no una ciudad: cualquiera con el archivo puede ponerlo en un mapa.","Latitud {lat}, longitud {lon}. Eso es una calle, no una ciudad: cualquiera con el archivo puede ponerlo en un mapa.","{size} que el fabricante nunca documentó","Metadatos","{carriers} — sin directorio EXIF que decodificar","no se encontró nada","Bloques con datos","Conservado","{kept} — cambia el aspecto de los colores y no nombra a nadie","Campos EXIF","{n} en total, incluida una nota del fabricante de {size}","{n} en total","Escrito","{name} · {size} · {dropped} de metadatos eliminados","Esta foto se ve derecha por su etiqueta de orientación. Si quitas los metadatos, algunos visores la mostrarán girada; vuelve a guardarla desde un editor si eso importa.","O nunca tuvo ninguno, o algo ya los quitó, que no es lo mismo que no haber existido nunca.","derecha (1)","reflejada (2)","boca abajo (3)","reflejada, boca abajo (4)","reflejada, cuarto de giro (5)","cuarto de giro en sentido horario (6)","reflejada, cuarto de giro inverso (7)","cuarto de giro en sentido antihorario (8)","({n} valor)","({n} valores)","{n} campo, ninguno con nombre","{n} campos, ninguno con nombre","Imagen y multimedia",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Voyez ce que porte une photo — appareil, numéro de série, heure, lieu — et téléchargez-la sans.","Sur cet appareil","Fonctionne hors ligne","Déposez un JPEG, PNG ou WebP — jusqu’à 30 Mo","déposez une photo ci-dessus","Cette photo dit où elle a été prise","Comment ça marche","Un fichier photo est une suite de blocs : les pixels, et à côté tout ce que l’appareil ou l’application a noté. Cette page lit elle-même ces blocs — les segments APP de JPEG, les chunks de PNG, les chunks RIFF de WebP — et décode l’EXIF qu’ils contiennent comme des répertoires TIFF, le format que les appareils utilisent depuis les années 1990. Elle affiche les champs qui comptent (appareil, objectif, exposition, l’horodatage d’origine, le numéro de série, la position GPS) et compte le reste, y compris la note du fabricant, le bloc privé où les constructeurs rangent ce qu’ils n’ont jamais documenté.","\u003cstrong>Supprimer n’est pas réenregistrer.\u003c/strong> L’astuce habituelle — dessiner la photo sur un canvas et l’exporter — élimine les métadonnées mais recompresse aussi chaque pixel : le fichier se dégrade et grossit souvent. Cette page réécrit plutôt le conteneur et n’écarte que les blocs qui portent des métadonnées : EXIF, XMP, IPTC et blocs Photoshop, commentaires, et les chunks de texte et d’horodatage de PNG. Les données d’image compressées sont copiées octet par octet : le résultat est donc identique, pixel pour pixel, à ce que vous avez déposé. Le profil colorimétrique (ICC) est conservé, car le retirer change visiblement les couleurs sur un écran à large gamut ; il ne nomme aucune personne ni aucun lieu.","Deux choses à savoir. L’orientation se trouve dans l’EXIF : une photo affichée à l’endroit grâce à une balise d’orientation peut apparaître pivotée une fois la balise disparue — la page avertit quand cette balise est présente, et les navigateurs et visionneuses la traitent différemment. Et un fichier sans EXIF ne prouve pas qu’il n’y avait rien : un service a pu le retirer au téléversement et en garder une copie, et les pixels eux-mêmes peuvent encore identifier un lieu. Cette page ne signale que ce qui se trouve dans le fichier qu’elle a sous les yeux.","Le fichier est lu dans cet onglet avec \u003ccode>FileReader\u003c/code>, et la page ne fait aucune requête réseau : rien n’est envoyé, et le téléchargement est assemblé dans le navigateur. Rien de ce que vous déposez n’est stocké ; les boutons Sombre et Langue gardent leur propre réglage dans le stockage local de ce navigateur.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Visionneuse et suppresseur d’EXIF — voyez ce qu’une photo divulgue, puis effacez-le — MDV","Lisez l’appareil, l’objectif, l’horodatage et le GPS cachés dans une photo, puis téléchargez une copie sans métadonnées et aux pixels intacts. Le fichier ne quitte jamais l’appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisir une photo à inspecter","Marque de l’appareil","Modèle de l’appareil","Orientation","Logiciel","Fichier modifié","Artiste","Copyright","Prise le","Exposition","Ouverture","ISO","Focale","Objectif","Marque de l’objectif","Modèle de l’objectif","Numéro de série du boîtier","Propriétaire de l’appareil","Commentaire de l’utilisateur","Note du fabricant","Trop volumineux","{name} fait {size}. Cette page lit jusqu’à {max}.","Lecture impossible","Le navigateur a cessé de lire {name}.","Pas une photo que cette page lit","{name} n’est ni un JPEG, ni un PNG, ni un WebP. Ces trois formats gardent leurs métadonnées dans des blocs que cette page sait réécrire.","Ce fichier","profil colorimétrique","bloc APP1","IPTC / Photoshop","commentaire","bloc {name}","horodatage","chunk de texte","Fichier","Position à l’intérieur","Métadonnées à l’intérieur","Rien à supprimer","Télécharger sans métadonnées","Rien à retirer","Latitude {lat}, longitude {lon}, environ {alt} m d’altitude. C’est une rue, pas une ville : quiconque a le fichier peut la placer sur une carte.","Latitude {lat}, longitude {lon}. C’est une rue, pas une ville : quiconque a le fichier peut la placer sur une carte.","{size} que le fabricant n’a jamais documentés","Métadonnées","{carriers} — aucun répertoire EXIF à décoder","aucune trouvée","Blocs porteurs de données","Conservé","{kept} — il change l’aspect des couleurs et ne nomme personne","Champs EXIF","{n} au total, dont une note du fabricant de {size}","{n} au total","Écrit","{name} · {size} · {dropped} de métadonnées écartées","Cette photo s’affiche à l’endroit grâce à sa balise d’orientation. Sans les métadonnées, certaines visionneuses l’afficheront pivotée ; réenregistrez-la depuis un éditeur si cela compte.","Soit elle n’en a jamais eu, soit quelque chose les a déjà retirées — ce qui n’est pas la même chose que ne jamais avoir existé.","à l’endroit (1)","en miroir (2)","à l’envers (3)","en miroir, à l’envers (4)","en miroir, quart de tour (5)","quart de tour horaire (6)","en miroir, quart de tour inverse (7)","quart de tour antihoraire (8)","({n} valeur)","({n} valeurs)","{n} champ, aucun nommé","{n} champs, aucun nommé","Image et médias",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Sieh, was ein Foto trägt — Kamera, Seriennummer, Zeit, Ort — und lade es ohne herunter.","Läuft auf diesem Gerät","Funktioniert offline","JPEG, PNG oder WebP ablegen — bis 30 MB","lege oben ein Foto ab","Dieses Foto verrät, wo es aufgenommen wurde","So funktioniert es","Eine Fotodatei ist eine Folge von Blöcken: die Pixel und daneben alles, was Kamera oder App notiert haben. Diese Seite liest diese Blöcke selbst — die APP-Segmente von JPEG, die Chunks von PNG, die RIFF-Chunks von WebP — und dekodiert das darin enthaltene EXIF als TIFF-Verzeichnisse, das Format, das Kameras seit den 1990er Jahren verwenden. Sie zeigt die Felder, die zählen (Kamera, Objektiv, Belichtung, den ursprünglichen Zeitstempel, die Seriennummer, die GPS-Position) und zählt den Rest, einschließlich der Herstellernotiz, des privaten Blocks, in dem Hersteller Dinge ablegen, die sie nie dokumentiert haben.","\u003cstrong>Entfernen ist nicht Neuspeichern.\u003c/strong> Der übliche Trick — das Foto auf ein Canvas zu zeichnen und zu exportieren — wirft die Metadaten weg, komprimiert aber auch jedes Pixel neu, sodass die Datei schlechter und oft größer wird. Diese Seite schreibt stattdessen den Container um und lässt nur die Blöcke weg, die Metadaten tragen: EXIF, XMP, IPTC und Photoshop-Blöcke, Kommentare sowie die Text- und Zeitstempel-Chunks von PNG. Die komprimierten Bilddaten werden Byte für Byte übernommen, sodass das Ergebnis pixelidentisch mit dem ist, was du abgelegt hast. Das Farbprofil (ICC) bleibt erhalten, weil sein Entfernen die Farben auf einem Weitgamut-Bildschirm sichtbar verändert; es nennt weder Person noch Ort.","Zwei Dinge, die man wissen sollte. Die Ausrichtung steckt im EXIF, daher kann ein Foto, das wegen eines Orientierungs-Tags aufrecht angezeigt wurde, gedreht erscheinen, sobald das Tag fehlt — die Seite warnt, wenn dieses Tag gesetzt ist, und Browser und Betrachter gehen unterschiedlich damit um. Und eine Datei ohne EXIF beweist nicht, dass nichts da war: Ein Dienst kann es beim Hochladen entfernt und eine Kopie behalten haben, und die Pixel selbst können noch einen Ort verraten. Diese Seite meldet nur, was in der Datei vor ihr steht.","Die Datei wird in diesem Tab mit \u003ccode>FileReader\u003c/code> gelesen, und die Seite stellt keine Netzwerkanfragen: Nichts wird hochgeladen, und der Download wird im Browser zusammengesetzt. Nichts, was du ablegst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","EXIF-Betrachter und -Entferner — sieh, was ein Foto verrät, und entferne es dann — MDV","Lies Kamera, Objektiv, Zeitstempel und GPS, die in einem Foto versteckt sind, und lade eine Kopie ohne Metadaten und mit unveränderten Pixeln herunter. Die Datei verlässt das Gerät nie.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Foto zum Prüfen wählen","Kamerahersteller","Kameramodell","Ausrichtung","Software","Datei geändert","Künstler","Copyright","Aufgenommen","Belichtung","Blende","ISO","Brennweite","Objektiv","Objektivhersteller","Objektivmodell","Seriennummer des Gehäuses","Kamerabesitzer","Benutzerkommentar","Herstellernotiz","Zu groß","{name} ist {size} groß. Diese Seite liest bis {max}.","Nicht lesbar","Der Browser hat das Lesen von {name} abgebrochen.","Kein Foto, das diese Seite liest","{name} ist weder JPEG noch PNG noch WebP. Diese drei halten ihre Metadaten in Blöcken, die diese Seite umschreiben kann.","Diese Datei","Farbprofil","APP1-Block","IPTC / Photoshop","Kommentar","{name}-Block","Zeitstempel","Text-Chunk","Datei","Standort enthalten","Metadaten enthalten","Nichts zu entfernen","Ohne Metadaten herunterladen","Nichts zu entfernen","Breitengrad {lat}, Längengrad {lon}, etwa {alt} m hoch. Das ist eine Straße, keine Stadt: Jeder mit der Datei kann sie auf eine Karte legen.","Breitengrad {lat}, Längengrad {lon}. Das ist eine Straße, keine Stadt: Jeder mit der Datei kann sie auf eine Karte legen.","{size}, die der Hersteller nie dokumentiert hat","Metadaten","{carriers} — kein EXIF-Verzeichnis zum Dekodieren","keine gefunden","Blöcke mit Daten","Behalten","{kept} — es verändert, wie die Farben aussehen, und nennt niemanden","EXIF-Felder","{n} insgesamt, darunter eine Herstellernotiz mit {size}","{n} insgesamt","Geschrieben","{name} · {size} · {dropped} Metadaten entfernt","Dieses Foto wird wegen seines Orientierungs-Tags aufrecht angezeigt. Ohne Metadaten zeigen es manche Betrachter gedreht; speichere es in einem Editor neu, wenn das wichtig ist.","Entweder hatte es nie welche, oder etwas hat sie schon entfernt — was nicht dasselbe ist, wie dass es sie nie gab.","aufrecht (1)","gespiegelt (2)","auf dem Kopf (3)","gespiegelt, auf dem Kopf (4)","gespiegelt, Vierteldrehung (5)","Vierteldrehung im Uhrzeigersinn (6)","gespiegelt, Vierteldrehung zurück (7)","Vierteldrehung gegen den Uhrzeigersinn (8)","({n} Wert)","({n} Werte)","{n} Feld, keines davon benannt","{n} Felder, keines davon benannt","Bild und Medien",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Guarda cosa porta con sé una foto — fotocamera, numero di serie, ora, luogo — e scaricala senza.","Su questo dispositivo","Funziona offline","Trascina un JPEG, PNG o WebP — fino a 30 MB","trascina una foto qui sopra","Questa foto dice dove è stata scattata","Come funziona","Un file fotografico è una sequenza di blocchi: i pixel e, accanto, ciò che la fotocamera o l’app ha annotato. Questa pagina legge da sé quei blocchi — i segmenti APP di JPEG, i chunk di PNG, i chunk RIFF di WebP — e decodifica l’EXIF che contengono come directory TIFF, il formato che le fotocamere usano dagli anni Novanta. Mostra i campi che interessano (fotocamera, obiettivo, esposizione, il timestamp originale, il numero di serie, la posizione GPS) e conta il resto, compresa la nota del produttore, il blocco privato in cui i costruttori tengono ciò che non hanno mai documentato.","\u003cstrong>Rimuovere non è risalvare.\u003c/strong> Il trucco solito — disegnare la foto su un canvas ed esportarla — elimina i metadati ma ricomprime anche ogni pixel, quindi il file peggiora e spesso diventa più grande. Questa pagina invece riscrive il contenitore ed elimina solo i blocchi che portano metadati: EXIF, XMP, IPTC e blocchi Photoshop, commenti, e i chunk di testo e di timestamp di PNG. I dati compressi dell’immagine vengono copiati byte per byte, quindi il risultato è identico nei pixel a ciò che hai trascinato. Il profilo colore (ICC) viene mantenuto, perché eliminarlo cambia visibilmente i colori su uno schermo a gamma estesa; non nomina nessuna persona né luogo.","Due cose da sapere. L’orientamento vive nell’EXIF, quindi una foto mostrata in verticale grazie a un tag di orientamento può apparire ruotata una volta tolto il tag — la pagina avvisa quando quel tag è impostato, e browser e visualizzatori lo gestiscono in modo diverso. E un file senza EXIF non prova che non ci fosse nulla: un servizio può averlo rimosso al caricamento e averne tenuto una copia, e i pixel stessi possono ancora identificare un luogo. Questa pagina riferisce solo ciò che c’è nel file che ha davanti.","Il file viene letto in questa scheda con \u003ccode>FileReader\u003c/code>, e la pagina non fa richieste di rete: non viene caricato nulla e il download è assemblato nel browser. Nulla di ciò che trascini viene memorizzato; i pulsanti Scuro e Lingua mantengono la propria impostazione nell’archivio locale di questo browser.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Visualizzatore e rimozione EXIF — guarda cosa rivela una foto, poi eliminalo — MDV","Leggi fotocamera, obiettivo, timestamp e GPS nascosti in una foto, poi scarica una copia senza metadati e con i pixel intatti. Il file non lascia mai il dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli una foto da ispezionare","Marca fotocamera","Modello fotocamera","Orientamento","Software","File modificato","Autore","Copyright","Scattata","Esposizione","Apertura","ISO","Lunghezza focale","Obiettivo","Marca obiettivo","Modello obiettivo","Numero di serie del corpo","Proprietario fotocamera","Commento utente","Nota del produttore","Troppo grande","{name} pesa {size}. Questa pagina legge fino a {max}.","Impossibile leggere","Il browser ha smesso di leggere {name}.","Non è una foto che questa pagina legge","{name} non è un JPEG, PNG o WebP. Questi tre tengono i metadati in blocchi che questa pagina può riscrivere.","Quel file","profilo colore","blocco APP1","IPTC / Photoshop","commento","blocco {name}","timestamp","chunk di testo","File","Posizione presente","Metadati presenti","Niente da rimuovere","Scarica senza metadati","Niente da togliere","Latitudine {lat}, longitudine {lon}, a circa {alt} m di altezza. È una strada, non una città: chiunque abbia il file può metterla su una mappa.","Latitudine {lat}, longitudine {lon}. È una strada, non una città: chiunque abbia il file può metterla su una mappa.","{size} che il produttore non ha mai documentato","Metadati","{carriers} — nessuna directory EXIF da decodificare","nessuno trovato","Blocchi con dati","Mantenuto","{kept} — cambia l’aspetto dei colori e non nomina nessuno","Campi EXIF","{n} in tutto, compresa una nota del produttore da {size}","{n} in tutto","Scritto","{name} · {size} · {dropped} di metadati eliminati","Questa foto è mostrata in verticale grazie al suo tag di orientamento. Senza i metadati alcuni visualizzatori la mostreranno ruotata; risalvala da un editor se è importante.","O non ne ha mai avuti, o qualcosa li ha già tolti — il che non è lo stesso che non essere mai esistiti.","dritta (1)","specchiata (2)","capovolta (3)","specchiata, capovolta (4)","specchiata, quarto di giro (5)","quarto di giro orario (6)","specchiata, quarto di giro inverso (7)","quarto di giro antiorario (8)","({n} valore)","({n} valori)","{n} campo, nessuno con nome","{n} campi, nessuno con nome","Immagini e media",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Veja o que uma foto carrega — câmera, número de série, hora, lugar — e baixe-a sem isso.","Neste dispositivo","Funciona offline","Solte um JPEG, PNG ou WebP — até 30 MB","solte uma foto acima","Esta foto diz onde foi tirada","Como funciona","Um arquivo de foto é uma sequência de blocos: os pixels e, ao lado deles, o que a câmera ou o aplicativo anotou. Esta página lê esses blocos por conta própria — os segmentos APP do JPEG, os chunks do PNG, os chunks RIFF do WebP — e decodifica o EXIF dentro deles como diretórios TIFF, o formato que as câmeras usam desde os anos 1990. Ela mostra os campos que importam (câmera, lente, exposição, o carimbo de data e hora original, o número de série, a posição GPS) e conta o resto, incluindo a nota do fabricante, o bloco privado onde os fabricantes guardam coisas que nunca documentaram.","\u003cstrong>Remover não é salvar de novo.\u003c/strong> O truque comum — desenhar a foto em um canvas e exportá-la — descarta os metadados, mas também recomprime cada pixel, então o arquivo piora e muitas vezes fica maior. Esta página, em vez disso, reescreve o contêiner e descarta apenas os blocos que carregam metadados: EXIF, XMP, IPTC e blocos do Photoshop, comentários e os chunks de texto e de carimbo de data e hora do PNG. Os dados comprimidos da imagem são copiados byte a byte, então o resultado é idêntico em pixels ao que você soltou. O perfil de cor (ICC) é mantido, porque removê-lo muda visivelmente as cores em uma tela de gama ampla; ele não nomeia nenhuma pessoa nem lugar.","Duas coisas que vale saber. A orientação vive no EXIF, então uma foto exibida na vertical por causa de uma etiqueta de orientação pode aparecer girada quando a etiqueta some — a página avisa quando essa etiqueta está definida, e navegadores e visualizadores a tratam de formas diferentes. E um arquivo sem EXIF não prova que não havia nada: um serviço pode tê-lo removido no envio e guardado uma cópia, e os próprios pixels ainda podem identificar um lugar. Esta página só informa o que está no arquivo à sua frente.","O arquivo é lido nesta aba com \u003ccode>FileReader\u003c/code>, e a página não faz nenhuma requisição de rede: nada é enviado, e o download é montado no navegador. Nada do que você solta é armazenado; os botões Escuro e Idioma guardam sua própria configuração no armazenamento local deste navegador.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Visualizador e removedor de EXIF — veja o que uma foto vaza e depois apague — MDV","Leia a câmera, a lente, o carimbo de data e hora e o GPS escondidos em uma foto e baixe uma cópia sem metadados e com os pixels intactos. O arquivo nunca sai do dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolher uma foto para inspecionar","Marca da câmera","Modelo da câmera","Orientação","Software","Arquivo alterado","Artista","Copyright","Tirada em","Exposição","Abertura","ISO","Distância focal","Lente","Marca da lente","Modelo da lente","Número de série do corpo","Proprietário da câmera","Comentário do usuário","Nota do fabricante","Grande demais","{name} tem {size}. Esta página lê até {max}.","Não foi possível ler","O navegador parou de ler {name}.","Não é uma foto que esta página lê","{name} não é um JPEG, PNG nem WebP. Esses três guardam seus metadados em blocos que esta página consegue reescrever.","Esse arquivo","perfil de cor","bloco APP1","IPTC / Photoshop","comentário","bloco {name}","carimbo de data e hora","chunk de texto","Arquivo","Localização dentro","Metadados dentro","Nada para remover","Baixar sem metadados","Nada para tirar","Latitude {lat}, longitude {lon}, a cerca de {alt} m de altitude. Isso é uma rua, não uma cidade: qualquer pessoa com o arquivo pode colocá-la num mapa.","Latitude {lat}, longitude {lon}. Isso é uma rua, não uma cidade: qualquer pessoa com o arquivo pode colocá-la num mapa.","{size} que o fabricante nunca documentou","Metadados","{carriers} — sem diretório EXIF para decodificar","nada encontrado","Blocos com dados","Mantido","{kept} — muda a aparência das cores e não nomeia ninguém","Campos EXIF","{n} no total, incluindo uma nota do fabricante de {size}","{n} no total","Gravado","{name} · {size} · {dropped} de metadados descartados","Esta foto é exibida na vertical por causa da etiqueta de orientação. Sem os metadados, alguns visualizadores a mostrarão girada; salve-a de novo em um editor se isso importar.","Ou ela nunca teve nenhum, ou algo já os removeu — o que não é o mesmo que nunca ter existido.","em pé (1)","espelhada (2)","de cabeça para baixo (3)","espelhada, de cabeça para baixo (4)","espelhada, quarto de volta (5)","quarto de volta no sentido horário (6)","espelhada, quarto de volta inverso (7)","quarto de volta no sentido anti-horário (8)","({n} valor)","({n} valores)","{n} campo, nenhum com nome","{n} campos, nenhum com nome","Imagem e mídia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","写真が持っている情報(カメラ、シリアル番号、時刻、場所)を確認し、それを取り除いてダウンロードします。","この端末で動作","オフラインで動作","JPEG、PNG、WebP をドロップ — 30 MB まで","上に写真をドロップ","この写真には撮影場所が記録されています","仕組み","写真ファイルはブロックの連なりです。ピクセルと、その横にカメラやアプリが書き残したものがあります。このページはそれらのブロック(JPEG の APP セグメント、PNG のチャンク、WebP の RIFF チャンク)を自分で読み、その中の EXIF を、カメラが 1990 年代から使っている形式である TIFF ディレクトリとしてデコードします。注目される項目(カメラ、レンズ、露出、元のタイムスタンプ、シリアル番号、GPS 位置)を表示し、残りは数えます。これにはメーカーノートも含まれ、メーカーが文書化していない情報を入れる非公開ブロックです。","\u003cstrong>削除は再保存ではありません。\u003c/strong>よくある方法(写真をキャンバスに描いて書き出す)はメタデータを捨てますが、すべてのピクセルを再圧縮してしまうため、ファイルが劣化し、多くの場合は大きくなります。このページは代わりにコンテナを書き換え、メタデータを持つブロックだけを取り除きます。対象は EXIF、XMP、IPTC、Photoshop のブロック、コメント、そして PNG のテキストとタイムスタンプのチャンクです。圧縮された画像データはバイト単位でそのままコピーされるため、結果はドロップしたものとピクセルが完全に同一です。カラープロファイル(ICC)は残します。外すと広色域ディスプレイで色が目に見えて変わるためで、人名や場所は含まれません。","知っておくべきことが 2 つあります。向きは EXIF に入っているため、向きタグのおかげで正しく表示されていた写真は、タグがなくなると回転して見えることがあります。このタグが設定されている場合、ページは警告しますが、ブラウザーやビューアーによって扱いは異なります。また、EXIF がないファイルは「何もなかった」証拠にはなりません。サービスがアップロード時に削除して控えを残している可能性があり、ピクセル自体から場所が特定できることもあります。このページは、目の前のファイルに入っているものだけを報告します。","ファイルは \u003ccode>FileReader\u003c/code> でこのタブ内で読み取られ、ページはネットワークリクエストを一切行いません。何もアップロードされず、ダウンロードはブラウザー内で組み立てられます。ドロップした内容は保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","EXIF ビューアー/リムーバー — 写真から漏れる情報を確認して取り除く — MDV","写真に隠れたカメラ、レンズ、タイムスタンプ、GPS を読み取り、メタデータを取り除いてピクセルはそのままのコピーをダウンロードします。ファイルは端末の外に出ません。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","調べる写真を選択","カメラのメーカー","カメラのモデル","向き","ソフトウェア","ファイルの変更日時","作者","著作権","撮影日時","露出","絞り","ISO","焦点距離","レンズ","レンズのメーカー","レンズのモデル","ボディのシリアル番号","カメラの所有者","ユーザーコメント","メーカーノート","大きすぎます","{name} は {size} です。このページが読み取れるのは {max} までです。","読み取れませんでした","ブラウザーが {name} の読み取りを中断しました。","このページが読み取れる写真ではありません","{name} は JPEG、PNG、WebP のいずれでもありません。この 3 つは、このページが書き換えられるブロックにメタデータを保持します。","そのファイル","カラープロファイル","APP1 ブロック","IPTC / Photoshop","コメント","{name} ブロック","タイムスタンプ","テキストチャンク","ファイル","位置情報あり","メタデータあり","取り除くものなし","メタデータなしでダウンロード","取り除くものなし","緯度 {lat}、経度 {lon}、高度約 {alt} m。これは都市ではなく通りの単位です。ファイルがあれば誰でも地図に表示できます。","緯度 {lat}、経度 {lon}。これは都市ではなく通りの単位です。ファイルがあれば誰でも地図に表示できます。","メーカーが文書化していない {size}","メタデータ","{carriers} — デコードする EXIF ディレクトリはありません","見つかりません","データを持つブロック","保持","{kept} — 色の見え方を変えますが、人名は含みません","EXIF フィールド","合計 {n} 件(うち {size} のメーカーノート)","合計 {n} 件","書き出し","{name} · {size} · メタデータ {dropped} を削除","この写真は向きタグのおかげで正しく表示されています。メタデータを取り除くと、回転して表示するビューアーがあります。問題がある場合は、エディターで保存し直してください。","もともと何もなかったか、すでに何かが取り除いたかのどちらかです。これは、最初から存在しなかったことと同じではありません。","正位置 (1)","左右反転 (2)","上下逆 (3)","左右反転、上下逆 (4)","左右反転、90 度回転 (5)","時計回りに 90 度 (6)","左右反転、逆に 90 度回転 (7)","反時計回りに 90 度 (8)","({n} 個の値)","({n} 個の値)","{n} 件のフィールド、名前付きのものはなし","{n} 件のフィールド、名前付きのものはなし","画像とメディア",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","사진이 담고 있는 정보(카메라, 일련번호, 시간, 장소)를 확인하고, 그것 없이 내려받으세요.","이 기기에서 실행","오프라인 작동","JPEG, PNG, WebP를 놓으세요 — 최대 30 MB","위에 사진을 놓으세요","이 사진에는 촬영 장소가 기록되어 있습니다","작동 방식","사진 파일은 블록의 연속입니다. 픽셀과 그 옆에 카메라나 앱이 적어 둔 것이 있습니다. 이 페이지는 그 블록들(JPEG의 APP 세그먼트, PNG 청크, WebP의 RIFF 청크)을 직접 읽고, 안에 든 EXIF를 카메라가 1990년대부터 써 온 형식인 TIFF 디렉터리로 디코딩합니다. 중요한 항목(카메라, 렌즈, 노출, 원래 타임스탬프, 일련번호, GPS 위치)을 보여 주고 나머지는 세어 줍니다. 여기에는 제조사가 문서화하지 않은 것을 보관하는 비공개 블록인 제조사 노트도 포함됩니다.","\u003cstrong>제거는 다시 저장하는 것이 아닙니다.\u003c/strong> 흔한 방법(사진을 캔버스에 그려 내보내기)은 메타데이터를 버리지만 모든 픽셀을 다시 압축하므로 파일이 나빠지고 종종 더 커집니다. 이 페이지는 대신 컨테이너를 다시 쓰고 메타데이터를 담은 블록만 버립니다. EXIF, XMP, IPTC, Photoshop 블록, 주석, PNG의 텍스트 및 타임스탬프 청크가 대상입니다. 압축된 이미지 데이터는 바이트 단위로 그대로 복사되므로 결과는 놓은 파일과 픽셀이 동일합니다. 색 프로파일(ICC)은 유지합니다. 제거하면 광색역 화면에서 색이 눈에 띄게 바뀌기 때문이며, 사람이나 장소를 나타내지 않습니다.","알아 둘 점이 두 가지 있습니다. 방향은 EXIF에 있으므로, 방향 태그 덕분에 똑바로 보이던 사진은 태그가 없어지면 회전되어 보일 수 있습니다. 이 태그가 설정되어 있으면 페이지가 경고하며, 브라우저와 뷰어마다 처리 방식이 다릅니다. 또한 EXIF가 없는 파일이 아무것도 없었다는 증거는 아닙니다. 서비스가 업로드할 때 지우고 사본을 보관했을 수 있고, 픽셀 자체로도 장소를 알아낼 수 있습니다. 이 페이지는 눈앞의 파일에 들어 있는 것만 알려 줍니다.","파일은 이 탭에서 \u003ccode>FileReader\u003c/code>로 읽으며, 페이지는 네트워크 요청을 하지 않습니다. 아무것도 업로드되지 않고 다운로드는 브라우저 안에서 만들어집니다. 놓은 내용은 저장되지 않습니다. 다크와 언어 버튼은 각자의 설정을 이 브라우저의 로컬 저장소에 기억합니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","EXIF 뷰어 및 제거기 — 사진이 흘리는 정보를 확인하고 지우세요 — MDV","사진에 숨은 카메라, 렌즈, 타임스탬프, GPS를 읽고, 메타데이터를 제거하고 픽셀은 그대로인 사본을 내려받습니다. 파일은 기기 밖으로 나가지 않습니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","검사할 사진 선택","카메라 제조사","카메라 모델","방향","소프트웨어","파일 수정","작성자","저작권","촬영","노출","조리개","ISO","초점 거리","렌즈","렌즈 제조사","렌즈 모델","바디 일련번호","카메라 소유자","사용자 주석","제조사 노트","너무 큽니다","{name}은(는) {size}입니다. 이 페이지는 {max}까지 읽습니다.","읽을 수 없습니다","브라우저가 {name} 읽기를 중단했습니다.","이 페이지가 읽을 수 있는 사진이 아닙니다","{name}은(는) JPEG, PNG, WebP가 아닙니다. 이 세 형식은 이 페이지가 다시 쓸 수 있는 블록에 메타데이터를 보관합니다.","그 파일","색 프로파일","APP1 블록","IPTC / Photoshop","주석","{name} 블록","타임스탬프","텍스트 청크","파일","위치 정보 있음","메타데이터 있음","제거할 것 없음","메타데이터 없이 다운로드","제거할 것 없음","위도 {lat}, 경도 {lon}, 고도 약 {alt} m. 이것은 도시가 아니라 거리 단위입니다. 파일이 있는 사람은 누구나 지도에 표시할 수 있습니다.","위도 {lat}, 경도 {lon}. 이것은 도시가 아니라 거리 단위입니다. 파일이 있는 사람은 누구나 지도에 표시할 수 있습니다.","제조사가 문서화하지 않은 {size}","메타데이터","{carriers} — 디코딩할 EXIF 디렉터리 없음","찾을 수 없음","데이터를 담은 블록","유지","{kept} — 색의 보이는 모습을 바꾸지만 누구도 지칭하지 않습니다","EXIF 필드","총 {n}개, 그중 {size}의 제조사 노트 포함","총 {n}개","기록","{name} · {size} · 메타데이터 {dropped} 제거","이 사진은 방향 태그 덕분에 똑바로 표시됩니다. 메타데이터를 제거하면 일부 뷰어에서 회전되어 보일 수 있습니다. 문제가 된다면 편집기에서 다시 저장하세요.","원래 없었거나 이미 무언가가 제거한 것입니다. 이는 처음부터 존재하지 않았다는 것과 같지 않습니다.","정상 (1)","좌우 반전 (2)","위아래 뒤집힘 (3)","좌우 반전, 위아래 뒤집힘 (4)","좌우 반전, 90도 회전 (5)","시계 방향 90도 (6)","좌우 반전, 반대로 90도 회전 (7)","시계 반대 방향 90도 (8)","(값 {n}개)","(값 {n}개)","필드 {n}개, 이름 있는 것은 없음","필드 {n}개, 이름 있는 것은 없음","이미지와 미디어",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","查看照片携带的信息——相机、序列号、时间、地点——并下载去除这些信息的副本。","在此设备上运行","可离线使用","拖入 JPEG、PNG 或 WebP — 最大 30 MB","请在上方拖入照片","这张照片记录了拍摄地点","工作原理","照片文件是一系列数据块:像素,以及相机或应用写在旁边的内容。本页自行读取这些数据块——JPEG 的 APP 段、PNG 的数据块、WebP 的 RIFF 数据块——并把其中的 EXIF 按 TIFF 目录解码,这是相机自 1990 年代起使用的格式。它显示人们关心的字段(相机、镜头、曝光、原始时间戳、序列号、GPS 位置),并统计其余部分,包括厂商备注,即厂商存放未公开内容的私有块。","\u003cstrong>清除不是重新保存。\u003c/strong>常见的做法——把照片画到画布上再导出——会丢掉元数据,但也会重新压缩每个像素,使文件变差,而且常常变大。本页则是重写容器,只丢弃携带元数据的块:EXIF、XMP、IPTC 和 Photoshop 块、注释,以及 PNG 的文本和时间戳数据块。压缩后的图像数据逐字节复制,所以结果在像素上与你拖入的文件完全相同。颜色配置文件(ICC)会保留,因为去掉它会让广色域屏幕上的颜色明显改变;它不涉及任何人或地点。","有两点值得了解。方向信息保存在 EXIF 中,因此原本靠方向标签才显示为正向的照片,标签去掉后可能显示为旋转状态——设置了该标签时页面会发出警告,而且浏览器和查看器的处理方式各不相同。另外,没有 EXIF 的文件并不能证明从来没有:服务可能在上传时去掉了它并保留了副本,而像素本身仍可能暴露地点。本页只报告眼前这个文件里有什么。","文件在此标签页中用 \u003ccode>FileReader\u003c/code> 读取,页面不发出任何网络请求:不会上传任何内容,下载文件是在浏览器中生成的。你拖入的内容不会被存储;深色和语言按钮各自把设置记在此浏览器的本地存储中。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","EXIF 查看与清除 — 看看照片泄露了什么,然后去除 — MDV","读取照片中隐藏的相机、镜头、时间戳和 GPS，然后下载去除元数据且像素不变的副本。文件不会离开设备。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择要检查的照片","相机品牌","相机型号","方向","软件","文件修改时间","作者","版权","拍摄时间","曝光","光圈","ISO","焦距","镜头","镜头品牌","镜头型号","机身序列号","相机所有者","用户注释","厂商备注","文件过大","{name} 为 {size}。本页最多读取 {max}。","无法读取","浏览器停止了对 {name} 的读取。","不是本页能读取的照片","{name} 不是 JPEG、PNG 或 WebP。这三种格式把元数据保存在本页可以重写的块中。","该文件","颜色配置文件","APP1 块","IPTC / Photoshop","注释","{name} 块","时间戳","文本数据块","文件","含位置信息","含元数据","没有可清除的内容","下载无元数据版本","没有可清除的内容","纬度 {lat},经度 {lon},海拔约 {alt} m。这精确到街道,而不是城市:拿到文件的人都可以把它标在地图上。","纬度 {lat},经度 {lon}。这精确到街道,而不是城市:拿到文件的人都可以把它标在地图上。","厂商从未公开的 {size}","元数据","{carriers} — 没有可解码的 EXIF 目录","未发现","携带数据的块","保留","{kept} — 它影响颜色的显示效果,不涉及任何人","EXIF 字段","共 {n} 个,其中包括 {size} 的厂商备注","共 {n} 个","已写出","{name} · {size} · 已丢弃 {dropped} 元数据","这张照片靠方向标签才显示为正向。去掉元数据后,部分查看器会将其显示为旋转状态;如果在意,请用编辑器重新保存。","要么它从来没有,要么已被某处清除——这与它从未存在过并不相同。","正向 (1)","镜像 (2)","上下颠倒 (3)","镜像并上下颠倒 (4)","镜像并旋转四分之一圈 (5)","顺时针旋转四分之一圈 (6)","镜像并反向旋转四分之一圈 (7)","逆时针旋转四分之一圈 (8)","({n} 个值)","({n} 个值)","{n} 个字段,没有一个有名称","{n} 个字段,没有一个有名称","图像与媒体",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2412,11 +2625,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   /* ---------- pure: decode EXIF (TIFF directories) ---------- */
 
   var TAGS = {
-    0x010F: "Camera make", 0x0110: "Camera model", 0x0112: "Orientation", 0x0131: "Software",
-    0x0132: "File changed", 0x013B: "Artist", 0x8298: "Copyright", 0x9003: "Taken",
-    0x829A: "Exposure", 0x829D: "Aperture", 0x8827: "ISO", 0x920A: "Focal length",
-    0xA432: "Lens", 0xA433: "Lens make", 0xA434: "Lens model", 0xA431: "Body serial number",
-    0xA430: "Camera owner", 0x9286: "User comment", 0x927C: "Maker note"
+    0x010F: trk("Camera make"), 0x0110: trk("Camera model"), 0x0112: trk("Orientation"), 0x0131: trk("Software"),
+    0x0132: trk("File changed"), 0x013B: trk("Artist"), 0x8298: trk("Copyright"), 0x9003: trk("Taken"),
+    0x829A: trk("Exposure"), 0x829D: trk("Aperture"), 0x8827: trk("ISO"), 0x920A: trk("Focal length"),
+    0xA432: trk("Lens"), 0xA433: trk("Lens make"), 0xA434: trk("Lens model"), 0xA431: trk("Body serial number"),
+    0xA430: trk("Camera owner"), 0x9286: trk("User comment"), 0x927C: trk("Maker note")
   };
   var GPS_TAGS = { 1: "latRef", 2: "lat", 3: "lonRef", 4: "lon", 5: "altRef", 6: "alt", 7: "time", 29: "date" };
   var SIZES = { 1: 1, 2: 1, 3: 2, 4: 4, 5: 8, 6: 1, 7: 1, 8: 2, 9: 4, 10: 8, 11: 4, 12: 8 };
@@ -2491,7 +2704,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       if (tag === 0x920A) return round(top / bottom, 1) + " mm";                             // focal length
       return round(top / bottom, 4);
     }
-    return "(" + n + " values)";
+    return { n: n };
   }
   function round(x, places) { var f = Math.pow(10, places); return Math.round(x * f) / f; }
   function degrees(parts, ref) {
@@ -2551,26 +2764,37 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var drop = $("drop"), file = $("file"), empty = $("empty"), err = $("err"), errtitle = $("errtitle"), errmsg = $("errmsg");
   var ok = $("ok"), verdict = $("verdict"), facts = $("facts"), meta = $("meta"), said = $("said");
   var gpsWarn = $("gpsWarn"), gpsMsg = $("gpsMsg"), stripBtn = $("strip");
-  var current = null;
+  var current = null;      // the file being shown: { file, buf, kind, info, exif, carriers, kept, gps, hasGps }
+  var written = [];        // one entry per download made from it
+  var failed = null;       // { title, msg, vars } while the error is on screen
+  var view = "empty";
 
   function state(which) {
+    view = which;
     empty.hidden = which !== "empty";
     err.hidden = which !== "error";
     ok.hidden = which !== "ok";
   }
-  function bad(title, message) { errtitle.textContent = title; errmsg.textContent = message; state("error"); }
+  function paintErr() {
+    if (!failed) return;
+    errtitle.textContent = tr(failed.title);
+    errmsg.textContent = tr(failed.msg, failed.vars);
+  }
+  function bad(title, message, vars) { failed = { title: title, msg: message, vars: vars }; paintErr(); state("error"); }
   function row(list, term, val) {
     var dt = document.createElement("dt"); dt.textContent = term;
     var dd = document.createElement("dd"); dd.textContent = val;
     list.appendChild(dt); list.appendChild(dd);
   }
+  // a carrier is a plain name (EXIF, XMP) or a phrase to translate: { k, v }
+  function word(c) { return c.k ? tr(c.k, c.v) : c.t; }
 
   function take(files) {
     if (!files || !files.length) return;
     var f = files[0];
-    if (f.size > MAX_BYTES) { bad("Too large", f.name + " is " + bytes(f.size) + ". This page reads up to " + bytes(MAX_BYTES) + "."); return; }
+    if (f.size > MAX_BYTES) { bad(trk("Too large"), trk("{name} is {size}. This page reads up to {max}."), { name: f.name, size: bytes(f.size), max: bytes(MAX_BYTES) }); return; }
     var reader = new FileReader();
-    reader.onerror = function () { bad("Could not read that", "The browser stopped reading " + f.name + "."); };
+    reader.onerror = function () { bad(trk("Could not read that"), trk("The browser stopped reading {name}."), { name: f.name }); };
     reader.onload = function () { inspect(f, reader.result); };
     reader.readAsArrayBuffer(f);
   }
@@ -2583,40 +2807,51 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       if (!kind) { info = readPng(buf); if (info) kind = "png"; }
       if (!kind) { info = readWebp(buf); if (info) kind = "webp"; }
     } catch (e) { info = null; }
-    if (!kind) { bad("Not a photo this page reads", (f.name || "That file") + " is not a JPEG, PNG or WebP. Those three keep their metadata in blocks this page can rewrite."); return; }
+    if (!kind) { bad(trk("Not a photo this page reads"), trk("{name} is not a JPEG, PNG or WebP. Those three keep their metadata in blocks this page can rewrite."), { name: f.name || tr("That file") }); return; }
 
     var exif = null;
     try { exif = info.exif ? readExif(buf, info.exif) : null; } catch (e) { exif = null; }
-    current = { file: f, buf: buf, kind: kind, info: info, exif: exif };
-
-    facts.textContent = "";
-    meta.textContent = "";
-    row(facts, "File", f.name + " · " + kind.toUpperCase() + " · " + bytes(f.size));
 
     var carriers = [], kept = [];
     if (kind === "jpeg") info.blocks.forEach(function (b) {
-      if (b.marker === 0xE2) { kept.push("colour profile"); return; }
+      if (b.marker === 0xE2) { kept.push({ k: trk("colour profile") }); return; }
       if (!dropsJpeg(b.marker)) return;
-      if (b.marker === 0xE1) carriers.push(b.head.indexOf("Exif") === 0 ? "EXIF" : b.head.indexOf("http") === 0 ? "XMP" : "APP1 block");
-      else if (b.marker === 0xED) carriers.push("IPTC / Photoshop");
-      else if (b.marker === 0xFE) carriers.push("comment");
-      else carriers.push(b.name + " block");
+      if (b.marker === 0xE1) carriers.push(b.head.indexOf("Exif") === 0 ? { t: "EXIF" } : b.head.indexOf("http") === 0 ? { t: "XMP" } : { k: trk("APP1 block") });
+      else if (b.marker === 0xED) carriers.push({ k: trk("IPTC / Photoshop") });
+      else if (b.marker === 0xFE) carriers.push({ k: trk("comment") });
+      else carriers.push({ k: trk("{name} block"), v: { name: b.name } });
     });
-    if (kind === "png") info.chunks.forEach(function (c) { if (PNG_DROP[c.name]) carriers.push(c.name === "eXIf" ? "EXIF" : c.name === "tIME" ? "timestamp" : "text chunk"); });
-    if (kind === "webp") info.chunks.forEach(function (c) { if (WEBP_DROP[c.name.trim()]) carriers.push(c.name.trim()); });
+    if (kind === "png") info.chunks.forEach(function (c) { if (PNG_DROP[c.name]) carriers.push(c.name === "eXIf" ? { t: "EXIF" } : c.name === "tIME" ? { k: trk("timestamp") } : { k: trk("text chunk") }); });
+    if (kind === "webp") info.chunks.forEach(function (c) { if (WEBP_DROP[c.name.trim()]) carriers.push({ t: c.name.trim() }); });
 
     var gps = exif && exif.gps ? { lat: degrees(exif.gps.lat, exif.gps.latRef), lon: degrees(exif.gps.lon, exif.gps.lonRef) } : null;
-    var hasGps = gps && gps.lat !== null && gps.lon !== null;
-    var anything = carriers.length > 0;
+    current = { file: f, buf: buf, kind: kind, info: info, exif: exif, carriers: carriers, kept: kept, gps: gps,
+      hasGps: !!(gps && gps.lat !== null && gps.lon !== null) };
+    written = [];
+    paintResult();
+    state("ok");
+  }
 
-    verdict.textContent = hasGps ? "Location inside" : anything ? "Metadata inside" : "Nothing to remove";
+  // The words of the result, drawn from what was read; nothing is parsed again.
+  function paintResult() {
+    if (!current) return;
+    var f = current.file, exif = current.exif, gps = current.gps, hasGps = current.hasGps;
+    var anything = current.carriers.length > 0;
+    var names = current.carriers.map(word).join(", ");
+
+    facts.textContent = "";
+    meta.textContent = "";
+    row(facts, tr("File"), f.name + " · " + current.kind.toUpperCase() + " · " + bytes(f.size));
+
+    verdict.textContent = hasGps ? tr("Location inside") : anything ? tr("Metadata inside") : tr("Nothing to remove");
     stripBtn.disabled = !anything;
-    stripBtn.textContent = anything ? "Download without metadata" : "Nothing to strip";
+    stripBtn.textContent = anything ? tr("Download without metadata") : tr("Nothing to strip");
 
     if (hasGps) {
-      gpsMsg.textContent = "Latitude " + gps.lat + ", longitude " + gps.lon +
-        (exif.gps.alt ? ", about " + Math.round(exif.gps.alt[0] || exif.gps.alt) + " m up" : "") +
-        ". That is a street, not a city: anyone with the file can put it on a map.";
+      var up = exif.gps.alt ? Math.round(exif.gps.alt[0] || exif.gps.alt) : 0;
+      gpsMsg.textContent = exif.gps.alt
+        ? tr("Latitude {lat}, longitude {lon}, about {alt} m up. That is a street, not a city: anyone with the file can put it on a map.", { lat: gps.lat, lon: gps.lon, alt: up })
+        : tr("Latitude {lat}, longitude {lon}. That is a street, not a city: anyone with the file can put it on a map.", { lat: gps.lat, lon: gps.lon });
     }
     gpsWarn.hidden = !hasGps;
 
@@ -2625,30 +2860,35 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         var v = exif.fields[k];
         if (v === "" || v === undefined || v === null) return;
         if (k === "Orientation") v = orientationWord(v);
-        if (k === "Maker note") v = bytes(exif.makerNote) + " the manufacturer never documented";
-        row(meta, k, String(v));
+        if (k === "Maker note") v = tr("{size} the manufacturer never documented", { size: bytes(exif.makerNote) });
+        if (v && typeof v === "object") v = trn(v.n, "({n} value)", "({n} values)");
+        row(meta, tr(k), String(v));
       });
-      if (!Object.keys(exif.fields).length) row(meta, "EXIF", exif.count + " fields, none of them named ones");
+      if (!Object.keys(exif.fields).length) row(meta, "EXIF", trn(exif.count, "{n} field, none of them named ones", "{n} fields, none of them named ones"));
     } else if (anything) {
-      row(meta, "Metadata", carriers.join(", ") + " — no EXIF directory to decode");
+      row(meta, tr("Metadata"), tr("{carriers} — no EXIF directory to decode", { carriers: names }));
     } else {
-      row(meta, "Metadata", "none found");
+      row(meta, tr("Metadata"), tr("none found"));
     }
-    if (anything) row(facts, "Blocks carrying data", carriers.join(", "));
-    if (kept.length) row(facts, "Kept", kept.join(", ") + " — it changes how the colours look and names nobody");
-    if (exif) row(facts, "EXIF fields", exif.count + " in all" + (exif.makerNote ? ", including a " + bytes(exif.makerNote) + " maker note" : ""));
+    if (anything) row(facts, tr("Blocks carrying data"), names);
+    if (current.kept.length) row(facts, tr("Kept"), tr("{kept} — it changes how the colours look and names nobody", { kept: current.kept.map(word).join(", ") }));
+    if (exif) row(facts, tr("EXIF fields"), exif.makerNote
+      ? tr("{n} in all, including a {size} maker note", { n: exif.count, size: bytes(exif.makerNote) })
+      : tr("{n} in all", { n: exif.count }));
+    written.forEach(function (w) {
+      row(facts, tr("Written"), tr("{name} · {size} · {dropped} of metadata dropped", { name: w.name, size: bytes(w.size), dropped: bytes(w.dropped) }));
+    });
 
     var notes = [];
-    if (exif && exif.fields["Orientation"] && exif.fields["Orientation"] !== 1) notes.push("This photo is shown upright because of its orientation tag. Remove the metadata and some viewers will show it rotated; re-save it from an editor if that matters.");
-    if (!anything) notes.push("Either it never had any, or something stripped it already — which is not the same as it never having existed.");
+    if (exif && exif.fields["Orientation"] && exif.fields["Orientation"] !== 1) notes.push(tr("This photo is shown upright because of its orientation tag. Remove the metadata and some viewers will show it rotated; re-save it from an editor if that matters."));
+    if (!anything) notes.push(tr("Either it never had any, or something stripped it already — which is not the same as it never having existed."));
     said.textContent = notes.join(" ");
     said.hidden = !notes.length;
-    state("ok");
   }
   function orientationWord(v) {
-    var words = { 1: "upright (1)", 2: "mirrored (2)", 3: "upside down (3)", 4: "mirrored, upside down (4)",
-      5: "mirrored, quarter turn (5)", 6: "quarter turn clockwise (6)", 7: "mirrored, quarter turn back (7)", 8: "quarter turn anticlockwise (8)" };
-    return words[v] || String(v);
+    var words = { 1: trk("upright (1)"), 2: trk("mirrored (2)"), 3: trk("upside down (3)"), 4: trk("mirrored, upside down (4)"),
+      5: trk("mirrored, quarter turn (5)"), 6: trk("quarter turn clockwise (6)"), 7: trk("mirrored, quarter turn back (7)"), 8: trk("quarter turn anticlockwise (8)") };
+    return words[v] ? tr(words[v]) : String(v);
   }
 
   function strip() {
@@ -2664,7 +2904,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    row(facts, "Written", name + " · " + bytes(out.length) + " · " + bytes(current.file.size - out.length) + " of metadata dropped");
+    written.push({ name: name, size: out.length, dropped: current.file.size - out.length });
+    paintResult();
   }
 
   drop.addEventListener("click", function () { file.click(); });
@@ -2675,6 +2916,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   drop.addEventListener("drop", function (e) { if (e.dataTransfer && e.dataTransfer.files) take(e.dataTransfer.files); });
   stripBtn.addEventListener("click", strip);
 
+  onLang(function () {
+    if (view === "error") paintErr(); else if (view === "ok") paintResult();
+  });
   drop.focus({ preventScroll: true });
   state("empty");
 })();

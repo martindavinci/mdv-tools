@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link is-here" href="./cron-generator.html" aria-current="page" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link is-here" href="./cron-generator.html" aria-current="page" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,32 +2353,32 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Cron expression</h1>
+      <h1 class="mdv-head-name" data-t="36">Cron expression</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Read a crontab line in plain English, or build one from a preset, and see when it fires next.</p>
+    <p class="mdv-head-line" data-t="79">Read a crontab line in plain English, or build one from a preset, and see when it fires next.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-stack is-tight">
-    <label class="mdv-label" for="expr">Expression</label>
+    <label class="mdv-label" for="expr" data-t="82">Expression</label>
     <input class="mdv-input mdv-mono" id="expr" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" value="30 3 * * 1-5" aria-describedby="said">
-    <div class="mdv-row mdv-btn-row" role="group" aria-label="Presets">
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="* * * * *">Every minute</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="*/15 * * * *">Every 15 min</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="0 * * * *">Hourly</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="30 3 * * *">Daily 03:30</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="30 3 * * 1-5">Weekdays 03:30</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="0 4 1 * *">Monthly 1st</button>
-      <button class="mdv-btn is-sm is-quiet" type="button" data-set="0 0 1 1 *">Yearly</button>
+    <div class="mdv-row mdv-btn-row" role="group" aria-label="Presets" data-t-attrs="aria-label">
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="* * * * *" data-t="83">Every minute</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="*/15 * * * *" data-t="84">Every 15 min</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="0 * * * *" data-t="85">Hourly</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="30 3 * * *" data-t="86">Daily 03:30</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="30 3 * * 1-5" data-t="87">Weekdays 03:30</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="0 4 1 * *" data-t="88">Monthly 1st</button>
+      <button class="mdv-btn is-sm is-quiet" type="button" data-set="0 0 1 1 *" data-t="89">Yearly</button>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>type a crontab line above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="90">type a crontab line above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Cannot read that</span>
@@ -2279,11 +2391,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       <div class="mdv-cols">
         <div class="mdv-panel is-flush">
           <dl class="mdv-kv">
-            <dt>Minute</dt><dd id="f-min"></dd>
-            <dt>Hour</dt><dd id="f-hour"></dd>
-            <dt>Day of month</dt><dd id="f-dom"></dd>
-            <dt>Month</dt><dd id="f-mon"></dd>
-            <dt>Day of week</dt><dd id="f-dow"></dd>
+            <dt data-t="91">Minute</dt><dd id="f-min"></dd>
+            <dt data-t="92">Hour</dt><dd id="f-hour"></dd>
+            <dt data-t="93">Day of month</dt><dd id="f-dom"></dd>
+            <dt data-t="94">Month</dt><dd id="f-mon"></dd>
+            <dt data-t="95">Day of week</dt><dd id="f-dow"></dd>
           </dl>
         </div>
         <div class="mdv-panel is-flush">
@@ -2294,9 +2406,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="96">How this works</summary>
     <div class="mdv-method-body">
-      <p>The page reads the five fields of a crontab line — minute, hour, day of month, month, day of week —
+      <p data-t="97">The page reads the five fields of a crontab line — minute, hour, day of month, month, day of week —
         written as <code>*</code>, a number, a list (<code>1,15</code>), a range (<code>9-17</code>) or a step
         (<code>*/5</code>, <code>10-40/10</code>). Month and weekday names work in any case
         (<code>JAN</code>, <code>mon</code>), Sunday is both <code>0</code> and <code>7</code>, and the
@@ -2306,36 +2418,37 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         and a six-field expression with seconds, which belongs to Quartz or Spring and not to crontab.
         Backwards ranges such as <code>22-4</code> are refused too — crontab does not define them, and
         different daemons disagree.</p>
-      <p>The rule people get wrong is the last one: <strong>when day of month and day of week are both
+      <p data-t="98">The rule people get wrong is the last one: <strong>when day of month and day of week are both
         restricted, cron runs when either matches</strong>, not when both do. So <code>0 0 13 * 5</code> is
         every 13th and every Friday, not Friday the 13th. When one of the two is <code>*</code>, only the
         other decides. The page says which rule is in force under the sentence.</p>
-      <p>The next runs are worked out by walking forward day by day for five years, taking the days the
+      <p data-t="99">The next runs are worked out by walking forward day by day for five years, taking the days the
         month and day rules allow, then the hours and minutes inside them; if nothing matches in that span
         the page says so, which is the honest answer for a line such as <code>0 0 30 2 *</code>. Times are
         this device's own clock and this device's summer-time rules. A real daemon uses the clock of the
         machine it runs on, so treat these as a reading of the expression, not a promise about a server; an
         hour the clocks skip is resolved the way the browser resolves it, and cron implementations differ on
         exactly that hour. Seconds are never part of a crontab line: every run lands on the minute.</p>
-      <p>Nothing leaves the page — the expression is parsed here, and there is no server in this file. The
-        Dark button remembers its setting in this browser's local storage; nothing you type is stored.</p>
+      <p data-t="100">Nothing leaves the page — the expression is parsed here, and there is no server in this file. The
+        Dark and language buttons remember their settings in this browser's local storage; nothing you type is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Developer">
-    <span class="mdv-tag">Also in Developer</span>
-    <a href="./json-diff.html">JSON diff</a>
-    <a href="./json-formatter.html">JSON formatter</a>
-    <a href="./regex-tester.html">Regex tester</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Developer"}'>Also in Developer</span>
+    <a href="./json-diff.html" data-t="38">JSON diff</a>
+    <a href="./json-formatter.html" data-t="39">JSON formatter</a>
+    <a href="./regex-tester.html" data-t="40">Regex tester</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="101">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="102">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="103" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="104">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2346,6 +2459,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Cron Expression Reader and Builder — plain English and the next runs — MDV","Paste a crontab line and read what it means in plain English, field by field, with the next runs in this device's clock. Presets build common schedules. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Presets","minute","hour","day of month","month","day of week","Cannot read that","The {field} field is empty. Fields are separated by single spaces.","A step of 0 in the {field} field never matches. Steps count from the start of the range: */5 is every fifth.","“{part}” has more than one / in the {field} field.","“{part}” is not a value the {field} field accepts. It takes {min}–{max}, the names {names}…, * , lists, ranges and steps.","“{part}” is not a value the {field} field accepts. It takes {min}–{max}, * , lists, ranges and steps.","“{part}” runs backwards in the {field} field. crontab does not define a range that wraps past the end; write it as two parts, {parts}.","Too long","That is {n} characters. A crontab line is five fields; this page reads up to {limit}.","Not a time","@reboot runs when the machine starts, so there is no next run to work out. Every other @ shorthand is read.","Unknown shorthand","“{line}” is not one of @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly or @reboot.","Six fields, not five","That expression starts with seconds, which Quartz and Spring use. A crontab line has five fields, starting at the minute. Drop the first field to read it here.","A crontab line has five fields — minute, hour, day of month, month, day of week — and this has {n}.","{n}st","{n}nd","{n}rd","{n}th","{list}, {item}","{a} and {b}","{list} and {last}","every {field}","every {field} ({list})","every {step} {field} ({list})","{list}… ({n} values)","Every minute","Every minute, every {step} hour","Every minute of {hours}","Every {n} minutes","Every {n} minutes of {hours}","At {n} minutes past every hour","At {time}","At {n} minutes past {hours}","At minutes {minutes} of {hours}","on the {days}","on {days}","in {months}","{when}, every day.","{when}, {days}.","every {step} hour","{weekday} {day} {month} {year}, {time}","in {n} min","in {h} h {m} min","in {h} h","Day of month and day of week are both set, so cron fires when either matches — not only when both do.","Read as {fields}.","Next runs","Next run","then","in {n} day","in {n} days","never in the next {n} year","never in the next {n} years","Developer","2026-11-02"],"h":105,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Lee una línea de crontab en lenguaje claro, o créala desde un preajuste, y mira cuándo se ejecuta a continuación.","En este dispositivo","Funciona sin conexión","Expresión","Cada minuto","Cada 15 min","Cada hora","Diario 03:30","Laborables 03:30","Mensual, día 1","Anual","escribe una línea de crontab arriba","Minuto","Hora","Día del mes","Mes","Día de la semana","Cómo funciona","La página lee los cinco campos de una línea de crontab — minuto, hora, día del mes, mes, día de la semana — escritos como \u003ccode>*\u003c/code>, un número, una lista (\u003ccode>1,15\u003c/code>), un rango (\u003ccode>9-17\u003c/code>) o un paso (\u003ccode>*/5\u003c/code>, \u003ccode>10-40/10\u003c/code>). Los nombres de mes y de día de la semana funcionan en mayúsculas o minúsculas (\u003ccode>JAN\u003c/code>, \u003ccode>mon\u003c/code>), el domingo es tanto \u003ccode>0\u003c/code> como \u003ccode>7\u003c/code>, y los atajos \u003ccode>@yearly\u003c/code>, \u003ccode>@annually\u003c/code>, \u003ccode>@monthly\u003c/code>, \u003ccode>@weekly\u003c/code>, \u003ccode>@daily\u003c/code>, \u003ccode>@midnight\u003c/code> y \u003ccode>@hourly\u003c/code> se expanden a sus cinco campos. Se rechazan dos cosas en lugar de adivinarlas: \u003ccode>@reboot\u003c/code>, que es un evento y no una hora, y una expresión de seis campos con segundos, que pertenece a Quartz o Spring y no a crontab. Los rangos al revés, como \u003ccode>22-4\u003c/code>, también se rechazan: crontab no los define y los distintos daemons no coinciden.","La regla que la gente entiende mal es la última: \u003cstrong>cuando el día del mes y el día de la semana están ambos restringidos, cron se ejecuta cuando coincide cualquiera de los dos\u003c/strong>, no cuando coinciden ambos. Así, \u003ccode>0 0 13 * 5\u003c/code> es cada día 13 y cada viernes, no el viernes 13. Cuando uno de los dos es \u003ccode>*\u003c/code>, decide solo el otro. La página indica bajo la frase qué regla está en vigor.","Las próximas ejecuciones se calculan avanzando día a día durante cinco años, tomando los días que permiten las reglas de mes y día, y luego las horas y minutos dentro de ellos; si nada coincide en ese lapso, la página lo dice, que es la respuesta honesta para una línea como \u003ccode>0 0 30 2 *\u003c/code>. Las horas son las del reloj de este dispositivo y las de sus reglas de horario de verano. Un daemon real usa el reloj de la máquina donde se ejecuta, así que toma esto como una lectura de la expresión, no como una promesa sobre un servidor; una hora que los relojes se saltan se resuelve como la resuelve el navegador, y las implementaciones de cron difieren justo en esa hora. Los segundos nunca forman parte de una línea de crontab: cada ejecución cae en el minuto exacto.","Nada sale de la página: la expresión se analiza aquí y este archivo no tiene servidor. Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador; nada de lo que escribes se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Lector y generador de expresiones cron — lenguaje claro y próximas ejecuciones — MDV","Pega una línea de crontab y lee qué significa en lenguaje claro, campo por campo, con las próximas ejecuciones según el reloj de este dispositivo. Los preajustes crean horarios habituales. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Preajustes","minuto","hora","día del mes","mes","día de la semana","No se puede leer","El campo {field} está vacío. Los campos se separan con un solo espacio.","Un paso de 0 en el campo {field} nunca coincide. Los pasos cuentan desde el inicio del rango: */5 es uno de cada cinco.","«{part}» tiene más de una / en el campo {field}.","«{part}» no es un valor que acepte el campo {field}. Admite {min}–{max}, los nombres {names}…, * , listas, rangos y pasos.","«{part}» no es un valor que acepte el campo {field}. Admite {min}–{max}, * , listas, rangos y pasos.","«{part}» va hacia atrás en el campo {field}. crontab no define un rango que dé la vuelta al final; escríbelo en dos partes, {parts}.","Demasiado largo","Son {n} caracteres. Una línea de crontab tiene cinco campos; esta página lee hasta {limit}.","No es una hora","@reboot se ejecuta cuando arranca la máquina, así que no hay una próxima ejecución que calcular. Todos los demás atajos con @ se leen.","Atajo desconocido","«{line}» no es ninguno de @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly o @reboot.","Seis campos, no cinco","Esa expresión empieza por los segundos, que usan Quartz y Spring. Una línea de crontab tiene cinco campos, empezando por el minuto. Quita el primer campo para leerla aquí.","Una línea de crontab tiene cinco campos — minuto, hora, día del mes, mes, día de la semana — y esta tiene {n}.","{n}","{n}","{n}","{n}","{list}, {item}","{a} y {b}","{list} y {last}","cada {field}","cada {field} ({list})","cada {step} {field} ({list})","{list}… ({n} valores)","Cada minuto","Cada minuto, cada {step} horas","Cada minuto de {hours}","Cada {n} minutos","Cada {n} minutos de {hours}","A los {n} minutos de cada hora","A las {time}","A los {n} minutos de {hours}","En los minutos {minutes} de {hours}","los días {days} del mes","cada {days}","en {months}","{when}, todos los días.","{when}, {days}.","cada {step} horas","{weekday} {day} {month} {year}, {time}","en {n} min","en {h} h {m} min","en {h} h","El día del mes y el día de la semana están ambos fijados, así que cron se ejecuta cuando coincide cualquiera de los dos, no solo cuando coinciden ambos.","Leído como {fields}.","Próximas ejecuciones","Próxima ejecución","luego","en {n} día","en {n} días","ninguna en el próximo {n} año","ninguna en los próximos {n} años","Desarrollo",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Lisez une ligne de crontab en langage clair, ou construisez-en une depuis un préréglage, et voyez quand elle s’exécute ensuite.","Sur cet appareil","Fonctionne hors ligne","Expression","Chaque minute","Toutes les 15 min","Chaque heure","Tous les jours 03:30","Jours ouvrés 03:30","Mensuel, le 1er","Annuel","saisissez une ligne de crontab ci-dessus","Minute","Heure","Jour du mois","Mois","Jour de la semaine","Comment ça marche","La page lit les cinq champs d’une ligne de crontab — minute, heure, jour du mois, mois, jour de la semaine — écrits sous forme de \u003ccode>*\u003c/code>, d’un nombre, d’une liste (\u003ccode>1,15\u003c/code>), d’une plage (\u003ccode>9-17\u003c/code>) ou d’un pas (\u003ccode>*/5\u003c/code>, \u003ccode>10-40/10\u003c/code>). Les noms de mois et de jours fonctionnent en majuscules comme en minuscules (\u003ccode>JAN\u003c/code>, \u003ccode>mon\u003c/code>), le dimanche vaut à la fois \u003ccode>0\u003c/code> et \u003ccode>7\u003c/code>, et les raccourcis \u003ccode>@yearly\u003c/code>, \u003ccode>@annually\u003c/code>, \u003ccode>@monthly\u003c/code>, \u003ccode>@weekly\u003c/code>, \u003ccode>@daily\u003c/code>, \u003ccode>@midnight\u003c/code> et \u003ccode>@hourly\u003c/code> se développent en leurs cinq champs. Deux choses sont refusées plutôt que devinées : \u003ccode>@reboot\u003c/code>, qui est un événement et non une heure, et une expression à six champs avec des secondes, qui relève de Quartz ou de Spring et non de crontab. Les plages inversées comme \u003ccode>22-4\u003c/code> sont refusées aussi : crontab ne les définit pas et les démons divergent.","La règle que l’on comprend de travers est la dernière : \u003cstrong>quand le jour du mois et le jour de la semaine sont tous deux restreints, cron s’exécute quand l’un ou l’autre correspond\u003c/strong>, pas quand les deux correspondent. Ainsi \u003ccode>0 0 13 * 5\u003c/code> signifie chaque 13 et chaque vendredi, pas le vendredi 13. Quand l’un des deux est \u003ccode>*\u003c/code>, seul l’autre décide. La page indique sous la phrase quelle règle s’applique.","Les prochaines exécutions sont calculées en avançant jour par jour pendant cinq ans, en retenant les jours que permettent les règles de mois et de jour, puis les heures et minutes dans ces jours ; si rien ne correspond sur cette période, la page le dit, ce qui est la réponse honnête pour une ligne comme \u003ccode>0 0 30 2 *\u003c/code>. Les heures sont celles de l’horloge de cet appareil et de ses règles d’heure d’été. Un vrai démon utilise l’horloge de la machine où il tourne : voyez donc ceci comme une lecture de l’expression, pas comme une promesse sur un serveur ; une heure que les horloges sautent est résolue comme le fait le navigateur, et les implémentations de cron diffèrent justement sur cette heure. Les secondes ne font jamais partie d’une ligne de crontab : chaque exécution tombe pile sur la minute.","Rien ne quitte la page : l’expression est analysée ici et ce fichier n’a pas de serveur. Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur ; rien de ce que vous saisissez n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Lecteur et générateur d’expressions cron — langage clair et prochaines exécutions — MDV","Collez une ligne de crontab et lisez ce qu’elle signifie en langage clair, champ par champ, avec les prochaines exécutions selon l’horloge de cet appareil. Les préréglages construisent des planifications courantes. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Préréglages","minute","heure","jour du mois","mois","jour de la semaine","Lecture impossible","Le champ {field} est vide. Les champs sont séparés par un seul espace.","Un pas de 0 dans le champ {field} ne correspond jamais. Les pas comptent depuis le début de la plage : */5 signifie un sur cinq.","« {part} » contient plus d’un / dans le champ {field}.","« {part} » n’est pas une valeur acceptée par le champ {field}. Il accepte {min}–{max}, les noms {names}…, * , listes, plages et pas.","« {part} » n’est pas une valeur acceptée par le champ {field}. Il accepte {min}–{max}, * , listes, plages et pas.","« {part} » va à l’envers dans le champ {field}. crontab ne définit pas de plage qui repasse par le début ; écrivez-la en deux parties, {parts}.","Trop long","Cela fait {n} caractères. Une ligne de crontab compte cinq champs ; cette page en lit jusqu’à {limit}.","Pas une heure","@reboot s’exécute au démarrage de la machine, il n’y a donc pas de prochaine exécution à calculer. Tous les autres raccourcis en @ sont lus.","Raccourci inconnu","« {line} » n’est ni @yearly, ni @annually, ni @monthly, ni @weekly, ni @daily, ni @midnight, ni @hourly, ni @reboot.","Six champs, pas cinq","Cette expression commence par des secondes, comme dans Quartz et Spring. Une ligne de crontab compte cinq champs, à partir de la minute. Retirez le premier champ pour la lire ici.","Une ligne de crontab compte cinq champs — minute, heure, jour du mois, mois, jour de la semaine — et celle-ci en a {n}.","{n}","{n}","{n}","{n}","{list}, {item}","{a} et {b}","{list} et {last}","chaque {field}","chaque {field} ({list})","tous les {step} {field} ({list})","{list}… ({n} valeurs)","Chaque minute","Chaque minute, toutes les {step} heures","Chaque minute de {hours}","Toutes les {n} minutes","Toutes les {n} minutes de {hours}","À {n} minutes de chaque heure","À {time}","À {n} minutes de {hours}","Aux minutes {minutes} de {hours}","le {days} du mois","le {days}","en {months}","{when}, tous les jours.","{when}, {days}.","toutes les {step} heures","{weekday} {day} {month} {year}, {time}","dans {n} min","dans {h} h {m} min","dans {h} h","Le jour du mois et le jour de la semaine sont tous deux définis : cron s’exécute donc quand l’un ou l’autre correspond, pas seulement quand les deux correspondent.","Lu comme {fields}.","Prochaines exécutions","Prochaine exécution","puis","dans {n} jour","dans {n} jours","aucune dans les {n} prochaine année","aucune dans les {n} prochaines années","Développement",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Lies eine Crontab-Zeile in klaren Worten oder baue eine aus einer Vorlage und sieh, wann sie als Nächstes läuft.","Läuft auf diesem Gerät","Funktioniert offline","Ausdruck","Jede Minute","Alle 15 Min.","Stündlich","Täglich 03:30","Werktags 03:30","Monatlich, am 1.","Jährlich","oben eine Crontab-Zeile eingeben","Minute","Stunde","Tag des Monats","Monat","Wochentag","So funktioniert es","Die Seite liest die fünf Felder einer Crontab-Zeile — Minute, Stunde, Tag des Monats, Monat, Wochentag — geschrieben als \u003ccode>*\u003c/code>, Zahl, Liste (\u003ccode>1,15\u003c/code>), Bereich (\u003ccode>9-17\u003c/code>) oder Schritt (\u003ccode>*/5\u003c/code>, \u003ccode>10-40/10\u003c/code>). Monats- und Wochentagsnamen funktionieren in jeder Schreibweise (\u003ccode>JAN\u003c/code>, \u003ccode>mon\u003c/code>), der Sonntag ist sowohl \u003ccode>0\u003c/code> als auch \u003ccode>7\u003c/code>, und die Kurzformen \u003ccode>@yearly\u003c/code>, \u003ccode>@annually\u003c/code>, \u003ccode>@monthly\u003c/code>, \u003ccode>@weekly\u003c/code>, \u003ccode>@daily\u003c/code>, \u003ccode>@midnight\u003c/code> und \u003ccode>@hourly\u003c/code> werden zu ihren fünf Feldern aufgelöst. Zwei Dinge werden abgelehnt, statt sie zu raten: \u003ccode>@reboot\u003c/code>, das ein Ereignis und keine Uhrzeit ist, und ein Ausdruck mit sechs Feldern samt Sekunden, der zu Quartz oder Spring gehört und nicht zu Crontab. Rückwärts laufende Bereiche wie \u003ccode>22-4\u003c/code> werden ebenfalls abgelehnt: Crontab definiert sie nicht, und verschiedene Daemons verhalten sich unterschiedlich.","Die Regel, die Leute falsch verstehen, ist die letzte: \u003cstrong>Wenn Tag des Monats und Wochentag beide eingeschränkt sind, läuft cron, wenn einer von beiden passt\u003c/strong>, nicht, wenn beide passen. So bedeutet \u003ccode>0 0 13 * 5\u003c/code> jeden 13. und jeden Freitag, nicht Freitag den 13. Ist eines der beiden \u003ccode>*\u003c/code>, entscheidet nur das andere. Die Seite nennt unter dem Satz, welche Regel gilt.","Die nächsten Läufe werden berechnet, indem fünf Jahre lang Tag für Tag vorwärtsgegangen wird; dabei werden die Tage genommen, die die Monats- und Tagesregeln erlauben, dann die Stunden und Minuten darin. Passt in diesem Zeitraum nichts, sagt die Seite das, was die ehrliche Antwort für eine Zeile wie \u003ccode>0 0 30 2 *\u003c/code> ist. Die Zeiten folgen der Uhr dieses Geräts und seinen Sommerzeitregeln. Ein echter Daemon nutzt die Uhr der Maschine, auf der er läuft; verstehe dies daher als Lesart des Ausdrucks, nicht als Zusage über einen Server. Eine Stunde, die die Uhren überspringen, wird so aufgelöst, wie der Browser sie auflöst, und cron-Implementierungen unterscheiden sich genau bei dieser Stunde. Sekunden sind nie Teil einer Crontab-Zeile: Jeder Lauf fällt auf die volle Minute.","Nichts verlässt die Seite: Der Ausdruck wird hier ausgewertet, und diese Datei hat keinen Server. Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers; nichts, was du eintippst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Cron-Ausdruck lesen und erstellen — in klaren Worten und mit den nächsten Läufen — MDV","Füge eine Crontab-Zeile ein und lies in klaren Worten, was sie bedeutet, Feld für Feld, mit den nächsten Läufen nach der Uhr dieses Geräts. Vorlagen erstellen gängige Zeitpläne. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Vorlagen","Minute","Stunde","Tag des Monats","Monat","Wochentag","Nicht lesbar","Das Feld {field} ist leer. Felder werden durch einzelne Leerzeichen getrennt.","Ein Schritt von 0 im Feld {field} trifft nie zu. Schritte zählen ab dem Anfang des Bereichs: */5 ist jeder fünfte.","„{part}“ enthält mehr als einen / im Feld {field}.","„{part}“ ist kein Wert, den das Feld {field} akzeptiert. Es nimmt {min}–{max}, die Namen {names}…, * , Listen, Bereiche und Schritte.","„{part}“ ist kein Wert, den das Feld {field} akzeptiert. Es nimmt {min}–{max}, * , Listen, Bereiche und Schritte.","„{part}“ läuft im Feld {field} rückwärts. Crontab definiert keinen Bereich, der über das Ende hinaus umläuft; schreibe ihn in zwei Teilen, {parts}.","Zu lang","Das sind {n} Zeichen. Eine Crontab-Zeile hat fünf Felder; diese Seite liest bis zu {limit}.","Keine Uhrzeit","@reboot läuft, wenn die Maschine startet, daher gibt es keinen nächsten Lauf zu berechnen. Alle anderen @-Kurzformen werden gelesen.","Unbekannte Kurzform","„{line}“ ist keines von @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly oder @reboot.","Sechs Felder, nicht fünf","Dieser Ausdruck beginnt mit Sekunden, wie Quartz und Spring sie verwenden. Eine Crontab-Zeile hat fünf Felder und beginnt bei der Minute. Lass das erste Feld weg, um sie hier zu lesen.","Eine Crontab-Zeile hat fünf Felder — Minute, Stunde, Tag des Monats, Monat, Wochentag — und diese hat {n}.","{n}.","{n}.","{n}.","{n}.","{list}, {item}","{a} und {b}","{list} und {last}","jede(r) {field}","jede(r) {field} ({list})","alle {step} {field} ({list})","{list}… ({n} Werte)","Jede Minute","Jede Minute, alle {step} Stunden","Jede Minute von {hours}","Alle {n} Minuten","Alle {n} Minuten von {hours}","Um {n} Minuten nach jeder vollen Stunde","Um {time}","Um {n} Minuten nach {hours}","In den Minuten {minutes} von {hours}","am {days} des Monats","am {days}","im {months}","{when}, jeden Tag.","{when}, {days}.","alle {step} Stunden","{weekday} {day}. {month} {year}, {time}","in {n} Min.","in {h} Std. {m} Min.","in {h} Std.","Tag des Monats und Wochentag sind beide gesetzt, daher läuft cron, wenn einer von beiden passt, nicht nur, wenn beide passen.","Gelesen als {fields}.","Nächste Läufe","Nächster Lauf","dann","in {n} Tag","in {n} Tagen","keiner im nächsten {n} Jahr","keiner in den nächsten {n} Jahren","Entwicklung",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Leggi una riga di crontab in parole semplici, o creane una da un preset, e vedi quando scatta la prossima volta.","Su questo dispositivo","Funziona offline","Espressione","Ogni minuto","Ogni 15 min","Ogni ora","Ogni giorno 03:30","Feriali 03:30","Mensile, il 1","Annuale","scrivi sopra una riga di crontab","Minuto","Ora","Giorno del mese","Mese","Giorno della settimana","Come funziona","La pagina legge i cinque campi di una riga di crontab — minuto, ora, giorno del mese, mese, giorno della settimana — scritti come \u003ccode>*\u003c/code>, un numero, un elenco (\u003ccode>1,15\u003c/code>), un intervallo (\u003ccode>9-17\u003c/code>) o un passo (\u003ccode>*/5\u003c/code>, \u003ccode>10-40/10\u003c/code>). I nomi di mesi e giorni funzionano in qualsiasi caso (\u003ccode>JAN\u003c/code>, \u003ccode>mon\u003c/code>), la domenica è sia \u003ccode>0\u003c/code> sia \u003ccode>7\u003c/code>, e le scorciatoie \u003ccode>@yearly\u003c/code>, \u003ccode>@annually\u003c/code>, \u003ccode>@monthly\u003c/code>, \u003ccode>@weekly\u003c/code>, \u003ccode>@daily\u003c/code>, \u003ccode>@midnight\u003c/code> e \u003ccode>@hourly\u003c/code> si espandono nei loro cinque campi. Due cose vengono rifiutate invece di essere indovinate: \u003ccode>@reboot\u003c/code>, che è un evento e non un orario, e un’espressione a sei campi con i secondi, che appartiene a Quartz o Spring e non a crontab. Vengono rifiutati anche gli intervalli all’indietro come \u003ccode>22-4\u003c/code>: crontab non li definisce e i vari daemon non concordano.","La regola che la gente sbaglia è l’ultima: \u003cstrong>quando giorno del mese e giorno della settimana sono entrambi vincolati, cron esegue quando corrisponde uno dei due\u003c/strong>, non quando corrispondono entrambi. Quindi \u003ccode>0 0 13 * 5\u003c/code> significa ogni 13 e ogni venerdì, non venerdì 13. Quando uno dei due è \u003ccode>*\u003c/code>, decide solo l’altro. Sotto la frase la pagina indica quale regola è in vigore.","Le prossime esecuzioni si calcolano avanzando giorno per giorno per cinque anni, prendendo i giorni che le regole di mese e giorno consentono, poi le ore e i minuti al loro interno; se in quel lasso non corrisponde nulla, la pagina lo dice, ed è la risposta onesta per una riga come \u003ccode>0 0 30 2 *\u003c/code>. Gli orari seguono l’orologio di questo dispositivo e le sue regole dell’ora legale. Un daemon reale usa l’orologio della macchina su cui gira, quindi considera questo come una lettura dell’espressione, non una promessa su un server; un’ora che gli orologi saltano viene risolta come la risolve il browser, e le implementazioni di cron differiscono proprio su quell’ora. I secondi non fanno mai parte di una riga di crontab: ogni esecuzione cade sul minuto.","Nulla lascia la pagina: l’espressione viene analizzata qui e questo file non ha un server. I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser; nulla di ciò che scrivi viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Lettore e generatore di espressioni cron — parole semplici e prossime esecuzioni — MDV","Incolla una riga di crontab e leggi cosa significa in parole semplici, campo per campo, con le prossime esecuzioni sull’orologio di questo dispositivo. I preset creano pianificazioni comuni. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Preset","minuto","ora","giorno del mese","mese","giorno della settimana","Impossibile leggerla","Il campo {field} è vuoto. I campi sono separati da singoli spazi.","Un passo di 0 nel campo {field} non corrisponde mai. I passi contano dall’inizio dell’intervallo: */5 è uno ogni cinque.","«{part}» ha più di uno / nel campo {field}.","«{part}» non è un valore accettato dal campo {field}. Accetta {min}–{max}, i nomi {names}…, * , elenchi, intervalli e passi.","«{part}» non è un valore accettato dal campo {field}. Accetta {min}–{max}, * , elenchi, intervalli e passi.","«{part}» va all’indietro nel campo {field}. crontab non definisce un intervallo che supera la fine; scrivilo in due parti, {parts}.","Troppo lunga","Sono {n} caratteri. Una riga di crontab ha cinque campi; questa pagina ne legge fino a {limit}.","Non è un orario","@reboot viene eseguito all’avvio della macchina, quindi non c’è una prossima esecuzione da calcolare. Tutte le altre scorciatoie con @ vengono lette.","Scorciatoia sconosciuta","«{line}» non è nessuna tra @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly o @reboot.","Sei campi, non cinque","Quell’espressione inizia con i secondi, usati da Quartz e Spring. Una riga di crontab ha cinque campi, a partire dal minuto. Togli il primo campo per leggerla qui.","Una riga di crontab ha cinque campi — minuto, ora, giorno del mese, mese, giorno della settimana — e questa ne ha {n}.","{n}","{n}","{n}","{n}","{list}, {item}","{a} e {b}","{list} e {last}","ogni {field}","ogni {field} ({list})","ogni {step} {field} ({list})","{list}… ({n} valori)","Ogni minuto","Ogni minuto, ogni {step} ore","Ogni minuto di {hours}","Ogni {n} minuti","Ogni {n} minuti di {hours}","Al minuto {n} di ogni ora","Alle {time}","Al minuto {n} di {hours}","Ai minuti {minutes} di {hours}","il {days} del mese","il {days}","a {months}","{when}, ogni giorno.","{when}, {days}.","ogni {step} ore","{weekday} {day} {month} {year}, {time}","tra {n} min","tra {h} h {m} min","tra {h} h","Giorno del mese e giorno della settimana sono entrambi impostati, quindi cron esegue quando corrisponde uno dei due, non solo quando corrispondono entrambi.","Letta come {fields}.","Prossime esecuzioni","Prossima esecuzione","poi","tra {n} giorno","tra {n} giorni","mai nel prossimo {n} anno","mai nei prossimi {n} anni","Sviluppo",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Leia uma linha de crontab em linguagem simples, ou monte uma a partir de um predefinido, e veja quando ela dispara em seguida.","Neste dispositivo","Funciona offline","Expressão","A cada minuto","A cada 15 min","A cada hora","Diário 03:30","Dias úteis 03:30","Mensal, dia 1","Anual","digite uma linha de crontab acima","Minuto","Hora","Dia do mês","Mês","Dia da semana","Como funciona","A página lê os cinco campos de uma linha de crontab — minuto, hora, dia do mês, mês, dia da semana — escritos como \u003ccode>*\u003c/code>, um número, uma lista (\u003ccode>1,15\u003c/code>), um intervalo (\u003ccode>9-17\u003c/code>) ou um passo (\u003ccode>*/5\u003c/code>, \u003ccode>10-40/10\u003c/code>). Nomes de mês e de dia da semana funcionam em qualquer caixa (\u003ccode>JAN\u003c/code>, \u003ccode>mon\u003c/code>), o domingo é tanto \u003ccode>0\u003c/code> quanto \u003ccode>7\u003c/code>, e os atalhos \u003ccode>@yearly\u003c/code>, \u003ccode>@annually\u003c/code>, \u003ccode>@monthly\u003c/code>, \u003ccode>@weekly\u003c/code>, \u003ccode>@daily\u003c/code>, \u003ccode>@midnight\u003c/code> e \u003ccode>@hourly\u003c/code> se expandem para seus cinco campos. Duas coisas são recusadas em vez de adivinhadas: \u003ccode>@reboot\u003c/code>, que é um evento e não um horário, e uma expressão de seis campos com segundos, que pertence ao Quartz ou ao Spring e não ao crontab. Intervalos invertidos como \u003ccode>22-4\u003c/code> também são recusados: o crontab não os define e os diferentes daemons divergem.","A regra que as pessoas entendem errado é a última: \u003cstrong>quando o dia do mês e o dia da semana estão ambos restritos, o cron executa quando qualquer um dos dois coincide\u003c/strong>, não quando ambos coincidem. Assim, \u003ccode>0 0 13 * 5\u003c/code> é todo dia 13 e toda sexta-feira, não a sexta-feira 13. Quando um dos dois é \u003ccode>*\u003c/code>, só o outro decide. A página diz, abaixo da frase, qual regra está em vigor.","As próximas execuções são calculadas avançando dia a dia por cinco anos, pegando os dias que as regras de mês e dia permitem e depois as horas e minutos dentro deles; se nada coincidir nesse período, a página diz isso, que é a resposta honesta para uma linha como \u003ccode>0 0 30 2 *\u003c/code>. Os horários seguem o relógio deste dispositivo e suas regras de horário de verão. Um daemon real usa o relógio da máquina em que roda, então trate isto como uma leitura da expressão, não como uma promessa sobre um servidor; uma hora que os relógios pulam é resolvida como o navegador a resolve, e as implementações de cron divergem justamente nessa hora. Segundos nunca fazem parte de uma linha de crontab: toda execução cai no minuto exato.","Nada sai da página: a expressão é analisada aqui e este arquivo não tem servidor. Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador; nada do que você digita é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Leitor e gerador de expressões cron — linguagem simples e próximas execuções — MDV","Cole uma linha de crontab e leia o que ela significa em linguagem simples, campo a campo, com as próximas execuções no relógio deste dispositivo. Os predefinidos montam agendamentos comuns. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Predefinidos","minuto","hora","dia do mês","mês","dia da semana","Não foi possível ler","O campo {field} está vazio. Os campos são separados por espaços simples.","Um passo de 0 no campo {field} nunca coincide. Os passos contam a partir do início do intervalo: */5 é um a cada cinco.","“{part}” tem mais de uma / no campo {field}.","“{part}” não é um valor que o campo {field} aceita. Ele aceita {min}–{max}, os nomes {names}…, * , listas, intervalos e passos.","“{part}” não é um valor que o campo {field} aceita. Ele aceita {min}–{max}, * , listas, intervalos e passos.","“{part}” vai de trás para frente no campo {field}. O crontab não define um intervalo que dá a volta no fim; escreva em duas partes, {parts}.","Longo demais","São {n} caracteres. Uma linha de crontab tem cinco campos; esta página lê até {limit}.","Não é um horário","@reboot executa quando a máquina inicia, então não há próxima execução para calcular. Todos os outros atalhos com @ são lidos.","Atalho desconhecido","“{line}” não é nenhum de @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly ou @reboot.","Seis campos, não cinco","Essa expressão começa com segundos, que o Quartz e o Spring usam. Uma linha de crontab tem cinco campos, começando no minuto. Remova o primeiro campo para lê-la aqui.","Uma linha de crontab tem cinco campos — minuto, hora, dia do mês, mês, dia da semana — e esta tem {n}.","{n}","{n}","{n}","{n}","{list}, {item}","{a} e {b}","{list} e {last}","todo(a) {field}","todo(a) {field} ({list})","a cada {step} {field} ({list})","{list}… ({n} valores)","A cada minuto","A cada minuto, a cada {step} horas","A cada minuto de {hours}","A cada {n} minutos","A cada {n} minutos de {hours}","Aos {n} minutos de cada hora","Às {time}","Aos {n} minutos de {hours}","Nos minutos {minutes} de {hours}","nos dias {days} do mês","em {days}","em {months}","{when}, todos os dias.","{when}, {days}.","a cada {step} horas","{weekday} {day} {month} {year}, {time}","em {n} min","em {h} h {m} min","em {h} h","Dia do mês e dia da semana estão ambos definidos, então o cron dispara quando qualquer um dos dois coincide, não só quando ambos coincidem.","Lido como {fields}.","Próximas execuções","Próxima execução","depois","em {n} dia","em {n} dias","nenhuma no próximo {n} ano","nenhuma nos próximos {n} anos","Desenvolvimento",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","crontab の行を平易な言葉で読み取るか、プリセットから作成して、次にいつ実行されるかを確認できます。","この端末で動作","オフラインで動作","式","毎分","15 分ごと","毎時","毎日 03:30","平日 03:30","毎月 1 日","毎年","上に crontab の行を入力","分","時","日","月","曜日","仕組み","このページは、crontab の行の 5 つのフィールド(分、時、日、月、曜日)を読み取ります。\u003ccode>*\u003c/code>、数値、リスト(\u003ccode>1,15\u003c/code>)、範囲(\u003ccode>9-17\u003c/code>)、ステップ(\u003ccode>*/5\u003c/code>、\u003ccode>10-40/10\u003c/code>)の形式で書けます。月名と曜日名は大文字小文字を問わず使え(\u003ccode>JAN\u003c/code>、\u003ccode>mon\u003c/code>)、日曜日は \u003ccode>0\u003c/code> でも \u003ccode>7\u003c/code> でも表せます。省略形の \u003ccode>@yearly\u003c/code>、\u003ccode>@annually\u003c/code>、\u003ccode>@monthly\u003c/code>、\u003ccode>@weekly\u003c/code>、\u003ccode>@daily\u003c/code>、\u003ccode>@midnight\u003c/code>、\u003ccode>@hourly\u003c/code> は 5 つのフィールドに展開されます。推測せずに拒否するものが 2 つあります。時刻ではなくイベントである \u003ccode>@reboot\u003c/code> と、秒を含む 6 フィールドの式(crontab ではなく Quartz や Spring のものです)です。\u003ccode>22-4\u003c/code> のような逆向きの範囲も拒否します。crontab はそれを定義しておらず、デーモンごとに挙動が異なるためです。","人がよく間違えるのは最後のルールです。\u003cstrong>日と曜日の両方が指定されている場合、cron はどちらか一方が一致したときに実行されます\u003c/strong>。両方が一致したときではありません。したがって \u003ccode>0 0 13 * 5\u003c/code> は、毎月 13 日と毎週金曜日を意味し、13 日の金曜日ではありません。どちらか一方が \u003ccode>*\u003c/code> の場合は、もう一方だけで決まります。どのルールが適用されているかは、文の下にページが表示します。","次回以降の実行は、5 年先まで 1 日ずつ進みながら、月と日のルールが許す日を選び、その中の時と分を調べて求めます。その期間に一致するものがなければページがそう表示します。\u003ccode>0 0 30 2 *\u003c/code> のような行に対する正直な答えです。時刻はこの端末の時計と、この端末の夏時間ルールに従います。実際のデーモンは、それが動いているマシンの時計を使うため、これは式の読み取りであり、サーバーについての約束ではないと考えてください。時計が飛ばす時間帯はブラウザーの扱いに従って解決され、cron の実装はまさにその時間帯で異なります。秒は crontab の行には含まれません。すべての実行は分の頭に行われます。","ページの外には何も出ません。式はここで解析され、このファイルにはサーバーがありません。ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力した内容は保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","cron 式の読み取りと作成 — 平易な言葉と次回の実行 — MDV","crontab の行を貼り付けると、その意味を平易な言葉でフィールドごとに読み取り、この端末の時計で次回の実行を表示します。プリセットでよくあるスケジュールを作成できます。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","プリセット","分","時","日","月","曜日","読み取れません","{field}フィールドが空です。フィールドは半角スペース 1 つで区切ってください。","{field}フィールドのステップ 0 には一致するものがありません。ステップは範囲の先頭から数えます。*/5 は 5 つおきです。","「{part}」には {field}フィールドに / が複数あります。","「{part}」は {field}フィールドで使える値ではありません。使えるのは {min}–{max}、名前({names}…)、*、リスト、範囲、ステップです。","「{part}」は {field}フィールドで使える値ではありません。使えるのは {min}–{max}、*、リスト、範囲、ステップです。","「{part}」は {field}フィールドで逆向きになっています。crontab は末尾をまたぐ範囲を定義していません。{parts} のように 2 つに分けて書いてください。","長すぎます","{n} 文字あります。crontab の行は 5 つのフィールドで構成されます。このページが読み取るのは {limit} 文字までです。","時刻ではありません","@reboot はマシンの起動時に実行されるため、求めるべき次回の実行がありません。それ以外の @ 省略形は読み取れます。","不明な省略形","「{line}」は @yearly、@annually、@monthly、@weekly、@daily、@midnight、@hourly、@reboot のいずれでもありません。","5 フィールドではなく 6 フィールドです","この式は、Quartz や Spring で使われる秒から始まっています。crontab の行は分から始まる 5 つのフィールドです。先頭のフィールドを削除すると、ここで読み取れます。","crontab の行は 5 つのフィールド(分、時、日、月、曜日)で構成されますが、これは {n} 個あります。","{n}","{n}","{n}","{n}","{list}、{item}","{a}と{b}","{list}、{last}","毎{field}","毎{field}({list})","{step} {field}ごと({list})","{list}…({n} 個の値)","毎分","{step} 時間ごとの毎分","{hours}の毎分","{n} 分ごと","{hours}の{n} 分ごと","毎時 {n} 分","{time}","{hours}の {n} 分","{hours}の {minutes} 分","毎月{days}日","毎週{days}","{months}","毎日、{when}。","{days}、{when}。","{step} 時間ごと","{year}年{month}{day}日({weekday}) {time}","{n} 分後","{h} 時間 {m} 分後","{h} 時間後","日と曜日の両方が指定されているため、cron は両方が一致したときだけでなく、どちらか一方が一致したときに実行されます。","{fields} として読み取りました。","次回以降の実行","次回の実行","その後","{n} 日後","{n} 日後","今後 {n} 年間は実行されません","今後 {n} 年間は実行されません","開発",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","crontab 줄을 쉬운 말로 읽거나 프리셋으로 만들고, 다음에 언제 실행되는지 확인하세요.","이 기기에서 실행","오프라인 작동","표현식","매분","15분마다","매시간","매일 03:30","평일 03:30","매월 1일","매년","위에 crontab 줄을 입력하세요","분","시","일","월","요일","작동 방식","이 페이지는 crontab 줄의 다섯 필드(분, 시, 일, 월, 요일)를 읽습니다. \u003ccode>*\u003c/code>, 숫자, 목록(\u003ccode>1,15\u003c/code>), 범위(\u003ccode>9-17\u003c/code>), 단계(\u003ccode>*/5\u003c/code>, \u003ccode>10-40/10\u003c/code>)로 쓸 수 있습니다. 월과 요일 이름은 대소문자에 관계없이 동작하고(\u003ccode>JAN\u003c/code>, \u003ccode>mon\u003c/code>), 일요일은 \u003ccode>0\u003c/code>과 \u003ccode>7\u003c/code> 모두이며, \u003ccode>@yearly\u003c/code>, \u003ccode>@annually\u003c/code>, \u003ccode>@monthly\u003c/code>, \u003ccode>@weekly\u003c/code>, \u003ccode>@daily\u003c/code>, \u003ccode>@midnight\u003c/code>, \u003ccode>@hourly\u003c/code> 단축어는 다섯 필드로 확장됩니다. 추측하지 않고 거부하는 것이 두 가지 있습니다. 시각이 아니라 이벤트인 \u003ccode>@reboot\u003c/code>, 그리고 초가 포함된 여섯 필드 표현식(crontab이 아니라 Quartz나 Spring의 것)입니다. \u003ccode>22-4\u003c/code>처럼 거꾸로 된 범위도 거부합니다. crontab은 이를 정의하지 않으며 데몬마다 동작이 다르기 때문입니다.","사람들이 가장 많이 틀리는 규칙은 마지막 것입니다. \u003cstrong>일과 요일이 모두 지정되면 cron은 둘 중 하나가 일치할 때 실행됩니다\u003c/strong>. 둘 다 일치할 때가 아닙니다. 그래서 \u003ccode>0 0 13 * 5\u003c/code>는 매월 13일과 매주 금요일이며, 13일의 금요일이 아닙니다. 둘 중 하나가 \u003ccode>*\u003c/code>이면 나머지 하나만 결정합니다. 어떤 규칙이 적용되는지는 문장 아래에 페이지가 표시합니다.","다음 실행은 5년 앞까지 하루씩 앞으로 가면서, 월과 일 규칙이 허용하는 날을 고른 다음 그 안의 시와 분을 계산해 구합니다. 그 기간에 일치하는 것이 없으면 페이지가 그렇게 알려 주며, \u003ccode>0 0 30 2 *\u003c/code> 같은 줄에는 이것이 정직한 답입니다. 시각은 이 기기의 시계와 이 기기의 서머타임 규칙을 따릅니다. 실제 데몬은 그것이 돌아가는 머신의 시계를 쓰므로, 이는 표현식을 읽은 결과일 뿐 서버에 대한 약속이 아닙니다. 시계가 건너뛰는 시간은 브라우저가 처리하는 방식으로 처리되며, cron 구현은 바로 그 시간에서 서로 다릅니다. 초는 crontab 줄에 포함되지 않습니다. 모든 실행은 정각 분에 이루어집니다.","페이지 밖으로 나가는 것은 없습니다. 표현식은 여기서 분석되며 이 파일에는 서버가 없습니다. 다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억하며, 입력한 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","Cron 표현식 해석기 및 생성기 — 쉬운 말과 다음 실행 — MDV","crontab 줄을 붙여넣으면 그 의미를 필드별로 쉬운 말로 읽고, 이 기기의 시계로 다음 실행을 보여 줍니다. 프리셋으로 흔한 일정을 만들 수 있습니다. 내 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","프리셋","분","시","일","월","요일","읽을 수 없음","{field} 필드가 비어 있습니다. 필드는 공백 한 칸으로 구분합니다.","{field} 필드의 단계 0은 절대 일치하지 않습니다. 단계는 범위의 시작부터 셉니다. */5는 다섯 번째마다입니다.","“{part}”에는 {field} 필드에 /가 둘 이상 있습니다.","“{part}”은(는) {field} 필드가 받는 값이 아닙니다. {min}–{max}, 이름({names}…), *, 목록, 범위, 단계를 쓸 수 있습니다.","“{part}”은(는) {field} 필드가 받는 값이 아닙니다. {min}–{max}, *, 목록, 범위, 단계를 쓸 수 있습니다.","“{part}”은(는) {field} 필드에서 거꾸로 되어 있습니다. crontab은 끝을 넘어 이어지는 범위를 정의하지 않습니다. {parts}처럼 두 부분으로 나누어 쓰세요.","너무 김","{n}자입니다. crontab 줄은 다섯 필드이며, 이 페이지는 {limit}자까지 읽습니다.","시각이 아님","@reboot는 머신이 시작될 때 실행되므로 계산할 다음 실행이 없습니다. 다른 @ 단축어는 모두 읽습니다.","알 수 없는 단축어","“{line}”은(는) @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly, @reboot 중 어느 것도 아닙니다.","다섯 필드가 아니라 여섯 필드","이 표현식은 Quartz와 Spring이 쓰는 초로 시작합니다. crontab 줄은 분으로 시작하는 다섯 필드입니다. 첫 필드를 지우면 여기서 읽을 수 있습니다.","crontab 줄은 다섯 필드(분, 시, 일, 월, 요일)인데 이 줄은 {n}개입니다.","{n}","{n}","{n}","{n}","{list}, {item}","{a} 및 {b}","{list} 및 {last}","매{field}","매{field} ({list})","{step}{field}마다 ({list})","{list}… (값 {n}개)","매분","매분, {step}시간마다","{hours}의 매분","{n}분마다","{hours}의 {n}분마다","매시 {n}분","{time}에","{hours}의 {n}분","{hours}의 {minutes}분","매월 {days}일","매주 {days}","{months}","매일, {when}.","{days}, {when}.","{step}시간마다","{year}년 {month} {day}일 ({weekday}) {time}","{n}분 후","{h}시간 {m}분 후","{h}시간 후","일과 요일이 모두 지정되어 있으므로 cron은 둘 다 일치할 때만이 아니라 둘 중 하나가 일치할 때 실행됩니다.","{fields}(으)로 읽었습니다.","다음 실행들","다음 실행","그다음","{n}일 후","{n}일 후","앞으로 {n}년 동안 없음","앞으로 {n}년 동안 없음","개발",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","用通俗的话解读一行 crontab，或从预设构建一行,并查看它下一次何时触发。","在此设备上运行","可离线使用","表达式","每分钟","每 15 分钟","每小时","每天 03:30","工作日 03:30","每月 1 日","每年","在上方输入一行 crontab","分钟","小时","日","月","星期","工作原理","本页读取一行 crontab 的五个字段——分钟、小时、日、月、星期——可写成 \u003ccode>*\u003c/code>、数字、列表(\u003ccode>1,15\u003c/code>)、范围(\u003ccode>9-17\u003c/code>)或步长(\u003ccode>*/5\u003c/code>、\u003ccode>10-40/10\u003c/code>)。月份和星期名称不分大小写(\u003ccode>JAN\u003c/code>、\u003ccode>mon\u003c/code>),星期日既可写 \u003ccode>0\u003c/code> 也可写 \u003ccode>7\u003c/code>,简写 \u003ccode>@yearly\u003c/code>、\u003ccode>@annually\u003c/code>、\u003ccode>@monthly\u003c/code>、\u003ccode>@weekly\u003c/code>、\u003ccode>@daily\u003c/code>、\u003ccode>@midnight\u003c/code> 和 \u003ccode>@hourly\u003c/code> 会展开为对应的五个字段。有两样东西会被拒绝而不是猜测:\u003ccode>@reboot\u003c/code>(它是事件而不是时间),以及带秒的六字段表达式(它属于 Quartz 或 Spring，而不属于 crontab)。像 \u003ccode>22-4\u003c/code> 这样倒过来的范围也会被拒绝:crontab 没有定义它,不同的守护进程处理方式不一。","人们最容易弄错的是最后一条规则:\u003cstrong>当日和星期都做了限制时,只要其中任意一个匹配,cron 就会运行\u003c/strong>,而不是两者都匹配才运行。所以 \u003ccode>0 0 13 * 5\u003c/code> 是每月 13 日和每个星期五,而不是 13 日的星期五。当两者之一为 \u003ccode>*\u003c/code> 时,只由另一个决定。页面会在句子下方说明当前适用哪条规则。","下次运行的算法是:向前逐日推进五年,取月和日规则允许的日子,再取其中的小时和分钟;如果这段时间内没有匹配,页面会这样说明,对于 \u003ccode>0 0 30 2 *\u003c/code> 这样的行,这才是诚实的答案。时间采用本设备自己的时钟和本设备的夏令时规则。真正的守护进程使用它所在机器的时钟,所以请把这里的结果当作对表达式的解读,而不是对某台服务器的承诺;时钟跳过的那一小时按浏览器的方式处理,而各种 cron 实现恰恰在这一小时上有所不同。秒从不属于 crontab 的一行:每次运行都落在整分钟上。","没有任何内容离开本页:表达式在这里解析,此文件没有服务器。深色和语言按钮会把各自的设置记在此浏览器的本地存储中;你输入的内容不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","Cron 表达式解读与生成 — 通俗说明和下几次运行 — MDV","粘贴一行 crontab，逐字段读出它的含义,并按本设备的时钟显示下几次运行。预设可生成常见的计划。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","预设","分钟","小时","日","月","星期","无法读取","{field}字段为空。字段之间用单个空格分隔。","{field}字段中的步长 0 永远不会匹配。步长从范围的起点开始数:*/5 表示每五个取一个。","“{part}”在{field}字段中含有多个 /。","“{part}”不是{field}字段接受的值。它接受 {min}–{max}、名称({names}…)、*、列表、范围和步长。","“{part}”不是{field}字段接受的值。它接受 {min}–{max}、*、列表、范围和步长。","“{part}”在{field}字段中是倒过来的。crontab 没有定义越过末尾的范围;请拆成两部分来写,{parts}。","太长","共 {n} 个字符。一行 crontab 有五个字段;本页最多读取 {limit} 个字符。","不是时间","@reboot 在机器启动时运行,因此没有需要计算的下一次运行。其他以 @ 开头的简写都可以读取。","未知的简写","“{line}”不是 @yearly、@annually、@monthly、@weekly、@daily、@midnight、@hourly 或 @reboot 中的任何一个。","是六个字段,不是五个","该表达式以秒开头,这是 Quartz 和 Spring 的用法。一行 crontab 有五个字段,从分钟开始。去掉第一个字段即可在这里读取。","一行 crontab 有五个字段——分钟、小时、日、月、星期——而这一行有 {n} 个。","{n}","{n}","{n}","{n}","{list}、{item}","{a}和{b}","{list}和{last}","每{field}","每{field}({list})","每 {step} {field}({list})","{list}…(共 {n} 个值)","每分钟","每隔 {step} 小时的每分钟","{hours}的每分钟","每 {n} 分钟","{hours}的每 {n} 分钟","每小时的第 {n} 分钟","{time}","{hours}的第 {n} 分钟","{hours}的第 {minutes} 分钟","每月{days}日","每周{days}","在{months}","每天,{when}。","{days},{when}。","每 {step} 小时","{year}年{month}{day}日({weekday}) {time}","{n} 分钟后","{h} 小时 {m} 分钟后","{h} 小时后","日和星期都已设置,所以只要其中任意一个匹配,cron 就会触发,而不是只在两者都匹配时才触发。","解读为 {fields}。","接下来的运行","下一次运行","之后","{n} 天后","{n} 天后","未来 {n} 年内都不会运行","未来 {n} 年内都不会运行","开发",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2362,32 +2575,44 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var DOW_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   var MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   var DOW_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  // name is what the code compares; label is what the reader sees
   var FIELDS = [
-    { name: "minute", min: 0, max: 59 },
-    { name: "hour", min: 0, max: 23 },
-    { name: "day of month", min: 1, max: 31 },
-    { name: "month", min: 1, max: 12, names: MONTH_NAMES },
-    { name: "day of week", min: 0, max: 7, names: DOW_NAMES }
+    { name: "minute", label: trk("minute"), min: 0, max: 59 },
+    { name: "hour", label: trk("hour"), min: 0, max: 23 },
+    { name: "day of month", label: trk("day of month"), min: 1, max: 31 },
+    { name: "month", label: trk("month"), min: 1, max: 12, names: MONTH_NAMES },
+    { name: "day of week", label: trk("day of week"), min: 0, max: 7, names: DOW_NAMES }
   ];
   var MACROS = {
     "@yearly": "0 0 1 1 *", "@annually": "0 0 1 1 *", "@monthly": "0 0 1 * *",
     "@weekly": "0 0 * * 0", "@daily": "0 0 * * *", "@midnight": "0 0 * * *", "@hourly": "0 * * * *"
   };
 
+  // The page's language. English keeps its own tables; the others take month and weekday names from Intl.
+  function loc() { return document.documentElement.getAttribute("lang") || "en"; }
+  function dowName(i, style) {   // i is 0 for Sunday; style is "long" or "short"
+    if (loc() === "en") return style === "long" ? DOW_LONG[i] : DOW_LONG[i].slice(0, 3);
+    return new Intl.DateTimeFormat(loc(), { weekday: style, timeZone: "UTC" }).format(new Date(Date.UTC(2023, 0, 1 + i)));
+  }
+  function monthName(i, style) {   // i is 0 for January
+    if (loc() === "en") return style === "long" ? MONTH_LONG[i] : MONTH_LONG[i].slice(0, 3);
+    return new Intl.DateTimeFormat(loc(), { month: style, timeZone: "UTC" }).format(new Date(Date.UTC(2023, i, 1)));
+  }
+
   function fail(title, message) { return { error: { title: title, message: message } }; }
 
   // One field to a sorted list of numbers, plus a plain reading of what was written.
   function parseField(raw, spec) {
-    var values = [], parts = raw.split(",");
-    if (raw === "") return fail("Cannot read that", "The " + spec.name + " field is empty. Fields are separated by single spaces.");
+    var values = [], parts = raw.split(","), label = tr(spec.label);
+    if (raw === "") return fail(tr("Cannot read that"), tr("The {field} field is empty. Fields are separated by single spaces.", { field: label }));
     for (var i = 0; i < parts.length; i++) {
       var part = parts[i], step = 1, m = /^(.*)\/(\d+)$/.exec(part);
       if (m) {
         part = m[1];
         step = Number(m[2]);
-        if (step < 1) return fail("Cannot read that", "A step of 0 in the " + spec.name + " field never matches. Steps count from the start of the range: */5 is every fifth.");
+        if (step < 1) return fail(tr("Cannot read that"), tr("A step of 0 in the {field} field never matches. Steps count from the start of the range: */5 is every fifth.", { field: label }));
       }
-      if (/\//.test(part)) return fail("Cannot read that", "“" + parts[i] + "” has more than one / in the " + spec.name + " field.");
+      if (/\//.test(part)) return fail(tr("Cannot read that"), tr("“{part}” has more than one / in the {field} field.", { part: parts[i], field: label }));
       var lo, hi;
       if (part === "*") { lo = spec.min; hi = spec.max; }
       else {
@@ -2395,10 +2620,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         if (r) { lo = readNumber(r[1], spec); hi = readNumber(r[2], spec); }
         else { lo = hi = readNumber(part, spec); if (m) hi = spec.max; }   // "5/15" means from 5 to the end, as crontab does
       }
-      if (lo === null || hi === null) return fail("Cannot read that", "“" + parts[i] + "” is not a value the " + spec.name + " field accepts. It takes " + spec.min + "–" + spec.max +
-        (spec.names ? ", the names " + spec.names.slice(0, 3).join(", ") + "…, " : ", ") + "* , lists, ranges and steps.");
-      if (lo > hi) return fail("Cannot read that", "“" + parts[i] + "” runs backwards in the " + spec.name + " field. crontab does not define a range that wraps past the end; write it as two parts, " +
-        lo + "-" + spec.max + "," + spec.min + "-" + hi + ".");
+      if (lo === null || hi === null) {
+        var accepts = { part: parts[i], field: label, min: spec.min, max: spec.max };
+        if (spec.names) accepts.names = spec.names.slice(0, 3).join(", ");
+        return fail(tr("Cannot read that"), spec.names
+          ? tr("“{part}” is not a value the {field} field accepts. It takes {min}–{max}, the names {names}…, * , lists, ranges and steps.", accepts)
+          : tr("“{part}” is not a value the {field} field accepts. It takes {min}–{max}, * , lists, ranges and steps.", accepts));
+      }
+      if (lo > hi) return fail(tr("Cannot read that"), tr("“{part}” runs backwards in the {field} field. crontab does not define a range that wraps past the end; write it as two parts, {parts}.",
+        { part: parts[i], field: label, parts: lo + "-" + spec.max + "," + spec.min + "-" + hi }));
       for (var v = lo; v <= hi; v += step) values.push(v);
     }
     return { values: values };
@@ -2422,14 +2652,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function parseCron(text) {
     var line = String(text).trim().replace(/\s+/g, " ");
     if (!line) return null;
-    if (line.length > LIMIT) return fail("Too long", "That is " + line.length + " characters. A crontab line is five fields; this page reads up to " + LIMIT + ".");
-    if (/^@reboot$/i.test(line)) return fail("Not a time", "@reboot runs when the machine starts, so there is no next run to work out. Every other @ shorthand is read.");
+    if (line.length > LIMIT) return fail(tr("Too long"), tr("That is {n} characters. A crontab line is five fields; this page reads up to {limit}.", { n: line.length, limit: LIMIT }));
+    if (/^@reboot$/i.test(line)) return fail(tr("Not a time"), tr("@reboot runs when the machine starts, so there is no next run to work out. Every other @ shorthand is read."));
     var macro = MACROS[line.toLowerCase()];
-    if (line.charAt(0) === "@" && !macro) return fail("Unknown shorthand", "“" + line + "” is not one of @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly or @reboot.");
+    if (line.charAt(0) === "@" && !macro) return fail(tr("Unknown shorthand"), tr("“{line}” is not one of @yearly, @annually, @monthly, @weekly, @daily, @midnight, @hourly or @reboot.", { line: line }));
     var fields = (macro || line).split(" ");
-    if (fields.length === 6 || fields.length === 7) return fail("Six fields, not five",
-      "That expression starts with seconds, which Quartz and Spring use. A crontab line has five fields, starting at the minute. Drop the first field to read it here.");
-    if (fields.length !== 5) return fail("Cannot read that", "A crontab line has five fields — minute, hour, day of month, month, day of week — and this has " + fields.length + ".");
+    if (fields.length === 6 || fields.length === 7) return fail(tr("Six fields, not five"),
+      tr("That expression starts with seconds, which Quartz and Spring use. A crontab line has five fields, starting at the minute. Drop the first field to read it here."));
+    if (fields.length !== 5) return fail(tr("Cannot read that"), tr("A crontab line has five fields — minute, hour, day of month, month, day of week — and this has {n}.", { n: fields.length }));
 
     var parsed = [];
     for (var i = 0; i < 5; i++) {
@@ -2450,17 +2680,23 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     };
   }
 
-  /* ---------- pure: say it in English ---------- */
+  /* ---------- pure: say it in words ---------- */
 
   function two(n) { return (n < 10 ? "0" : "") + n; }
+  // English takes st, nd, rd and th by Intl's ordinal rule; the other languages write the bare number
   function ordinal(n) {
-    var rest = n % 100, last = n % 10;
-    return n + (rest >= 11 && rest <= 13 ? "th" : last === 1 ? "st" : last === 2 ? "nd" : last === 3 ? "rd" : "th");
+    var rule = window.Intl && Intl.PluralRules ? new Intl.PluralRules(loc(), { type: "ordinal" }).select(n) : "other", v = { n: n };
+    return rule === "one" ? tr("{n}st", v) : rule === "two" ? tr("{n}nd", v) : rule === "few" ? tr("{n}rd", v) : tr("{n}th", v);
   }
-  function joinWords(list) {
+  function joinItems(list) {   // a, b, c
+    var out = list[0];
+    for (var i = 1; i < list.length; i++) out = tr("{list}, {item}", { list: out, item: list[i] });
+    return out;
+  }
+  function joinWords(list) {   // a, b and c
     if (list.length === 1) return list[0];
-    if (list.length === 2) return list[0] + " and " + list[1];
-    return list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
+    if (list.length === 2) return tr("{a} and {b}", { a: list[0], b: list[1] });
+    return tr("{list} and {last}", { list: joinItems(list.slice(0, -1)), last: list[list.length - 1] });
   }
   function stepOf(values, min, max) {   // the step, when the values are one evenly spaced run
     if (values.length < 3 || values[0] !== min) return 0;
@@ -2469,42 +2705,46 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     return values[values.length - 1] + gap > max ? gap : 0;
   }
   function readField(field) {
-    var v = field.values, spec = field.spec, whole = v.length === spec.max - spec.min + 1 || (spec.name === "day of week" && v.length === 7);
-    if (whole) return "every " + spec.name;
-    var names = spec.name === "month" ? v.map(function (x) { return MONTH_LONG[x - 1]; })
-      : spec.name === "day of week" ? v.map(function (x) { return DOW_LONG[x]; })
+    var v = field.values, spec = field.spec, label = tr(spec.label), whole = v.length === spec.max - spec.min + 1 || (spec.name === "day of week" && v.length === 7);
+    if (whole) return tr("every {field}", { field: label });
+    var names = spec.name === "month" ? v.map(function (x) { return monthName(x - 1, "long"); })
+      : spec.name === "day of week" ? v.map(function (x) { return dowName(x, "long"); })
         : spec.name === "day of month" ? v.map(ordinal)
           : spec.name === "hour" ? v.map(function (x) { return two(x) + ":00"; }) : v.map(String);
     var step = stepOf(v, spec.min, spec.max);
-    if (step) return "every " + (step === 1 ? "" : ordinal(step) + " ") + spec.name.replace("day of ", "day of ") + " (" + (names.length > 6 ? names.slice(0, 6).join(", ") + "…" : joinWords(names)) + ")";
-    return names.length > 8 ? names.slice(0, 8).join(", ") + "… (" + names.length + " values)" : joinWords(names);
+    if (step) {
+      var list = names.length > 6 ? joinItems(names.slice(0, 6)) + "…" : joinWords(names);
+      return step === 1 ? tr("every {field} ({list})", { field: label, list: list })
+        : tr("every {step} {field} ({list})", { step: ordinal(step), field: label, list: list });
+    }
+    return names.length > 8 ? tr("{list}… ({n} values)", { list: joinItems(names.slice(0, 8)), n: names.length }) : joinWords(names);
   }
 
   function sentence(cron) {
     var mins = cron.minutes, hours = cron.hours, minStep = stepOf(mins, 0, 59), hourStep = stepOf(hours, 0, 23);
     var everyMin = mins.length === 60, everyHour = hours.length === 24, when;
 
-    if (everyMin && everyHour) when = "Every minute";
-    else if (everyMin) when = "Every minute" + (hourStep ? ", every " + ordinal(hourStep) + " hour" : " of " + hourList(hours));
-    else if (minStep && everyHour) when = "Every " + (minStep === 1 ? "minute" : minStep + " minutes");
-    else if (minStep) when = "Every " + minStep + " minutes" + (everyHour ? "" : " of " + hourList(hours));
-    else if (mins.length === 1 && everyHour) when = "At " + two(mins[0]) + " minutes past every hour";
-    else if (mins.length === 1 && hours.length === 1) when = "At " + two(hours[0]) + ":" + two(mins[0]);
-    else if (hours.length === 1) when = "At " + joinWords(mins.map(function (m) { return two(hours[0]) + ":" + two(m); }));
-    else if (mins.length === 1) when = "At " + two(mins[0]) + " minutes past " + hourList(hours);
-    else when = "At minutes " + joinWords(mins.map(two)) + " of " + hourList(hours);
+    if (everyMin && everyHour) when = tr("Every minute");
+    else if (everyMin) when = hourStep ? tr("Every minute, every {step} hour", { step: ordinal(hourStep) }) : tr("Every minute of {hours}", { hours: hourList(hours) });
+    else if (minStep && everyHour) when = minStep === 1 ? tr("Every minute") : tr("Every {n} minutes", { n: minStep });
+    else if (minStep) when = everyHour ? tr("Every {n} minutes", { n: minStep }) : tr("Every {n} minutes of {hours}", { n: minStep, hours: hourList(hours) });
+    else if (mins.length === 1 && everyHour) when = tr("At {n} minutes past every hour", { n: two(mins[0]) });
+    else if (mins.length === 1 && hours.length === 1) when = tr("At {time}", { time: two(hours[0]) + ":" + two(mins[0]) });
+    else if (hours.length === 1) when = tr("At {time}", { time: joinWords(mins.map(function (m) { return two(hours[0]) + ":" + two(m); })) });
+    else if (mins.length === 1) when = tr("At {n} minutes past {hours}", { n: two(mins[0]), hours: hourList(hours) });
+    else when = tr("At minutes {minutes} of {hours}", { minutes: joinWords(mins.map(two)), hours: hourList(hours) });
 
     var days = [];
-    if (!cron.domStar) days.push("on the " + joinWords(cron.doms.map(ordinal)));
-    if (!cron.dowStar) days.push("on " + joinWords(cron.dows.map(function (d) { return DOW_LONG[d]; })));
-    if (cron.months.length !== 12) days.push("in " + joinWords(cron.months.map(function (m) { return MONTH_LONG[m - 1]; })));
-    if (!days.length) return when + ", every day.";
-    return when + ", " + days.join(", ") + ".";
+    if (!cron.domStar) days.push(tr("on the {days}", { days: joinWords(cron.doms.map(ordinal)) }));
+    if (!cron.dowStar) days.push(tr("on {days}", { days: joinWords(cron.dows.map(function (d) { return dowName(d, "long"); })) }));
+    if (cron.months.length !== 12) days.push(tr("in {months}", { months: joinWords(cron.months.map(function (m) { return monthName(m - 1, "long"); })) }));
+    if (!days.length) return tr("{when}, every day.", { when: when });
+    return tr("{when}, {days}.", { when: when, days: joinItems(days) });
   }
   function hourList(hours) {
     var step = stepOf(hours, 0, 23);
-    if (step) return "every " + ordinal(step) + " hour";
-    return (hours.length > 6 ? hours.slice(0, 6).map(two).join(", ") + "…" : joinWords(hours.map(function (h) { return two(h) + ":00"; }))).replace(/:00(?=(,| and |…|$))/g, ":00");
+    if (step) return tr("every {step} hour", { step: ordinal(step) });
+    return hours.length > 6 ? joinItems(hours.slice(0, 6).map(two)) + "…" : joinWords(hours.map(function (h) { return two(h) + ":00"; }));
   }
 
   /* ---------- pure: the next runs ---------- */
@@ -2545,14 +2785,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     ok.hidden = which !== "ok";
   }
   function stamp(d) {
-    return DOW_LONG[d.getDay()].slice(0, 3) + " " + d.getDate() + " " + MONTH_LONG[d.getMonth()].slice(0, 3) + " " + d.getFullYear() + ", " + two(d.getHours()) + ":" + two(d.getMinutes());
+    return tr("{weekday} {day} {month} {year}, {time}", { weekday: dowName(d.getDay(), "short"), day: d.getDate(), month: monthName(d.getMonth(), "short"),
+      year: d.getFullYear(), time: two(d.getHours()) + ":" + two(d.getMinutes()) });
   }
   function away(d, now) {
     var mins = Math.round((d - now) / 60000);
-    if (mins < 60) return "in " + mins + " min";
-    if (mins < 1440) return "in " + Math.floor(mins / 60) + " h " + (mins % 60 ? (mins % 60) + " min" : "").trim();
-    var days = Math.floor(mins / 1440);
-    return "in " + days + (days === 1 ? " day" : " days");
+    if (mins < 60) return tr("in {n} min", { n: mins });
+    if (mins < 1440) return mins % 60 ? tr("in {h} h {m} min", { h: Math.floor(mins / 60), m: mins % 60 }) : tr("in {h} h", { h: Math.floor(mins / 60) });
+    return trn(Math.floor(mins / 1440), "in {n} day", "in {n} days");
   }
 
   function run() {
@@ -2564,21 +2804,21 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     for (var i = 0; i < 5; i++) $(["f-min", "f-hour", "f-dom", "f-mon", "f-dow"][i]).textContent = cron.fields[i].raw + " — " + readField(cron.fields[i]);
 
     var notes = [];
-    if (!cron.domStar && !cron.dowStar) notes.push("Day of month and day of week are both set, so cron fires when either matches — not only when both do.");
-    if (/\(/.test(cron.expr)) notes.push("Read as " + cron.expr.replace(/^\S+ \(/, "").replace(/\)$/, "") + ".");
+    if (!cron.domStar && !cron.dowStar) notes.push(tr("Day of month and day of week are both set, so cron fires when either matches — not only when both do."));
+    if (/\(/.test(cron.expr)) notes.push(tr("Read as {fields}.", { fields: cron.expr.replace(/^\S+ \(/, "").replace(/\)$/, "") }));
     said.textContent = notes.join(" ");
     said.hidden = !notes.length;
 
     var now = new Date(), list = nextRuns(cron, now, 5);
     runs.textContent = "";
     if (!list.length) {
-      var dt = document.createElement("dt"); dt.textContent = "Next runs";
-      var dd = document.createElement("dd"); dd.textContent = "never in the next " + YEARS_AHEAD + " years";
+      var dt = document.createElement("dt"); dt.textContent = tr("Next runs");
+      var dd = document.createElement("dd"); dd.textContent = trn(YEARS_AHEAD, "never in the next {n} year", "never in the next {n} years");
       runs.appendChild(dt); runs.appendChild(dd);
     } else {
       for (var k = 0; k < list.length; k++) {
         var term = document.createElement("dt");
-        term.textContent = k === 0 ? "Next run" : "then";
+        term.textContent = k === 0 ? tr("Next run") : tr("then");
         var val = document.createElement("dd");
         val.textContent = stamp(list[k]) + " · " + away(list[k], now);
         runs.appendChild(term); runs.appendChild(val);
@@ -2593,6 +2833,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   });
 
   expr.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

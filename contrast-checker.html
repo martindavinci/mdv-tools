@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link is-here" href="./contrast-checker.html" aria-current="page" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link is-here" href="./contrast-checker.html" aria-current="page" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,62 +2353,62 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Contrast checker</h1>
+      <h1 class="mdv-head-name" data-t="46">Contrast checker</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Two colours, the ratio between them, and what passes at each text size.</p>
+    <p class="mdv-head-line" data-t="79">Two colours, the ratio between them, and what passes at each text size.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-panel">
     <div class="mdv-cols">
       <div>
-        <label class="mdv-label" for="fg">Text colour</label>
+        <label class="mdv-label" for="fg" data-t="82">Text colour</label>
         <div class="mdv-row" style="gap:var(--space-2)">
-          <input id="fgPick" type="color" value="#cb6d4f" aria-label="Pick the text colour">
+          <input id="fgPick" type="color" value="#cb6d4f" aria-label="Pick the text colour" data-t-attrs="aria-label">
           <input class="mdv-input mdv-mono" id="fg" type="text" spellcheck="false" autocomplete="off" value="#cb6d4f" style="flex:1">
         </div>
       </div>
       <div>
-        <label class="mdv-label" for="bg">Background</label>
+        <label class="mdv-label" for="bg" data-t="83">Background</label>
         <div class="mdv-row" style="gap:var(--space-2)">
-          <input id="bgPick" type="color" value="#f4efe6" aria-label="Pick the background colour">
+          <input id="bgPick" type="color" value="#f4efe6" aria-label="Pick the background colour" data-t-attrs="aria-label">
           <input class="mdv-input mdv-mono" id="bg" type="text" spellcheck="false" autocomplete="off" value="#f4efe6" style="flex:1">
-          <button class="mdv-btn is-sm is-quiet" type="button" id="swap">Swap</button>
+          <button class="mdv-btn is-sm is-quiet" type="button" id="swap"><span data-t="84">Swap</span></button>
         </div>
       </div>
     </div>
   </section>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>type two colours above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="85">type two colours above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title">Cannot read that colour</span>
+      <span class="mdv-notice-title" data-t="86">Cannot read that colour</span>
       <span id="errmsg"></span>
     </div>
 
     <div id="ok" hidden>
       <div class="mdv-row is-between">
-        <div class="mdv-readout"><span id="ratio"></span><span class="mdv-unit">to 1</span></div>
+        <div class="mdv-readout"><span id="ratio"></span><span class="mdv-unit" data-t="87">to 1</span></div>
         <div class="mdv-btn-row" id="verdicts"></div>
       </div>
 
       <div id="sample" style="padding:var(--space-5);border:1px solid var(--border-hair)">
-        <p style="margin:0 0 var(--space-3);font-size:16px" id="s16">Normal text at 16 pixels — the size most words on a page are set in.</p>
-        <p style="margin:0 0 var(--space-3);font-size:24px;font-weight:700" id="s24">Large text, 24 px bold</p>
-        <p style="margin:0;font-size:12px" id="s12">Small print at 12 px, which WCAG still judges as normal text</p>
+        <p style="margin:0 0 var(--space-3);font-size:16px" id="s16"><span data-t="88">Normal text at 16 pixels — the size most words on a page are set in.</span></p>
+        <p style="margin:0 0 var(--space-3);font-size:24px;font-weight:700" id="s24"><span data-t="89">Large text, 24 px bold</span></p>
+        <p style="margin:0;font-size:12px" id="s12"><span data-t="90">Small print at 12 px, which WCAG still judges as normal text</span></p>
       </div>
 
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Normal text</dt><dd id="k-normal"></dd>
-          <dt>Large text</dt><dd id="k-large"></dd>
-          <dt>Interface parts</dt><dd id="k-ui"></dd>
-          <dt>Nearest pass</dt><dd id="k-fix"></dd>
+          <dt data-t="91">Normal text</dt><dd id="k-normal"></dd>
+          <dt data-t="92">Large text</dt><dd id="k-large"></dd>
+          <dt data-t="93">Interface parts</dt><dd id="k-ui"></dd>
+          <dt data-t="94">Nearest pass</dt><dd id="k-fix"></dd>
         </dl>
       </div>
       <p class="mdv-hint" id="said" hidden></p>
@@ -2304,46 +2416,47 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="95">How this works</summary>
     <div class="mdv-method-body">
-      <p>Each colour is turned into its relative luminance the way WCAG 2 defines it: the sRGB channels are
+      <p data-t="96">Each colour is turned into its relative luminance the way WCAG 2 defines it: the sRGB channels are
         divided by 255, linearised (the piecewise curve, not a plain 2.2 power), then weighted 0.2126 red,
         0.7152 green, 0.0722 blue. The ratio is (lighter + 0.05) ÷ (darker + 0.05), which runs from 1:1 for
         two identical colours to 21:1 for black on white. Anything you can write in CSS is accepted —
         <code>#abc</code>, <code>#aabbcc</code>, <code>rgb(0 0 0)</code>, <code>hsl(30 40% 50%)</code>, a
         colour name — because the page hands it to the browser's own parser rather than guessing. A
         transparent colour is composited over the background first, and the page says it did that.</p>
-      <p>The thresholds are WCAG 2.1: <strong>4.5:1</strong> for normal text at AA, <strong>3:1</strong>
+      <p data-t="97">The thresholds are WCAG 2.1: <strong>4.5:1</strong> for normal text at AA, <strong>3:1</strong>
         for large text (18.66px bold or 24px and up), <strong>7:1</strong> and <strong>4.5:1</strong> for
         AAA, and <strong>3:1</strong> for interface parts and meaningful graphics — a form border, an icon
         that carries meaning, the edge of a button. Nearest pass keeps the hue and walks the text colour
         lighter or darker in small steps until AA for normal text is met, and prints the first shade that
         does; if the background is a mid tone, moving the background instead is often the better fix.</p>
-      <p>Two honest limits. The ratio is a formula, not eyesight: it ignores font weight, the rendering of
+      <p data-t="98">Two honest limits. The ratio is a formula, not eyesight: it ignores font weight, the rendering of
         thin strokes, and what a screen does at low brightness, so a pass at 4.6:1 in a hairline weight can
         still read badly. And WCAG 2 is known to be unkind to light text on dark grounds and generous to
         mid-tone pairs — the newer APCA model in WCAG 3 handles that better, but it is not final and is not
         what audits are run against today, so this page states the standard in force rather than the one
         coming.</p>
-      <p>Everything is worked out in this tab. Nothing is uploaded and nothing you type is stored; the Dark
-        button keeps its own setting in this browser's local storage.</p>
+      <p data-t="99">Everything is worked out in this tab. Nothing is uploaded and nothing you type is stored; the Dark
+        and language buttons keep their own settings in this browser's local storage.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="More tools">
-    <span class="mdv-tag">More tools</span>
-    <a href="./cron-generator.html">Cron expression</a>
-    <a href="./date-difference.html">Date difference</a>
-    <a href="./dice-roller.html">Dice roller</a>
+    <span class="mdv-tag" data-t="100">More tools</span>
+    <a href="./cron-generator.html" data-t="36">Cron expression</a>
+    <a href="./date-difference.html" data-t="69">Date difference</a>
+    <a href="./dice-roller.html" data-t="75">Dice roller</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="101">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="102">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="103" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="104">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2354,6 +2467,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Colour Contrast Checker — WCAG AA and AAA, with a fix — MDV","Check the contrast ratio between two colours against WCAG AA and AAA for text and interface parts, and get the nearest shade that passes. Runs on your device.","All {n} tools","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Pick the text colour","Pick the background colour","{ratio}:1 against {need}:1 — passes","{ratio}:1 against {need}:1 — fails, short by {short}","“{value}” is not a colour this browser knows. Write a hex value such as #336699, an rgb() or hsl() colour, or a CSS colour name.","AA pass","AA fail","AA large pass","AA large fail","AAA pass","AAA fail","{verdict} at AA, passes at AAA","{verdict} at AA, fails at AAA","{verdict} for borders, icons and the edges of controls","not needed — this already clears AA for normal text","no shade of this hue clears 4.5:1 on that background; change the background instead","{colour} — the same hue lighter, at {ratio}:1","{colour} — the same hue darker, at {ratio}:1","A translucent colour was composited before measuring: the text over the background, the background over white.","Below 3:1 nothing passes, at any size — this pair is decorative only.","Between 3 and 4.5 only large text passes, which means 24 px, or 18.66 px when bold.","Clears AA everywhere; AAA would want 7:1 for normal text.","Clears AAA for normal text, which is as far as WCAG 2 goes.","The ratio is a formula, not eyesight: thin strokes and low screen brightness can still read badly at a passing number.","2026-11-02"],"h":105,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Dos colores, la relación entre ellos y qué cumple en cada tamaño de texto.","En este dispositivo","Funciona sin conexión","Color del texto","Fondo","Cambiar","escribe dos colores arriba","No se puede leer ese color","a 1","Texto normal a 16 píxeles: el tamaño en que se compone la mayoría de las palabras de una página.","Texto grande, 24 px en negrita","Letra pequeña a 12 px, que WCAG sigue juzgando como texto normal","Texto normal","Texto grande","Elementos de interfaz","Aprobado más cercano","Cómo funciona","Cada color se convierte en su luminancia relativa tal como la define WCAG 2: los canales sRGB se dividen entre 255, se linealizan (la curva por tramos, no una simple potencia de 2,2) y luego se ponderan 0,2126 rojo, 0,7152 verde y 0,0722 azul. La relación es (más claro + 0,05) ÷ (más oscuro + 0,05), que va de 1:1 para dos colores idénticos a 21:1 para negro sobre blanco. Se acepta cualquier cosa que puedas escribir en CSS (\u003ccode>#abc\u003c/code>, \u003ccode>#aabbcc\u003c/code>, \u003ccode>rgb(0 0 0)\u003c/code>, \u003ccode>hsl(30 40% 50%)\u003c/code>, un nombre de color), porque la página se lo entrega al analizador del propio navegador en lugar de adivinar. Un color transparente se compone primero sobre el fondo, y la página avisa de que lo hizo.","Los umbrales son los de WCAG 2.1: \u003cstrong>4,5:1\u003c/strong> para texto normal en AA, \u003cstrong>3:1\u003c/strong> para texto grande (18,66 px en negrita o 24 px en adelante), \u003cstrong>7:1\u003c/strong> y \u003cstrong>4,5:1\u003c/strong> para AAA, y \u003cstrong>3:1\u003c/strong> para elementos de interfaz y gráficos con significado: el borde de un formulario, un icono que transmite algo, el borde de un botón. El aprobado más cercano conserva el tono y desplaza el color del texto hacia más claro o más oscuro en pasos pequeños hasta cumplir AA para texto normal, y muestra el primer tono que lo logra; si el fondo es un tono medio, mover el fondo suele ser la mejor solución.","Dos límites honestos. La relación es una fórmula, no la vista: ignora el grosor de la fuente, el renderizado de los trazos finos y lo que hace una pantalla con poco brillo, así que un aprobado con 4,6:1 en un grosor finísimo aún puede leerse mal. Y se sabe que WCAG 2 es poco amable con el texto claro sobre fondos oscuros y generoso con los pares de tonos medios; el modelo APCA, más nuevo, de WCAG 3 lo resuelve mejor, pero no es definitivo y no es con lo que se hacen hoy las auditorías, así que esta página expone el estándar vigente y no el que viene.","Todo se calcula en esta pestaña. No se sube nada y nada de lo que escribes se guarda; los botones de modo oscuro e idioma guardan su propio ajuste en el almacenamiento local de este navegador.","Más herramientas","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Comprobador de contraste de color — WCAG AA y AAA, con una corrección — MDV","Comprueba la relación de contraste entre dos colores según WCAG AA y AAA para texto y elementos de interfaz, y obtén el tono más cercano que cumple. Funciona en tu dispositivo.","Las {n} herramientas","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elegir el color del texto","Elegir el color de fondo","{ratio}:1 frente a {need}:1: cumple","{ratio}:1 frente a {need}:1: no cumple, le faltan {short}","“{value}” no es un color que este navegador conozca. Escribe un valor hexadecimal como #336699, un color rgb() o hsl(), o un nombre de color CSS.","AA cumple","AA no cumple","AA grande cumple","AA grande no cumple","AAA cumple","AAA no cumple","{verdict} en AA, cumple en AAA","{verdict} en AA, no cumple en AAA","{verdict} para bordes, iconos y bordes de controles","no hace falta: ya cumple AA para texto normal","ningún tono de este matiz alcanza 4,5:1 sobre ese fondo; cambia el fondo","{colour}: el mismo tono, más claro, a {ratio}:1","{colour}: el mismo tono, más oscuro, a {ratio}:1","Se compuso un color translúcido antes de medir: el texto sobre el fondo y el fondo sobre blanco.","Por debajo de 3:1 no cumple nada, con ningún tamaño: este par es solo decorativo.","Entre 3 y 4,5 solo cumple el texto grande, es decir, 24 px, o 18,66 px en negrita.","Cumple AA en todos los casos; AAA pediría 7:1 para texto normal.","Cumple AAA para texto normal, que es lo máximo que llega WCAG 2.","La relación es una fórmula, no la vista: los trazos finos y el poco brillo de pantalla pueden seguir leyéndose mal aunque la cifra cumpla.",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Deux couleurs, le rapport entre elles et ce qui passe à chaque taille de texte.","Sur cet appareil","Fonctionne hors ligne","Couleur du texte","Arrière-plan","Inverser","saisissez deux couleurs ci-dessus","Couleur illisible","pour 1","Texte normal à 16 pixels : la taille dans laquelle s’écrit la plupart des mots d’une page.","Grand texte, 24 px en gras","Petits caractères à 12 px, que WCAG juge encore comme du texte normal","Texte normal","Grand texte","Éléments d’interface","Valeur conforme la plus proche","Comment ça marche","Chaque couleur est convertie en sa luminance relative telle que la définit WCAG 2 : les canaux sRGB sont divisés par 255, linéarisés (la courbe par morceaux, pas une simple puissance 2,2), puis pondérés 0,2126 pour le rouge, 0,7152 pour le vert, 0,0722 pour le bleu. Le rapport est (plus clair + 0,05) ÷ (plus sombre + 0,05), qui va de 1:1 pour deux couleurs identiques à 21:1 pour du noir sur blanc. Tout ce qu’on peut écrire en CSS est accepté (\u003ccode>#abc\u003c/code>, \u003ccode>#aabbcc\u003c/code>, \u003ccode>rgb(0 0 0)\u003c/code>, \u003ccode>hsl(30 40% 50%)\u003c/code>, un nom de couleur), car la page le confie à l’analyseur du navigateur plutôt que de deviner. Une couleur transparente est d’abord composée sur l’arrière-plan, et la page le signale.","Les seuils sont ceux de WCAG 2.1 : \u003cstrong>4,5:1\u003c/strong> pour le texte normal en AA, \u003cstrong>3:1\u003c/strong> pour le grand texte (18,66 px en gras ou 24 px et plus), \u003cstrong>7:1\u003c/strong> et \u003cstrong>4,5:1\u003c/strong> pour AAA, et \u003cstrong>3:1\u003c/strong> pour les éléments d’interface et les graphiques porteurs de sens : une bordure de formulaire, une icône qui véhicule un sens, le bord d’un bouton. La valeur conforme la plus proche garde la teinte et éclaircit ou assombrit la couleur du texte par petits pas jusqu’à satisfaire AA pour le texte normal, et affiche la première nuance qui y parvient ; si l’arrière-plan est un ton moyen, modifier plutôt l’arrière-plan est souvent la meilleure correction.","Deux limites honnêtes. Le rapport est une formule, pas la vue : il ignore la graisse de la police, le rendu des traits fins et ce que fait un écran à faible luminosité, si bien qu’un résultat conforme à 4,6:1 dans une graisse très fine peut rester mal lisible. Et WCAG 2 est connu pour être dur avec le texte clair sur fond sombre et généreux avec les paires de tons moyens ; le modèle APCA de WCAG 3, plus récent, s’en sort mieux, mais il n’est pas définitif et n’est pas ce sur quoi les audits se font aujourd’hui : cette page indique donc la norme en vigueur, pas celle à venir.","Tout est calculé dans cet onglet. Rien n’est envoyé et rien de ce que vous saisissez n’est stocké ; les boutons Sombre et Langue conservent leur propre réglage dans le stockage local de ce navigateur.","Autres outils","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Vérificateur de contraste des couleurs — WCAG AA et AAA, avec une correction — MDV","Vérifiez le rapport de contraste entre deux couleurs selon WCAG AA et AAA pour le texte et les éléments d’interface, et obtenez la nuance conforme la plus proche. Fonctionne sur votre appareil.","Les {n} outils","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisir la couleur du texte","Choisir la couleur d’arrière-plan","{ratio}:1 pour {need}:1 : conforme","{ratio}:1 pour {need}:1 : non conforme, il manque {short}","« {value} » n’est pas une couleur que ce navigateur connaît. Saisissez une valeur hexadécimale comme #336699, une couleur rgb() ou hsl(), ou un nom de couleur CSS.","AA conforme","AA non conforme","AA grand conforme","AA grand non conforme","AAA conforme","AAA non conforme","{verdict} en AA, conforme en AAA","{verdict} en AA, non conforme en AAA","{verdict} pour les bordures, les icônes et les bords des commandes","inutile : cela satisfait déjà AA pour le texte normal","aucune nuance de cette teinte n’atteint 4,5:1 sur cet arrière-plan ; changez plutôt l’arrière-plan","{colour} : la même teinte, plus claire, à {ratio}:1","{colour} : la même teinte, plus sombre, à {ratio}:1","Une couleur translucide a été composée avant la mesure : le texte sur l’arrière-plan, l’arrière-plan sur du blanc.","En dessous de 3:1, rien ne passe, quelle que soit la taille : cette paire est purement décorative.","Entre 3 et 4,5, seul le grand texte passe, c’est-à-dire 24 px, ou 18,66 px en gras.","Satisfait AA partout ; AAA exigerait 7:1 pour le texte normal.","Satisfait AAA pour le texte normal, ce qui est le maximum de WCAG 2.","Le rapport est une formule, pas la vue : des traits fins et une faible luminosité d’écran peuvent rester mal lisibles même avec un chiffre conforme.",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Zwei Farben, ihr Verhältnis und was bei welcher Textgröße besteht.","Läuft auf diesem Gerät","Funktioniert offline","Textfarbe","Hintergrund","Tauschen","oben zwei Farben eingeben","Farbe nicht lesbar","zu 1","Normaler Text mit 16 Pixeln: die Größe, in der die meisten Wörter einer Seite gesetzt sind.","Großer Text, 24 px fett","Kleingedrucktes mit 12 px, das WCAG weiterhin als normalen Text bewertet","Normaler Text","Großer Text","Oberflächenelemente","Nächster Treffer","So funktioniert es","Jede Farbe wird in ihre relative Luminanz umgerechnet, wie WCAG 2 sie definiert: Die sRGB-Kanäle werden durch 255 geteilt, linearisiert (die abschnittsweise Kurve, kein einfacher Exponent 2,2) und dann mit 0,2126 für Rot, 0,7152 für Grün und 0,0722 für Blau gewichtet. Das Verhältnis ist (heller + 0,05) ÷ (dunkler + 0,05) und reicht von 1:1 bei zwei identischen Farben bis 21:1 bei Schwarz auf Weiß. Alles, was sich in CSS schreiben lässt, wird akzeptiert (\u003ccode>#abc\u003c/code>, \u003ccode>#aabbcc\u003c/code>, \u003ccode>rgb(0 0 0)\u003c/code>, \u003ccode>hsl(30 40% 50%)\u003c/code>, ein Farbname), weil die Seite es dem Parser des Browsers übergibt, statt zu raten. Eine transparente Farbe wird zuerst über den Hintergrund gelegt, und die Seite sagt, dass sie das getan hat.","Die Schwellenwerte sind die von WCAG 2.1: \u003cstrong>4,5:1\u003c/strong> für normalen Text bei AA, \u003cstrong>3:1\u003c/strong> für großen Text (18,66 px fett oder ab 24 px), \u003cstrong>7:1\u003c/strong> und \u003cstrong>4,5:1\u003c/strong> für AAA sowie \u003cstrong>3:1\u003c/strong> für Oberflächenelemente und aussagekräftige Grafiken: ein Formularrahmen, ein Symbol mit Bedeutung, der Rand einer Schaltfläche. „Nächster Treffer“ behält den Farbton und verschiebt die Textfarbe in kleinen Schritten heller oder dunkler, bis AA für normalen Text erreicht ist, und gibt den ersten Farbton aus, der das schafft; ist der Hintergrund ein mittlerer Ton, ist es oft besser, stattdessen den Hintergrund zu ändern.","Zwei ehrliche Grenzen. Das Verhältnis ist eine Formel, kein Sehvermögen: Es ignoriert die Schriftstärke, die Darstellung feiner Striche und das, was ein Bildschirm bei geringer Helligkeit tut, sodass ein Bestehen bei 4,6:1 in einer haarfeinen Schrift immer noch schlecht lesbar sein kann. Und WCAG 2 ist bekannt dafür, hellen Text auf dunklem Grund zu streng und mitteltonige Paare zu großzügig zu beurteilen; das neuere APCA-Modell in WCAG 3 handhabt das besser, ist aber nicht final und nicht das, wogegen heute Audits laufen, daher nennt diese Seite den geltenden Standard und nicht den kommenden.","Alles wird in diesem Tab berechnet. Nichts wird hochgeladen, und nichts, was du eintippst, wird gespeichert; die Schaltflächen für Dunkel und Sprache behalten ihre eigene Einstellung im lokalen Speicher dieses Browsers.","Weitere Werkzeuge","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Farbkontrast-Prüfer — WCAG AA und AAA, mit Korrekturvorschlag — MDV","Prüfe das Kontrastverhältnis zweier Farben nach WCAG AA und AAA für Text und Oberflächenelemente und erhalte den nächstgelegenen Farbton, der besteht. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Textfarbe wählen","Hintergrundfarbe wählen","{ratio}:1 gegen {need}:1: besteht","{ratio}:1 gegen {need}:1: besteht nicht, es fehlen {short}","„{value}“ ist keine Farbe, die dieser Browser kennt. Schreibe einen Hex-Wert wie #336699, eine rgb()- oder hsl()-Farbe oder einen CSS-Farbnamen.","AA bestanden","AA nicht bestanden","AA groß bestanden","AA groß nicht bestanden","AAA bestanden","AAA nicht bestanden","{verdict} bei AA, besteht bei AAA","{verdict} bei AA, besteht nicht bei AAA","{verdict} für Rahmen, Symbole und Ränder von Bedienelementen","nicht nötig — das erfüllt AA für normalen Text bereits","kein Farbton dieser Farbe erreicht auf diesem Hintergrund 4,5:1; ändere stattdessen den Hintergrund","{colour} — derselbe Farbton, heller, bei {ratio}:1","{colour} — derselbe Farbton, dunkler, bei {ratio}:1","Eine durchscheinende Farbe wurde vor der Messung zusammengesetzt: der Text über dem Hintergrund, der Hintergrund über Weiß.","Unter 3:1 besteht nichts, bei keiner Größe — dieses Paar ist nur dekorativ.","Zwischen 3 und 4,5 besteht nur großer Text, das heißt 24 px oder 18,66 px fett.","Erfüllt AA überall; AAA würde für normalen Text 7:1 verlangen.","Erfüllt AAA für normalen Text, mehr verlangt WCAG 2 nicht.","Das Verhältnis ist eine Formel, kein Sehvermögen: Feine Striche und geringe Bildschirmhelligkeit können auch bei bestandenem Wert schlecht lesbar bleiben.",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Due colori, il rapporto tra loro e che cosa è conforme a ogni dimensione del testo.","Su questo dispositivo","Funziona offline","Colore del testo","Sfondo","Scambia","scrivi due colori qui sopra","Impossibile leggere quel colore","a 1","Testo normale a 16 pixel: la dimensione in cui è composta la maggior parte delle parole di una pagina.","Testo grande, 24 px in grassetto","Testo piccolo a 12 px, che WCAG giudica comunque testo normale","Testo normale","Testo grande","Elementi dell’interfaccia","Valore conforme più vicino","Come funziona","Ogni colore viene convertito nella sua luminanza relativa come la definisce WCAG 2: i canali sRGB sono divisi per 255, linearizzati (la curva a tratti, non una semplice potenza di 2,2), poi pesati 0,2126 per il rosso, 0,7152 per il verde e 0,0722 per il blu. Il rapporto è (più chiaro + 0,05) ÷ (più scuro + 0,05), che va da 1:1 per due colori identici a 21:1 per nero su bianco. Viene accettato tutto ciò che si può scrivere in CSS (\u003ccode>#abc\u003c/code>, \u003ccode>#aabbcc\u003c/code>, \u003ccode>rgb(0 0 0)\u003c/code>, \u003ccode>hsl(30 40% 50%)\u003c/code>, un nome di colore), perché la pagina lo passa al parser del browser invece di tirare a indovinare. Un colore trasparente viene prima composto sullo sfondo, e la pagina lo segnala.","Le soglie sono quelle di WCAG 2.1: \u003cstrong>4,5:1\u003c/strong> per il testo normale in AA, \u003cstrong>3:1\u003c/strong> per il testo grande (18,66 px in grassetto o da 24 px in su), \u003cstrong>7:1\u003c/strong> e \u003cstrong>4,5:1\u003c/strong> per AAA, e \u003cstrong>3:1\u003c/strong> per gli elementi dell’interfaccia e la grafica significativa: il bordo di un modulo, un’icona che porta un significato, il bordo di un pulsante. Il valore conforme più vicino mantiene la tinta e sposta il colore del testo verso il chiaro o lo scuro a piccoli passi finché AA per il testo normale è soddisfatto, e mostra la prima sfumatura che ci riesce; se lo sfondo è un tono medio, spostare invece lo sfondo è spesso la correzione migliore.","Due limiti onesti. Il rapporto è una formula, non la vista: ignora lo spessore del carattere, il rendering dei tratti sottili e ciò che fa uno schermo a bassa luminosità, quindi un esito positivo a 4,6:1 in uno spessore sottilissimo può comunque essere poco leggibile. E WCAG 2 è noto per essere severo con il testo chiaro su fondo scuro e generoso con le coppie di toni medi; il più recente modello APCA di WCAG 3 se la cava meglio, ma non è definitivo e non è ciò su cui si fanno oggi gli audit, quindi questa pagina indica lo standard in vigore e non quello futuro.","Tutto viene calcolato in questa scheda. Non viene caricato nulla e nulla di ciò che scrivi viene salvato; i pulsanti Scuro e Lingua conservano la propria impostazione nell’archivio locale di questo browser.","Altri strumenti","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Verifica contrasto dei colori — WCAG AA e AAA, con una correzione — MDV","Controlla il rapporto di contrasto tra due colori secondo WCAG AA e AAA per testo ed elementi dell’interfaccia, e ottieni la sfumatura conforme più vicina. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli il colore del testo","Scegli il colore dello sfondo","{ratio}:1 contro {need}:1: conforme","{ratio}:1 contro {need}:1: non conforme, mancano {short}","“{value}” non è un colore che questo browser conosce. Scrivi un valore esadecimale come #336699, un colore rgb() o hsl(), oppure un nome di colore CSS.","AA conforme","AA non conforme","AA grande conforme","AA grande non conforme","AAA conforme","AAA non conforme","{verdict} in AA, conforme in AAA","{verdict} in AA, non conforme in AAA","{verdict} per bordi, icone e margini dei controlli","non serve: soddisfa già AA per il testo normale","nessuna sfumatura di questa tinta raggiunge 4,5:1 su quello sfondo; cambia invece lo sfondo","{colour}: la stessa tinta, più chiara, a {ratio}:1","{colour}: la stessa tinta, più scura, a {ratio}:1","Un colore traslucido è stato composto prima della misura: il testo sullo sfondo, lo sfondo sul bianco.","Sotto 3:1 non è conforme nulla, a nessuna dimensione: questa coppia è solo decorativa.","Tra 3 e 4,5 è conforme solo il testo grande, cioè 24 px, o 18,66 px in grassetto.","Soddisfa AA ovunque; AAA richiederebbe 7:1 per il testo normale.","Soddisfa AAA per il testo normale, che è il massimo previsto da WCAG 2.","Il rapporto è una formula, non la vista: tratti sottili e bassa luminosità dello schermo possono restare poco leggibili anche con un valore conforme.",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Duas cores, a razão entre elas e o que passa em cada tamanho de texto.","Neste dispositivo","Funciona offline","Cor do texto","Fundo","Trocar","digite duas cores acima","Não foi possível ler essa cor","para 1","Texto normal em 16 pixels: o tamanho em que a maioria das palavras de uma página é composta.","Texto grande, 24 px em negrito","Letras miúdas em 12 px, que a WCAG ainda julga como texto normal","Texto normal","Texto grande","Elementos da interface","Aprovação mais próxima","Como funciona","Cada cor é convertida em sua luminância relativa como a WCAG 2 define: os canais sRGB são divididos por 255, linearizados (a curva em partes, não uma simples potência de 2,2) e depois ponderados 0,2126 para o vermelho, 0,7152 para o verde e 0,0722 para o azul. A razão é (mais claro + 0,05) ÷ (mais escuro + 0,05), que vai de 1:1 para duas cores idênticas a 21:1 para preto sobre branco. Aceita-se tudo que você puder escrever em CSS (\u003ccode>#abc\u003c/code>, \u003ccode>#aabbcc\u003c/code>, \u003ccode>rgb(0 0 0)\u003c/code>, \u003ccode>hsl(30 40% 50%)\u003c/code>, um nome de cor), porque a página entrega isso ao analisador do próprio navegador em vez de adivinhar. Uma cor transparente é composta primeiro sobre o fundo, e a página avisa que fez isso.","Os limites são os da WCAG 2.1: \u003cstrong>4,5:1\u003c/strong> para texto normal em AA, \u003cstrong>3:1\u003c/strong> para texto grande (18,66 px em negrito ou 24 px ou mais), \u003cstrong>7:1\u003c/strong> e \u003cstrong>4,5:1\u003c/strong> para AAA, e \u003cstrong>3:1\u003c/strong> para elementos da interface e gráficos com significado: a borda de um formulário, um ícone que transmite algo, a borda de um botão. A aprovação mais próxima mantém o matiz e desloca a cor do texto para mais clara ou mais escura em passos pequenos até atender AA para texto normal, e mostra o primeiro tom que consegue; se o fundo for um tom médio, mover o fundo costuma ser a melhor correção.","Dois limites honestos. A razão é uma fórmula, não a visão: ela ignora o peso da fonte, a renderização de traços finos e o que uma tela faz com pouco brilho, então uma aprovação em 4,6:1 num peso finíssimo ainda pode ser difícil de ler. E a WCAG 2 é conhecida por ser dura com texto claro sobre fundo escuro e generosa com pares de tons médios; o modelo APCA, mais novo, na WCAG 3 lida melhor com isso, mas não é definitivo e não é contra o que as auditorias são feitas hoje, então esta página apresenta o padrão em vigor e não o que vem por aí.","Tudo é calculado nesta aba. Nada é enviado e nada do que você digita é armazenado; os botões Escuro e Idioma guardam sua própria configuração no armazenamento local deste navegador.","Mais ferramentas","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Verificador de contraste de cores — WCAG AA e AAA, com uma correção — MDV","Verifique a razão de contraste entre duas cores segundo a WCAG AA e AAA para texto e elementos da interface, e obtenha o tom mais próximo que passa. Funciona no seu dispositivo.","Todas as {n} ferramentas","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolher a cor do texto","Escolher a cor do fundo","{ratio}:1 contra {need}:1: passa","{ratio}:1 contra {need}:1: não passa, faltam {short}","“{value}” não é uma cor que este navegador conheça. Escreva um valor hexadecimal como #336699, uma cor rgb() ou hsl(), ou um nome de cor CSS.","AA passa","AA não passa","AA grande passa","AA grande não passa","AAA passa","AAA não passa","{verdict} em AA, passa em AAA","{verdict} em AA, não passa em AAA","{verdict} para bordas, ícones e bordas de controles","desnecessário: já atende AA para texto normal","nenhum tom deste matiz alcança 4,5:1 nesse fundo; mude o fundo","{colour}: o mesmo matiz, mais claro, a {ratio}:1","{colour}: o mesmo matiz, mais escuro, a {ratio}:1","Uma cor translúcida foi composta antes da medição: o texto sobre o fundo, o fundo sobre o branco.","Abaixo de 3:1 nada passa, em nenhum tamanho: este par é apenas decorativo.","Entre 3 e 4,5 só o texto grande passa, ou seja, 24 px, ou 18,66 px em negrito.","Atende AA em todos os casos; AAA exigiria 7:1 para texto normal.","Atende AAA para texto normal, que é o máximo a que a WCAG 2 chega.","A razão é uma fórmula, não a visão: traços finos e pouco brilho de tela ainda podem ser difíceis de ler mesmo com um valor que passa.",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","2 つの色、その比率、そして各文字サイズで何が基準を満たすか。","この端末で動作","オフラインで動作","文字色","背景","入れ替え","上に 2 つの色を入力","その色を読み取れません","対 1","16 ピクセルの通常テキスト。ページ上のほとんどの文字がこのサイズで組まれます。","大きな文字、24 px の太字","12 px の小さな文字。WCAG ではこれも通常テキストとして判定されます","通常テキスト","大きな文字","UI 部品","最も近い合格色","仕組み","各色は、WCAG 2 の定義に従って相対輝度に変換されます。sRGB の各チャンネルを 255 で割り、線形化(単純な 2.2 乗ではなく区分的な曲線)したうえで、赤 0.2126、緑 0.7152、青 0.0722 で重み付けします。比率は (明るい方 + 0.05) ÷ (暗い方 + 0.05) で、同じ色どうしなら 1:1、白地の黒なら 21:1 になります。CSS で書けるものはすべて受け付けます(\u003ccode>#abc\u003c/code>、\u003ccode>#aabbcc\u003c/code>、\u003ccode>rgb(0 0 0)\u003c/code>、\u003ccode>hsl(30 40% 50%)\u003c/code>、色名)。推測せず、ブラウザー自身のパーサーに渡して解釈させるためです。透明な色は、まず背景の上に合成され、その旨がページに表示されます。","しきい値は WCAG 2.1 のものです。通常テキストの AA は \u003cstrong>4.5:1\u003c/strong>、大きな文字(18.66px の太字、または 24px 以上)は \u003cstrong>3:1\u003c/strong>、AAA は \u003cstrong>7:1\u003c/strong> と \u003cstrong>4.5:1\u003c/strong>、UI 部品や意味を持つグラフィック(フォームの枠線、意味を伝えるアイコン、ボタンの縁)は \u003cstrong>3:1\u003c/strong> です。「最も近い合格色」は色相を保ったまま、通常テキストの AA を満たすまで文字色を少しずつ明るくまたは暗くし、最初に満たした色合いを表示します。背景が中間の明るさなら、代わりに背景を動かすほうが良い解決になることが多いです。","正直な限界が 2 つあります。比率は計算式であり、視覚そのものではありません。フォントの太さ、細い線の描画、画面の輝度が低いときの見え方は考慮されないため、極細の太さで 4.6:1 に合格していても読みづらいことがあります。また、WCAG 2 は暗い背景上の明るい文字に厳しく、中間調の組み合わせに甘いことが知られています。WCAG 3 の新しい APCA モデルはこの点をより適切に扱いますが、まだ確定しておらず、現在の監査の基準でもないため、このページは今後の基準ではなく現行の基準を示します。","すべての計算はこのタブ内で行われます。何もアップロードされず、入力した内容も保存されません。ダークと言語のボタンは、それぞれの設定をこのブラウザーのローカルストレージに保存します。","その他のツール","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","色のコントラストチェッカー — WCAG AA と AAA、修正案つき — MDV","2 つの色のコントラスト比を、テキストと UI 部品について WCAG AA・AAA で確認し、基準を満たす最も近い色合いを得られます。お使いの端末で動作します。","全 {n} ツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","文字色を選択","背景色を選択","{ratio}:1(基準 {need}:1)— 合格","{ratio}:1(基準 {need}:1)— 不合格、あと {short} 足りません","「{value}」は、このブラウザーが認識できる色ではありません。#336699 のような16進数値、rgb() または hsl() の色、CSS の色名を入力してください。","AA 合格","AA 不合格","AA 大 合格","AA 大 不合格","AAA 合格","AAA 不合格","{verdict}(AA)、AAA でも合格","{verdict}(AA)、AAA では不合格","{verdict}(枠線、アイコン、コントロールの縁)","不要です。通常テキストの AA をすでに満たしています","この色相では、その背景で 4.5:1 に達する色合いがありません。代わりに背景を変えてください","{colour} — 同じ色相でより明るく、{ratio}:1","{colour} — 同じ色相でより暗く、{ratio}:1","測定の前に半透明の色を合成しました。文字は背景の上に、背景は白の上に重ねています。","3:1 未満では、どのサイズでも合格しません。この組み合わせは装飾用だけです。","3 から 4.5 の間では、大きな文字、つまり 24 px(太字なら 18.66 px)だけが合格します。","AA はすべてのサイズで満たしています。AAA では通常テキストに 7:1 が必要です。","通常テキストの AAA を満たしています。これが WCAG 2 の最上位です。","比率は計算式であり、視覚そのものではありません。合格する数値でも、細い線や画面の輝度が低い状況では読みづらいことがあります。",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","두 색, 그 사이의 비율, 그리고 글자 크기별로 통과하는 기준.","이 기기에서 실행","오프라인 작동","글자 색","배경","교체","위에 두 색을 입력하세요","이 색을 읽을 수 없습니다","대 1","16픽셀의 일반 텍스트: 페이지의 대부분 단어가 쓰이는 크기입니다.","큰 텍스트, 24px 굵게","12px의 작은 글씨: WCAG는 이것도 일반 텍스트로 판단합니다","일반 텍스트","큰 텍스트","인터페이스 요소","가장 가까운 통과 색","작동 방식","각 색은 WCAG 2가 정의하는 상대 휘도로 변환됩니다. sRGB 채널을 255로 나누고, 선형화(단순한 2.2제곱이 아니라 구간별 곡선)한 뒤, 빨강 0.2126, 초록 0.7152, 파랑 0.0722로 가중합니다. 비율은 (밝은 쪽 + 0.05) ÷ (어두운 쪽 + 0.05)이며, 같은 두 색이면 1:1, 흰색 위의 검정이면 21:1이 됩니다. CSS로 쓸 수 있는 것은 모두 받아들입니다(\u003ccode>#abc\u003c/code>, \u003ccode>#aabbcc\u003c/code>, \u003ccode>rgb(0 0 0)\u003c/code>, \u003ccode>hsl(30 40% 50%)\u003c/code>, 색 이름). 추측하지 않고 브라우저 자체의 파서에 맡기기 때문입니다. 투명한 색은 먼저 배경 위에 합성되며, 페이지가 그렇게 했다고 알려 줍니다.","기준값은 WCAG 2.1을 따릅니다. 일반 텍스트의 AA는 \u003cstrong>4.5:1\u003c/strong>, 큰 텍스트(굵은 18.66px 또는 24px 이상)는 \u003cstrong>3:1\u003c/strong>, AAA는 \u003cstrong>7:1\u003c/strong>과 \u003cstrong>4.5:1\u003c/strong>, 인터페이스 요소와 의미 있는 그래픽(양식 테두리, 의미를 전하는 아이콘, 버튼 가장자리)은 \u003cstrong>3:1\u003c/strong>입니다. “가장 가까운 통과 색”은 색조를 유지한 채 일반 텍스트의 AA를 만족할 때까지 글자 색을 조금씩 밝게 또는 어둡게 하고, 처음으로 만족하는 색을 보여 줍니다. 배경이 중간 톤이면 대신 배경을 옮기는 편이 더 나은 해결책인 경우가 많습니다.","솔직한 한계가 두 가지 있습니다. 비율은 공식이지 시각이 아닙니다. 글꼴 굵기, 가는 획의 렌더링, 화면 밝기가 낮을 때의 모습은 무시하므로, 아주 가는 굵기에서 4.6:1로 통과해도 여전히 읽기 어려울 수 있습니다. 또 WCAG 2는 어두운 배경 위의 밝은 글자에 가혹하고 중간 톤의 조합에는 너그러운 것으로 알려져 있습니다. WCAG 3의 더 새로운 APCA 모델이 이를 더 잘 다루지만 아직 확정되지 않았고 오늘날의 감사 기준도 아니므로, 이 페이지는 다가올 기준이 아니라 현재 유효한 기준을 따릅니다.","모든 계산은 이 탭 안에서 이루어집니다. 아무것도 업로드되지 않으며 입력한 내용도 저장되지 않습니다. 다크와 언어 버튼은 각자의 설정을 이 브라우저의 로컬 스토리지에 저장합니다.","다른 도구","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","색상 명도 대비 검사기 — WCAG AA와 AAA, 수정 제안 포함 — MDV","두 색의 명도 대비를 텍스트와 인터페이스 요소에 대해 WCAG AA와 AAA 기준으로 확인하고, 통과하는 가장 가까운 색을 얻으세요. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","글자 색 선택","배경 색 선택","{ratio}:1 (기준 {need}:1) — 통과","{ratio}:1 (기준 {need}:1) — 불통과, {short} 부족","“{value}”은(는) 이 브라우저가 아는 색이 아닙니다. #336699 같은 16진수 값, rgb() 또는 hsl() 색, CSS 색 이름을 입력하세요.","AA 통과","AA 불통과","AA 큰 글자 통과","AA 큰 글자 불통과","AAA 통과","AAA 불통과","{verdict} (AA), AAA도 통과","{verdict} (AA), AAA는 불통과","{verdict} (테두리, 아이콘, 컨트롤 가장자리)","필요 없음 — 이미 일반 텍스트의 AA를 충족합니다","이 색조로는 그 배경에서 4.5:1을 만족하는 색이 없습니다. 대신 배경을 바꾸세요","{colour} — 같은 색조, 더 밝게, {ratio}:1","{colour} — 같은 색조, 더 어둡게, {ratio}:1","측정 전에 반투명 색을 합성했습니다. 글자는 배경 위에, 배경은 흰색 위에 합성했습니다.","3:1 미만에서는 어떤 크기에서도 통과하지 못합니다. 이 조합은 장식용으로만 쓰세요.","3과 4.5 사이에서는 큰 텍스트, 즉 24px(굵게는 18.66px)만 통과합니다.","AA는 모든 경우에 충족합니다. AAA는 일반 텍스트에 7:1이 필요합니다.","일반 텍스트의 AAA를 충족합니다. WCAG 2가 요구하는 가장 높은 수준입니다.","비율은 공식이지 시각이 아닙니다. 통과하는 수치여도 가는 획이나 낮은 화면 밝기에서는 여전히 읽기 어려울 수 있습니다.",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","两种颜色、它们之间的比值,以及各文字尺寸下哪些能达标。","在此设备上运行","可离线使用","文字颜色","背景","交换","请在上方输入两种颜色","无法识别该颜色","比 1","16 像素的正常文本:页面上大多数文字使用的字号。","大号文本,24 px 粗体","12 px 的小字:WCAG 仍将其视为正常文本","正常文本","大号文本","界面元素","最接近的达标色","工作原理","每种颜色都按 WCAG 2 的定义转换为相对亮度:sRGB 各通道除以 255，线性化(使用分段曲线,而不是简单的 2.2 次幂),再按红 0.2126、绿 0.7152、蓝 0.0722 加权。比值为 (较亮者 + 0.05) ÷ (较暗者 + 0.05),两种相同颜色为 1:1，白底黑字为 21:1。凡是能在 CSS 中写出的都可以接受(\u003ccode>#abc\u003c/code>、\u003ccode>#aabbcc\u003c/code>、\u003ccode>rgb(0 0 0)\u003c/code>、\u003ccode>hsl(30 40% 50%)\u003c/code>、颜色名称),因为页面把它交给浏览器自己的解析器,而不是去猜测。透明颜色会先合成到背景上,页面会说明它这样做了。","阈值取自 WCAG 2.1:正常文本的 AA 要求 \u003cstrong>4.5:1\u003c/strong>,大号文本(18.66px 粗体或 24px 及以上)要求 \u003cstrong>3:1\u003c/strong>,AAA 要求 \u003cstrong>7:1\u003c/strong> 和 \u003cstrong>4.5:1\u003c/strong>,界面元素和有意义的图形(表单边框、传达含义的图标、按钮边缘)要求 \u003cstrong>3:1\u003c/strong>。“最接近的达标色”保持色相,把文字颜色以小步长调亮或调暗,直到满足正常文本的 AA，并给出第一个满足的色调;如果背景是中间色调,改为调整背景往往是更好的办法。","有两点坦率的局限。比值只是公式,而不是视觉:它忽略字重、细笔画的渲染以及屏幕在低亮度下的表现,因此在极细字重下 4.6:1 达标,读起来仍可能很吃力。而且众所周知,WCAG 2 对深色背景上的浅色文字不够友好,对中间色调的组合又过于宽松;WCAG 3 中较新的 APCA 模型处理得更好,但它尚未定稿,也不是目前审核所依据的标准,因此本页面采用现行标准,而不是即将到来的标准。","所有计算都在此标签页内完成。不会上传任何内容,你输入的内容也不会被保存;“深色”和“语言”按钮会把各自的设置保存在此浏览器的本地存储中。","更多工具","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","颜色对比度检查器 — WCAG AA 与 AAA，附修正建议 — MDV","按 WCAG AA 和 AAA 检查两种颜色在文本和界面元素上的对比度,并获得最接近的达标色调。在你的设备上运行。","全部 {n} 个工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择文字颜色","选择背景颜色","{ratio}:1，要求 {need}:1 — 达标","{ratio}:1，要求 {need}:1 — 未达标,差 {short}","“{value}”不是此浏览器能识别的颜色。请输入十六进制值(如 #336699)、rgb() 或 hsl() 颜色,或 CSS 颜色名称。","AA 达标","AA 未达标","AA 大号 达标","AA 大号 未达标","AAA 达标","AAA 未达标","{verdict}(AA),AAA 也达标","{verdict}(AA),AAA 未达标","{verdict},适用于边框、图标和控件边缘","无需调整 — 已满足正常文本的 AA","该色相的任何色调在此背景上都达不到 4.5:1;请改为更换背景","{colour} — 同一色相、更亮,{ratio}:1","{colour} — 同一色相、更暗,{ratio}:1","测量前已对半透明颜色做了合成:文字叠加到背景上,背景叠加到白色上。","低于 3:1 时,任何尺寸都无法达标——这组颜色只适合用于装饰。","在 3 到 4.5 之间,只有大号文本(24 px，或 18.66 px 粗体)能达标。","在所有情况下都满足 AA;AAA 对正常文本要求 7:1。","正常文本满足 AAA，这已是 WCAG 2 的最高要求。","比值只是公式,而不是视觉:即使数值达标,细笔画和较低的屏幕亮度仍可能难以辨认。",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2440,18 +2653,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function badge(label, pass) {
     var el = document.createElement("span");
     el.className = "mdv-badge " + (pass ? "is-ok" : "is-bad");
-    el.textContent = label + (pass ? " pass" : " fail");
+    el.textContent = tr(label);
     return el;
   }
   function verdictText(ratio, need) {
-    return round(ratio) + ":1 against " + need + ":1 — " + (ratio >= need ? "passes" : "fails, short by " + round(need - ratio));
+    var v = { ratio: round(ratio), need: need, short: round(need - ratio) };
+    return ratio >= need ? tr("{ratio}:1 against {need}:1 — passes", v) : tr("{ratio}:1 against {need}:1 — fails, short by {short}", v);
   }
 
   function run() {
     var a = readColour(fg.value), b = readColour(bg.value);
     if (!a || !b) { state("empty"); return; }
     if (a.bad || b.bad) {
-      errmsg.textContent = "“" + (a.bad ? fg.value : bg.value) + "” is not a colour this browser knows. Write a hex value such as #336699, an rgb() or hsl() colour, or a CSS colour name.";
+      errmsg.textContent = tr("“{value}” is not a colour this browser knows. Write a hex value such as #336699, an rgb() or hsl() colour, or a CSS colour name.",
+        { value: a.bad ? fg.value : bg.value });
       state("error");
       return;
     }
@@ -2461,32 +2676,35 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     $("ratio").textContent = round(ratio);
     verdicts.textContent = "";
-    verdicts.appendChild(badge("AA", ratio >= 4.5));
-    verdicts.appendChild(badge("AA large", ratio >= 3));
-    verdicts.appendChild(badge("AAA", ratio >= 7));
+    verdicts.appendChild(badge(ratio >= 4.5 ? trk("AA pass") : trk("AA fail"), ratio >= 4.5));
+    verdicts.appendChild(badge(ratio >= 3 ? trk("AA large pass") : trk("AA large fail"), ratio >= 3));
+    verdicts.appendChild(badge(ratio >= 7 ? trk("AAA pass") : trk("AAA fail"), ratio >= 7));
 
-    $("k-normal").textContent = verdictText(ratio, 4.5) + " at AA, " + (ratio >= 7 ? "passes" : "fails") + " at AAA";
-    $("k-large").textContent = verdictText(ratio, 3) + " at AA, " + (ratio >= 4.5 ? "passes" : "fails") + " at AAA";
-    $("k-ui").textContent = verdictText(ratio, 3) + " for borders, icons and the edges of controls";
+    $("k-normal").textContent = ratio >= 7 ? tr("{verdict} at AA, passes at AAA", { verdict: verdictText(ratio, 4.5) })
+      : tr("{verdict} at AA, fails at AAA", { verdict: verdictText(ratio, 4.5) });
+    $("k-large").textContent = ratio >= 4.5 ? tr("{verdict} at AA, passes at AAA", { verdict: verdictText(ratio, 3) })
+      : tr("{verdict} at AA, fails at AAA", { verdict: verdictText(ratio, 3) });
+    $("k-ui").textContent = tr("{verdict} for borders, icons and the edges of controls", { verdict: verdictText(ratio, 3) });
 
     var sample = $("sample");
     sample.style.background = hex(ground);
     sample.style.color = hex(text);
 
-    if (ratio >= 4.5) $("k-fix").textContent = "not needed — this already clears AA for normal text";
+    if (ratio >= 4.5) $("k-fix").textContent = tr("not needed — this already clears AA for normal text");
     else {
       var fix = nearestPass(text, ground, 4.5);
-      $("k-fix").textContent = fix ? hex(fix.colour) + " — the same hue " + fix.moved + ", at " + round(ratioOf(fix.colour, ground)) + ":1"
-        : "no shade of this hue clears 4.5:1 on that background; change the background instead";
+      var fv = fix && { colour: hex(fix.colour), ratio: round(ratioOf(fix.colour, ground)) };
+      $("k-fix").textContent = !fix ? tr("no shade of this hue clears 4.5:1 on that background; change the background instead")
+        : fix.moved === "lighter" ? tr("{colour} — the same hue lighter, at {ratio}:1", fv) : tr("{colour} — the same hue darker, at {ratio}:1", fv);
     }
 
     var notes = [];
-    if (a.a < 1 || b.a < 1) notes.push("A translucent colour was composited before measuring: the text over the background, the background over white.");
-    if (ratio < 3) notes.push("Below 3:1 nothing passes, at any size — this pair is decorative only.");
-    else if (ratio < 4.5) notes.push("Between 3 and 4.5 only large text passes, which means 24 px, or 18.66 px when bold.");
-    if (ratio >= 4.5 && ratio < 7) notes.push("Clears AA everywhere; AAA would want 7:1 for normal text.");
-    if (ratio >= 7) notes.push("Clears AAA for normal text, which is as far as WCAG 2 goes.");
-    notes.push("The ratio is a formula, not eyesight: thin strokes and low screen brightness can still read badly at a passing number.");
+    if (a.a < 1 || b.a < 1) notes.push(tr("A translucent colour was composited before measuring: the text over the background, the background over white."));
+    if (ratio < 3) notes.push(tr("Below 3:1 nothing passes, at any size — this pair is decorative only."));
+    else if (ratio < 4.5) notes.push(tr("Between 3 and 4.5 only large text passes, which means 24 px, or 18.66 px when bold."));
+    if (ratio >= 4.5 && ratio < 7) notes.push(tr("Clears AA everywhere; AAA would want 7:1 for normal text."));
+    if (ratio >= 7) notes.push(tr("Clears AAA for normal text, which is as far as WCAG 2 goes."));
+    notes.push(tr("The ratio is a formula, not eyesight: thin strokes and low screen brightness can still read badly at a passing number."));
     said.textContent = notes.join(" ");
     said.hidden = false;
     state("ok");
@@ -2510,6 +2728,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   });
 
   fg.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

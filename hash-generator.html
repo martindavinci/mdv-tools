@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link is-here" href="./hash-generator.html" aria-current="page" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link is-here" href="./hash-generator.html" aria-current="page" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,13 +2353,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Hash generator</h1>
+      <h1 class="mdv-head-name" data-t="20">Hash generator</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Type a string and read every digest of it at once.</p>
+    <p class="mdv-head-line" data-t="79">Type a string and read every digest of it at once.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
@@ -2255,7 +2367,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <div class="mdv-block">
       <div class="mdv-block-label">
-        <b><label for="src">Input</label></b>
+        <b><label for="src" data-t="82">Input</label></b>
         <span class="mdv-count mdv-mono" id="count">0 characters</span>
       </div>
       <textarea class="mdv-textarea" id="src" spellcheck="false" autocomplete="off"
@@ -2264,21 +2376,21 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <div class="mdv-block">
       <div class="mdv-row">
-        <label class="mdv-chip" style="--c:var(--accent-warm)" title="Show hex digests in capitals">
+        <label class="mdv-chip" style="--c:var(--accent-warm)" title="Show hex digests in capitals" data-t-attrs="title">
           <input type="checkbox" id="upper" checked>
-          <span class="mdv-swatch"></span><span>Uppercase hex</span>
+          <span class="mdv-swatch"></span><span data-t="83">Uppercase hex</span>
         </label>
-        <label class="mdv-chip" style="--c:var(--accent-cool)" title="Drop leading and trailing whitespace before hashing">
+        <label class="mdv-chip" style="--c:var(--accent-cool)" title="Drop leading and trailing whitespace before hashing" data-t-attrs="title">
           <input type="checkbox" id="trim">
-          <span class="mdv-swatch"></span><span>Trim whitespace</span>
+          <span class="mdv-swatch"></span><span data-t="84">Trim whitespace</span>
         </label>
       </div>
     </div>
 
     <div class="mdv-block" id="status">
-      <div class="mdv-empty" id="empty"><span>type or paste a string above</span></div>
+      <div class="mdv-empty" id="empty"><span data-t="85">type or paste a string above</span></div>
       <div class="mdv-notice is-bad" id="err" hidden>
-        <span class="mdv-notice-title">Refused</span>
+        <span class="mdv-notice-title" data-t="86">Refused</span>
         <span id="errmsg" class="mdv-mono"></span>
       </div>
       <p class="mdv-hint" id="slow" hidden></p>
@@ -2287,17 +2399,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     <div id="rows" data-mdv-result hidden></div>
 
     <div class="mdv-block mdv-legend" id="legend" hidden>
-      <span style="--c:var(--state-ok)"><span class="mdv-mark"></span>Safe to use today</span>
-      <span style="--c:var(--state-bad)"><span class="mdv-mark"></span>Broken, legacy only</span>
-      <span style="--c:var(--state-warn)"><span class="mdv-mark"></span>Checksum, not a hash</span>
+      <span style="--c:var(--state-ok)"><span class="mdv-mark"></span><span data-t="87">Safe to use today</span></span>
+      <span style="--c:var(--state-bad)"><span class="mdv-mark"></span><span data-t="88">Broken, legacy only</span></span>
+      <span style="--c:var(--state-warn)"><span class="mdv-mark"></span><span data-t="89">Checksum, not a hash</span></span>
     </div>
 
   </div>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="90">How this works</summary>
     <div class="mdv-method-body">
-      <p>What you type is encoded to UTF-8 with <code>TextEncoder</code> and those bytes are hashed —
+      <p data-t="91">What you type is encoded to UTF-8 with <code>TextEncoder</code> and those bytes are hashed —
         the byte count next to the input is that encoding, not the character count. A textarea turns
         every line break into LF, so text pasted with CRLF endings hashes as LF text, and a lone
         surrogate becomes U+FFFD before hashing. "Trim whitespace" drops leading and trailing
@@ -2306,7 +2418,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         the browser's own code. WebCrypto has no MD5 and no CRC-32, so both are written out in
         plain JavaScript in this page — MD5 is RFC 1321, CRC-32 is the reflected IEEE 802.3
         polynomial used by zip and PNG.</p>
-      <p>MD5 and SHA-1 are broken for collision resistance: two different inputs with the same
+      <p data-t="92">MD5 and SHA-1 are broken for collision resistance: two different inputs with the same
         digest are cheap to produce, so neither says anything about who made a file. They are here
         to check legacy values, nothing more. CRC-32 is error detection — it catches a flipped bit
         in transit and is trivial to forge on purpose. MySQL <code>PASSWORD()</code> is SHA-1
@@ -2314,7 +2426,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <code>mysql_native_password</code> format; it is printed in capitals because the format is.
         MySQL 8 defaults to <code>caching_sha2_password</code>, which is salted and iterated, so it
         cannot be reproduced from the password alone and this tool does not try.</p>
-      <p>None of these are password hashes in the modern sense. To store real passwords use argon2,
+      <p data-t="93">None of these are password hashes in the modern sense. To store real passwords use argon2,
         scrypt or bcrypt, which are deliberately slow. What this tool refuses to do: it does not
         hash files — only the text in the box — and it does no HMAC, no salt, no key derivation and
         no iteration count. Input above 5,000,000 characters is refused rather than attempted, and
@@ -2325,24 +2437,25 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <code>http</code> from any other host the browser withholds it. When it is missing the SHA and
         MySQL rows say why; when a digest call fails they print the browser's own error. MD5 and CRC-32
         run either way. Nothing is uploaded: there is no server in this file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="94">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Encoding &amp; Crypto">
-    <span class="mdv-tag">Also in Encoding &amp; Crypto</span>
-    <a href="./html-entities.html">HTML entities</a>
-    <a href="./base64-image.html">Image to data URI</a>
-    <a href="./jwt-decoder.html">JWT decoder</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Encoding &amp; Crypto"}'>Also in Encoding &amp; Crypto</span>
+    <a href="./html-entities.html" data-t="21">HTML entities</a>
+    <a href="./base64-image.html" data-t="18">Image to data URI</a>
+    <a href="./jwt-decoder.html" data-t="22">JWT decoder</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="95">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="96">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="97" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="98">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2353,6 +2466,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Hash generator — MDV","Type a string, read its CRC-32, MD5, SHA-1, SHA-256, SHA-384, SHA-512 and MySQL PASSWORD() digests as you type. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Show hex digests in capitals","Drop leading and trailing whitespace before hashing","Unavailable — this page is not a secure context (plain http from a host other than localhost), so the browser withholds crypto.subtle. Open it over https or straight from disk (file://).","Unavailable — this browser does not expose crypto.subtle, although the page is a secure context.","Unavailable — this browser does not expose crypto.subtle.","computing…","error detection","128-bit","160-bit","SHA-1 twice, raw bytes","SHA-2 family","Copy","{n} characters is past the {limit}-character ceiling this tool will attempt. It hashes text, not files — for a file, use a file checksum tool.","over {n} characters — md5 and crc-32 run one frame late so the page stays responsive","Not computed — crypto.subtle.digest failed with {why}","Copied","{n} character","{n} characters","{n} byte","{n} bytes","Encoding & Crypto","2026-11-02"],"h":99,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Escribe un texto y lee todos sus resúmenes a la vez.","En este dispositivo","Funciona sin conexión","Entrada","Hex en mayúsculas","Recortar espacios","escribe o pega un texto arriba","Rechazado","Seguro hoy","Roto, solo heredado","Suma de control, no hash","Cómo funciona","Lo que escribes se codifica a UTF-8 con \u003ccode>TextEncoder\u003c/code> y se calcula el hash de esos bytes; el número de bytes junto a la entrada corresponde a esa codificación, no al número de caracteres. Un textarea convierte cada salto de línea en LF, así que el texto pegado con finales CRLF se procesa como texto LF, y un sustituto suelto pasa a ser U+FFFD antes del cálculo. \"Recortar espacios\" elimina los espacios en blanco iniciales y finales antes de codificar, lo que cambia el resumen; \"Hex en mayúsculas\", activado por defecto, solo cambia lo que se muestra: pone en mayúsculas los dígitos hexadecimales y deja el prefijo \u003ccode>0x\u003c/code> del CRC-32 tal cual. SHA-1, SHA-256, SHA-384 y SHA-512 provienen de \u003ccode>crypto.subtle.digest\u003c/code>, el código del propio navegador. WebCrypto no tiene MD5 ni CRC-32, así que ambos están escritos en JavaScript puro en esta página: MD5 es la RFC 1321 y CRC-32 es el polinomio reflejado IEEE 802.3 que usan zip y PNG.","MD5 y SHA-1 están rotos en cuanto a resistencia a colisiones: producir dos entradas distintas con el mismo resumen es barato, por lo que ninguno dice nada sobre quién hizo un archivo. Están aquí para comprobar valores heredados, nada más. CRC-32 es detección de errores: detecta un bit cambiado en tránsito y es trivial de falsificar a propósito. MySQL \u003ccode>PASSWORD()\u003c/code> es SHA-1 aplicado dos veces sobre los bytes en bruto con un asterisco al inicio, el antiguo formato \u003ccode>mysql_native_password\u003c/code>; se imprime en mayúsculas porque así es el formato. MySQL 8 usa por defecto \u003ccode>caching_sha2_password\u003c/code>, que lleva sal y es iterado, así que no puede reproducirse solo con la contraseña y esta herramienta no lo intenta.","Ninguno de estos es un hash de contraseñas en el sentido moderno. Para guardar contraseñas reales usa argon2, scrypt o bcrypt, que son deliberadamente lentos. Lo que esta herramienta se niega a hacer: no calcula hashes de archivos, solo del texto del cuadro, y no hace HMAC, ni sal, ni derivación de claves, ni número de iteraciones. La entrada de más de 5.000.000 de caracteres se rechaza en lugar de intentarla, y el límite se muestra cuando lo alcanzas. Por encima de 200.000 caracteres, MD5 y CRC-32 se ejecutan un fotograma más tarde, después de que la página se haya repintado, para que la pestaña siga respondiendo mientras trabajan. \u003ccode>crypto.subtle\u003c/code> requiere un contexto seguro: funciona abierto por \u003ccode>https\u003c/code>, desde \u003ccode>localhost\u003c/code> o directamente desde el disco (\u003ccode>file://\u003c/code>); por \u003ccode>http\u003c/code> simple desde cualquier otro host el navegador lo oculta. Cuando falta, las filas SHA y MySQL explican por qué; cuando falla una llamada de resumen, muestran el error del propio navegador. MD5 y CRC-32 funcionan en ambos casos. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Generador de hashes — MDV","Escribe un texto y lee sus resúmenes CRC-32, MD5, SHA-1, SHA-256, SHA-384, SHA-512 y MySQL PASSWORD() mientras escribes. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Mostrar los resúmenes hexadecimales en mayúsculas","Quitar los espacios iniciales y finales antes de calcular el hash","No disponible — esta página no es un contexto seguro (http simple desde un host que no es localhost), así que el navegador oculta crypto.subtle. Ábrela por https o directamente desde el disco (file://).","No disponible — este navegador no expone crypto.subtle, aunque la página es un contexto seguro.","No disponible — este navegador no expone crypto.subtle.","calculando…","detección de errores","128 bits","160 bits","SHA-1 dos veces, bytes en bruto","familia SHA-2","Copiar","{n} caracteres superan el límite de {limit} caracteres que esta herramienta intentará procesar. Calcula hashes de texto, no de archivos; para un archivo, usa una herramienta de suma de control de archivos.","más de {n} caracteres — md5 y crc-32 se ejecutan un fotograma más tarde para que la página siga respondiendo","No calculado — crypto.subtle.digest falló con {why}","Copiado","{n} carácter","{n} caracteres","{n} byte","{n} bytes","Codificación y criptografía",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Saisissez une chaîne et lisez tous ses condensés d’un coup.","Sur cet appareil","Fonctionne hors ligne","Entrée","Hex en majuscules","Rogner les espaces","saisissez ou collez une chaîne ci-dessus","Refusé","Sûr aujourd’hui","Cassé, hérité seulement","Somme de contrôle, pas un hash","Comment ça marche","Ce que vous saisissez est encodé en UTF-8 avec \u003ccode>TextEncoder\u003c/code> et ce sont ces octets qui sont hachés ; le nombre d’octets à côté de l’entrée correspond à cet encodage, pas au nombre de caractères. Un textarea transforme chaque saut de ligne en LF : un texte collé avec des fins CRLF est donc haché comme du texte LF, et un substitut isolé devient U+FFFD avant le hachage. « Rogner les espaces » supprime les espaces de début et de fin avant l’encodage, ce qui change le condensé ; « Hex en majuscules », activé par défaut, ne change que l’affichage : il met les chiffres hexadécimaux en capitales et laisse le préfixe \u003ccode>0x\u003c/code> du CRC-32 tel quel. SHA-1, SHA-256, SHA-384 et SHA-512 viennent de \u003ccode>crypto.subtle.digest\u003c/code>, le code du navigateur lui-même. WebCrypto n’a ni MD5 ni CRC-32 ; les deux sont donc écrits en JavaScript pur dans cette page : MD5 suit la RFC 1321 et CRC-32 utilise le polynôme réfléchi IEEE 802.3 employé par zip et PNG.","MD5 et SHA-1 sont cassés en résistance aux collisions : produire deux entrées différentes de même condensé est peu coûteux, donc ni l’un ni l’autre ne dit rien de l’auteur d’un fichier. Ils sont là pour vérifier des valeurs héritées, rien de plus. CRC-32 est de la détection d’erreurs : il repère un bit inversé en transit et se falsifie trivialement à dessein. MySQL \u003ccode>PASSWORD()\u003c/code> est du SHA-1 appliqué deux fois sur les octets bruts, précédé d’un astérisque, l’ancien format \u003ccode>mysql_native_password\u003c/code> ; il est affiché en capitales parce que le format l’est. MySQL 8 utilise par défaut \u003ccode>caching_sha2_password\u003c/code>, salé et itéré, qui ne peut donc pas être reproduit à partir du seul mot de passe, et cet outil ne l’essaie pas.","Aucun de ces algorithmes n’est un hash de mot de passe au sens moderne. Pour stocker de vrais mots de passe, utilisez argon2, scrypt ou bcrypt, volontairement lents. Ce que cet outil refuse de faire : il ne hache pas de fichiers, seulement le texte de la zone, et ne fait ni HMAC, ni sel, ni dérivation de clé, ni nombre d’itérations. Une entrée de plus de 5 000 000 de caractères est refusée plutôt que tentée, et la limite est affichée quand vous l’atteignez. Au-delà de 200 000 caractères, MD5 et CRC-32 s’exécutent une image plus tard, après le repeint de la page, pour que l’onglet continue de répondre pendant le calcul. \u003ccode>crypto.subtle\u003c/code> exige un contexte sécurisé : ouvert en \u003ccode>https\u003c/code>, depuis \u003ccode>localhost\u003c/code> ou directement depuis le disque (\u003ccode>file://\u003c/code>), il fonctionne ; en \u003ccode>http\u003c/code> simple depuis un autre hôte, le navigateur le retient. Quand il manque, les lignes SHA et MySQL disent pourquoi ; quand un appel de condensé échoue, elles affichent l’erreur du navigateur. MD5 et CRC-32 fonctionnent dans tous les cas. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Générateur de hash — MDV","Saisissez une chaîne et lisez ses condensés CRC-32, MD5, SHA-1, SHA-256, SHA-384, SHA-512 et MySQL PASSWORD() au fil de la frappe. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Afficher les condensés hexadécimaux en majuscules","Retirer les espaces de début et de fin avant le hachage","Indisponible — cette page n’est pas un contexte sécurisé (http simple depuis un hôte autre que localhost), donc le navigateur retient crypto.subtle. Ouvrez-la en https ou directement depuis le disque (file://).","Indisponible — ce navigateur n’expose pas crypto.subtle, bien que la page soit un contexte sécurisé.","Indisponible — ce navigateur n’expose pas crypto.subtle.","calcul en cours…","détection d’erreurs","128 bits","160 bits","SHA-1 deux fois, octets bruts","famille SHA-2","Copier","{n} caractères dépassent la limite de {limit} caractères que cet outil acceptera de traiter. Il hache du texte, pas des fichiers ; pour un fichier, utilisez un outil de somme de contrôle de fichier.","plus de {n} caractères — md5 et crc-32 s’exécutent une image plus tard pour que la page reste réactive","Non calculé — crypto.subtle.digest a échoué avec {why}","Copié","{n} caractère","{n} caractères","{n} octet","{n} octets","Encodage et cryptographie",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Gib einen Text ein und lies alle seine Prüfsummen auf einmal.","Läuft auf diesem Gerät","Funktioniert offline","Eingabe","Hex groß","Leerraum kürzen","Text oben eingeben oder einfügen","Abgelehnt","Heute sicher","Gebrochen, nur Altbestand","Prüfsumme, kein Hash","So funktioniert es","Was du eintippst, wird mit \u003ccode>TextEncoder\u003c/code> nach UTF-8 kodiert, und diese Bytes werden gehasht; die Bytezahl neben der Eingabe stammt aus dieser Kodierung, nicht aus der Zeichenzahl. Ein Textarea macht aus jedem Zeilenumbruch ein LF, daher wird Text mit eingefügten CRLF-Enden als LF-Text gehasht, und ein einzelnes Surrogat wird vor dem Hashen zu U+FFFD. „Leerraum kürzen“ entfernt Leerraum am Anfang und Ende vor dem Kodieren, was die Prüfsumme ändert; „Hex groß“, standardmäßig an, ändert nur die Anzeige: Es schreibt die Hex-Ziffern groß und lässt das \u003ccode>0x\u003c/code>-Präfix von CRC-32 unverändert. SHA-1, SHA-256, SHA-384 und SHA-512 kommen aus \u003ccode>crypto.subtle.digest\u003c/code>, dem eigenen Code des Browsers. WebCrypto hat weder MD5 noch CRC-32, daher sind beide in dieser Seite in reinem JavaScript geschrieben: MD5 ist RFC 1321, CRC-32 ist das gespiegelte IEEE-802.3-Polynom, das zip und PNG verwenden.","MD5 und SHA-1 sind bei der Kollisionsresistenz gebrochen: Zwei verschiedene Eingaben mit derselben Prüfsumme lassen sich billig erzeugen, daher sagt keiner von beiden etwas darüber, wer eine Datei erstellt hat. Sie sind nur dazu da, Altwerte zu prüfen. CRC-32 ist Fehlererkennung: Es erkennt ein gekipptes Bit bei der Übertragung und lässt sich absichtlich trivial fälschen. MySQL \u003ccode>PASSWORD()\u003c/code> ist SHA-1, zweimal auf die Rohbytes angewendet, mit einem Sternchen davor, das alte Format \u003ccode>mysql_native_password\u003c/code>; es wird in Großbuchstaben ausgegeben, weil das Format es so verlangt. MySQL 8 verwendet standardmäßig \u003ccode>caching_sha2_password\u003c/code>, das gesalzen und iteriert ist, sich also nicht allein aus dem Passwort nachbilden lässt, und dieses Werkzeug versucht es nicht.","Keines davon ist ein Passwort-Hash im modernen Sinn. Zum Speichern echter Passwörter nimm argon2, scrypt oder bcrypt, die absichtlich langsam sind. Was dieses Werkzeug nicht tut: Es hasht keine Dateien, nur den Text im Feld, und es macht kein HMAC, kein Salt, keine Schlüsselableitung und keine Iterationszahl. Eingaben über 5.000.000 Zeichen werden abgelehnt, statt es zu versuchen, und die Grenze wird angezeigt, wenn du sie erreichst. Über 200.000 Zeichen laufen MD5 und CRC-32 einen Frame später, nachdem die Seite neu gezeichnet wurde, damit der Tab während der Arbeit weiter antwortet. \u003ccode>crypto.subtle\u003c/code> braucht einen sicheren Kontext: Über \u003ccode>https\u003c/code>, von \u003ccode>localhost\u003c/code> oder direkt von der Festplatte (\u003ccode>file://\u003c/code>) geöffnet funktioniert es; über einfaches \u003ccode>http\u003c/code> von einem anderen Host hält der Browser es zurück. Fehlt es, sagen die SHA- und MySQL-Zeilen warum; schlägt ein Digest-Aufruf fehl, zeigen sie die eigene Fehlermeldung des Browsers. MD5 und CRC-32 laufen in jedem Fall. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Hash-Generator — MDV","Gib einen Text ein und lies beim Tippen seine Prüfsummen CRC-32, MD5, SHA-1, SHA-256, SHA-384, SHA-512 und MySQL PASSWORD(). Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Hex-Prüfsummen in Großbuchstaben anzeigen","Leerraum am Anfang und Ende vor dem Hashen entfernen","Nicht verfügbar — diese Seite ist kein sicherer Kontext (einfaches http von einem anderen Host als localhost), daher hält der Browser crypto.subtle zurück. Öffne sie über https oder direkt von der Festplatte (file://).","Nicht verfügbar — dieser Browser stellt crypto.subtle nicht bereit, obwohl die Seite ein sicherer Kontext ist.","Nicht verfügbar — dieser Browser stellt crypto.subtle nicht bereit.","wird berechnet…","Fehlererkennung","128 Bit","160 Bit","SHA-1 zweimal, Rohbytes","SHA-2-Familie","Kopieren","{n} Zeichen überschreiten die Grenze von {limit} Zeichen, die dieses Werkzeug zu verarbeiten versucht. Es hasht Text, keine Dateien; nutze für eine Datei ein Datei-Prüfsummen-Werkzeug.","über {n} Zeichen — md5 und crc-32 laufen einen Frame später, damit die Seite reaktionsfähig bleibt","Nicht berechnet — crypto.subtle.digest schlug fehl mit {why}","Kopiert","{n} Zeichen","{n} Zeichen","{n} Byte","{n} Bytes","Kodierung und Krypto",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Scrivi una stringa e leggi tutti i suoi digest in una volta.","Su questo dispositivo","Funziona offline","Input","Hex maiuscolo","Taglia spazi","scrivi o incolla una stringa qui sopra","Rifiutato","Sicuro oggi","Rotto, solo legacy","Checksum, non un hash","Come funziona","Ciò che scrivi viene codificato in UTF-8 con \u003ccode>TextEncoder\u003c/code> e di quei byte si calcola l’hash; il numero di byte accanto all’input è quella codifica, non il numero di caratteri. Una textarea trasforma ogni a capo in LF, quindi il testo incollato con finali CRLF viene elaborato come testo LF, e un surrogato isolato diventa U+FFFD prima del calcolo. «Taglia spazi» elimina gli spazi iniziali e finali prima della codifica, il che cambia il digest; «Hex maiuscolo», attivo per impostazione predefinita, cambia solo la visualizzazione: mette in maiuscolo le cifre esadecimali e lascia invariato il prefisso \u003ccode>0x\u003c/code> del CRC-32. SHA-1, SHA-256, SHA-384 e SHA-512 provengono da \u003ccode>crypto.subtle.digest\u003c/code>, il codice del browser stesso. WebCrypto non ha né MD5 né CRC-32, quindi entrambi sono scritti in JavaScript puro in questa pagina: MD5 è la RFC 1321, CRC-32 è il polinomio riflesso IEEE 802.3 usato da zip e PNG.","MD5 e SHA-1 sono rotti quanto a resistenza alle collisioni: produrre due input diversi con lo stesso digest costa poco, quindi nessuno dei due dice nulla su chi ha creato un file. Sono qui per controllare valori legacy, niente di più. CRC-32 è rilevamento di errori: coglie un bit cambiato in transito ed è banale da falsificare di proposito. MySQL \u003ccode>PASSWORD()\u003c/code> è SHA-1 applicato due volte ai byte grezzi con un asterisco davanti, il vecchio formato \u003ccode>mysql_native_password\u003c/code>; è stampato in maiuscolo perché lo è il formato. MySQL 8 usa per impostazione predefinita \u003ccode>caching_sha2_password\u003c/code>, che è salato e iterato, quindi non si può riprodurre dalla sola password e questo strumento non ci prova.","Nessuno di questi è un hash di password in senso moderno. Per memorizzare password vere usa argon2, scrypt o bcrypt, che sono volutamente lenti. Ciò che questo strumento si rifiuta di fare: non calcola l’hash di file, solo del testo nel riquadro, e non fa HMAC, né salt, né derivazione di chiavi, né conteggio di iterazioni. Un input oltre 5.000.000 di caratteri viene rifiutato invece di essere tentato, e il limite viene mostrato quando lo raggiungi. Oltre 200.000 caratteri MD5 e CRC-32 girano un frame dopo, a pagina ridisegnata, così la scheda continua a rispondere mentre lavorano. \u003ccode>crypto.subtle\u003c/code> richiede un contesto sicuro: aperta via \u003ccode>https\u003c/code>, da \u003ccode>localhost\u003c/code> o direttamente dal disco (\u003ccode>file://\u003c/code>) funziona; via \u003ccode>http\u003c/code> semplice da qualsiasi altro host il browser la nasconde. Quando manca, le righe SHA e MySQL dicono perché; quando una chiamata di digest fallisce, mostrano l’errore del browser. MD5 e CRC-32 funzionano comunque. Non viene caricato nulla: questo file non ha un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Generatore di hash — MDV","Scrivi una stringa e leggi mentre digiti i suoi digest CRC-32, MD5, SHA-1, SHA-256, SHA-384, SHA-512 e MySQL PASSWORD(). Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Mostra i digest esadecimali in maiuscolo","Elimina gli spazi iniziali e finali prima del calcolo","Non disponibile — questa pagina non è un contesto sicuro (http semplice da un host diverso da localhost), quindi il browser nasconde crypto.subtle. Aprila via https o direttamente dal disco (file://).","Non disponibile — questo browser non espone crypto.subtle, benché la pagina sia un contesto sicuro.","Non disponibile — questo browser non espone crypto.subtle.","calcolo in corso…","rilevamento errori","128 bit","160 bit","SHA-1 due volte, byte grezzi","famiglia SHA-2","Copia","{n} caratteri superano il limite di {limit} caratteri che questo strumento tenterà di elaborare. Calcola l’hash di testo, non di file; per un file usa uno strumento di checksum dei file.","oltre {n} caratteri — md5 e crc-32 girano un frame dopo così la pagina resta reattiva","Non calcolato — crypto.subtle.digest non è riuscito: {why}","Copiato","{n} carattere","{n} caratteri","{n} byte","{n} byte","Codifica e crittografia",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Digite um texto e leia todos os seus resumos de uma vez.","Neste dispositivo","Funciona offline","Entrada","Hex maiúsculo","Remover espaços","digite ou cole um texto acima","Recusado","Seguro hoje","Quebrado, só legado","Checksum, não um hash","Como funciona","O que você digita é codificado em UTF-8 com \u003ccode>TextEncoder\u003c/code> e o hash é calculado sobre esses bytes; a contagem de bytes ao lado da entrada é dessa codificação, não a contagem de caracteres. Um textarea transforma cada quebra de linha em LF, então o texto colado com finais CRLF é processado como texto LF, e um surrogate isolado vira U+FFFD antes do cálculo. \"Remover espaços\" tira os espaços do início e do fim antes de codificar, o que muda o resumo; \"Hex maiúsculo\", ligado por padrão, só muda a exibição: põe os dígitos hexadecimais em maiúsculas e deixa o prefixo \u003ccode>0x\u003c/code> do CRC-32 como está. SHA-1, SHA-256, SHA-384 e SHA-512 vêm de \u003ccode>crypto.subtle.digest\u003c/code>, o código do próprio navegador. O WebCrypto não tem MD5 nem CRC-32, então ambos estão escritos em JavaScript puro nesta página: MD5 é a RFC 1321 e CRC-32 é o polinômio refletido IEEE 802.3 usado por zip e PNG.","MD5 e SHA-1 estão quebrados quanto à resistência a colisões: produzir duas entradas diferentes com o mesmo resumo é barato, então nenhum dos dois diz nada sobre quem criou um arquivo. Estão aqui para conferir valores legados, nada mais. CRC-32 é detecção de erros: pega um bit trocado em trânsito e é trivial de falsificar de propósito. O MySQL \u003ccode>PASSWORD()\u003c/code> é SHA-1 aplicado duas vezes sobre os bytes brutos com um asterisco na frente, o antigo formato \u003ccode>mysql_native_password\u003c/code>; é impresso em maiúsculas porque o formato é assim. O MySQL 8 usa por padrão \u003ccode>caching_sha2_password\u003c/code>, que tem sal e é iterado, então não dá para reproduzi-lo só com a senha, e esta ferramenta não tenta.","Nenhum desses é um hash de senha no sentido moderno. Para guardar senhas de verdade use argon2, scrypt ou bcrypt, que são lentos de propósito. O que esta ferramenta se recusa a fazer: não calcula hash de arquivos, só do texto da caixa, e não faz HMAC, sal, derivação de chave nem contagem de iterações. Entrada acima de 5.000.000 de caracteres é recusada em vez de tentada, e o limite é mostrado quando você o atinge. Acima de 200.000 caracteres, MD5 e CRC-32 rodam um quadro depois, com a página já redesenhada, para que a aba continue respondendo enquanto trabalham. O \u003ccode>crypto.subtle\u003c/code> exige um contexto seguro: aberto por \u003ccode>https\u003c/code>, a partir de \u003ccode>localhost\u003c/code> ou direto do disco (\u003ccode>file://\u003c/code>), funciona; por \u003ccode>http\u003c/code> simples em qualquer outro host o navegador o retém. Quando ele falta, as linhas SHA e MySQL dizem por quê; quando uma chamada de resumo falha, mostram o erro do próprio navegador. MD5 e CRC-32 funcionam de qualquer forma. Nada é enviado: este arquivo não tem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Gerador de hash — MDV","Digite um texto e leia, enquanto digita, seus resumos CRC-32, MD5, SHA-1, SHA-256, SHA-384, SHA-512 e MySQL PASSWORD(). Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Mostrar os resumos hexadecimais em maiúsculas","Remover espaços do início e do fim antes do cálculo","Indisponível — esta página não é um contexto seguro (http simples em um host que não é localhost), então o navegador retém o crypto.subtle. Abra por https ou direto do disco (file://).","Indisponível — este navegador não expõe o crypto.subtle, embora a página seja um contexto seguro.","Indisponível — este navegador não expõe o crypto.subtle.","calculando…","detecção de erros","128 bits","160 bits","SHA-1 duas vezes, bytes brutos","família SHA-2","Copiar","{n} caracteres passam do limite de {limit} caracteres que esta ferramenta tentará processar. Ela calcula hash de texto, não de arquivos; para um arquivo, use uma ferramenta de checksum de arquivo.","mais de {n} caracteres — md5 e crc-32 rodam um quadro depois para a página continuar responsiva","Não calculado — crypto.subtle.digest falhou com {why}","Copiado","{n} caractere","{n} caracteres","{n} byte","{n} bytes","Codificação e criptografia",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","文字列を入力すると、そのすべてのダイジェストを一度に読み取れます。","この端末で動作","オフラインで動作","入力","16 進を大文字","空白を除去","上に文字列を入力または貼り付け","拒否しました","現在も安全","破られている・旧式のみ","チェックサム(ハッシュではない)","仕組み","入力した内容は \u003ccode>TextEncoder\u003c/code> で UTF-8 にエンコードされ、そのバイト列がハッシュされます。入力欄の横のバイト数はこのエンコード後のもので、文字数ではありません。textarea はすべての改行を LF にするため、CRLF 改行で貼り付けたテキストは LF のテキストとしてハッシュされ、単独のサロゲートはハッシュ前に U+FFFD になります。「空白を除去」はエンコード前に前後の空白を取り除くため、ダイジェストが変わります。既定でオンの「16 進を大文字」は表示だけを変え、16 進の数字を大文字にしますが、CRC-32 の \u003ccode>0x\u003c/code> 接頭辞はそのままです。SHA-1、SHA-256、SHA-384、SHA-512 はブラウザー自身のコードである \u003ccode>crypto.subtle.digest\u003c/code> によるものです。WebCrypto には MD5 も CRC-32 もないため、どちらもこのページ内に素の JavaScript で書かれています。MD5 は RFC 1321、CRC-32 は zip や PNG で使われる反転 IEEE 802.3 多項式です。","MD5 と SHA-1 は衝突耐性の面で破られています。同じダイジェストを持つ異なる 2 つの入力を作るのは安価であり、どちらもファイルを誰が作ったかを示しません。ここにあるのは旧来の値を確認するためだけです。CRC-32 は誤り検出です。転送中に反転したビットは検出できますが、意図的な偽造は容易です。MySQL \u003ccode>PASSWORD()\u003c/code> は、生のバイト列に SHA-1 を 2 回適用して先頭にアスタリスクを付けた、古い \u003ccode>mysql_native_password\u003c/code> 形式です。形式が大文字なので大文字で出力されます。MySQL 8 の既定は \u003ccode>caching_sha2_password\u003c/code> で、ソルトと反復が使われるため、パスワードだけからは再現できず、このツールも試みません。","これらはいずれも現代的な意味でのパスワードハッシュではありません。実際のパスワードを保存するには、意図的に遅い argon2、scrypt、bcrypt を使ってください。このツールが行わないこと:ファイルのハッシュは計算せず(ボックス内のテキストのみ)、HMAC、ソルト、鍵導出、反復回数の指定も行いません。5,000,000 文字を超える入力は、試みずに拒否し、上限に達したときにその値を表示します。200,000 文字を超えると、MD5 と CRC-32 はページが再描画された後の 1 フレーム遅れで実行され、処理中もタブが応答し続けます。\u003ccode>crypto.subtle\u003c/code> にはセキュアコンテキストが必要です。\u003ccode>https\u003c/code>、\u003ccode>localhost\u003c/code>、またはディスクから直接(\u003ccode>file://\u003c/code>)開けば動作しますが、他のホストからの通常の \u003ccode>http\u003c/code> ではブラウザーが提供しません。提供されない場合は SHA と MySQL の行が理由を表示し、ダイジェスト呼び出しが失敗した場合はブラウザー自身のエラーを表示します。MD5 と CRC-32 はどちらの場合も動作します。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","ハッシュジェネレーター — MDV","文字列を入力すると、入力と同時に CRC-32、MD5、SHA-1、SHA-256、SHA-384、SHA-512、MySQL PASSWORD() のダイジェストを表示します。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","16 進のダイジェストを大文字で表示","ハッシュ前に前後の空白を取り除く","利用できません — このページはセキュアコンテキストではありません(localhost 以外のホストからの通常の http)。そのためブラウザーが crypto.subtle を提供しません。https で、またはディスクから直接(file://)開いてください。","利用できません — ページはセキュアコンテキストですが、このブラウザーは crypto.subtle を提供していません。","利用できません — このブラウザーは crypto.subtle を提供していません。","計算中…","誤り検出","128 ビット","160 ビット","SHA-1 を 2 回、生バイト","SHA-2 系","コピー","{n} 文字は、このツールが処理する上限の {limit} 文字を超えています。このツールはテキストをハッシュします。ファイルには使えないので、ファイルにはファイルのチェックサムツールを使ってください。","{n} 文字超 — ページの応答性を保つため、md5 と crc-32 は 1 フレーム遅れて実行されます","計算できませんでした — crypto.subtle.digest が {why} で失敗しました","コピーしました","{n} 文字","{n} 文字","{n} バイト","{n} バイト","エンコードと暗号",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","문자열을 입력하면 모든 다이제스트를 한꺼번에 볼 수 있습니다.","이 기기에서 실행","오프라인 작동","입력","16진수 대문자","공백 제거","위에 문자열을 입력하거나 붙여넣으세요","거부됨","지금도 안전","깨짐, 구형 전용","체크섬, 해시 아님","작동 방식","입력한 내용은 \u003ccode>TextEncoder\u003c/code>로 UTF-8로 인코딩되고, 그 바이트가 해시됩니다. 입력란 옆의 바이트 수는 이 인코딩 기준이며 글자 수가 아닙니다. textarea는 모든 줄바꿈을 LF로 바꾸므로 CRLF로 붙여넣은 텍스트는 LF 텍스트로 해시되고, 홀로 있는 서러게이트는 해시 전에 U+FFFD가 됩니다. \"공백 제거\"는 인코딩 전에 앞뒤 공백을 지우므로 다이제스트가 달라집니다. 기본으로 켜져 있는 \"16진수 대문자\"는 표시만 바꾸어 16진수 숫자를 대문자로 만들고, CRC-32의 \u003ccode>0x\u003c/code> 접두사는 그대로 둡니다. SHA-1, SHA-256, SHA-384, SHA-512는 브라우저 자체 코드인 \u003ccode>crypto.subtle.digest\u003c/code>에서 가져옵니다. WebCrypto에는 MD5와 CRC-32가 없으므로 둘 다 이 페이지 안에 순수 JavaScript로 작성되어 있습니다. MD5는 RFC 1321이고, CRC-32는 zip과 PNG가 쓰는 반전 IEEE 802.3 다항식입니다.","MD5와 SHA-1은 충돌 저항성 면에서 깨졌습니다. 같은 다이제스트를 가진 서로 다른 두 입력을 만드는 비용이 낮으므로, 어느 쪽도 파일을 누가 만들었는지 알려 주지 않습니다. 구형 값을 확인하기 위한 용도일 뿐입니다. CRC-32는 오류 검출입니다. 전송 중 뒤집힌 비트는 잡아내지만 의도적으로 위조하기는 매우 쉽습니다. MySQL \u003ccode>PASSWORD()\u003c/code>는 원시 바이트에 SHA-1을 두 번 적용하고 앞에 별표를 붙인 옛 \u003ccode>mysql_native_password\u003c/code> 형식이며, 형식이 대문자이므로 대문자로 출력됩니다. MySQL 8의 기본값은 솔트와 반복이 적용된 \u003ccode>caching_sha2_password\u003c/code>라서 비밀번호만으로는 재현할 수 없으며, 이 도구도 시도하지 않습니다.","이들 중 어느 것도 현대적 의미의 비밀번호 해시가 아닙니다. 실제 비밀번호를 저장하려면 일부러 느리게 만든 argon2, scrypt, bcrypt를 쓰세요. 이 도구가 하지 않는 것: 파일은 해시하지 않고(입력란의 텍스트만), HMAC, 솔트, 키 유도, 반복 횟수 지정도 없습니다. 5,000,000자를 넘는 입력은 시도하지 않고 거부하며, 한계에 도달하면 그 값을 표시합니다. 200,000자를 넘으면 MD5와 CRC-32는 페이지가 다시 그려진 뒤 한 프레임 늦게 실행되어, 작업 중에도 탭이 계속 응답합니다. \u003ccode>crypto.subtle\u003c/code>에는 보안 컨텍스트가 필요합니다. \u003ccode>https\u003c/code>, \u003ccode>localhost\u003c/code>, 또는 디스크에서 직접(\u003ccode>file://\u003c/code>) 열면 동작하지만, 다른 호스트의 일반 \u003ccode>http\u003c/code>에서는 브라우저가 제공하지 않습니다. 없을 때는 SHA와 MySQL 행이 이유를 알려 주고, 다이제스트 호출이 실패하면 브라우저 자체 오류를 표시합니다. MD5와 CRC-32는 어느 경우에나 동작합니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크와 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","해시 생성기 — MDV","문자열을 입력하면 입력과 동시에 CRC-32, MD5, SHA-1, SHA-256, SHA-384, SHA-512, MySQL PASSWORD() 다이제스트를 보여 줍니다. 내 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","16진수 다이제스트를 대문자로 표시","해시하기 전에 앞뒤 공백 제거","사용할 수 없음 — 이 페이지는 보안 컨텍스트가 아니므로(localhost가 아닌 호스트의 일반 http) 브라우저가 crypto.subtle을 제공하지 않습니다. https로 열거나 디스크에서 직접(file://) 여세요.","사용할 수 없음 — 페이지는 보안 컨텍스트이지만 이 브라우저는 crypto.subtle을 제공하지 않습니다.","사용할 수 없음 — 이 브라우저는 crypto.subtle을 제공하지 않습니다.","계산 중…","오류 검출","128비트","160비트","SHA-1 두 번, 원시 바이트","SHA-2 계열","복사","{n}자는 이 도구가 처리하는 한계인 {limit}자를 넘습니다. 이 도구는 텍스트를 해시하며 파일은 해시하지 않습니다. 파일에는 파일 체크섬 도구를 사용하세요.","{n}자 초과 — 페이지가 계속 응답하도록 md5와 crc-32는 한 프레임 늦게 실행됩니다","계산되지 않음 — crypto.subtle.digest가 {why} 오류로 실패했습니다","복사됨","{n}자","{n}자","{n}바이트","{n}바이트","인코딩과 암호화",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","输入一段文字,一次读出它的所有摘要。","在此设备上运行","可离线使用","输入","十六进制大写","去除首尾空白","在上方输入或粘贴文字","已拒绝","目前安全","已被攻破,仅限旧系统","校验和,不是哈希","工作原理","你输入的内容用 \u003ccode>TextEncoder\u003c/code> 编码为 UTF-8，对这些字节计算哈希;输入框旁的字节数是该编码的结果,不是字符数。textarea 会把每个换行变成 LF，所以以 CRLF 结尾粘贴的文本按 LF 文本计算,孤立的代理项在计算前会变成 U+FFFD。“去除首尾空白”会在编码前去掉首尾空白,这会改变摘要;默认开启的“十六进制大写”只改变显示,把十六进制数字变成大写,CRC-32 的 \u003ccode>0x\u003c/code> 前缀保持不变。SHA-1、SHA-256、SHA-384 和 SHA-512 来自浏览器自带的 \u003ccode>crypto.subtle.digest\u003c/code>。WebCrypto 没有 MD5 和 CRC-32，所以这两个都用纯 JavaScript 写在本页中:MD5 遵循 RFC 1321,CRC-32 是 zip 和 PNG 使用的反射式 IEEE 802.3 多项式。","MD5 和 SHA-1 在抗碰撞性上已被攻破:构造两个摘要相同的不同输入成本很低,所以它们都无法说明文件是谁制作的。它们在这里只是用来核对旧值,仅此而已。CRC-32 是错误检测:能发现传输中翻转的一个比特,但故意伪造极其容易。MySQL \u003ccode>PASSWORD()\u003c/code> 是对原始字节连续做两次 SHA-1、前面加一个星号,即旧的 \u003ccode>mysql_native_password\u003c/code> 格式;因为该格式是大写,所以按大写输出。MySQL 8 默认使用 \u003ccode>caching_sha2_password\u003c/code>,它带盐并经过迭代,无法仅凭密码重现,本工具也不尝试。","以现代标准衡量,这些都不是密码哈希。要存储真正的密码,请使用 argon2、scrypt 或 bcrypt，它们是刻意设计得很慢的。本工具不做的事:不对文件做哈希,只处理框中的文本,也不做 HMAC、加盐、密钥派生,不设迭代次数。超过 5,000,000 个字符的输入会被拒绝而不是尝试处理,达到上限时会显示该上限。超过 200,000 个字符时,MD5 和 CRC-32 会在页面重绘之后晚一帧运行,这样它们工作时标签页仍能响应。\u003ccode>crypto.subtle\u003c/code> 需要安全上下文:通过 \u003ccode>https\u003c/code>、从 \u003ccode>localhost\u003c/code> 或直接从磁盘(\u003ccode>file://\u003c/code>)打开时可用;通过其他主机的普通 \u003ccode>http\u003c/code> 打开时,浏览器不提供它。缺失时,SHA 和 MySQL 各行会说明原因;摘要调用失败时,它们会显示浏览器自己的错误。无论哪种情况,MD5 和 CRC-32 都能运行。不会上传任何内容:此文件没有服务器。","深色和语言按钮会把各自的设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","哈希生成器 — MDV","输入一段文字,边输入边读出它的 CRC-32、MD5、SHA-1、SHA-256、SHA-384、SHA-512 和 MySQL PASSWORD() 摘要。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","以大写显示十六进制摘要","计算哈希前去掉首尾空白","不可用 — 此页面不是安全上下文(来自 localhost 以外主机的普通 http),所以浏览器不提供 crypto.subtle。请通过 https 或直接从磁盘(file://)打开。","不可用 — 此页面虽是安全上下文,但此浏览器没有提供 crypto.subtle。","不可用 — 此浏览器没有提供 crypto.subtle。","计算中…","错误检测","128 位","160 位","两次 SHA-1，原始字节","SHA-2 系列","复制","{n} 个字符超过了本工具可处理的 {limit} 个字符上限。它对文本做哈希,而不是对文件;处理文件请使用文件校验和工具。","超过 {n} 个字符 — md5 和 crc-32 晚一帧运行,以保持页面响应","未计算 — crypto.subtle.digest 失败:{why}","已复制","{n} 个字符","{n} 个字符","{n} 字节","{n} 字节","编码与加密",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2444,21 +2657,21 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // https, localhost and file:// qualify; plain http from any other host does not.
   function subtleMissing() {
     if (window.isSecureContext === false)
-      return "Unavailable — this page is not a secure context (plain http from a host other than localhost), " +
-        "so the browser withholds crypto.subtle. Open it over https or straight from disk (file://).";
-    return "Unavailable — this browser does not expose crypto.subtle" +
-      (window.isSecureContext ? ", although the page is a secure context." : ".");
+      return tr("Unavailable — this page is not a secure context (plain http from a host other than localhost), so the browser withholds crypto.subtle. Open it over https or straight from disk (file://).");
+    return window.isSecureContext ? tr("Unavailable — this browser does not expose crypto.subtle, although the page is a secure context.")
+      : tr("Unavailable — this browser does not expose crypto.subtle.");
   }
+  function computing() { return tr("computing…"); }
 
   /* ---------- the rows ---------- */
   var ROWS = [
-    { id: "crc32",  name: "CRC-32",           kind: "error detection",        tone: "state-warn" },
-    { id: "md5",    name: "MD5",              kind: "128-bit",                tone: "state-bad" },
-    { id: "sha1",   name: "SHA-1",            kind: "160-bit",                tone: "state-bad" },
-    { id: "mysql",  name: "MySQL PASSWORD()", kind: "SHA-1 twice, raw bytes", tone: "state-bad" },
-    { id: "sha256", name: "SHA-256",          kind: "SHA-2 family",           tone: "state-ok" },
-    { id: "sha384", name: "SHA-384",          kind: "SHA-2 family",           tone: "state-ok" },
-    { id: "sha512", name: "SHA-512",          kind: "SHA-2 family",           tone: "state-ok" }
+    { id: "crc32",  name: "CRC-32",           kind: trk("error detection"),        tone: "state-warn" },
+    { id: "md5",    name: "MD5",              kind: trk("128-bit"),                tone: "state-bad" },
+    { id: "sha1",   name: "SHA-1",            kind: trk("160-bit"),                tone: "state-bad" },
+    { id: "mysql",  name: "MySQL PASSWORD()", kind: trk("SHA-1 twice, raw bytes"), tone: "state-bad" },
+    { id: "sha256", name: "SHA-256",          kind: trk("SHA-2 family"),           tone: "state-ok" },
+    { id: "sha384", name: "SHA-384",          kind: trk("SHA-2 family"),           tone: "state-ok" },
+    { id: "sha512", name: "SHA-512",          kind: trk("SHA-2 family"),           tone: "state-ok" }
   ];
   var SUBTLE_ROWS = ["sha1", "mysql", "sha256", "sha384", "sha512"];
 
@@ -2470,28 +2683,33 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     el.innerHTML =
       '<div class="mdv-row"><span class="mdv-mark"></span><b class="mdv-digest-name"></b>' +
       '<span class="mdv-digest-kind mdv-muted"></span>' +
-      '<button class="mdv-btn is-sm is-ghost" type="button" style="margin-left:auto" disabled>Copy</button></div>' +
+      '<button class="mdv-btn is-sm is-ghost" type="button" style="margin-left:auto" disabled></button></div>' +
       '<p class="mdv-digest-val is-blank">&#8212;</p>';
     el.querySelector(".mdv-digest-name").textContent = r.name;
-    el.querySelector(".mdv-digest-kind").textContent = r.kind;
+    var kindEl = el.querySelector(".mdv-digest-kind");
+    kindEl.textContent = tr(r.kind);
     rowsEl.appendChild(el);
     var val = el.querySelector(".mdv-digest-val");
     var btn = el.querySelector("button");
-    cells[r.id] = { val: val, btn: btn };
+    btn.textContent = tr("Copy");
+    cells[r.id] = { val: val, btn: btn, kindEl: kindEl, kind: r.kind, noteFn: null };
     btn.addEventListener("click", function () { copy(val.textContent, btn); });
   });
 
   // A real digest: mono, copyable.
   function put(id, text) {
     var c = cells[id];
+    c.noteFn = null;
     c.val.textContent = text;
     c.val.classList.remove("is-blank");
     c.btn.disabled = false;
   }
   // A note in place of a digest: nothing to copy.
+  // text is a string, or a function that gives the string in the current language
   function note(id, text) {
     var c = cells[id];
-    c.val.textContent = text;
+    c.noteFn = typeof text === "function" ? text : null;
+    c.val.textContent = c.noteFn ? c.noteFn() : text;
     c.val.classList.add("is-blank");
     c.btn.disabled = true;
   }
@@ -2502,11 +2720,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   // The digest rows and their legend show only with something hashed: blank rows under the empty
   // hint or a refusal would push the page past one screen and say nothing.
+  // what the status line and the count say, kept as functions so a language change can say them again
+  var countFn = null, errFn = null, slowFn = null;
   function state(which, message) {
     empty.hidden = which !== "empty";
     err.hidden = which !== "error";
     rowsEl.hidden = legend.hidden = which !== "result";
-    if (which === "error") errmsg.textContent = message;
+    errFn = which === "error" ? message : null;
+    if (errFn) errmsg.textContent = errFn();
+    slowFn = null;
     slow.hidden = true;
     slow.textContent = "";
     showStatus();
@@ -2519,35 +2741,38 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var text = trim.checked ? raw.trim() : raw;
 
     if (!text) {
-      countEl.textContent = raw.length.toLocaleString() + " characters";
+      countFn = function () { return trn(raw.length, "{n} character", "{n} characters"); };
+      countEl.textContent = countFn();
       blankAll();
       state("empty");
       return;
     }
 
     if (text.length > LIMIT) {
-      countEl.textContent = text.length.toLocaleString() + " characters";
+      countFn = function () { return trn(text.length, "{n} character", "{n} characters"); };
+      countEl.textContent = countFn();
       blankAll();
-      state("error", text.length.toLocaleString() + " characters is past the " +
-        LIMIT.toLocaleString() + "-character ceiling this tool will attempt. " +
-        "It hashes text, not files — for a file, use a file checksum tool.");
+      state("error", function () {
+        return tr("{n} characters is past the {limit}-character ceiling this tool will attempt. It hashes text, not files — for a file, use a file checksum tool.",
+          { n: text.length.toLocaleString(), limit: LIMIT.toLocaleString() });
+      });
       return;
     }
 
     var bytes = enc.encode(text);
-    countEl.textContent = text.length.toLocaleString() + " characters · " +
-      bytes.length.toLocaleString() + (bytes.length === 1 ? " byte" : " bytes");
+    countFn = function () { return trn(text.length, "{n} character", "{n} characters") + " · " + trn(bytes.length, "{n} byte", "{n} bytes"); };
+    countEl.textContent = countFn();
     state("result");
 
     var heavy = text.length > DEFER;
     if (heavy) {
-      slow.textContent = "over " + DEFER.toLocaleString() +
-        " characters — md5 and crc-32 run one frame late so the page stays responsive";
+      slowFn = function () { return tr("over {n} characters — md5 and crc-32 run one frame late so the page stays responsive", { n: DEFER.toLocaleString() }); };
+      slow.textContent = slowFn();
       slow.hidden = false;
       showStatus();
-      note("crc32", "computing…");
-      note("md5", "computing…");
-      if (subtleOk) SUBTLE_ROWS.forEach(function (id) { note(id, "computing…"); });
+      note("crc32", computing);
+      note("md5", computing);
+      if (subtleOk) SUBTLE_ROWS.forEach(function (id) { note(id, computing); });
     }
 
     var cap = function (s) { return upper.checked ? s.toUpperCase() : s; };
@@ -2563,7 +2788,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     else sync();
 
     if (!subtleOk) {
-      SUBTLE_ROWS.forEach(function (id) { note(id, subtleMissing()); });
+      SUBTLE_ROWS.forEach(function (id) { note(id, subtleMissing); });
       return;
     }
 
@@ -2583,15 +2808,16 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         if (token !== run) return;
         var why = e && e.name ? e.name + (e.message ? ": " + e.message : "") : String(e);
         SUBTLE_ROWS.forEach(function (id) {
-          note(id, "Not computed — crypto.subtle.digest failed with " + why.replace(/\.?$/, "."));
+          note(id, function () { return tr("Not computed — crypto.subtle.digest failed with {why}", { why: why.replace(/\.?$/, ".") }); });
         });
       });
   }
 
   function copy(text, btn) {
     var done = function () {
-      btn.textContent = "Copied";
-      setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+      btn.dataset.copied = "1";
+      btn.textContent = tr("Copied");
+      setTimeout(function () { delete btn.dataset.copied; btn.textContent = tr("Copy"); }, 1600);
     };
     if (navigator.clipboard && window.isSecureContext)
       navigator.clipboard.writeText(text).then(done).catch(function () { fallback(text, done); });
@@ -2613,6 +2839,18 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   upper.addEventListener("change", compute);
   trim.addEventListener("change", compute);
   src.focus({ preventScroll: true });
+  // a language change says the same things again from what is kept; no digest is computed twice
+  onLang(function () {
+    if (countFn) countEl.textContent = countFn();
+    if (errFn && !err.hidden) errmsg.textContent = errFn();
+    if (slowFn && !slow.hidden) slow.textContent = slowFn();
+    ROWS.forEach(function (row) {
+      var c = cells[row.id];
+      c.kindEl.textContent = tr(c.kind);
+      c.btn.textContent = c.btn.dataset.copied ? tr("Copied") : tr("Copy");
+      if (c.noteFn) c.val.textContent = c.noteFn();
+    });
+  });
   compute();
 })();
 </script>

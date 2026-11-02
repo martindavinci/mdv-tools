@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link is-here" href="./document-scanner.html" aria-current="page" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link is-here" href="./document-scanner.html" aria-current="page" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,40 +2353,40 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Document scanner</h1>
+      <h1 class="mdv-head-name" data-t="59">Document scanner</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Photograph a page, set its four corners, and take away a flat, white scan.</p>
+    <p class="mdv-head-line" data-t="79">Photograph a page, set its four corners, and take away a flat, white scan.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
-  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose a photo of a page">
+  <div class="mdv-drop" id="drop" tabindex="0" role="button" aria-label="Choose a photo of a page" data-t-attrs="aria-label">
     <span class="mdv-drop-glyph" aria-hidden="true"></span>
-    <span class="mdv-tag">Drop a photo of a page — JPEG, PNG or WebP, up to 30 MB</span>
+    <span class="mdv-tag" data-t="82">Drop a photo of a page — JPEG, PNG or WebP, up to 30 MB</span>
     <input type="file" id="file" accept="image/jpeg,image/png,image/webp,image/avif" class="mdv-sr" tabindex="-1" aria-hidden="true">
   </div>
 
   <section class="mdv-stack is-tight" data-mdv-result>
-    <div class="mdv-empty" id="empty"><span>drop a photo of a page above</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="83">drop a photo of a page above</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
-      <span class="mdv-notice-title" id="errtitle">Cannot scan that</span>
+      <span class="mdv-notice-title" id="errtitle" data-t="84">Cannot scan that</span>
       <span id="errmsg"></span>
     </div>
 
     <div id="ok" hidden>
       <div class="mdv-row is-between">
-        <div class="mdv-seg" role="group" aria-label="Clean up">
-          <button type="button" data-clean="colour" class="is-on" aria-pressed="true">Clean colour</button>
-          <button type="button" data-clean="grey" aria-pressed="false">Greyscale</button>
-          <button type="button" data-clean="bw" aria-pressed="false">Black and white</button>
-          <button type="button" data-clean="none" aria-pressed="false">Straighten only</button>
+        <div class="mdv-seg" role="group" aria-label="Clean up" data-t-attrs="aria-label">
+          <button type="button" data-clean="colour" class="is-on" aria-pressed="true" data-t="85">Clean colour</button>
+          <button type="button" data-clean="grey" aria-pressed="false" data-t="86">Greyscale</button>
+          <button type="button" data-clean="bw" aria-pressed="false" data-t="87">Black and white</button>
+          <button type="button" data-clean="none" aria-pressed="false" data-t="88">Straighten only</button>
         </div>
-        <div class="mdv-seg" role="group" aria-label="Page size">
-          <button type="button" data-paper="auto" class="is-on" aria-pressed="true">As photographed</button>
+        <div class="mdv-seg" role="group" aria-label="Page size" data-t-attrs="aria-label">
+          <button type="button" data-paper="auto" class="is-on" aria-pressed="true" data-t="89">As photographed</button>
           <button type="button" data-paper="a4" aria-pressed="false">A4</button>
           <button type="button" data-paper="letter" aria-pressed="false">Letter</button>
         </div>
@@ -2282,26 +2394,26 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
       <div class="mdv-cols">
         <div class="mdv-stack is-tight">
-          <span class="mdv-label">Photo — drag the four corners onto the page's corners</span>
+          <span class="mdv-label" data-t="90">Photo — drag the four corners onto the page's corners</span>
           <div class="mdv-stage" id="stage">
-            <img id="photo" alt="Your photo, with the page outline over it">
+            <img id="photo" alt="Your photo, with the page outline over it" data-t-attrs="alt">
             <svg class="mdv-quad" id="quad" aria-hidden="true" preserveAspectRatio="none">
               <path class="wash" id="wash"/>
               <polygon class="edge" id="edge"/>
             </svg>
-            <button class="mdv-handle is-free" type="button" data-corner="0" aria-label="Top left corner. Arrow keys move it."></button>
-            <button class="mdv-handle is-free" type="button" data-corner="1" aria-label="Top right corner. Arrow keys move it."></button>
-            <button class="mdv-handle is-free" type="button" data-corner="2" aria-label="Bottom right corner. Arrow keys move it."></button>
-            <button class="mdv-handle is-free" type="button" data-corner="3" aria-label="Bottom left corner. Arrow keys move it."></button>
+            <button class="mdv-handle is-free" type="button" data-corner="0" aria-label="Top left corner. Arrow keys move it." data-t-attrs="aria-label"></button>
+            <button class="mdv-handle is-free" type="button" data-corner="1" aria-label="Top right corner. Arrow keys move it." data-t-attrs="aria-label"></button>
+            <button class="mdv-handle is-free" type="button" data-corner="2" aria-label="Bottom right corner. Arrow keys move it." data-t-attrs="aria-label"></button>
+            <button class="mdv-handle is-free" type="button" data-corner="3" aria-label="Bottom left corner. Arrow keys move it." data-t-attrs="aria-label"></button>
           </div>
           <div class="mdv-btn-row">
-            <button class="mdv-btn is-sm is-quiet" type="button" id="reset">Reset corners</button>
-            <button class="mdv-btn is-sm is-quiet" type="button" id="rotL">Rotate left</button>
-            <button class="mdv-btn is-sm is-quiet" type="button" id="rotR">Rotate right</button>
+            <button class="mdv-btn is-sm is-quiet" type="button" id="reset"><span data-t="91">Reset corners</span></button>
+            <button class="mdv-btn is-sm is-quiet" type="button" id="rotL"><span data-t="92">Rotate left</span></button>
+            <button class="mdv-btn is-sm is-quiet" type="button" id="rotR"><span data-t="93">Rotate right</span></button>
           </div>
         </div>
         <div class="mdv-stack is-tight">
-          <span class="mdv-label">Page</span>
+          <span class="mdv-label" data-t="94">Page</span>
           <canvas id="preview" style="display:block;max-width:100%;max-height:70vh;border:1px solid var(--border-hair);background:#ffffff"></canvas>
         </div>
       </div>
@@ -2311,14 +2423,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <div class="mdv-btn-row">
           <button class="mdv-btn is-sm is-quiet" type="button" id="savePng">PNG</button>
           <button class="mdv-btn is-sm is-quiet" type="button" id="saveJpg">JPEG</button>
-          <button class="mdv-btn is-sm is-primary" type="button" id="savePdf">Download PDF</button>
+          <button class="mdv-btn is-sm is-primary" type="button" id="savePdf"><span data-t="95">Download PDF</span></button>
         </div>
       </div>
       <div class="mdv-panel is-flush">
         <dl class="mdv-kv">
-          <dt>Photo</dt><dd id="k-photo"></dd>
-          <dt>Page</dt><dd id="k-page"></dd>
-          <dt>Written</dt><dd id="k-out">nothing yet</dd>
+          <dt data-t="96">Photo</dt><dd id="k-photo"></dd>
+          <dt data-t="94">Page</dt><dd id="k-page"></dd>
+          <dt data-t="97">Written</dt><dd id="k-out"></dd>
         </dl>
       </div>
       <p class="mdv-hint" id="said" hidden></p>
@@ -2326,9 +2438,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="98">How this works</summary>
     <div class="mdv-method-body">
-      <p>Three steps, all in this tab, none of them needing a library. <strong>Straighten:</strong> the four
+      <p data-t="99">Three steps, all in this tab, none of them needing a library. <strong>Straighten:</strong> the four
         corners you set are mapped onto a flat rectangle with a perspective transform — the page is solved
         for the eight numbers that carry one quadrilateral onto the other, and every pixel of the scan is
         read back from the photo through that mapping, blended from its four nearest neighbours.
@@ -2339,7 +2451,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         splits the cleaned page at the threshold that best separates two tones (Otsu's method).
         <strong>Save:</strong> PNG and JPEG come from the canvas; the PDF is written here byte by byte, one
         page holding the JPEG at exactly the page size, with no author, date or software name inside.</p>
-      <p>A4 and Letter give the page its real proportions at 300 dots per inch — 2480 × 3508 pixels for A4.
+      <p data-t="100">A4 and Letter give the page its real proportions at 300 dots per inch — 2480 × 3508 pixels for A4.
         <strong>As photographed</strong> takes the proportions from the corners you set, which is close but
         not exact when the photo was taken at a steep angle, since a far edge looks shorter than it is; pick
         the paper size when you know it. Photos are worked at up to 4,000 pixels on the long side and pages
@@ -2347,27 +2459,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         says so. Pages with large dark areas — photographs, black boxes — are lightened by the clean-up,
         because the lighting estimate cannot tell a dark picture from a shadow: use Straighten only for
         those.</p>
-      <p>What it does not do: it does not find the corners by itself, flatten a curved book page or a fold,
+      <p data-t="101">What it does not do: it does not find the corners by itself, flatten a curved book page or a fold,
         or read the text — the PDF holds a picture of the page, not searchable words. Nothing is kept: close
         the tab and the photo and the scan are gone, so download before you leave. The page makes no network
-        requests; the Dark button keeps its own setting in this browser's local storage.</p>
+        requests.</p>
+      <p data-t="102">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="More tools">
-    <span class="mdv-tag">More tools</span>
-    <a href="./exif-remover.html">EXIF viewer and remover</a>
-    <a href="./favicon-from-image.html">Favicon maker</a>
-    <a href="./find-and-replace.html">Find and replace</a>
+    <span class="mdv-tag" data-t="103">More tools</span>
+    <a href="./exif-remover.html" data-t="49">EXIF viewer and remover</a>
+    <a href="./favicon-from-image.html" data-t="50">Favicon maker</a>
+    <a href="./find-and-replace.html" data-t="9">Find and replace</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="104">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="105">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="106" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-22</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="107">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2378,6 +2492,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Document Scanner — straighten a photo of a page into clean white paper — MDV","Turn a photo of a page into a flat, clean scan: set the four corners, straighten it, whiten the paper and lift the shadows, then save PNG, JPEG or PDF. The photo never leaves the device.","All {n} tools","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Choose a photo of a page","Clean up","Page size","Your photo, with the page outline over it","Top left corner. Arrow keys move it.","Top right corner. Arrow keys move it.","Bottom right corner. Arrow keys move it.","Bottom left corner. Arrow keys move it.","The corners cross or fold back on themselves. Put each one on its own corner of the page, going round the page in order.","The corners enclose almost nothing. Spread them out onto the page's four corners.","nothing yet","{name} · {w} × {h} px · {size} · worked at {cw} × {ch}","Too large","{name} is {size}. This page reads photos up to {limit}.","Not a photo","{name} is {type}. Drop a JPEG, PNG or WebP photo of the page.","That file","Could not read that","The browser stopped reading {name}.","This browser cannot decode that","{name} did not decode. If it is an iPhone HEIC photo, export it as JPEG first: browsers other than Safari cannot read HEIC.","cleaned, in colour","cleaned, greyscale","black and white","straightened only","proportions from the corners","{paper} at 300 dpi","turned {deg}°","drag a corner, or focus it and use the arrow keys","The photo is {w} × {h}, past the 4,000 pixels this page works at, so it was scaled down first — far more detail than a page at 300 dpi needs.","As photographed takes its proportions from the corners, which a steep angle shortens; choose A4 or Letter if you know the paper.","working at full size…","2026-11-02"],"h":108,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Fotografía una página, marca sus cuatro esquinas y llévate un escaneo plano y blanco.","En este dispositivo","Funciona sin conexión","Suelta una foto de una página — JPEG, PNG o WebP, hasta 30 MB","suelta una foto de una página arriba","No se puede escanear","Color limpio","Grises","Blanco y negro","Solo enderezar","Como en la foto","Foto — arrastra las cuatro esquinas a las esquinas de la página","Restablecer esquinas","Girar a la izquierda","Girar a la derecha","Página","Descargar PDF","Foto","Escrito","Cómo funciona","Tres pasos, todos en esta pestaña, sin necesidad de ninguna biblioteca. \u003cstrong>Enderezar:\u003c/strong> las cuatro esquinas que marcas se proyectan sobre un rectángulo plano con una transformación de perspectiva: se resuelven los ocho números que llevan un cuadrilátero sobre el otro, y cada píxel del escaneo se lee de nuevo desde la foto a través de esa correspondencia, mezclado a partir de sus cuatro vecinos más cercanos. \u003cstrong>Limpiar:\u003c/strong> la iluminación de la página se estima a baja resolución extendiendo el valor más brillante cercano sobre el texto, lo que lo borra y deja solo el papel y sus sombras, y luego se suaviza lo que queda; cada color se divide por esa estimación, así que el papel sale blanco allí donde cayera la luz y el tinte de una lámpara amarilla desaparece con ella. Después una curva de tonos oscurece la tinta. Blanco y negro divide la página limpia en el umbral que mejor separa dos tonos (método de Otsu). \u003cstrong>Guardar:\u003c/strong> el PNG y el JPEG salen del lienzo; el PDF se escribe aquí byte a byte, con una página que contiene el JPEG exactamente al tamaño de la página, sin autor, fecha ni nombre de software dentro.","A4 y Letter dan a la página sus proporciones reales a 300 puntos por pulgada: 2480 × 3508 píxeles para A4. \u003cstrong>Como en la foto\u003c/strong> toma las proporciones de las esquinas que marcas, lo cual es cercano pero no exacto cuando la foto se hizo con un ángulo pronunciado, ya que un borde lejano parece más corto de lo que es; elige el tamaño de papel cuando lo conozcas. Las fotos se trabajan hasta 4.000 píxeles en el lado largo y las páginas hasta 3508, lo que mantiene bajo control la memoria de un teléfono; una foto mayor se reduce primero y la página lo indica. Las páginas con grandes zonas oscuras (fotografías, recuadros negros) se aclaran con la limpieza, porque la estimación de la iluminación no distingue una imagen oscura de una sombra: usa Solo enderezar para esas.","Lo que no hace: no encuentra las esquinas por sí mismo, no aplana una página curva de libro ni un pliegue, ni lee el texto: el PDF contiene una imagen de la página, no palabras buscables. No se guarda nada: si cierras la pestaña, la foto y el escaneo desaparecen, así que descarga antes de irte. La página no hace peticiones de red.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Más herramientas","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Escáner de documentos: endereza la foto de una página en papel blanco y limpio — MDV","Convierte la foto de una página en un escaneo plano y limpio: marca las cuatro esquinas, endereza, blanquea el papel y aclara las sombras, y guarda PNG, JPEG o PDF. La foto nunca sale del dispositivo.","Las {n} herramientas","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Elegir una foto de una página","Limpieza","Tamaño de página","Tu foto, con el contorno de la página encima","Esquina superior izquierda. Las teclas de flecha la mueven.","Esquina superior derecha. Las teclas de flecha la mueven.","Esquina inferior derecha. Las teclas de flecha la mueven.","Esquina inferior izquierda. Las teclas de flecha la mueven.","Las esquinas se cruzan o se pliegan sobre sí mismas. Pon cada una en su propia esquina de la página, recorriendo la página en orden.","Las esquinas no encierran casi nada. Sepáralas hasta las cuatro esquinas de la página.","todavía nada","{name} · {w} × {h} px · {size} · trabajada a {cw} × {ch}","Demasiado grande","{name} pesa {size}. Esta página lee fotos de hasta {limit}.","No es una foto","{name} es {type}. Suelta una foto JPEG, PNG o WebP de la página.","Ese archivo","No se pudo leer","El navegador dejó de leer {name}.","Este navegador no puede decodificarlo","{name} no se decodificó. Si es una foto HEIC de iPhone, expórtala antes como JPEG: los navegadores distintos de Safari no pueden leer HEIC.","limpia, en color","limpia, en grises","blanco y negro","solo enderezada","proporciones de las esquinas","{paper} a 300 ppp","girada {deg}°","arrastra una esquina, o enfócala y usa las teclas de flecha","La foto mide {w} × {h}, por encima de los 4.000 píxeles con los que trabaja esta página, así que se redujo primero: mucho más detalle del que necesita una página a 300 ppp.","Como en la foto toma sus proporciones de las esquinas, que un ángulo pronunciado acorta; elige A4 o Letter si conoces el papel.","trabajando a tamaño completo…",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Photographiez une page, placez ses quatre coins et repartez avec un scan plat et blanc.","Sur cet appareil","Fonctionne hors ligne","Déposez une photo d’une page — JPEG, PNG ou WebP, jusqu’à 30 Mo","déposez une photo de page ci-dessus","Scan impossible","Couleur nette","Gris","Noir et blanc","Redresser seulement","Tel quel","Photo — faites glisser les quatre coins sur les coins de la page","Réinitialiser les coins","Pivoter à gauche","Pivoter à droite","Page","Télécharger le PDF","Photo","Écrit","Comment ça marche","Trois étapes, toutes dans cet onglet, sans aucune bibliothèque. \u003cstrong>Redresser :\u003c/strong> les quatre coins que vous placez sont ramenés sur un rectangle plat par une transformation de perspective : on résout les huit nombres qui font passer un quadrilatère sur l’autre, et chaque pixel du scan est relu dans la photo à travers cette correspondance, mélangé à partir de ses quatre plus proches voisins. \u003cstrong>Nettoyer :\u003c/strong> l’éclairage de la page est estimé en basse résolution en étalant la valeur la plus claire voisine sur le texte, ce qui l’efface et ne laisse que le papier et ses ombres, puis on lisse ce qui reste ; chaque couleur est divisée par cette estimation, si bien que le papier sort blanc partout où tombait la lumière et que la dominante d’une lampe jaune disparaît avec elle. Une courbe de tons assombrit ensuite l’encre. Le noir et blanc sépare la page nettoyée au seuil qui sépare le mieux deux tons (méthode d’Otsu). \u003cstrong>Enregistrer :\u003c/strong> le PNG et le JPEG viennent du canevas ; le PDF est écrit ici octet par octet, une page contenant le JPEG exactement à la taille de la page, sans auteur, date ni nom de logiciel à l’intérieur.","A4 et Letter donnent à la page ses vraies proportions à 300 points par pouce : 2480 × 3508 pixels pour l’A4. \u003cstrong>Tel quel\u003c/strong> prend les proportions des coins que vous placez, ce qui est proche mais pas exact quand la photo a été prise sous un angle prononcé, car un bord éloigné paraît plus court qu’il n’est ; choisissez le format du papier quand vous le connaissez. Les photos sont traitées jusqu’à 4 000 pixels sur le grand côté et les pages jusqu’à 3508, ce qui ménage la mémoire d’un téléphone ; une photo plus grande est d’abord réduite et la page le signale. Les pages avec de grandes zones sombres (photographies, cadres noirs) sont éclaircies par le nettoyage, car l’estimation de l’éclairage ne distingue pas une image sombre d’une ombre : utilisez Redresser seulement pour celles-là.","Ce qu’il ne fait pas : il ne trouve pas les coins tout seul, n’aplatit pas une page de livre courbée ni un pli, et ne lit pas le texte : le PDF contient une image de la page, pas des mots recherchables. Rien n’est conservé : fermez l’onglet et la photo et le scan disparaissent, téléchargez donc avant de partir. La page ne fait aucune requête réseau.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Autres outils","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Scanner de documents : redressez la photo d’une page en papier blanc et net — MDV","Transformez la photo d’une page en scan plat et net : placez les quatre coins, redressez, blanchissez le papier et atténuez les ombres, puis enregistrez en PNG, JPEG ou PDF. La photo ne quitte jamais l’appareil.","Les {n} outils","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Choisir une photo de page","Nettoyage","Format de page","Votre photo, avec le contour de la page par-dessus","Coin supérieur gauche. Les flèches le déplacent.","Coin supérieur droit. Les flèches le déplacent.","Coin inférieur droit. Les flèches le déplacent.","Coin inférieur gauche. Les flèches le déplacent.","Les coins se croisent ou se replient sur eux-mêmes. Placez chacun sur son propre coin de la page, en faisant le tour de la page dans l’ordre.","Les coins n’enferment presque rien. Écartez-les jusqu’aux quatre coins de la page.","rien encore","{name} · {w} × {h} px · {size} · traitée à {cw} × {ch}","Trop volumineux","{name} pèse {size}. Cette page lit des photos jusqu’à {limit}.","Pas une photo","{name} est de type {type}. Déposez une photo JPEG, PNG ou WebP de la page.","Ce fichier","Lecture impossible","Le navigateur a cessé de lire {name}.","Ce navigateur ne peut pas le décoder","{name} n’a pas pu être décodé. S’il s’agit d’une photo HEIC d’iPhone, exportez-la d’abord en JPEG : les navigateurs autres que Safari ne lisent pas le HEIC.","nettoyée, en couleur","nettoyée, en gris","noir et blanc","redressée seulement","proportions des coins","{paper} à 300 ppp","pivotée de {deg}°","faites glisser un coin, ou donnez-lui le focus et utilisez les flèches","La photo fait {w} × {h}, au-delà des 4 000 pixels de travail de cette page, elle a donc d’abord été réduite : bien plus de détails qu’une page à 300 ppp n’en demande.","Tel quel prend ses proportions des coins, qu’un angle prononcé raccourcit ; choisissez A4 ou Letter si vous connaissez le papier.","traitement à pleine taille…",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Fotografiere eine Seite, setze ihre vier Ecken und nimm einen flachen, weißen Scan mit.","Läuft auf diesem Gerät","Funktioniert offline","Foto einer Seite ablegen — JPEG, PNG oder WebP, bis 30 MB","Foto einer Seite oben ablegen","Scannen nicht möglich","Farbe bereinigen","Graustufen","Schwarzweiß","Nur begradigen","Wie fotografiert","Foto — ziehe die vier Ecken auf die Ecken der Seite","Ecken zurücksetzen","Nach links drehen","Nach rechts drehen","Seite","PDF herunterladen","Foto","Geschrieben","So funktioniert es","Drei Schritte, alle in diesem Tab, ohne Bibliothek. \u003cstrong>Begradigen:\u003c/strong> Die vier Ecken, die du setzt, werden mit einer perspektivischen Transformation auf ein flaches Rechteck abgebildet: Es werden die acht Zahlen gelöst, die ein Viereck auf das andere abbilden, und jedes Pixel des Scans wird über diese Abbildung aus dem Foto zurückgelesen, gemischt aus seinen vier nächsten Nachbarn. \u003cstrong>Bereinigen:\u003c/strong> Die Beleuchtung der Seite wird in niedriger Auflösung geschätzt, indem der hellste Wert in der Nähe über den Text gelegt wird, was ihn löscht und nur Papier und Schatten übrig lässt, und das Übrige wird geglättet; jede Farbe wird durch diese Schätzung geteilt, sodass das Papier überall weiß wird, wo Licht fiel, und der Farbstich einer gelben Lampe mit verschwindet. Eine Tonkurve dunkelt danach die Tinte ab. Schwarzweiß teilt die bereinigte Seite an der Schwelle, die zwei Töne am besten trennt (Otsu-Verfahren). \u003cstrong>Speichern:\u003c/strong> PNG und JPEG kommen von der Zeichenfläche; das PDF wird hier Byte für Byte geschrieben, eine Seite, die das JPEG genau in Seitengröße enthält, ohne Autor, Datum oder Softwarenamen darin.","A4 und Letter geben der Seite ihre echten Proportionen bei 300 Punkten pro Zoll: 2480 × 3508 Pixel für A4. \u003cstrong>Wie fotografiert\u003c/strong> übernimmt die Proportionen von den Ecken, die du setzt, was nah, aber nicht exakt ist, wenn das Foto in steilem Winkel entstand, da eine ferne Kante kürzer wirkt, als sie ist; wähle das Papierformat, wenn du es kennst. Fotos werden mit bis zu 4.000 Pixeln an der langen Seite bearbeitet und Seiten mit bis zu 3508, was den Speicher eines Telefons schont; ein größeres Foto wird zuerst verkleinert, und die Seite sagt es. Seiten mit großen dunklen Flächen (Fotos, schwarze Kästen) werden von der Bereinigung aufgehellt, weil die Beleuchtungsschätzung ein dunkles Bild nicht von einem Schatten unterscheiden kann: Nimm dafür Nur begradigen.","Was es nicht tut: Es findet die Ecken nicht selbst, glättet keine gewölbte Buchseite und keinen Falz und liest den Text nicht: Das PDF enthält ein Bild der Seite, keine durchsuchbaren Wörter. Nichts wird behalten: Schließt du den Tab, sind Foto und Scan weg, also lade herunter, bevor du gehst. Die Seite stellt keine Netzwerkanfragen.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Weitere Werkzeuge","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Dokumentenscanner: ein Foto einer Seite zu sauberem weißem Papier begradigen — MDV","Mach aus dem Foto einer Seite einen flachen, sauberen Scan: Setze die vier Ecken, begradige, weiße das Papier und hebe die Schatten an, dann speichere PNG, JPEG oder PDF. Das Foto verlässt nie das Gerät.","Alle {n} Werkzeuge","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Foto einer Seite wählen","Bereinigung","Seitengröße","Dein Foto mit dem Seitenumriss darüber","Ecke oben links. Pfeiltasten bewegen sie.","Ecke oben rechts. Pfeiltasten bewegen sie.","Ecke unten rechts. Pfeiltasten bewegen sie.","Ecke unten links. Pfeiltasten bewegen sie.","Die Ecken kreuzen sich oder knicken in sich zurück. Setze jede auf ihre eigene Ecke der Seite, der Reihe nach um die Seite herum.","Die Ecken schließen fast nichts ein. Ziehe sie auf die vier Ecken der Seite auseinander.","noch nichts","{name} · {w} × {h} px · {size} · bearbeitet mit {cw} × {ch}","Zu groß","{name} ist {size} groß. Diese Seite liest Fotos bis {limit}.","Kein Foto","{name} ist {type}. Lege ein JPEG-, PNG- oder WebP-Foto der Seite ab.","Diese Datei","Lesen nicht möglich","Der Browser hat das Lesen von {name} abgebrochen.","Dieser Browser kann das nicht dekodieren","{name} ließ sich nicht dekodieren. Bei einem HEIC-Foto vom iPhone exportiere es zuerst als JPEG: Andere Browser als Safari können HEIC nicht lesen.","bereinigt, in Farbe","bereinigt, in Graustufen","schwarzweiß","nur begradigt","Proportionen von den Ecken","{paper} bei 300 dpi","um {deg}° gedreht","ziehe eine Ecke, oder fokussiere sie und nutze die Pfeiltasten","Das Foto ist {w} × {h}, über den 4.000 Pixeln, mit denen diese Seite arbeitet, daher wurde es zuerst verkleinert: weit mehr Details, als eine Seite bei 300 dpi braucht.","Wie fotografiert übernimmt die Proportionen von den Ecken, die ein steiler Winkel verkürzt; wähle A4 oder Letter, wenn du das Papier kennst.","arbeite in voller Größe …",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Fotografa una pagina, imposta i suoi quattro angoli e porta via una scansione piatta e bianca.","Su questo dispositivo","Funziona offline","Trascina la foto di una pagina — JPEG, PNG o WebP, fino a 30 MB","trascina qui sopra la foto di una pagina","Impossibile scansionare","Colore pulito","Scala di grigi","Bianco e nero","Solo raddrizza","Come fotografata","Foto — trascina i quattro angoli sugli angoli della pagina","Reimposta angoli","Ruota a sinistra","Ruota a destra","Pagina","Scarica PDF","Foto","Scritto","Come funziona","Tre passaggi, tutti in questa scheda, nessuno con una libreria. \u003cstrong>Raddrizza:\u003c/strong> i quattro angoli che imposti vengono mappati su un rettangolo piatto con una trasformazione prospettica: si risolvono gli otto numeri che portano un quadrilatero sull’altro, e ogni pixel della scansione viene riletto dalla foto attraverso quella mappatura, mescolato dai suoi quattro vicini più prossimi. \u003cstrong>Pulisci:\u003c/strong> l’illuminazione della pagina viene stimata a bassa risoluzione stendendo il valore più luminoso vicino sopra il testo, che così sparisce e lascia solo la carta e le sue ombre, poi si leviga ciò che resta; ogni colore è diviso per quella stima, così la carta esce bianca ovunque cadesse la luce e la dominante di una lampada gialla se ne va con essa. Una curva tonale poi scurisce l’inchiostro. Il bianco e nero divide la pagina pulita alla soglia che separa meglio due toni (metodo di Otsu). \u003cstrong>Salva:\u003c/strong> PNG e JPEG vengono dal canvas; il PDF è scritto qui byte per byte, una pagina che contiene il JPEG esattamente alla dimensione della pagina, senza autore, data o nome del software all’interno.","A4 e Letter danno alla pagina le sue vere proporzioni a 300 punti per pollice: 2480 × 3508 pixel per l’A4. \u003cstrong>Come fotografata\u003c/strong> prende le proporzioni dagli angoli che imposti, il che è vicino ma non esatto quando la foto è stata scattata con un angolo molto inclinato, perché un bordo lontano sembra più corto di quanto sia; scegli il formato della carta quando lo conosci. Le foto vengono elaborate fino a 4.000 pixel sul lato lungo e le pagine fino a 3508, il che tiene sotto controllo la memoria di un telefono; una foto più grande viene prima ridotta e la pagina lo segnala. Le pagine con grandi aree scure (fotografie, riquadri neri) vengono schiarite dalla pulizia, perché la stima dell’illuminazione non distingue un’immagine scura da un’ombra: per quelle usa Solo raddrizza.","Cosa non fa: non trova gli angoli da sola, non appiattisce una pagina curva di libro né una piega, e non legge il testo: il PDF contiene un’immagine della pagina, non parole ricercabili. Non viene conservato nulla: chiudi la scheda e la foto e la scansione spariscono, quindi scarica prima di andare via. La pagina non fa richieste di rete.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","Altri strumenti","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Scanner di documenti: raddrizza la foto di una pagina in carta bianca e pulita — MDV","Trasforma la foto di una pagina in una scansione piatta e pulita: imposta i quattro angoli, raddrizza, sbianca la carta e attenua le ombre, poi salva PNG, JPEG o PDF. La foto non lascia mai il dispositivo.","Tutti i {n} strumenti","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Scegli la foto di una pagina","Pulizia","Dimensione pagina","La tua foto, con il contorno della pagina sopra","Angolo in alto a sinistra. Le frecce lo spostano.","Angolo in alto a destra. Le frecce lo spostano.","Angolo in basso a destra. Le frecce lo spostano.","Angolo in basso a sinistra. Le frecce lo spostano.","Gli angoli si incrociano o si ripiegano su sé stessi. Metti ciascuno sul proprio angolo della pagina, girando intorno alla pagina in ordine.","Gli angoli racchiudono quasi nulla. Allargali sui quattro angoli della pagina.","ancora nulla","{name} · {w} × {h} px · {size} · elaborata a {cw} × {ch}","Troppo grande","{name} pesa {size}. Questa pagina legge foto fino a {limit}.","Non è una foto","{name} è {type}. Trascina una foto JPEG, PNG o WebP della pagina.","Quel file","Impossibile leggere","Il browser ha smesso di leggere {name}.","Questo browser non può decodificarla","{name} non è stato decodificato. Se è una foto HEIC di iPhone, esportala prima come JPEG: i browser diversi da Safari non leggono l’HEIC.","pulita, a colori","pulita, in scala di grigi","bianco e nero","solo raddrizzata","proporzioni dagli angoli","{paper} a 300 dpi","ruotata di {deg}°","trascina un angolo, oppure dagli il focus e usa le frecce","La foto è {w} × {h}, oltre i 4.000 pixel con cui lavora questa pagina, quindi è stata prima ridotta: molto più dettaglio di quanto serva a una pagina a 300 dpi.","Come fotografata prende le proporzioni dagli angoli, che un angolo molto inclinato accorcia; scegli A4 o Letter se conosci la carta.","elaborazione a dimensione piena…",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Fotografe uma página, marque os quatro cantos e leve um scan plano e branco.","Neste dispositivo","Funciona offline","Solte uma foto de uma página — JPEG, PNG ou WebP, até 30 MB","solte uma foto de uma página acima","Não é possível escanear","Cor limpa","Tons de cinza","Preto e branco","Só endireitar","Como fotografada","Foto — arraste os quatro cantos para os cantos da página","Redefinir cantos","Girar à esquerda","Girar à direita","Página","Baixar PDF","Foto","Gravado","Como funciona","Três etapas, todas nesta aba, nenhuma com biblioteca. \u003cstrong>Endireitar:\u003c/strong> os quatro cantos que você marca são mapeados para um retângulo plano por uma transformação de perspectiva: resolvem-se os oito números que levam um quadrilátero ao outro, e cada pixel do scan é relido da foto por esse mapeamento, misturado a partir de seus quatro vizinhos mais próximos. \u003cstrong>Limpar:\u003c/strong> a iluminação da página é estimada em baixa resolução espalhando o valor mais claro por perto sobre o texto, o que o apaga e deixa só o papel e suas sombras, e depois suaviza o que sobra; cada cor é dividida por essa estimativa, então o papel sai branco onde quer que a luz caísse e o tom de uma lâmpada amarela some junto. Uma curva de tons então escurece a tinta. O preto e branco divide a página limpa no limiar que melhor separa dois tons (método de Otsu). \u003cstrong>Salvar:\u003c/strong> PNG e JPEG saem do canvas; o PDF é escrito aqui byte a byte, uma página contendo o JPEG exatamente no tamanho da página, sem autor, data ou nome de software dentro.","A4 e Letter dão à página suas proporções reais a 300 pontos por polegada: 2480 × 3508 pixels para A4. \u003cstrong>Como fotografada\u003c/strong> toma as proporções dos cantos que você marca, o que é próximo, mas não exato quando a foto foi tirada em ângulo acentuado, já que uma borda distante parece mais curta do que é; escolha o tamanho do papel quando o souber. As fotos são trabalhadas até 4.000 pixels no lado maior e as páginas até 3508, o que mantém a memória de um celular sob controle; uma foto maior é reduzida primeiro e a página avisa. Páginas com grandes áreas escuras (fotografias, caixas pretas) são clareadas pela limpeza, porque a estimativa de iluminação não distingue uma imagem escura de uma sombra: use Só endireitar para essas.","O que não faz: não encontra os cantos sozinha, não achata uma página curva de livro nem uma dobra, e não lê o texto: o PDF contém uma imagem da página, não palavras pesquisáveis. Nada é guardado: feche a aba e a foto e o scan somem, então baixe antes de sair. A página não faz requisições de rede.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Mais ferramentas","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Scanner de documentos: endireite a foto de uma página em papel branco e limpo — MDV","Transforme a foto de uma página em um scan plano e limpo: marque os quatro cantos, endireite, clareie o papel e suavize as sombras, depois salve PNG, JPEG ou PDF. A foto nunca sai do dispositivo.","Todas as {n} ferramentas","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Escolher uma foto de uma página","Limpeza","Tamanho da página","Sua foto, com o contorno da página por cima","Canto superior esquerdo. As setas o movem.","Canto superior direito. As setas o movem.","Canto inferior direito. As setas o movem.","Canto inferior esquerdo. As setas o movem.","Os cantos se cruzam ou se dobram sobre si mesmos. Ponha cada um no seu próprio canto da página, percorrendo a página em ordem.","Os cantos envolvem quase nada. Afaste-os até os quatro cantos da página.","nada ainda","{name} · {w} × {h} px · {size} · trabalhada a {cw} × {ch}","Grande demais","{name} tem {size}. Esta página lê fotos de até {limit}.","Não é uma foto","{name} é {type}. Solte uma foto JPEG, PNG ou WebP da página.","Esse arquivo","Não foi possível ler","O navegador parou de ler {name}.","Este navegador não consegue decodificar","{name} não foi decodificado. Se for uma foto HEIC de iPhone, exporte-a antes como JPEG: navegadores além do Safari não leem HEIC.","limpa, em cores","limpa, em tons de cinza","preto e branco","só endireitada","proporções dos cantos","{paper} a 300 dpi","girada {deg}°","arraste um canto, ou foque nele e use as setas","A foto tem {w} × {h}, acima dos 4.000 pixels com que esta página trabalha, então foi reduzida primeiro: muito mais detalhe do que uma página a 300 dpi precisa.","Como fotografada toma as proporções dos cantos, que um ângulo acentuado encurta; escolha A4 ou Letter se souber o papel.","trabalhando em tamanho total…",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","ページを撮影し、4 つの角を指定すると、平らで白いスキャンが得られます。","この端末で動作","オフラインで動作","ページの写真をドロップ — JPEG、PNG、WebP、30 MB まで","上にページの写真をドロップ","スキャンできません","色をきれいに","グレースケール","白黒","補正のみ","撮影どおり","写真 — 4 つの角をページの角にドラッグ","角をリセット","左へ回転","右へ回転","ページ","PDF をダウンロード","写真","書き出し","仕組み","3 つの手順はすべてこのタブ内で行われ、ライブラリは不要です。\u003cstrong>補正:\u003c/strong> 指定した 4 つの角は、射影変換で平らな長方形に対応づけられます。一方の四角形をもう一方に移す 8 つの数を解き、スキャンの各ピクセルはその対応を通して写真から読み戻され、最も近い 4 つの隣接ピクセルから補間されます。\u003cstrong>クリーンアップ:\u003c/strong> ページの照明は、近くの最も明るい値を文字の上に広げて低解像度で推定します。これにより文字が消えて紙とその影だけが残り、残ったものを平滑化します。各色はその推定値で割られるため、光が当たっていた場所のどこでも紙は白くなり、黄色い照明の色かぶりも一緒に消えます。その後、トーンカーブがインクを濃くします。白黒は、2 つの階調を最もよく分けるしきい値(大津の方法)でクリーンアップ済みのページを分けます。\u003cstrong>保存:\u003c/strong> PNG と JPEG はキャンバスから作られ、PDF はここで 1 バイトずつ書き出されます。JPEG をページサイズちょうどで 1 ページに収め、作成者、日付、ソフトウェア名は含まれません。","A4 と Letter は、300 dpi でのページ本来の縦横比を与えます。A4 では 2480 × 3508 ピクセルです。\u003cstrong>撮影どおり\u003c/strong>は、指定した角から縦横比を取ります。急な角度で撮影した場合、遠い辺は実際より短く見えるため、近い値にはなりますが正確ではありません。用紙サイズがわかるときは、それを選んでください。写真は長辺 4,000 ピクセルまで、ページは 3508 まで処理され、スマートフォンのメモリを抑えます。それより大きい写真は先に縮小され、ページがそのことを表示します。写真や黒い枠など暗い領域が大きいページは、照明の推定が暗い画像と影を区別できないため、クリーンアップで明るくなってしまいます。そのようなページには「補正のみ」を使ってください。","できないこと: 角を自動で見つけること、湾曲した本のページや折り目を平らにすること、文字を読み取ることはしません。PDF にはページの画像が入っており、検索できる単語は入っていません。何も保持されません。タブを閉じると写真とスキャンは消えるので、離れる前にダウンロードしてください。このページはネットワークリクエストを行いません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","その他のツール","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","ドキュメントスキャナー — ページの写真をまっすぐに補正してきれいな白い紙に — MDV","ページの写真を、平らできれいなスキャンにします。4 つの角を指定し、補正し、紙を白くして影を持ち上げてから、PNG、JPEG、PDF で保存します。写真は端末の外に出ません。","全 {n} ツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","ページの写真を選択","クリーンアップ","ページサイズ","ページの輪郭を重ねた写真","左上の角。矢印キーで動かせます。","右上の角。矢印キーで動かせます。","右下の角。矢印キーで動かせます。","左下の角。矢印キーで動かせます。","角が交差しているか、折り返しています。それぞれをページの自分の角に置き、ページを順に一周するようにしてください。","角で囲まれた範囲がほとんどありません。ページの 4 つの角まで広げてください。","まだありません","{name} · {w} × {h} px · {size} · {cw} × {ch} で処理","大きすぎます","{name} は {size} です。このページは {limit} までの写真を読み込みます。","写真ではありません","{name} は {type} です。ページの JPEG、PNG、WebP の写真をドロップしてください。","そのファイル","読み込めませんでした","ブラウザーが {name} の読み込みを中止しました。","このブラウザーではデコードできません","{name} をデコードできませんでした。iPhone の HEIC 写真の場合は、先に JPEG として書き出してください。Safari 以外のブラウザーは HEIC を読み込めません。","クリーンアップ済み、カラー","クリーンアップ済み、グレースケール","白黒","補正のみ","角から求めた縦横比","{paper}、300 dpi","{deg}° 回転","角をドラッグするか、フォーカスして矢印キーを使用","写真は {w} × {h} で、このページが処理する 4,000 ピクセルを超えているため、先に縮小しました。300 dpi のページに必要な量よりはるかに多くの細部が残っています。","撮影どおりは角から縦横比を取りますが、急な角度ではそれが短く見えます。用紙がわかる場合は A4 か Letter を選んでください。","原寸で処理中…",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","페이지를 촬영하고 네 모서리를 지정하면 평평하고 하얀 스캔을 얻습니다.","이 기기에서 실행","오프라인 작동","페이지 사진을 놓으세요 — JPEG, PNG, WebP, 최대 30 MB","위에 페이지 사진을 놓으세요","스캔할 수 없음","색상 정리","회색조","흑백","펴기만","촬영 비율 그대로","사진 — 네 모서리를 페이지의 모서리로 끌어 놓으세요","모서리 초기화","왼쪽으로 회전","오른쪽으로 회전","페이지","PDF 다운로드","사진","저장됨","작동 방식","세 단계는 모두 이 탭 안에서 진행되며 라이브러리가 필요 없습니다. \u003cstrong>펴기:\u003c/strong> 지정한 네 모서리는 원근 변환으로 평평한 직사각형에 대응됩니다. 한 사각형을 다른 사각형으로 옮기는 여덟 개의 수를 풀고, 스캔의 모든 픽셀은 그 대응을 통해 사진에서 다시 읽히며 가장 가까운 네 이웃 픽셀로 보간됩니다. \u003cstrong>정리:\u003c/strong> 페이지의 조명은 근처의 가장 밝은 값을 글자 위로 펼쳐 낮은 해상도에서 추정합니다. 그러면 글자가 지워지고 종이와 그림자만 남으며, 남은 것을 부드럽게 만듭니다. 각 색은 이 추정값으로 나뉘므로 빛이 닿은 곳이면 어디서나 종이가 하얗게 나오고 노란 조명의 색조도 함께 사라집니다. 그다음 톤 커브가 잉크를 더 어둡게 합니다. 흑백은 두 톤을 가장 잘 나누는 임계값(오츠의 방법)에서 정리된 페이지를 나눕니다. \u003cstrong>저장:\u003c/strong> PNG와 JPEG는 캔버스에서 만들어지고, PDF는 여기서 바이트 단위로 기록됩니다. JPEG를 정확히 페이지 크기로 담은 한 페이지이며, 작성자, 날짜, 소프트웨어 이름은 들어 있지 않습니다.","A4와 Letter는 300 dpi에서 페이지의 실제 비율을 줍니다. A4는 2480 × 3508 픽셀입니다. \u003cstrong>촬영 비율 그대로\u003c/strong>는 지정한 모서리에서 비율을 가져옵니다. 가파른 각도에서 촬영했다면 먼 쪽 변이 실제보다 짧아 보이므로 비슷하지만 정확하지는 않습니다. 용지 크기를 알면 그것을 고르세요. 사진은 긴 변 기준 최대 4,000 픽셀, 페이지는 최대 3508로 처리되어 휴대폰 메모리를 지킵니다. 더 큰 사진은 먼저 축소되며 페이지가 그 사실을 알립니다. 사진이나 검은 상자처럼 어두운 영역이 큰 페이지는 조명 추정이 어두운 그림과 그림자를 구분하지 못하므로 정리 과정에서 밝아집니다. 그런 페이지에는 펴기만을 사용하세요.","하지 않는 것: 모서리를 스스로 찾지 않고, 휘어진 책 페이지나 접힌 부분을 펴지 않으며, 글자를 읽지 않습니다. PDF에는 페이지의 이미지가 들어 있고 검색할 수 있는 단어는 없습니다. 아무것도 보관되지 않습니다. 탭을 닫으면 사진과 스캔이 사라지므로 떠나기 전에 내려받으세요. 이 페이지는 네트워크 요청을 하지 않습니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","다른 도구","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","문서 스캐너 — 페이지 사진을 반듯하게 펴서 깨끗한 흰 종이로 — MDV","페이지 사진을 평평하고 깨끗한 스캔으로 바꿉니다. 네 모서리를 지정하고, 펴고, 종이를 하얗게 하고 그림자를 밝힌 뒤 PNG, JPEG, PDF로 저장합니다. 사진은 기기를 벗어나지 않습니다.","도구 {n}개 전체","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","페이지 사진 선택","정리","페이지 크기","페이지 윤곽을 겹친 내 사진","왼쪽 위 모서리. 화살표 키로 움직입니다.","오른쪽 위 모서리. 화살표 키로 움직입니다.","오른쪽 아래 모서리. 화살표 키로 움직입니다.","왼쪽 아래 모서리. 화살표 키로 움직입니다.","모서리가 서로 교차하거나 접혀 있습니다. 각각을 페이지의 자기 모서리에 놓고 페이지를 순서대로 한 바퀴 돌게 하세요.","모서리가 둘러싼 영역이 거의 없습니다. 페이지의 네 모서리로 벌리세요.","아직 없음","{name} · {w} × {h} px · {size} · {cw} × {ch}로 처리","너무 큼","{name}의 크기는 {size}입니다. 이 페이지는 {limit}까지의 사진을 읽습니다.","사진이 아님","{name}은(는) {type}입니다. 페이지의 JPEG, PNG, WebP 사진을 놓으세요.","그 파일","읽을 수 없음","브라우저가 {name} 읽기를 중단했습니다.","이 브라우저에서는 디코딩할 수 없음","{name}을(를) 디코딩하지 못했습니다. iPhone HEIC 사진이라면 먼저 JPEG로 내보내세요. Safari 외의 브라우저는 HEIC를 읽을 수 없습니다.","정리됨, 컬러","정리됨, 회색조","흑백","펴기만 함","모서리에서 가져온 비율","{paper}, 300 dpi","{deg}° 회전","모서리를 끌거나, 포커스를 두고 화살표 키를 사용하세요","사진은 {w} × {h}로, 이 페이지가 처리하는 4,000 픽셀을 넘어 먼저 축소되었습니다. 300 dpi 페이지에 필요한 것보다 훨씬 많은 세부 정보입니다.","촬영 비율 그대로는 모서리에서 비율을 가져오는데, 가파른 각도에서는 이것이 짧아집니다. 용지를 알면 A4나 Letter를 고르세요.","원본 크기로 처리 중…",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","拍下一页纸,设置它的四个角,得到一份平整洁白的扫描件。","在此设备上运行","可离线使用","拖入页面照片 — JPEG、PNG 或 WebP，最大 30 MB","请把页面照片拖到上方","无法扫描","清理彩色","灰度","黑白","仅校正","按拍摄比例","照片 — 把四个角拖到页面的四个角上","重置角点","向左旋转","向右旋转","页面","下载 PDF","照片","已写出","工作原理","三个步骤全在此标签页中完成,都不需要任何库。\u003cstrong>校正:\u003c/strong>你设置的四个角通过透视变换映射到一个平整的矩形上——求解把一个四边形映射到另一个四边形的八个数,扫描件的每个像素都通过这一映射从照片中读回,并由最近的四个相邻像素混合而成。\u003cstrong>清理:\u003c/strong>页面的光照在低分辨率下估计,方法是把附近最亮的值铺开到文字上,这样文字被抹去,只留下纸张及其阴影,再对剩下的部分做平滑;每种颜色都除以这一估计值,因此凡是光线照到之处纸张都变成白色,黄色灯光的色偏也随之消失。然后用一条色调曲线加深墨迹。黑白会在最能分开两种色调的阈值(大津法)处划分清理后的页面。\u003cstrong>保存:\u003c/strong>PNG 和 JPEG 来自画布;PDF 在此逐字节写出,一页中恰好以页面大小放入 JPEG，内部没有作者、日期或软件名称。","A4 和 Letter 按 300 dpi 给出页面的真实比例——A4 为 2480 × 3508 像素。\u003cstrong>按拍摄比例\u003c/strong>从你设置的角点取得比例;当照片是以陡峭角度拍摄时,这很接近但并不精确,因为远处的边看起来比实际短;知道纸张尺寸时请选择它。照片的长边最多按 4,000 像素处理,页面最多按 3508 处理,以便控制手机内存;更大的照片会先被缩小,页面会说明。含有大片深色区域(照片、黑框)的页面会被清理步骤提亮,因为光照估计分不清深色图像和阴影:这类页面请使用“仅校正”。","它不做的事:它不会自己找到角点,不会把弯曲的书页或折痕压平,也不会识别文字——PDF 里是页面的图像,不是可搜索的文字。不保留任何内容:关闭标签页,照片和扫描件就消失了,所以离开前请先下载。此页面不发出任何网络请求。","深色和语言按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被存储。","更多工具","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","文档扫描仪:把页面照片校正成干净的白纸 — MDV","把页面照片变成平整干净的扫描件:设置四个角,校正,把纸张变白并提亮阴影,然后保存为 PNG、JPEG 或 PDF。照片不会离开设备。","全部 {n} 个工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","选择页面照片","清理方式","页面尺寸","叠有页面轮廓的照片","左上角。方向键可移动。","右上角。方向键可移动。","右下角。方向键可移动。","左下角。方向键可移动。","这些角点相互交叉或折回。请把每个角点放在页面各自的角上,并按顺序绕页面一周。","这些角点几乎没有围出任何区域。请把它们分开到页面的四个角上。","暂无","{name} · {w} × {h} px · {size} · 按 {cw} × {ch} 处理","太大","{name} 大小为 {size}。此页面最多读取 {limit} 的照片。","不是照片","{name} 的类型是 {type}。请拖入页面的 JPEG、PNG 或 WebP 照片。","该文件","无法读取","浏览器停止读取 {name}。","此浏览器无法解码","{name} 无法解码。如果是 iPhone 的 HEIC 照片,请先导出为 JPEG:除 Safari 外的浏览器都无法读取 HEIC。","已清理,彩色","已清理,灰度","黑白","仅校正","取自角点的比例","{paper},300 dpi","已旋转 {deg}°","拖动角点,或聚焦后使用方向键","照片为 {w} × {h},超过了此页面处理的 4,000 像素,因此先被缩小了——保留的细节远多于 300 dpi 的页面所需。","按拍摄比例从角点取得比例,而陡峭的角度会使其变短;如果知道纸张,请选择 A4 或 Letter。","正在按完整尺寸处理……",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2402,8 +2616,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // A usable quad turns the same way at all four corners (convex, not crossed) and is not a sliver.
   function quadProblem(q, w, h) {
     var signs = [0, 1, 2, 3].map(function (i) { return Math.sign(cross(q[i], q[(i + 1) % 4], q[(i + 2) % 4])); });
-    if (signs.some(function (s) { return s === 0 || s !== signs[0]; })) return "The corners cross or fold back on themselves. Put each one on its own corner of the page, going round the page in order.";
-    if (areaOf(q) < w * h * 0.01) return "The corners enclose almost nothing. Spread them out onto the page's four corners.";
+    if (signs.some(function (s) { return s === 0 || s !== signs[0]; })) return trk("The corners cross or fold back on themselves. Put each one on its own corner of the page, going round the page in order.");
+    if (areaOf(q) < w * h * 0.01) return trk("The corners enclose almost nothing. Spread them out onto the page's four corners.");
     return null;
   }
   // The eight numbers of the perspective transform carrying the output rectangle onto the quad.
@@ -2567,21 +2781,32 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var ok = $("ok"), stage = $("stage"), photo = $("photo"), preview = $("preview"), note = $("note"), said = $("said");
   var handles = Array.prototype.slice.call(document.querySelectorAll("[data-corner]"));
   var src = null, current = null, corners = null, cleanMode = "colour", paper = "auto", turn = 0, full = null, pending = false;
+  var errFn = null, noteFn = null, noteClass = "", problemNow = null, written = null, scaledTo = null;   // what the words are drawn from; nothing heavy is redone on a language change
 
   function state(which) {
     empty.hidden = which !== "empty";
     err.hidden = which !== "error";
     ok.hidden = which !== "ok";
   }
-  function bad(title, message) { errtitle.textContent = title; errmsg.textContent = message; state("error"); }
+  // fn returns [title, message], translated; kept so a language change can write them again
+  function bad(fn) { errFn = fn; showError(); state("error"); }
+  function showError() { var t = errFn(); errtitle.textContent = t[0]; errmsg.textContent = t[1]; }
+  function say(fn, cls) { noteFn = fn; noteClass = cls; note.textContent = fn(); note.className = cls; }
+  function showOut() { $("k-out").textContent = written ? written.name + " · " + bytes(written.bytes) : tr("nothing yet"); }
+  function showPhoto() {
+    if (!current) return;
+    $("k-photo").textContent = scaledTo
+      ? tr("{name} · {w} × {h} px · {size} · worked at {cw} × {ch}", { name: current.file.name, w: current.w, h: current.h, size: bytes(current.file.size), cw: scaledTo[0], ch: scaledTo[1] })
+      : current.file.name + " · " + current.w + " × " + current.h + " px · " + bytes(current.file.size);
+  }
 
   function take(files) {
     if (!files || !files.length) return;
     var f = files[0];
-    if (f.size > MAX_BYTES) { bad("Too large", f.name + " is " + bytes(f.size) + ". This page reads photos up to " + bytes(MAX_BYTES) + "."); return; }
-    if (f.type && f.type.indexOf("image/") !== 0) { bad("Not a photo", (f.name || "That file") + " is " + f.type + ". Drop a JPEG, PNG or WebP photo of the page."); return; }
+    if (f.size > MAX_BYTES) { bad(function () { return [tr("Too large"), tr("{name} is {size}. This page reads photos up to {limit}.", { name: f.name, size: bytes(f.size), limit: bytes(MAX_BYTES) })]; }); return; }
+    if (f.type && f.type.indexOf("image/") !== 0) { bad(function () { return [tr("Not a photo"), tr("{name} is {type}. Drop a JPEG, PNG or WebP photo of the page.", { name: f.name || tr("That file"), type: f.type })]; }); return; }
     var reader = new FileReader();
-    reader.onerror = function () { bad("Could not read that", "The browser stopped reading " + f.name + "."); };
+    reader.onerror = function () { bad(function () { return [tr("Could not read that"), tr("The browser stopped reading {name}.", { name: f.name })]; }); };
     reader.onload = function () {
       var img = new Image();
       img.onload = function () {
@@ -2597,11 +2822,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         resetCorners();
         turn = 0;
         state("ok");
-        $("k-photo").textContent = f.name + " · " + w + " × " + h + " px · " + bytes(f.size) + (scale < 1 ? " · worked at " + cw + " × " + chh : "");
-        $("k-out").textContent = "nothing yet";
+        scaledTo = scale < 1 ? [cw, chh] : null;
+        written = null;
+        showPhoto();
+        showOut();
         update();
       };
-      img.onerror = function () { bad("This browser cannot decode that", (f.name || "That file") + " did not decode. If it is an iPhone HEIC photo, export it as JPEG first: browsers other than Safari cannot read HEIC."); };
+      img.onerror = function () { bad(function () { return [tr("This browser cannot decode that"), tr("{name} did not decode. If it is an iPhone HEIC photo, export it as JPEG first: browsers other than Safari cannot read HEIC.", { name: f.name || tr("That file") })]; }); };
       img.src = String(reader.result);
     };
     reader.readAsDataURL(f);
@@ -2661,9 +2888,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       pending = false;
       var problem = quadProblem(corners, src.width, src.height);
       ["savePng", "saveJpg", "savePdf"].forEach(function (id) { $(id).disabled = !!problem; });
+      problemNow = problem;
       if (problem) {
-        note.textContent = problem;
-        note.className = "mdv-dot-note is-bad";
+        say(function () { return tr(problem); }, "mdv-dot-note is-bad");
         return;
       }
       var r = render(PREVIEW_LONG);
@@ -2675,13 +2902,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   function describe() {
     var size = pageSize(PAGE_LONG), odd = turn % 2 !== 0, w = odd ? size[1] : size[0], h = odd ? size[0] : size[1];
-    $("k-page").textContent = w + " × " + h + " px · " + (paper === "auto" ? "proportions from the corners" : PAPER[paper].name + " at 300 dpi") +
-      " · " + { colour: "cleaned, in colour", grey: "cleaned, greyscale", bw: "black and white", none: "straightened only" }[cleanMode] + (turn ? " · turned " + (turn * 90) + "°" : "");
-    note.textContent = "drag a corner, or focus it and use the arrow keys";
-    note.className = "mdv-dot-note is-ok";
+    var CLEAN = { colour: trk("cleaned, in colour"), grey: trk("cleaned, greyscale"), bw: trk("black and white"), none: trk("straightened only") };
+    $("k-page").textContent = w + " × " + h + " px · " + (paper === "auto" ? tr("proportions from the corners") : tr("{paper} at 300 dpi", { paper: PAPER[paper].name })) +
+      " · " + tr(CLEAN[cleanMode]) + (turn ? " · " + tr("turned {deg}°", { deg: turn * 90 }) : "");
+    say(function () { return tr("drag a corner, or focus it and use the arrow keys"); }, "mdv-dot-note is-ok");
     var notes = [];
-    if (current.scaled) notes.push("The photo is " + current.w + " × " + current.h + ", past the 4,000 pixels this page works at, so it was scaled down first — far more detail than a page at 300 dpi needs.");
-    if (paper === "auto") notes.push("As photographed takes its proportions from the corners, which a steep angle shortens; choose A4 or Letter if you know the paper.");
+    if (current.scaled) notes.push(tr("The photo is {w} × {h}, past the 4,000 pixels this page works at, so it was scaled down first — far more detail than a page at 300 dpi needs.", { w: current.w, h: current.h }));
+    if (paper === "auto") notes.push(tr("As photographed takes its proportions from the corners, which a steep angle shortens; choose A4 or Letter if you know the paper."));
     said.textContent = notes.join(" ");
     said.hidden = !notes.length;
   }
@@ -2699,11 +2926,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    $("k-out").textContent = name + " · " + bytes(blob.size);
+    written = { name: name, bytes: blob.size };
+    showOut();
   }
   function working(then) {
-    note.textContent = "working at full size…";
-    note.className = "mdv-dot-note";
+    say(function () { return tr("working at full size…"); }, "mdv-dot-note");
     setTimeout(function () { then(fullPage().canvas); describe(); }, 30);
   }
   $("savePng").addEventListener("click", function () { working(function (c) { c.toBlob(function (b) { download(b, stem() + ".png"); }, "image/png"); }); });
@@ -2782,6 +3009,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   ["dragleave", "drop"].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove("is-over"); }); });
   drop.addEventListener("drop", function (e) { if (e.dataTransfer && e.dataTransfer.files) take(e.dataTransfer.files); });
 
+  onLang(function () {
+    if (!err.hidden && errFn) showError();
+    if (!current) return;
+    showPhoto(); showOut();
+    if (problemNow) say(function () { return tr(problemNow); }, noteClass); else describe();
+  });
   drop.focus({ preventScroll: true });
   state("empty");
 })();

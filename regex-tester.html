@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link is-here" href="./regex-tester.html" aria-current="page" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link is-here" href="./regex-tester.html" aria-current="page" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link" href="./timezone-converter.html" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,35 +2353,35 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Regex tester</h1>
+      <h1 class="mdv-head-name" data-t="40">Regex tester</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Test a JavaScript regex against your text as you type.</p>
+    <p class="mdv-head-line" data-t="79">Test a JavaScript regex against your text as you type.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-panel">
     <div class="mdv-cols">
       <div>
-        <label class="mdv-label" for="pat">Pattern</label>
+        <label class="mdv-label" for="pat" data-t="82">Pattern</label>
         <input class="mdv-input" id="pat" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
           placeholder="(?<user>\w+)@(?<host>[\w.-]+)">
-        <div class="mdv-row" style="margin-top:var(--space-2)" role="group" aria-label="Flags">
-          <label class="mdv-check"><input type="checkbox" data-flag="g" checked> <span class="mdv-mono">g</span> global</label>
-          <label class="mdv-check"><input type="checkbox" data-flag="i"> <span class="mdv-mono">i</span> ignore case</label>
-          <label class="mdv-check"><input type="checkbox" data-flag="m"> <span class="mdv-mono">m</span> multiline</label>
-          <label class="mdv-check"><input type="checkbox" data-flag="s"> <span class="mdv-mono">s</span> dot all</label>
-          <label class="mdv-check"><input type="checkbox" data-flag="u"> <span class="mdv-mono">u</span> unicode</label>
-          <label class="mdv-check" hidden><input type="checkbox" data-flag="v"> <span class="mdv-mono">v</span> unicode sets</label>
-          <label class="mdv-check"><input type="checkbox" data-flag="y"> <span class="mdv-mono">y</span> sticky</label>
-          <label class="mdv-check"><input type="checkbox" data-flag="d"> <span class="mdv-mono">d</span> indices</label>
+        <div class="mdv-row" style="margin-top:var(--space-2)" role="group" aria-label="Flags" data-t-attrs="aria-label">
+          <label class="mdv-check"><input type="checkbox" data-flag="g" checked> <span class="mdv-mono">g</span> <span data-t="83">global</span></label>
+          <label class="mdv-check"><input type="checkbox" data-flag="i"> <span class="mdv-mono">i</span> <span data-t="84">ignore case</span></label>
+          <label class="mdv-check"><input type="checkbox" data-flag="m"> <span class="mdv-mono">m</span> <span data-t="85">multiline</span></label>
+          <label class="mdv-check"><input type="checkbox" data-flag="s"> <span class="mdv-mono">s</span> <span data-t="86">dot all</span></label>
+          <label class="mdv-check"><input type="checkbox" data-flag="u"> <span class="mdv-mono">u</span> <span data-t="87">unicode</span></label>
+          <label class="mdv-check" hidden><input type="checkbox" data-flag="v"> <span class="mdv-mono">v</span> <span data-t="88">unicode sets</span></label>
+          <label class="mdv-check"><input type="checkbox" data-flag="y"> <span class="mdv-mono">y</span> <span data-t="89">sticky</span></label>
+          <label class="mdv-check"><input type="checkbox" data-flag="d"> <span class="mdv-mono">d</span> <span data-t="90">indices</span></label>
         </div>
       </div>
       <div>
-        <label class="mdv-label" for="rep">Replace with</label>
+        <label class="mdv-label" for="rep" data-t="91">Replace with</label>
         <input class="mdv-input" id="rep" type="text" spellcheck="false" autocomplete="off" autocapitalize="off"
           placeholder="$<user> at $<host>">
       </div>
@@ -2279,7 +2391,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   <div class="mdv-cols">
     <section class="mdv-stack is-tight">
       <div class="mdv-row is-between">
-        <label class="mdv-label" style="margin:0" for="in">Test text</label>
+        <label class="mdv-label" style="margin:0" for="in" data-t="92">Test text</label>
         <span class="mdv-hint mdv-mono" style="margin:0" id="size">0 characters</span>
       </div>
       <textarea class="mdv-textarea" id="in" spellcheck="false" autocomplete="off"
@@ -2287,13 +2399,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     </section>
     <section class="mdv-stack is-tight" data-mdv-result>
       <div class="mdv-row is-between">
-        <span class="mdv-label" style="margin:0">Matches</span>
+        <span class="mdv-label" style="margin:0" data-t="93">Matches</span>
         <span class="mdv-hint mdv-mono" style="margin:0" id="count"></span>
       </div>
-      <div class="mdv-empty" id="empty"><span>type a pattern above</span></div>
-      <div class="mdv-empty" id="notext" hidden><span>paste text to test</span></div>
+      <div class="mdv-empty" id="empty"><span data-t="94">type a pattern above</span></div>
+      <div class="mdv-empty" id="notext" hidden><span data-t="95">paste text to test</span></div>
       <div class="mdv-notice is-bad" id="err" hidden>
-        <span class="mdv-notice-title">Refused</span>
+        <span class="mdv-notice-title" data-t="96">Refused</span>
         <span id="errmsg" class="mdv-mono"></span>
         <p class="mdv-mono" id="errwhere" hidden></p>
         <pre class="mdv-out is-paper" id="errcaret" hidden></pre>
@@ -2306,7 +2418,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <div class="mdv-panel is-flush" id="tblwrap" hidden>
       <div class="mdv-panel-head">
-        <span class="mdv-tag">Groups</span>
+        <span class="mdv-tag" data-t="97">Groups</span>
         <span class="mdv-tag mdv-mono" id="tblcount"></span>
       </div>
       <div style="overflow:auto">
@@ -2320,29 +2432,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
     <section class="mdv-stack is-tight" id="repwrap" hidden>
       <div class="mdv-row is-between">
-        <span class="mdv-label" style="margin:0">Replaced</span>
+        <span class="mdv-label" style="margin:0" data-t="98">Replaced</span>
         <div class="mdv-btn-row">
           <span class="mdv-hint mdv-mono" style="margin:0" id="repnote"></span>
-          <span class="mdv-badge is-accent" id="copied" hidden>Copied</span>
-          <button class="mdv-btn is-sm is-quiet" id="copy" type="button">Copy</button>
+          <span class="mdv-badge is-accent" id="copied" hidden data-t="99">Copied</span>
+          <button class="mdv-btn is-sm is-quiet" id="copy" type="button" data-t="100">Copy</button>
         </div>
       </div>
       <pre class="mdv-out" id="repout"></pre>
     </section>
 
     <section class="mdv-stack is-tight">
-      <span class="mdv-label" style="margin:0">Explained</span>
+      <span class="mdv-label" style="margin:0" data-t="101">Explained</span>
       <dl class="mdv-kv" id="explain"></dl>
-      <p class="mdv-hint">A token-by-token reading of the pattern. It covers the common syntax, not every
+      <p class="mdv-hint" data-t="102">A token-by-token reading of the pattern. It covers the common syntax, not every
         edge of the ECMAScript grammar.</p>
     </section>
 
   </div>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="103">How this works</summary>
     <div class="mdv-method-body">
-      <p>The pattern and the ticked flags go straight into <code>new RegExp(pattern, flags)</code>, so the
+      <p data-t="104">The pattern and the ticked flags go straight into <code>new RegExp(pattern, flags)</code>, so the
         engine is this browser's own ECMAScript regular expression engine, and a pattern behaves here as it
         does in JavaScript in this browser — on the text as this page holds it. A textarea stores every line
         break as a line feed, so text pasted with Windows CRLF line endings arrives without its carriage
@@ -2363,7 +2475,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         mean what they mean there, an empty replacement deletes each match, and without <code>g</code>
         only the first match is replaced. With
         <code>d</code> on, the table adds each group's start and end from <code>match.indices</code>.</p>
-      <p>The explanation is a small tokeniser written in this file. It walks the pattern once and names
+      <p data-t="105">The explanation is a small tokeniser written in this file. It walks the pattern once and names
         anchors, classes, escapes, groups, lookarounds, backreferences, quantifiers and alternation. It
         reads token by token, so it does not verify that a backreference points at an existing group, and
         it does not read <code>v</code>-flag set operations or nested classes. It does name the problems it
@@ -2372,30 +2484,31 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         pattern, the first of those is the position shown. The engine's message still wins: it can be
         about a problem the tokeniser does not see, and when the tokeniser sees none, no position is given.
         Group numbers in the table come from the same walk.</p>
-      <p>Catastrophic backtracking cannot be detected from outside: a pattern such as <code>(a+)+$</code>
+      <p data-t="106">Catastrophic backtracking cannot be detected from outside: a pattern such as <code>(a+)+$</code>
         against a long run of <code>a</code> will freeze this tab as it would freeze any program, and that is
         the engine, not the tool. To keep the usual cases quick, the text is capped at 200,000 characters and
         the pattern at 5,000; the highlight and the table show the first 5,000 matches and the count says
         when there are more. The table shows the first 80 characters of a match or group and marks the cut.
         Nothing is uploaded: there is no server in this file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="107">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Developer">
-    <span class="mdv-tag">Also in Developer</span>
-    <a href="./subnet-calculator.html">Subnet calculator</a>
-    <a href="./xml-formatter.html">XML formatter</a>
-    <a href="./chmod-calculator.html">Chmod calculator</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Developer"}'>Also in Developer</span>
+    <a href="./subnet-calculator.html" data-t="37">Subnet calculator</a>
+    <a href="./xml-formatter.html" data-t="41">XML formatter</a>
+    <a href="./chmod-calculator.html" data-t="35">Chmod calculator</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="108">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="109">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="110" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="111">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2406,6 +2519,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Regex Tester — matches, groups, replace, explained — MDV","Test a JavaScript regex: matches highlighted, groups in a table, replace preview and a plain-English reading of the pattern. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","Flags","global: find every match, not only the first","ignore case: letters match in either case","multiline: ^ and $ also match at line breaks","dot all: . also matches line breaks","unicode: \\p{…} works and characters outside the BMP count as one","unicode sets: what u does, plus set operations such as [\\p{L}--[a-z]] and strings in a class","sticky: each match must start exactly where the previous one ended, the first at index 0","indices: the start and end of every group is recorded","zero-width match at index {index}","a space","a tab","a line feed","a carriage return","{list} or {last}","a digit, 0 to 9","any character that is not a digit","a word character: a letter, a digit or _","any character that is not a word character","a whitespace character: space, tab, line break and the like","any character that is not whitespace","a form feed","a vertical tab","a NUL character","a lone backslash at the end of the pattern","a backspace","a word boundary: the edge between a word character and anything else","a position that is not a word boundary","the character {cp}","the character {cp} (needs the u flag)","the control character Ctrl-{ch}","a character with the Unicode property {name} (needs the u flag)","a character without the Unicode property {name} (needs the u flag)","the same text that group {group} matched (backreference)","a literal {ch}","{from} to {to}","a character class that is never closed — a ] is missing","any character at all (an empty negated set)","nothing at all (an empty set never matches)","one character that is not {list}","one character that is {list}","a group that does not capture","end of the group","lookahead: the text that follows must match this, without consuming it","end of the lookahead","negative lookahead: the text that follows must not match this","end of the negative lookahead","lookbehind: the text before this point must match this","end of the lookbehind","negative lookbehind: the text before this point must not match this","end of the negative lookbehind","group {n}, named {name} (captures)","end of group {n} {name}","a group that does not capture, with {on} turned on and with {off} turned off inside it","a group that does not capture, with {on} turned on inside it","a group that does not capture, with {off} turned off inside it","a group that does not capture, inside it","group {n} (captures)","end of group {n}","zero or more times","one or more times","zero or one time (optional)","{n} or more times","between {from} and {to} times","{what}, as few as possible (lazy)","{what}, as many as possible (greedy)","{n} spaces","the text {text}","{what}, in either case","a ) with no group open before it","or: either what comes before this or what comes after it","the start of a line","the start of the text","the end of a line","the end of the text","any character, including line breaks","any character except a line break","{what}, {q}","{what}; the whole group repeats {q}","a quantifier with nothing before it to repeat","a quantifier straight after another one — to repeat {tok}, wrap it in (?:…) first","a quantifier after {tok}, {what}, which cannot be repeated","a quantifier after {tok}, which cannot be repeated","a group is never closed — a ) is missing ({close})","flags","none: one match, case-sensitive","Index","Length","Match","(empty)","{count} · no groups","showing first {shown} of {total} matches","No position: the engine names none, and the tokeniser in this page does not see the problem.","The tokeniser in this page points at character {n}: {what}.","{n} characters of pattern is past the {limit}-character ceiling this tool will attempt.","{n} characters is past the {limit}-character ceiling this tool will attempt.","no match","1 match — first only, g is off","{base} · {n} zero-width, marked ¦","no match, text unchanged","{n} replaced","first match replaced","exactly {n} time","exactly {n} times","{count} × {n} group","{count} × {n} groups","{n} character","{n} characters","{n} match","{n} matches","Developer","2026-11-02"],"h":112,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Prueba una regex de JavaScript con tu texto mientras escribes.","En este dispositivo","Funciona sin conexión","Patrón","global","ignorar mayúsculas","multilínea","punto = todo","unicode","conjuntos unicode","pegajoso","índices","Reemplazar con","Texto de prueba","Coincidencias","escribe un patrón arriba","pega texto para probar","Rechazado","Grupos","Reemplazado","Copiado","Copiar","Explicación","Una lectura del patrón token por token. Cubre la sintaxis habitual, no todos los rincones de la gramática de ECMAScript.","Cómo funciona","El patrón y los indicadores marcados van directamente a \u003ccode>new RegExp(pattern, flags)\u003c/code>, así que el motor es el propio motor de expresiones regulares ECMAScript de este navegador, y un patrón se comporta aquí como en JavaScript en este navegador, sobre el texto tal como lo guarda esta página. Un textarea guarda cada salto de línea como un avance de línea, así que el texto pegado con finales de línea CRLF de Windows llega sin sus retornos de carro, y \u003ccode>\\r\u003c/code> o \u003ccode>\\r\\n\u003c/code> no encuentra aquí lo que encontraría en el archivo original. La casilla \u003ccode>v\u003c/code> solo se muestra cuando el motor de este navegador acepta \u003ccode>v\u003c/code>; el motor rechaza \u003ccode>u\u003c/code> y \u003ccode>v\u003c/code> juntos, así que marcar una desmarca la otra. Cuando el constructor lanza un error, su mensaje se muestra tal cual; ese mensaje no lleva posición, así que se la pide al tokenizador descrito a continuación, y cuando este ve el problema, el carácter se nombra y se señala con un signo ^. Con \u003ccode>g\u003c/code> activado, las coincidencias vienen de \u003ccode>String.prototype.matchAll\u003c/code>; sin él, de un único \u003ccode>exec\u003c/code>, por eso entonces solo se muestra la primera coincidencia. \u003ccode>lastIndex\u003c/code> se pone a 0 antes de ese \u003ccode>exec\u003c/code> y antes del reemplazo, así que con \u003ccode>y\u003c/code> activado la primera coincidencia debe empezar en el índice 0. El resaltado se construye con nodos de texto y elementos \u003ccode>mark\u003c/code>, nunca con marcado, así que el texto que parece HTML sigue siendo texto. Una coincidencia de ancho cero, como \u003ccode>\\b\u003c/code>, no tiene texto que marcar, así que se dibuja como \u003ccode>¦\u003c/code> (una marca que no está en tu texto) y el recuento indica cuántas hay. El reemplazo es \u003ccode>String.prototype.replace\u003c/code> con tu cadena, así que \u003ccode>$1\u003c/code>, \u003ccode>$&lt;name&gt;\u003c/code>, \u003ccode>$&amp;\u003c/code>, \u003ccode>$`\u003c/code>, \u003ccode>$'\u003c/code> y \u003ccode>$$\u003c/code> significan lo que allí significan, un reemplazo vacío elimina cada coincidencia, y sin \u003ccode>g\u003c/code> solo se reemplaza la primera. Con \u003ccode>d\u003c/code> activado, la tabla añade el inicio y el fin de cada grupo a partir de \u003ccode>match.indices\u003c/code>.","La explicación es un pequeño tokenizador escrito en este archivo. Recorre el patrón una vez y nombra anclas, clases, escapes, grupos, aserciones de contexto, referencias hacia atrás, cuantificadores y alternancia. Lee token por token, así que no verifica que una referencia hacia atrás apunte a un grupo existente, y no lee las operaciones de conjuntos ni las clases anidadas del indicador \u003ccode>v\u003c/code>. Sí nombra los problemas que puede ver (una clase o un grupo que nunca se cierra, un \u003ccode>)\u003c/code> sin grupo abierto, una barra invertida suelta al final, un cuantificador sin nada antes que se pueda repetir), y cuando el motor rechaza un patrón, el primero de ellos es la posición mostrada. El mensaje del motor sigue mandando: puede tratar de un problema que el tokenizador no ve, y cuando el tokenizador no ve ninguno, no se da posición. Los números de grupo de la tabla salen del mismo recorrido.","El retroceso catastrófico no se puede detectar desde fuera: un patrón como \u003ccode>(a+)+$\u003c/code> frente a una larga tirada de \u003ccode>a\u003c/code> congelará esta pestaña como congelaría cualquier programa, y eso es el motor, no la herramienta. Para mantener rápidos los casos habituales, el texto se limita a 200.000 caracteres y el patrón a 5.000; el resaltado y la tabla muestran las primeras 5.000 coincidencias y el recuento avisa cuando hay más. La tabla muestra los primeros 80 caracteres de una coincidencia o grupo y marca el corte. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Probador de regex — coincidencias, grupos, reemplazo, explicado — MDV","Prueba una regex de JavaScript: coincidencias resaltadas, grupos en una tabla, vista previa del reemplazo y una lectura en lenguaje llano del patrón. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Indicadores","global: encuentra todas las coincidencias, no solo la primera","ignorar mayúsculas: las letras coinciden en cualquier caso","multilínea: ^ y $ también coinciden en los saltos de línea","punto = todo: . también coincide con saltos de línea","unicode: \\p{…} funciona y los caracteres fuera del BMP cuentan como uno","conjuntos unicode: lo que hace u, más operaciones de conjuntos como [\\p{L}--[a-z]] y cadenas dentro de una clase","pegajoso: cada coincidencia debe empezar justo donde terminó la anterior, la primera en el índice 0","índices: se registran el inicio y el fin de cada grupo","coincidencia de ancho cero en el índice {index}","un espacio","un tabulador","un avance de línea","un retorno de carro","{list} o {last}","un dígito, de 0 a 9","cualquier carácter que no sea un dígito","un carácter de palabra: una letra, un dígito o _","cualquier carácter que no sea de palabra","un carácter de espacio en blanco: espacio, tabulador, salto de línea y similares","cualquier carácter que no sea un espacio en blanco","un avance de página","un tabulador vertical","un carácter NUL","una barra invertida suelta al final del patrón","un retroceso (backspace)","un límite de palabra: el borde entre un carácter de palabra y cualquier otra cosa","una posición que no es un límite de palabra","el carácter {cp}","el carácter {cp} (necesita el indicador u)","el carácter de control Ctrl-{ch}","un carácter con la propiedad Unicode {name} (necesita el indicador u)","un carácter sin la propiedad Unicode {name} (necesita el indicador u)","el mismo texto que coincidió con el grupo {group} (referencia hacia atrás)","un {ch} literal","{from} a {to}","una clase de caracteres que nunca se cierra: falta un ]","cualquier carácter en absoluto (un conjunto negado vacío)","nada en absoluto (un conjunto vacío nunca coincide)","un carácter que no es {list}","un carácter que es {list}","un grupo que no captura","fin del grupo","aserción de anticipación: el texto que sigue debe coincidir con esto, sin consumirlo","fin de la anticipación","anticipación negativa: el texto que sigue no debe coincidir con esto","fin de la anticipación negativa","aserción de retroceso: el texto anterior a este punto debe coincidir con esto","fin del retroceso","retroceso negativo: el texto anterior a este punto no debe coincidir con esto","fin del retroceso negativo","grupo {n}, llamado {name} (captura)","fin del grupo {n} {name}","un grupo que no captura, con {on} activado y con {off} desactivado en su interior","un grupo que no captura, con {on} activado en su interior","un grupo que no captura, con {off} desactivado en su interior","un grupo que no captura, en su interior","grupo {n} (captura)","fin del grupo {n}","cero o más veces","una o más veces","cero o una vez (opcional)","{n} o más veces","entre {from} y {to} veces","{what}, lo menos posible (perezoso)","{what}, tantas veces como sea posible (voraz)","{n} espacios","el texto {text}","{what}, en mayúsculas o minúsculas","un ) sin ningún grupo abierto antes","o: lo que viene antes o lo que viene después","el inicio de una línea","el inicio del texto","el final de una línea","el final del texto","cualquier carácter, incluidos los saltos de línea","cualquier carácter excepto un salto de línea","{what}, {q}","{what}; el grupo entero se repite {q}","un cuantificador sin nada antes que repetir","un cuantificador justo después de otro: para repetir {tok}, enciérralo antes en (?:…)","un cuantificador después de {tok}, {what}, que no se puede repetir","un cuantificador después de {tok}, que no se puede repetir","un grupo que nunca se cierra: falta un ) ({close})","indicadores","ninguno: una coincidencia, distingue mayúsculas","Índice","Longitud","Coincidencia","(vacío)","{count} · sin grupos","se muestran las primeras {shown} de {total} coincidencias","Sin posición: el motor no da ninguna y el tokenizador de esta página no ve el problema.","El tokenizador de esta página señala el carácter {n}: {what}.","{n} caracteres de patrón superan el límite de {limit} caracteres que esta herramienta intentará procesar.","{n} caracteres superan el límite de {limit} caracteres que esta herramienta intentará procesar.","sin coincidencias","1 coincidencia: solo la primera, g está desactivado","{base} · {n} de ancho cero, marcadas con ¦","sin coincidencias, texto sin cambios","{n} reemplazadas","primera coincidencia reemplazada","exactamente {n} vez","exactamente {n} veces","{count} × {n} grupo","{count} × {n} grupos","{n} carácter","{n} caracteres","{n} coincidencia","{n} coincidencias","Desarrollo",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Testez une regex JavaScript sur votre texte pendant que vous tapez.","Sur cet appareil","Fonctionne hors ligne","Motif","global","ignorer la casse","multiligne","point = tout","unicode","ensembles unicode","collant","indices","Remplacer par","Texte à tester","Correspondances","saisissez un motif ci-dessus","collez du texte à tester","Refusé","Groupes","Remplacé","Copié","Copier","Explication","Une lecture du motif jeton par jeton. Elle couvre la syntaxe courante, pas tous les recoins de la grammaire ECMAScript.","Comment ça marche","Le motif et les drapeaux cochés vont directement dans \u003ccode>new RegExp(pattern, flags)\u003c/code> : le moteur est donc le moteur d’expressions régulières ECMAScript propre à ce navigateur, et un motif se comporte ici comme en JavaScript dans ce navigateur, sur le texte tel que cette page le détient. Un textarea stocke chaque saut de ligne comme un saut de ligne simple (LF), donc un texte collé avec des fins de ligne CRLF de Windows arrive sans ses retours chariot, et \u003ccode>\\r\u003c/code> ou \u003ccode>\\r\\n\u003c/code> ne trouve ici rien de ce qu’il trouverait dans le fichier d’origine. La case \u003ccode>v\u003c/code> n’apparaît que si le moteur de ce navigateur accepte \u003ccode>v\u003c/code> ; le moteur refuse \u003ccode>u\u003c/code> et \u003ccode>v\u003c/code> ensemble, donc cocher l’une décoche l’autre. Quand le constructeur lève une erreur, son message est affiché tel quel ; ce message ne porte aucune position, on la demande donc à l’analyseur décrit plus loin, et quand il voit le problème, le caractère est nommé et marqué d’un repère ^. Avec \u003ccode>g\u003c/code>, les correspondances viennent de \u003ccode>String.prototype.matchAll\u003c/code> ; sans lui, d’un seul \u003ccode>exec\u003c/code>, d’où le fait que seule la première correspondance s’affiche alors. \u003ccode>lastIndex\u003c/code> est mis à 0 avant cet \u003ccode>exec\u003c/code> et avant le remplacement, donc avec \u003ccode>y\u003c/code> la première correspondance doit commencer à l’indice 0. La surbrillance est construite à partir de nœuds de texte et d’éléments \u003ccode>mark\u003c/code>, jamais de balisage, si bien qu’un texte qui ressemble à du HTML reste du texte. Une correspondance de largeur nulle, comme \u003ccode>\\b\u003c/code>, n’a pas de texte à marquer ; elle est donc dessinée comme \u003ccode>¦\u003c/code> (un repère qui ne fait pas partie de votre texte) et le compte indique combien il y en a. Le remplacement est \u003ccode>String.prototype.replace\u003c/code> avec votre chaîne, donc \u003ccode>$1\u003c/code>, \u003ccode>$&lt;name&gt;\u003c/code>, \u003ccode>$&amp;\u003c/code>, \u003ccode>$`\u003c/code>, \u003ccode>$'\u003c/code> et \u003ccode>$$\u003c/code> y ont leur sens habituel, un remplacement vide supprime chaque correspondance, et sans \u003ccode>g\u003c/code> seule la première est remplacée. Avec \u003ccode>d\u003c/code>, le tableau ajoute le début et la fin de chaque groupe à partir de \u003ccode>match.indices\u003c/code>.","L’explication est un petit analyseur lexical écrit dans ce fichier. Il parcourt le motif une fois et nomme ancres, classes, échappements, groupes, assertions de contexte, références arrière, quantificateurs et alternance. Il lit jeton par jeton : il ne vérifie donc pas qu’une référence arrière désigne un groupe existant, et il ne lit ni les opérations d’ensembles ni les classes imbriquées du drapeau \u003ccode>v\u003c/code>. Il nomme en revanche les problèmes qu’il voit (une classe ou un groupe jamais fermé, une \u003ccode>)\u003c/code> sans groupe ouvert, une barre oblique inverse seule à la fin, un quantificateur sans rien avant qui puisse se répéter), et quand le moteur refuse un motif, le premier d’entre eux fournit la position affichée. Le message du moteur reste prioritaire : il peut porter sur un problème que l’analyseur ne voit pas, et quand l’analyseur n’en voit aucun, aucune position n’est donnée. Les numéros de groupe du tableau viennent du même parcours.","Le retour arrière catastrophique ne peut pas être détecté de l’extérieur : un motif comme \u003ccode>(a+)+$\u003c/code> face à une longue suite de \u003ccode>a\u003c/code> figera cet onglet comme il figerait n’importe quel programme, et cela vient du moteur, pas de l’outil. Pour garder les cas courants rapides, le texte est plafonné à 200 000 caractères et le motif à 5 000 ; la surbrillance et le tableau montrent les 5 000 premières correspondances et le compte indique quand il y en a davantage. Le tableau montre les 80 premiers caractères d’une correspondance ou d’un groupe et marque la coupure. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Testeur de regex — correspondances, groupes, remplacement, expliqué — MDV","Testez une regex JavaScript : correspondances en surbrillance, groupes dans un tableau, aperçu du remplacement et lecture en langage clair du motif. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Drapeaux","global : trouve toutes les correspondances, pas seulement la première","ignorer la casse : les lettres correspondent en majuscule comme en minuscule","multiligne : ^ et $ correspondent aussi aux sauts de ligne","point = tout : . correspond aussi aux sauts de ligne","unicode : \\p{…} fonctionne et les caractères hors du BMP comptent pour un","ensembles unicode : ce que fait u, plus des opérations d’ensembles comme [\\p{L}--[a-z]] et des chaînes dans une classe","collant : chaque correspondance doit commencer exactement où la précédente s’est terminée, la première à l’indice 0","indices : le début et la fin de chaque groupe sont enregistrés","correspondance de largeur nulle à l’indice {index}","une espace","une tabulation","un saut de ligne (LF)","un retour chariot","{list} ou {last}","un chiffre, de 0 à 9","tout caractère qui n’est pas un chiffre","un caractère de mot : une lettre, un chiffre ou _","tout caractère qui n’est pas un caractère de mot","un caractère d’espacement : espace, tabulation, saut de ligne et assimilés","tout caractère qui n’est pas un espacement","un saut de page","une tabulation verticale","un caractère NUL","une barre oblique inverse seule à la fin du motif","un retour arrière (backspace)","une limite de mot : la frontière entre un caractère de mot et tout autre caractère","une position qui n’est pas une limite de mot","le caractère {cp}","le caractère {cp} (nécessite le drapeau u)","le caractère de contrôle Ctrl-{ch}","un caractère ayant la propriété Unicode {name} (nécessite le drapeau u)","un caractère sans la propriété Unicode {name} (nécessite le drapeau u)","le même texte que celui du groupe {group} (référence arrière)","un {ch} littéral","{from} à {to}","une classe de caractères jamais fermée : il manque un ]","n’importe quel caractère (un ensemble négatif vide)","rien du tout (un ensemble vide ne correspond jamais)","un caractère qui n’est pas {list}","un caractère qui est {list}","un groupe non capturant","fin du groupe","assertion avant : le texte qui suit doit correspondre à ceci, sans le consommer","fin de l’assertion avant","assertion avant négative : le texte qui suit ne doit pas correspondre à ceci","fin de l’assertion avant négative","assertion arrière : le texte avant ce point doit correspondre à ceci","fin de l’assertion arrière","assertion arrière négative : le texte avant ce point ne doit pas correspondre à ceci","fin de l’assertion arrière négative","groupe {n}, nommé {name} (capture)","fin du groupe {n} {name}","un groupe non capturant, avec {on} activé et {off} désactivé à l’intérieur","un groupe non capturant, avec {on} activé à l’intérieur","un groupe non capturant, avec {off} désactivé à l’intérieur","un groupe non capturant, à l’intérieur","groupe {n} (capture)","fin du groupe {n}","zéro fois ou plus","une fois ou plus","zéro ou une fois (facultatif)","{n} fois ou plus","entre {from} et {to} fois","{what}, aussi peu que possible (paresseux)","{what}, autant que possible (gourmand)","{n} espaces","le texte {text}","{what}, en majuscules comme en minuscules","un ) sans aucun groupe ouvert avant","ou : soit ce qui précède, soit ce qui suit","le début d’une ligne","le début du texte","la fin d’une ligne","la fin du texte","n’importe quel caractère, sauts de ligne compris","n’importe quel caractère sauf un saut de ligne","{what}, {q}","{what} ; le groupe entier se répète {q}","un quantificateur sans rien avant à répéter","un quantificateur juste après un autre : pour répéter {tok}, entourez-le d’abord de (?:…)","un quantificateur après {tok}, {what}, qui ne peut pas être répété","un quantificateur après {tok}, qui ne peut pas être répété","un groupe jamais fermé : il manque un ) ({close})","drapeaux","aucun : une correspondance, sensible à la casse","Indice","Longueur","Correspondance","(vide)","{count} · aucun groupe","affichage des {shown} premières correspondances sur {total}","Aucune position : le moteur n’en donne pas et l’analyseur de cette page ne voit pas le problème.","L’analyseur de cette page pointe le caractère {n} : {what}.","{n} caractères de motif dépassent la limite de {limit} caractères que cet outil acceptera de traiter.","{n} caractères dépassent la limite de {limit} caractères que cet outil acceptera de traiter.","aucune correspondance","1 correspondance : la première seulement, g est désactivé","{base} · {n} de largeur nulle, marquées ¦","aucune correspondance, texte inchangé","{n} remplacées","première correspondance remplacée","exactement {n} fois","exactement {n} fois","{count} × {n} groupe","{count} × {n} groupes","{n} caractère","{n} caractères","{n} correspondance","{n} correspondances","Développement",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Teste einen JavaScript-Regex an deinem Text, während du tippst.","Läuft auf diesem Gerät","Funktioniert offline","Muster","global","Groß-/Kleinschreibung ignorieren","mehrzeilig","Punkt = alles","Unicode","Unicode-Mengen","sticky","Indizes","Ersetzen durch","Testtext","Treffer","oben ein Muster eingeben","Text zum Testen einfügen","Abgelehnt","Gruppen","Ersetzt","Kopiert","Kopieren","Erklärung","Eine Lesart des Musters Token für Token. Sie deckt die gängige Syntax ab, nicht jeden Winkel der ECMAScript-Grammatik.","So funktioniert es","Das Muster und die angekreuzten Flags gehen direkt in \u003ccode>new RegExp(pattern, flags)\u003c/code>, die Engine ist also die eigene ECMAScript-Engine für reguläre Ausdrücke dieses Browsers, und ein Muster verhält sich hier wie in JavaScript in diesem Browser, und zwar auf dem Text, wie diese Seite ihn hält. Eine Textarea speichert jeden Zeilenumbruch als Line Feed, daher kommt mit Windows-CRLF-Zeilenenden eingefügter Text ohne seine Carriage Returns an, und \u003ccode>\\r\u003c/code> oder \u003ccode>\\r\\n\u003c/code> findet hier nichts, was es in der Originaldatei fände. Das Feld \u003ccode>v\u003c/code> wird nur angezeigt, wenn die Engine dieses Browsers \u003ccode>v\u003c/code> akzeptiert; die Engine lehnt \u003ccode>u\u003c/code> und \u003ccode>v\u003c/code> zusammen ab, daher hebt das Ankreuzen des einen das andere auf. Wirft der Konstruktor einen Fehler, wird seine Meldung unverändert angezeigt; diese Meldung enthält keine Position, deshalb wird der weiter unten beschriebene Tokenizer danach gefragt, und sieht er das Problem, wird das Zeichen benannt und mit einem ^ markiert. Mit \u003ccode>g\u003c/code> kommen die Treffer von \u003ccode>String.prototype.matchAll\u003c/code>; ohne es von einem einzelnen \u003ccode>exec\u003c/code>, weshalb dann nur der erste Treffer angezeigt wird. \u003ccode>lastIndex\u003c/code> wird vor diesem \u003ccode>exec\u003c/code> und vor dem Ersetzen auf 0 gesetzt, daher muss mit \u003ccode>y\u003c/code> der erste Treffer bei Index 0 beginnen. Die Hervorhebung wird aus Textknoten und \u003ccode>mark\u003c/code>-Elementen gebaut, nie aus Markup, sodass Text, der wie HTML aussieht, Text bleibt. Ein Treffer der Breite null, etwa \u003ccode>\\b\u003c/code>, hat keinen Text zum Markieren und wird deshalb als \u003ccode>¦\u003c/code> gezeichnet (ein Zeichen, das nicht in deinem Text steht), und die Anzahl sagt, wie viele es sind. Das Ersetzen ist \u003ccode>String.prototype.replace\u003c/code> mit deiner Zeichenkette, also bedeuten \u003ccode>$1\u003c/code>, \u003ccode>$&lt;name&gt;\u003c/code>, \u003ccode>$&amp;\u003c/code>, \u003ccode>$`\u003c/code>, \u003ccode>$'\u003c/code> und \u003ccode>$$\u003c/code> dort, was sie dort bedeuten; ein leerer Ersatz löscht jeden Treffer, und ohne \u003ccode>g\u003c/code> wird nur der erste ersetzt. Mit \u003ccode>d\u003c/code> ergänzt die Tabelle Anfang und Ende jeder Gruppe aus \u003ccode>match.indices\u003c/code>.","Die Erklärung ist ein kleiner Tokenizer, der in dieser Datei geschrieben ist. Er geht das Muster einmal durch und benennt Anker, Klassen, Escapes, Gruppen, Lookarounds, Rückverweise, Quantifizierer und Alternation. Er liest Token für Token, prüft also nicht, ob ein Rückverweis auf eine existierende Gruppe zeigt, und liest keine Mengenoperationen oder verschachtelten Klassen des \u003ccode>v\u003c/code>-Flags. Er benennt aber die Probleme, die er sieht (eine nie geschlossene Klasse oder Gruppe, eine \u003ccode>)\u003c/code> ohne offene Gruppe, ein einzelner Backslash am Ende, ein Quantifizierer ohne etwas davor, das sich wiederholen lässt), und lehnt die Engine ein Muster ab, liefert das erste davon die angezeigte Position. Die Meldung der Engine hat trotzdem Vorrang: Sie kann ein Problem betreffen, das der Tokenizer nicht sieht, und sieht er keines, wird keine Position angegeben. Die Gruppennummern in der Tabelle stammen aus demselben Durchlauf.","Katastrophales Backtracking lässt sich von außen nicht erkennen: Ein Muster wie \u003ccode>(a+)+$\u003c/code> auf einer langen Folge von \u003ccode>a\u003c/code> friert diesen Tab ein, wie es jedes Programm einfrieren würde, und das liegt an der Engine, nicht am Werkzeug. Damit die üblichen Fälle schnell bleiben, ist der Text auf 200.000 Zeichen und das Muster auf 5.000 begrenzt; Hervorhebung und Tabelle zeigen die ersten 5.000 Treffer, und die Anzahl sagt, wenn es mehr gibt. Die Tabelle zeigt die ersten 80 Zeichen eines Treffers oder einer Gruppe und markiert den Schnitt. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Regex-Tester — Treffer, Gruppen, Ersetzen, erklärt — MDV","Teste einen JavaScript-Regex: Treffer hervorgehoben, Gruppen in einer Tabelle, Vorschau des Ersetzens und eine Erklärung des Musters in einfacher Sprache. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Flags","global: findet jeden Treffer, nicht nur den ersten","Groß-/Kleinschreibung ignorieren: Buchstaben passen in beiden Schreibweisen","mehrzeilig: ^ und $ passen auch an Zeilenumbrüchen","Punkt = alles: . passt auch auf Zeilenumbrüche","Unicode: \\p{…} funktioniert, und Zeichen außerhalb der BMP zählen als eins","Unicode-Mengen: was u tut, plus Mengenoperationen wie [\\p{L}--[a-z]] und Zeichenfolgen in einer Klasse","sticky: jeder Treffer muss genau dort beginnen, wo der vorige endete, der erste bei Index 0","Indizes: Anfang und Ende jeder Gruppe werden festgehalten","Treffer der Breite null bei Index {index}","ein Leerzeichen","ein Tabulator","ein Line Feed","ein Carriage Return","{list} oder {last}","eine Ziffer, 0 bis 9","jedes Zeichen, das keine Ziffer ist","ein Wortzeichen: ein Buchstabe, eine Ziffer oder _","jedes Zeichen, das kein Wortzeichen ist","ein Leerraumzeichen: Leerzeichen, Tabulator, Zeilenumbruch und Ähnliches","jedes Zeichen, das kein Leerraum ist","ein Form Feed","ein vertikaler Tabulator","ein NUL-Zeichen","ein einzelner Backslash am Ende des Musters","ein Backspace","eine Wortgrenze: der Rand zwischen einem Wortzeichen und allem anderen","eine Position, die keine Wortgrenze ist","das Zeichen {cp}","das Zeichen {cp} (braucht das Flag u)","das Steuerzeichen Strg-{ch}","ein Zeichen mit der Unicode-Eigenschaft {name} (braucht das Flag u)","ein Zeichen ohne die Unicode-Eigenschaft {name} (braucht das Flag u)","derselbe Text, den Gruppe {group} getroffen hat (Rückverweis)","ein wörtliches {ch}","{from} bis {to}","eine Zeichenklasse, die nie geschlossen wird: ein ] fehlt","überhaupt jedes Zeichen (eine leere negierte Menge)","überhaupt nichts (eine leere Menge trifft nie)","ein Zeichen, das nicht {list} ist","ein Zeichen, das {list} ist","eine nicht erfassende Gruppe","Ende der Gruppe","Lookahead: der folgende Text muss hierauf passen, ohne verbraucht zu werden","Ende des Lookaheads","negatives Lookahead: der folgende Text darf hierauf nicht passen","Ende des negativen Lookaheads","Lookbehind: der Text vor dieser Stelle muss hierauf passen","Ende des Lookbehinds","negatives Lookbehind: der Text vor dieser Stelle darf hierauf nicht passen","Ende des negativen Lookbehinds","Gruppe {n}, benannt {name} (erfasst)","Ende von Gruppe {n} {name}","eine nicht erfassende Gruppe, in der {on} an- und {off} ausgeschaltet ist","eine nicht erfassende Gruppe, in der {on} angeschaltet ist","eine nicht erfassende Gruppe, in der {off} ausgeschaltet ist","eine nicht erfassende Gruppe, darin","Gruppe {n} (erfasst)","Ende von Gruppe {n}","null- oder mehrmals","ein- oder mehrmals","null- oder einmal (optional)","{n}-mal oder öfter","zwischen {from}- und {to}-mal","{what}, so wenige wie möglich (lazy)","{what}, so viele wie möglich (greedy)","{n} Leerzeichen","der Text {text}","{what}, in Groß- oder Kleinschreibung","eine ) ohne vorher geöffnete Gruppe","oder: entweder das, was davor kommt, oder das, was danach kommt","der Anfang einer Zeile","der Anfang des Textes","das Ende einer Zeile","das Ende des Textes","jedes Zeichen, einschließlich Zeilenumbrüchen","jedes Zeichen außer einem Zeilenumbruch","{what}, {q}","{what}; die ganze Gruppe wiederholt sich {q}","ein Quantifizierer ohne etwas davor, das sich wiederholen ließe","ein Quantifizierer direkt nach einem anderen: um {tok} zu wiederholen, setze es zuerst in (?:…)","ein Quantifizierer nach {tok}, {what}, der nicht wiederholt werden kann","ein Quantifizierer nach {tok}, der nicht wiederholt werden kann","eine Gruppe, die nie geschlossen wird: eine ) fehlt ({close})","Flags","keine: ein Treffer, Groß-/Kleinschreibung beachtet","Index","Länge","Treffer","(leer)","{count} · keine Gruppen","zeigt die ersten {shown} von {total} Treffern","Keine Position: Die Engine nennt keine, und der Tokenizer in dieser Seite sieht das Problem nicht.","Der Tokenizer in dieser Seite zeigt auf Zeichen {n}: {what}.","{n} Zeichen Muster überschreiten die Grenze von {limit} Zeichen, die dieses Werkzeug zu verarbeiten versucht.","{n} Zeichen überschreiten die Grenze von {limit} Zeichen, die dieses Werkzeug zu verarbeiten versucht.","kein Treffer","1 Treffer: nur der erste, g ist aus","{base} · {n} der Breite null, markiert mit ¦","kein Treffer, Text unverändert","{n} ersetzt","erster Treffer ersetzt","genau {n}-mal","genau {n}-mal","{count} × {n} Gruppe","{count} × {n} Gruppen","{n} Zeichen","{n} Zeichen","{n} Treffer","{n} Treffer","Entwicklung",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Prova una regex JavaScript sul tuo testo mentre scrivi.","Su questo dispositivo","Funziona offline","Pattern","globale","ignora maiuscole","multilinea","punto = tutto","unicode","insiemi unicode","sticky","indici","Sostituisci con","Testo di prova","Corrispondenze","scrivi un pattern qui sopra","incolla del testo da provare","Rifiutato","Gruppi","Sostituito","Copiato","Copia","Spiegazione","Una lettura del pattern token per token. Copre la sintassi comune, non ogni angolo della grammatica ECMAScript.","Come funziona","Il pattern e i flag spuntati vanno direttamente in \u003ccode>new RegExp(pattern, flags)\u003c/code>, quindi il motore è il motore di espressioni regolari ECMAScript di questo browser, e un pattern si comporta qui come in JavaScript in questo browser, sul testo così come lo tiene questa pagina. Una textarea memorizza ogni a capo come line feed, quindi il testo incollato con terminatori di riga CRLF di Windows arriva senza i ritorni a capo (carriage return), e \u003ccode>\\r\u003c/code> o \u003ccode>\\r\\n\u003c/code> qui non trova ciò che troverebbe nel file originale. La casella \u003ccode>v\u003c/code> compare solo se il motore di questo browser accetta \u003ccode>v\u003c/code>; il motore rifiuta \u003ccode>u\u003c/code> e \u003ccode>v\u003c/code> insieme, quindi spuntarne una deseleziona l’altra. Quando il costruttore lancia un errore, il suo messaggio viene mostrato così com’è; quel messaggio non porta una posizione, quindi la si chiede al tokenizzatore descritto più avanti, e quando questo vede il problema il carattere viene nominato e segnato con un cursore ^. Con \u003ccode>g\u003c/code> attivo le corrispondenze vengono da \u003ccode>String.prototype.matchAll\u003c/code>; senza, da un singolo \u003ccode>exec\u003c/code>, ed è per questo che allora si mostra solo la prima. \u003ccode>lastIndex\u003c/code> viene posto a 0 prima di quell’\u003ccode>exec\u003c/code> e prima della sostituzione, quindi con \u003ccode>y\u003c/code> la prima corrispondenza deve iniziare all’indice 0. L’evidenziazione è costruita con nodi di testo ed elementi \u003ccode>mark\u003c/code>, mai con markup, quindi il testo che sembra HTML resta testo. Una corrispondenza di larghezza zero, come \u003ccode>\\b\u003c/code>, non ha testo da segnare, quindi viene disegnata come \u003ccode>¦\u003c/code> (un segno che non è nel tuo testo) e il conteggio dice quante sono. La sostituzione è \u003ccode>String.prototype.replace\u003c/code> con la tua stringa, quindi \u003ccode>$1\u003c/code>, \u003ccode>$&lt;name&gt;\u003c/code>, \u003ccode>$&amp;\u003c/code>, \u003ccode>$`\u003c/code>, \u003ccode>$'\u003c/code> e \u003ccode>$$\u003c/code> significano ciò che significano lì, una sostituzione vuota elimina ogni corrispondenza, e senza \u003ccode>g\u003c/code> si sostituisce solo la prima. Con \u003ccode>d\u003c/code> attivo la tabella aggiunge inizio e fine di ogni gruppo da \u003ccode>match.indices\u003c/code>.","La spiegazione è un piccolo tokenizzatore scritto in questo file. Percorre il pattern una volta e nomina ancore, classi, escape, gruppi, lookaround, backreference, quantificatori e alternanza. Legge token per token, quindi non verifica che una backreference punti a un gruppo esistente, e non legge le operazioni su insiemi né le classi annidate del flag \u003ccode>v\u003c/code>. Nomina però i problemi che vede (una classe o un gruppo mai chiuso, una \u003ccode>)\u003c/code> senza gruppo aperto, un backslash isolato alla fine, un quantificatore senza nulla prima che si possa ripetere), e quando il motore rifiuta un pattern, il primo di questi è la posizione mostrata. Il messaggio del motore vince comunque: può riguardare un problema che il tokenizzatore non vede, e quando il tokenizzatore non ne vede nessuno, non viene data alcuna posizione. I numeri di gruppo nella tabella vengono dallo stesso percorso.","Il backtracking catastrofico non si può rilevare dall’esterno: un pattern come \u003ccode>(a+)+$\u003c/code> contro una lunga sequenza di \u003ccode>a\u003c/code> bloccherà questa scheda come bloccherebbe qualsiasi programma, e questo è il motore, non lo strumento. Per mantenere veloci i casi comuni, il testo è limitato a 200.000 caratteri e il pattern a 5.000; l’evidenziazione e la tabella mostrano le prime 5.000 corrispondenze e il conteggio avvisa quando ce ne sono di più. La tabella mostra i primi 80 caratteri di una corrispondenza o di un gruppo e segna il taglio. Non viene caricato nulla: questo file non ha un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Tester di regex — corrispondenze, gruppi, sostituzione, spiegato — MDV","Prova una regex JavaScript: corrispondenze evidenziate, gruppi in una tabella, anteprima della sostituzione e una lettura in linguaggio semplice del pattern. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Flag","globale: trova tutte le corrispondenze, non solo la prima","ignora maiuscole: le lettere corrispondono in entrambi i casi","multilinea: ^ e $ corrispondono anche agli a capo","punto = tutto: . corrisponde anche agli a capo","unicode: \\p{…} funziona e i caratteri fuori dal BMP contano come uno","insiemi unicode: ciò che fa u, più operazioni su insiemi come [\\p{L}--[a-z]] e stringhe in una classe","sticky: ogni corrispondenza deve iniziare esattamente dove è finita la precedente, la prima all’indice 0","indici: vengono registrati l’inizio e la fine di ogni gruppo","corrispondenza di larghezza zero all’indice {index}","uno spazio","una tabulazione","un line feed","un ritorno a capo (carriage return)","{list} o {last}","una cifra, da 0 a 9","qualsiasi carattere che non sia una cifra","un carattere di parola: una lettera, una cifra o _","qualsiasi carattere che non sia di parola","un carattere di spazio bianco: spazio, tabulazione, a capo e simili","qualsiasi carattere che non sia uno spazio bianco","un form feed","una tabulazione verticale","un carattere NUL","un backslash isolato alla fine del pattern","un backspace","un confine di parola: il bordo tra un carattere di parola e qualsiasi altra cosa","una posizione che non è un confine di parola","il carattere {cp}","il carattere {cp} (richiede il flag u)","il carattere di controllo Ctrl-{ch}","un carattere con la proprietà Unicode {name} (richiede il flag u)","un carattere senza la proprietà Unicode {name} (richiede il flag u)","lo stesso testo trovato dal gruppo {group} (backreference)","un {ch} letterale","da {from} a {to}","una classe di caratteri mai chiusa: manca un ]","qualsiasi carattere in assoluto (un insieme negato vuoto)","niente in assoluto (un insieme vuoto non corrisponde mai)","un carattere che non è {list}","un carattere che è {list}","un gruppo che non cattura","fine del gruppo","lookahead: il testo che segue deve corrispondere a questo, senza consumarlo","fine del lookahead","lookahead negativo: il testo che segue non deve corrispondere a questo","fine del lookahead negativo","lookbehind: il testo prima di questo punto deve corrispondere a questo","fine del lookbehind","lookbehind negativo: il testo prima di questo punto non deve corrispondere a questo","fine del lookbehind negativo","gruppo {n}, chiamato {name} (cattura)","fine del gruppo {n} {name}","un gruppo che non cattura, con {on} attivato e {off} disattivato al suo interno","un gruppo che non cattura, con {on} attivato al suo interno","un gruppo che non cattura, con {off} disattivato al suo interno","un gruppo che non cattura, al suo interno","gruppo {n} (cattura)","fine del gruppo {n}","zero o più volte","una o più volte","zero o una volta (facoltativo)","{n} o più volte","tra {from} e {to} volte","{what}, il meno possibile (lazy)","{what}, il più possibile (greedy)","{n} spazi","il testo {text}","{what}, in maiuscolo o minuscolo","una ) senza alcun gruppo aperto prima","oppure: o ciò che viene prima o ciò che viene dopo","l’inizio di una riga","l’inizio del testo","la fine di una riga","la fine del testo","qualsiasi carattere, compresi gli a capo","qualsiasi carattere tranne un a capo","{what}, {q}","{what}; l’intero gruppo si ripete {q}","un quantificatore senza nulla prima da ripetere","un quantificatore subito dopo un altro: per ripetere {tok}, racchiudilo prima in (?:…)","un quantificatore dopo {tok}, {what}, che non può essere ripetuto","un quantificatore dopo {tok}, che non può essere ripetuto","un gruppo mai chiuso: manca una ) ({close})","flag","nessuno: una corrispondenza, distingue maiuscole","Indice","Lunghezza","Corrispondenza","(vuoto)","{count} · nessun gruppo","prime {shown} corrispondenze su {total}","Nessuna posizione: il motore non ne indica e il tokenizzatore di questa pagina non vede il problema.","Il tokenizzatore di questa pagina indica il carattere {n}: {what}.","{n} caratteri di pattern superano il limite di {limit} caratteri che questo strumento tenterà di elaborare.","{n} caratteri superano il limite di {limit} caratteri che questo strumento tenterà di elaborare.","nessuna corrispondenza","1 corrispondenza: solo la prima, g è disattivato","{base} · {n} di larghezza zero, segnate con ¦","nessuna corrispondenza, testo invariato","{n} sostituite","prima corrispondenza sostituita","esattamente {n} volta","esattamente {n} volte","{count} × {n} gruppo","{count} × {n} gruppi","{n} carattere","{n} caratteri","{n} corrispondenza","{n} corrispondenze","Sviluppo",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Teste uma regex de JavaScript no seu texto enquanto digita.","Neste dispositivo","Funciona offline","Padrão","global","ignorar maiúsculas","multilinha","ponto = tudo","unicode","conjuntos unicode","sticky","índices","Substituir por","Texto de teste","Correspondências","digite um padrão acima","cole um texto para testar","Recusado","Grupos","Substituído","Copiado","Copiar","Explicação","Uma leitura do padrão token a token. Cobre a sintaxe comum, não todos os cantos da gramática do ECMAScript.","Como funciona","O padrão e os flags marcados vão direto para \u003ccode>new RegExp(pattern, flags)\u003c/code>, então o motor é o próprio motor de expressões regulares ECMAScript deste navegador, e um padrão se comporta aqui como em JavaScript neste navegador, sobre o texto como esta página o guarda. Uma textarea armazena cada quebra de linha como um line feed, então o texto colado com finais de linha CRLF do Windows chega sem os retornos de carro, e \u003ccode>\\r\u003c/code> ou \u003ccode>\\r\\n\u003c/code> não encontra aqui o que encontraria no arquivo original. A caixa \u003ccode>v\u003c/code> só aparece quando o motor deste navegador aceita \u003ccode>v\u003c/code>; o motor recusa \u003ccode>u\u003c/code> e \u003ccode>v\u003c/code> juntos, então marcar uma desmarca a outra. Quando o construtor lança um erro, a mensagem é mostrada como está; essa mensagem não traz posição, então ela é pedida ao tokenizador descrito a seguir, e quando ele vê o problema o caractere é nomeado e marcado com um cursor ^. Com \u003ccode>g\u003c/code> ativo, as correspondências vêm de \u003ccode>String.prototype.matchAll\u003c/code>; sem ele, de um único \u003ccode>exec\u003c/code>, e por isso só a primeira é mostrada. \u003ccode>lastIndex\u003c/code> é definido como 0 antes desse \u003ccode>exec\u003c/code> e antes da substituição, então com \u003ccode>y\u003c/code> a primeira correspondência deve começar no índice 0. O destaque é construído com nós de texto e elementos \u003ccode>mark\u003c/code>, nunca com marcação, então texto que parece HTML continua sendo texto. Uma correspondência de largura zero, como \u003ccode>\\b\u003c/code>, não tem texto para marcar, então é desenhada como \u003ccode>¦\u003c/code> (uma marca que não está no seu texto) e a contagem diz quantas existem. A substituição é \u003ccode>String.prototype.replace\u003c/code> com a sua string, então \u003ccode>$1\u003c/code>, \u003ccode>$&lt;name&gt;\u003c/code>, \u003ccode>$&amp;\u003c/code>, \u003ccode>$`\u003c/code>, \u003ccode>$'\u003c/code> e \u003ccode>$$\u003c/code> significam o que significam lá, uma substituição vazia apaga cada correspondência, e sem \u003ccode>g\u003c/code> só a primeira é substituída. Com \u003ccode>d\u003c/code> ativo, a tabela acrescenta início e fim de cada grupo a partir de \u003ccode>match.indices\u003c/code>.","A explicação é um pequeno tokenizador escrito neste arquivo. Ele percorre o padrão uma vez e nomeia âncoras, classes, escapes, grupos, lookarounds, referências reversas, quantificadores e alternância. Ele lê token a token, então não verifica se uma referência reversa aponta para um grupo existente, e não lê as operações de conjunto nem as classes aninhadas do flag \u003ccode>v\u003c/code>. Ele nomeia os problemas que consegue ver (uma classe ou um grupo nunca fechado, um \u003ccode>)\u003c/code> sem grupo aberto, uma barra invertida solta no fim, um quantificador sem nada antes que possa ser repetido), e quando o motor recusa um padrão, o primeiro deles é a posição mostrada. A mensagem do motor ainda prevalece: ela pode ser sobre um problema que o tokenizador não vê, e quando o tokenizador não vê nenhum, nenhuma posição é dada. Os números de grupo na tabela vêm do mesmo percurso.","O backtracking catastrófico não pode ser detectado de fora: um padrão como \u003ccode>(a+)+$\u003c/code> contra uma longa sequência de \u003ccode>a\u003c/code> vai travar esta aba como travaria qualquer programa, e isso é o motor, não a ferramenta. Para manter os casos comuns rápidos, o texto é limitado a 200.000 caracteres e o padrão a 5.000; o destaque e a tabela mostram as primeiras 5.000 correspondências e a contagem avisa quando há mais. A tabela mostra os primeiros 80 caracteres de uma correspondência ou grupo e marca o corte. Nada é enviado: este arquivo não tem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Testador de regex — correspondências, grupos, substituição, explicado — MDV","Teste uma regex de JavaScript: correspondências destacadas, grupos em uma tabela, prévia da substituição e uma leitura em linguagem simples do padrão. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Flags","global: encontra todas as correspondências, não só a primeira","ignorar maiúsculas: as letras correspondem em qualquer caixa","multilinha: ^ e $ também correspondem nas quebras de linha","ponto = tudo: . também corresponde a quebras de linha","unicode: \\p{…} funciona e caracteres fora do BMP contam como um","conjuntos unicode: o que u faz, mais operações de conjunto como [\\p{L}--[a-z]] e strings em uma classe","sticky: cada correspondência deve começar exatamente onde a anterior terminou, a primeira no índice 0","índices: o início e o fim de cada grupo são registrados","correspondência de largura zero no índice {index}","um espaço","uma tabulação","um line feed","um retorno de carro","{list} ou {last}","um dígito, de 0 a 9","qualquer caractere que não seja um dígito","um caractere de palavra: uma letra, um dígito ou _","qualquer caractere que não seja de palavra","um caractere de espaço em branco: espaço, tabulação, quebra de linha e similares","qualquer caractere que não seja espaço em branco","um form feed","uma tabulação vertical","um caractere NUL","uma barra invertida solta no fim do padrão","um backspace","um limite de palavra: a borda entre um caractere de palavra e qualquer outra coisa","uma posição que não é um limite de palavra","o caractere {cp}","o caractere {cp} (precisa do flag u)","o caractere de controle Ctrl-{ch}","um caractere com a propriedade Unicode {name} (precisa do flag u)","um caractere sem a propriedade Unicode {name} (precisa do flag u)","o mesmo texto que o grupo {group} correspondeu (referência reversa)","um {ch} literal","{from} a {to}","uma classe de caracteres nunca fechada: falta um ]","qualquer caractere (um conjunto negado vazio)","nada (um conjunto vazio nunca corresponde)","um caractere que não é {list}","um caractere que é {list}","um grupo que não captura","fim do grupo","lookahead: o texto que vem a seguir deve corresponder a isto, sem consumi-lo","fim do lookahead","lookahead negativo: o texto que vem a seguir não deve corresponder a isto","fim do lookahead negativo","lookbehind: o texto antes deste ponto deve corresponder a isto","fim do lookbehind","lookbehind negativo: o texto antes deste ponto não deve corresponder a isto","fim do lookbehind negativo","grupo {n}, chamado {name} (captura)","fim do grupo {n} {name}","um grupo que não captura, com {on} ativado e {off} desativado dentro dele","um grupo que não captura, com {on} ativado dentro dele","um grupo que não captura, com {off} desativado dentro dele","um grupo que não captura, dentro dele","grupo {n} (captura)","fim do grupo {n}","zero ou mais vezes","uma ou mais vezes","zero ou uma vez (opcional)","{n} ou mais vezes","entre {from} e {to} vezes","{what}, o mínimo possível (preguiçoso)","{what}, o máximo possível (ganancioso)","{n} espaços","o texto {text}","{what}, em maiúsculas ou minúsculas","um ) sem nenhum grupo aberto antes","ou: o que vem antes ou o que vem depois","o início de uma linha","o início do texto","o fim de uma linha","o fim do texto","qualquer caractere, incluindo quebras de linha","qualquer caractere exceto uma quebra de linha","{what}, {q}","{what}; o grupo inteiro se repete {q}","um quantificador sem nada antes para repetir","um quantificador logo depois de outro: para repetir {tok}, coloque-o antes em (?:…)","um quantificador depois de {tok}, {what}, que não pode ser repetido","um quantificador depois de {tok}, que não pode ser repetido","um grupo nunca fechado: falta um ) ({close})","flags","nenhum: uma correspondência, diferencia maiúsculas","Índice","Comprimento","Correspondência","(vazio)","{count} · sem grupos","mostrando as primeiras {shown} de {total} correspondências","Sem posição: o motor não informa nenhuma e o tokenizador desta página não vê o problema.","O tokenizador desta página aponta para o caractere {n}: {what}.","{n} caracteres de padrão passam do limite de {limit} caracteres que esta ferramenta tentará processar.","{n} caracteres passam do limite de {limit} caracteres que esta ferramenta tentará processar.","nenhuma correspondência","1 correspondência: só a primeira, g está desativado","{base} · {n} de largura zero, marcadas com ¦","nenhuma correspondência, texto inalterado","{n} substituídas","primeira correspondência substituída","exatamente {n} vez","exatamente {n} vezes","{count} × {n} grupo","{count} × {n} grupos","{n} caractere","{n} caracteres","{n} correspondência","{n} correspondências","Desenvolvimento",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","入力しながら、JavaScript の正規表現をテキストに対して試せます。","この端末で動作","オフラインで動作","パターン","グローバル","大文字小文字を無視","複数行","ドットで全て","Unicode","Unicode セット","スティッキー","インデックス","置換後","テスト用テキスト","一致","上にパターンを入力","テストするテキストを貼り付け","拒否しました","グループ","置換結果","コピーしました","コピー","解説","パターンをトークン単位で読み解きます。一般的な構文を扱い、ECMAScript 文法のすべての細部までは扱いません。","仕組み","パターンとチェックしたフラグは、そのまま \u003ccode>new RegExp(pattern, flags)\u003c/code> に渡されます。そのためエンジンはこのブラウザー自身の ECMAScript 正規表現エンジンであり、パターンはこのブラウザーの JavaScript と同じように、このページが保持しているテキストに対して動作します。textarea はすべての改行をラインフィード 1 文字で保持するため、Windows の CRLF 改行のテキストを貼り付けるとキャリッジリターンが除かれた状態で届き、\u003ccode>\\r\u003c/code> や \u003ccode>\\r\\n\u003c/code> は元のファイルなら見つかるものを、ここでは見つけられません。\u003ccode>v\u003c/code> のチェックボックスは、このブラウザーのエンジンが \u003ccode>v\u003c/code> を受け付ける場合にだけ表示されます。エンジンは \u003ccode>u\u003c/code> と \u003ccode>v\u003c/code> の併用を拒否するため、一方をオンにするともう一方は解除されます。コンストラクターがエラーを投げた場合、そのメッセージはそのまま表示されます。メッセージには位置情報が含まれないため、後述のトークナイザーに位置を尋ね、問題が見つかればその文字を示してキャレット ^ を付けます。\u003ccode>g\u003c/code> がオンのとき、一致は \u003ccode>String.prototype.matchAll\u003c/code> から得られ、オフのときは 1 回の \u003ccode>exec\u003c/code> から得られるため、その場合は最初の一致だけが表示されます。\u003ccode>lastIndex\u003c/code> はその \u003ccode>exec\u003c/code> の前と置換の前に 0 に設定されるので、\u003ccode>y\u003c/code> がオンなら最初の一致はインデックス 0 から始まらなければなりません。ハイライトはテキストノードと \u003ccode>mark\u003c/code> 要素から作られ、マークアップから作られることはないので、HTML のように見えるテキストもテキストのままです。\u003ccode>\\b\u003c/code> のような幅ゼロの一致にはマークするテキストがないため \u003ccode>¦\u003c/code>(入力テキストには含まれない記号)で描かれ、件数にその数が表示されます。置換には入力した文字列を使った \u003ccode>String.prototype.replace\u003c/code> が使われるため、\u003ccode>$1\u003c/code>、\u003ccode>$&lt;name&gt;\u003c/code>、\u003ccode>$&amp;\u003c/code>、\u003ccode>$`\u003c/code>、\u003ccode>$'\u003c/code>、\u003ccode>$$\u003c/code> はそこでの意味どおりに働き、空の置換文字列はすべての一致を削除し、\u003ccode>g\u003c/code> がなければ最初の一致だけが置換されます。\u003ccode>d\u003c/code> がオンのとき、表には \u003ccode>match.indices\u003c/code> から各グループの開始位置と終了位置が追加されます。","解説は、このファイルに書かれた小さなトークナイザーです。パターンを 1 回たどり、アンカー、クラス、エスケープ、グループ、先読み・後読み、後方参照、量指定子、選択を名前で示します。トークン単位で読むため、後方参照が実在するグループを指しているかは検証せず、\u003ccode>v\u003c/code> フラグの集合演算や入れ子のクラスも読みません。見つけられる問題は指摘します。閉じていないクラスやグループ、開いたグループのない \u003ccode>)\u003c/code>、末尾の単独のバックスラッシュ、繰り返せるものが前にない量指定子などです。エンジンがパターンを拒否した場合は、これらの最初のものが表示される位置になります。それでもエンジンのメッセージが優先されます。トークナイザーが見つけられない問題についてのものかもしれず、トークナイザーが何も見つけなければ位置は示されません。表のグループ番号も同じ走査から得られます。","壊滅的バックトラッキングは外部から検出できません。\u003ccode>(a+)+$\u003c/code> のようなパターンを長い \u003ccode>a\u003c/code> の連なりに適用すると、どんなプログラムでもそうなるようにこのタブはフリーズします。これはエンジンの問題であり、ツールの問題ではありません。一般的なケースを速く保つため、テキストは 200,000 文字、パターンは 5,000 文字までに制限されています。ハイライトと表には最初の 5,000 件の一致が表示され、それ以上ある場合は件数でお知らせします。表には一致またはグループの最初の 80 文字が表示され、省略された箇所には印が付きます。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","正規表現テスター — 一致・グループ・置換・解説 — MDV","JavaScript の正規表現をテストできます。一致のハイライト、グループの表、置換のプレビュー、パターンのわかりやすい解説を備えています。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","フラグ","グローバル:最初だけでなくすべての一致を検索","大文字小文字を無視:文字は大文字・小文字のどちらにも一致","複数行:^ と $ が改行位置にも一致","ドットで全て:. が改行にも一致","Unicode:\\p{…} が使え、BMP 外の文字も 1 文字として数えます","Unicode セット:u の機能に加え、[\\p{L}--[a-z]] のような集合演算とクラス内の文字列","スティッキー:各一致は直前の一致が終わった位置から始まる必要があり、最初はインデックス 0","インデックス:各グループの開始位置と終了位置を記録","インデックス {index} の幅ゼロの一致","スペース","タブ","ラインフィード","キャリッジリターン","{list} または {last}","数字(0〜9)","数字以外の任意の文字","単語文字(文字、数字、または _)","単語文字以外の任意の文字","空白文字(スペース、タブ、改行など)","空白文字以外の任意の文字","フォームフィード","垂直タブ","NUL 文字","パターン末尾の単独のバックスラッシュ","バックスペース","単語境界(単語文字とそれ以外の境目)","単語境界ではない位置","文字 {cp}","文字 {cp}(u フラグが必要)","制御文字 Ctrl-{ch}","Unicode プロパティ {name} を持つ文字(u フラグが必要)","Unicode プロパティ {name} を持たない文字(u フラグが必要)","グループ {group} が一致したのと同じテキスト(後方参照)","リテラルの {ch}","{from} から {to}","閉じられていない文字クラス(] がありません)","あらゆる文字(空の否定集合)","何にも一致しない(空の集合は決して一致しません)","{list} 以外の 1 文字","{list} のいずれかの 1 文字","キャプチャしないグループ","グループの終わり","先読み:後続のテキストがこれに一致する必要があります(消費しません)","先読みの終わり","否定先読み:後続のテキストがこれに一致してはいけません","否定先読みの終わり","後読み:この位置より前のテキストがこれに一致する必要があります","後読みの終わり","否定後読み:この位置より前のテキストがこれに一致してはいけません","否定後読みの終わり","グループ {n}、名前 {name}(キャプチャ)","グループ {n} {name} の終わり","キャプチャしないグループ(内部で {on} をオン、{off} をオフ)","キャプチャしないグループ(内部で {on} をオン)","キャプチャしないグループ(内部で {off} をオフ)","キャプチャしないグループ(内部)","グループ {n}(キャプチャ)","グループ {n} の終わり","0 回以上","1 回以上","0 回または 1 回(省略可能)","{n} 回以上","{from} 回から {to} 回","{what}、できるだけ少なく(最短一致)","{what}、できるだけ多く(最長一致)","スペース {n} 個","テキスト {text}","{what}(大文字・小文字のどちらでも)","対応する開きグループのない )","または:この前にあるものか、後にあるもののどちらか","行の先頭","テキストの先頭","行の末尾","テキストの末尾","任意の文字(改行を含む)","改行以外の任意の文字","{what}、{q}","{what}。グループ全体が {q} 繰り返されます","繰り返す対象が前にない量指定子","別の量指定子の直後にある量指定子です。{tok} を繰り返すには、先に (?:…) で囲んでください","{tok}({what})の後にある量指定子ですが、これは繰り返せません","{tok} の後にある量指定子ですが、これは繰り返せません","閉じられていないグループ(次の ) がありません:{close})","フラグ","なし:一致は 1 件、大文字小文字を区別","位置","長さ","一致","(空)","{count} · グループなし","{total} 件中、先頭の {shown} 件を表示","位置なし:エンジンは位置を示さず、このページのトークナイザーも問題を検出できません。","このページのトークナイザーは {n} 文字目を指しています:{what}。","パターンの {n} 文字は、このツールが処理する上限の {limit} 文字を超えています。","{n} 文字は、このツールが処理する上限の {limit} 文字を超えています。","一致なし","一致 1 件:最初のみ(g がオフ)","{base} · 幅ゼロ {n} 件(¦ で表示)","一致なし、テキストは変更なし","{n} 件を置換","最初の一致を置換","ちょうど {n} 回","ちょうど {n} 回","{count} × {n} グループ","{count} × {n} グループ","{n} 文字","{n} 文字","{n} 件の一致","{n} 件の一致","開発",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","입력하는 동안 JavaScript 정규식을 텍스트에 바로 시험해 보세요.","이 기기에서 실행","오프라인 작동","패턴","전역","대소문자 무시","여러 줄","점이 모두","유니코드","유니코드 집합","고정","인덱스","바꿀 내용","테스트 텍스트","일치 항목","위에 패턴을 입력","테스트할 텍스트를 붙여넣기","거부됨","그룹","바꾼 결과","복사됨","복사","설명","패턴을 토큰 단위로 풀어 설명합니다. 일반적인 구문은 다루지만 ECMAScript 문법의 모든 세부까지는 다루지 않습니다.","작동 방식","패턴과 체크한 플래그는 그대로 \u003ccode>new RegExp(pattern, flags)\u003c/code>에 들어가므로, 엔진은 이 브라우저 자체의 ECMAScript 정규식 엔진이며 패턴은 이 브라우저의 JavaScript에서와 똑같이, 이 페이지가 가진 텍스트에 대해 동작합니다. textarea는 모든 줄바꿈을 라인 피드 하나로 저장하므로, Windows CRLF 줄 끝으로 붙여넣은 텍스트는 캐리지 리턴이 빠진 채 들어오고, \u003ccode>\\r\u003c/code>이나 \u003ccode>\\r\\n\u003c/code>은 원본 파일에서는 찾을 것을 여기서는 찾지 못합니다. \u003ccode>v\u003c/code> 체크박스는 이 브라우저의 엔진이 \u003ccode>v\u003c/code>를 받아들일 때만 표시됩니다. 엔진은 \u003ccode>u\u003c/code>와 \u003ccode>v\u003c/code>를 함께 거부하므로 하나를 체크하면 다른 하나가 해제됩니다. 생성자가 오류를 던지면 그 메시지가 그대로 표시됩니다. 이 메시지에는 위치가 없으므로 아래에서 설명하는 토크나이저에 위치를 묻고, 토크나이저가 문제를 찾으면 해당 문자를 지목해 캐럿 ^으로 표시합니다. \u003ccode>g\u003c/code>를 켜면 일치 항목은 \u003ccode>String.prototype.matchAll\u003c/code>에서 나오고, 끄면 한 번의 \u003ccode>exec\u003c/code>에서 나오므로 그때는 첫 번째 일치만 표시됩니다. \u003ccode>lastIndex\u003c/code>는 그 \u003ccode>exec\u003c/code> 전과 치환 전에 0으로 설정되므로, \u003ccode>y\u003c/code>를 켜면 첫 번째 일치는 인덱스 0에서 시작해야 합니다. 강조 표시는 텍스트 노드와 \u003ccode>mark\u003c/code> 요소로 만들며 마크업으로는 절대 만들지 않으므로, HTML처럼 보이는 텍스트도 텍스트로 남습니다. \u003ccode>\\b\u003c/code> 같은 폭이 0인 일치는 표시할 텍스트가 없으므로 입력 텍스트에 없는 표시 \u003ccode>¦\u003c/code>로 그려지고, 개수가 몇 개인지 알려 줍니다. 치환은 입력한 문자열로 \u003ccode>String.prototype.replace\u003c/code>를 호출하므로 \u003ccode>$1\u003c/code>, \u003ccode>$&lt;name&gt;\u003c/code>, \u003ccode>$&amp;\u003c/code>, \u003ccode>$`\u003c/code>, \u003ccode>$'\u003c/code>, \u003ccode>$$\u003c/code>는 거기서의 의미 그대로이며, 빈 치환 문자열은 각 일치를 삭제하고, \u003ccode>g\u003c/code>가 없으면 첫 번째 일치만 치환됩니다. \u003ccode>d\u003c/code>를 켜면 표에 \u003ccode>match.indices\u003c/code>에서 가져온 각 그룹의 시작과 끝이 추가됩니다.","설명은 이 파일에 작성된 작은 토크나이저입니다. 패턴을 한 번 훑으며 앵커, 클래스, 이스케이프, 그룹, 룩어라운드, 역참조, 수량자, 선택을 이름으로 짚어 줍니다. 토큰 단위로 읽기 때문에 역참조가 실제 존재하는 그룹을 가리키는지는 검증하지 않으며, \u003ccode>v\u003c/code> 플래그의 집합 연산이나 중첩 클래스도 읽지 않습니다. 찾을 수 있는 문제는 짚어 줍니다. 닫히지 않은 클래스나 그룹, 열린 그룹 없는 \u003ccode>)\u003c/code>, 끝에 홀로 놓인 백슬래시, 앞에 반복할 대상이 없는 수량자 등입니다. 엔진이 패턴을 거부하면 이 중 첫 번째가 표시되는 위치가 됩니다. 그래도 엔진의 메시지가 우선합니다. 토크나이저가 보지 못하는 문제에 대한 메시지일 수 있고, 토크나이저가 아무것도 찾지 못하면 위치는 제공되지 않습니다. 표의 그룹 번호도 같은 탐색에서 나옵니다.","치명적 백트래킹은 외부에서 감지할 수 없습니다. \u003ccode>(a+)+$\u003c/code> 같은 패턴을 긴 \u003ccode>a\u003c/code> 연속에 적용하면 어떤 프로그램이든 그렇듯 이 탭이 멈추며, 이는 엔진 문제이지 도구 문제가 아닙니다. 일반적인 경우를 빠르게 유지하기 위해 텍스트는 200,000자, 패턴은 5,000자로 제한됩니다. 강조 표시와 표에는 처음 5,000개의 일치가 표시되고, 더 있으면 개수로 알려 줍니다. 표에는 일치 또는 그룹의 처음 80자가 표시되고 잘린 곳에 표시가 붙습니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크와 언어 버튼은 설정을 이 브라우저의 로컬 스토리지에 기억합니다. 입력하거나 페이지에 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","정규식 테스터 — 일치, 그룹, 치환, 설명 — MDV","JavaScript 정규식을 테스트하세요. 일치 항목 강조, 그룹 표, 치환 미리보기, 패턴을 쉬운 말로 풀어 주는 설명을 제공합니다. 사용 중인 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","플래그","전역: 첫 번째뿐 아니라 모든 일치를 찾음","대소문자 무시: 글자가 대문자와 소문자 모두에 일치","여러 줄: ^와 $가 줄바꿈에서도 일치","점이 모두: .가 줄바꿈에도 일치","유니코드: \\p{…}가 동작하고 BMP 밖의 문자도 한 글자로 셈","유니코드 집합: u의 기능에 더해 [\\p{L}--[a-z]] 같은 집합 연산과 클래스 안의 문자열","고정: 각 일치는 이전 일치가 끝난 바로 그 위치에서 시작해야 하며, 첫 번째는 인덱스 0","인덱스: 각 그룹의 시작과 끝을 기록","인덱스 {index}의 폭이 0인 일치","공백","탭","라인 피드","캐리지 리턴","{list} 또는 {last}","숫자 0~9","숫자가 아닌 모든 문자","단어 문자: 글자, 숫자 또는 _","단어 문자가 아닌 모든 문자","공백 문자: 공백, 탭, 줄바꿈 등","공백이 아닌 모든 문자","폼 피드","수직 탭","NUL 문자","패턴 끝에 홀로 놓인 백슬래시","백스페이스","단어 경계: 단어 문자와 그 밖의 문자 사이의 경계","단어 경계가 아닌 위치","문자 {cp}","문자 {cp} (u 플래그 필요)","제어 문자 Ctrl-{ch}","유니코드 속성 {name}을(를) 가진 문자 (u 플래그 필요)","유니코드 속성 {name}이(가) 없는 문자 (u 플래그 필요)","그룹 {group}이(가) 일치한 것과 같은 텍스트 (역참조)","리터럴 {ch}","{from}에서 {to}","닫히지 않은 문자 클래스: ]가 빠져 있음","어떤 문자든 모두 (빈 부정 집합)","아무것도 일치하지 않음 (빈 집합은 절대 일치하지 않음)","{list}이(가) 아닌 한 문자","{list} 중 한 문자","캡처하지 않는 그룹","그룹의 끝","룩어헤드: 뒤따르는 텍스트가 이것과 일치해야 하며, 소비하지 않음","룩어헤드의 끝","부정 룩어헤드: 뒤따르는 텍스트가 이것과 일치하면 안 됨","부정 룩어헤드의 끝","룩비하인드: 이 지점 앞의 텍스트가 이것과 일치해야 함","룩비하인드의 끝","부정 룩비하인드: 이 지점 앞의 텍스트가 이것과 일치하면 안 됨","부정 룩비하인드의 끝","그룹 {n}, 이름 {name} (캡처)","그룹 {n} {name}의 끝","캡처하지 않는 그룹, 내부에서 {on} 켜짐 및 {off} 꺼짐","캡처하지 않는 그룹, 내부에서 {on} 켜짐","캡처하지 않는 그룹, 내부에서 {off} 꺼짐","캡처하지 않는 그룹, 내부","그룹 {n} (캡처)","그룹 {n}의 끝","0회 이상","1회 이상","0회 또는 1회 (선택)","{n}회 이상","{from}회에서 {to}회 사이","{what}, 가능한 한 적게 (게으른 방식)","{what}, 가능한 한 많이 (탐욕적 방식)","공백 {n}개","텍스트 {text}","{what}, 대문자든 소문자든","앞에 열린 그룹이 없는 )","또는: 이 앞의 것이나 뒤의 것 중 하나","줄의 시작","텍스트의 시작","줄의 끝","텍스트의 끝","모든 문자, 줄바꿈 포함","줄바꿈을 제외한 모든 문자","{what}, {q}","{what}; 그룹 전체가 {q} 반복됨","앞에 반복할 대상이 없는 수량자","다른 수량자 바로 뒤의 수량자: {tok}을(를) 반복하려면 먼저 (?:…)로 감싸세요","{tok}, {what} 뒤의 수량자: 반복할 수 없음","{tok} 뒤의 수량자: 반복할 수 없음","닫히지 않은 그룹: )가 빠져 있음 ({close})","플래그","없음: 일치 하나, 대소문자 구분","인덱스","길이","일치","(비어 있음)","{count} · 그룹 없음","{total}개 중 처음 {shown}개 일치 표시","위치 없음: 엔진이 위치를 알려 주지 않으며 이 페이지의 토크나이저도 문제를 찾지 못합니다.","이 페이지의 토크나이저가 {n}번째 문자를 가리킵니다: {what}.","패턴 {n}자는 이 도구가 처리하는 상한인 {limit}자를 초과합니다.","{n}자는 이 도구가 처리하는 상한인 {limit}자를 초과합니다.","일치 없음","일치 1개: 첫 번째만, g가 꺼짐","{base} · 폭 0 일치 {n}개, ¦로 표시","일치 없음, 텍스트 그대로","{n}개 치환됨","첫 번째 일치 치환됨","정확히 {n}회","정확히 {n}회","{count} × {n}개 그룹","{count} × {n}개 그룹","{n}자","{n}자","일치 {n}개","일치 {n}개","개발",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","边输入边用你的文本测试 JavaScript 正则表达式。","在此设备上运行","可离线使用","模式","全局","忽略大小写","多行","点匹配全部","Unicode","Unicode 集合","粘性","索引","替换为","测试文本","匹配","在上面输入模式","粘贴要测试的文本","已拒绝","分组","替换结果","已复制","复制","解释","逐个记号解读模式。它涵盖常见语法,但不覆盖 ECMAScript 语法的每个细节。","工作原理","模式和勾选的标志会直接传给 \u003ccode>new RegExp(pattern, flags)\u003c/code>,所以引擎就是此浏览器自带的 ECMAScript 正则表达式引擎,模式在这里的表现与在此浏览器的 JavaScript 中完全一致,针对的是本页所持有的文本。textarea 把每个换行都存为换行符(LF),所以以 Windows CRLF 换行粘贴的文本到达时已不含回车符,\u003ccode>\\r\u003c/code> 或 \u003ccode>\\r\\n\u003c/code> 在这里找不到原文件中能找到的内容。只有当此浏览器的引擎接受 \u003ccode>v\u003c/code> 时才会显示 \u003ccode>v\u003c/code> 复选框;引擎不接受 \u003ccode>u\u003c/code> 和 \u003ccode>v\u003c/code> 同时使用,所以勾选其中一个会取消另一个。构造函数抛出错误时,其消息按原样显示;该消息不含位置,所以会向下文所述的词法分析器询问位置,它发现问题时,会指出该字符并用插入符 ^ 标记。开启 \u003ccode>g\u003c/code> 时,匹配来自 \u003ccode>String.prototype.matchAll\u003c/code>;关闭时来自一次 \u003ccode>exec\u003c/code>,因此那时只显示第一个匹配。\u003ccode>lastIndex\u003c/code> 在该 \u003ccode>exec\u003c/code> 之前和替换之前都被设为 0，所以开启 \u003ccode>y\u003c/code> 时第一个匹配必须从索引 0 开始。高亮由文本节点和 \u003ccode>mark\u003c/code> 元素构建,绝不使用标记语言,所以看起来像 HTML 的文本仍然只是文本。像 \u003ccode>\\b\u003c/code> 这样的零宽匹配没有可标记的文本,所以画成 \u003ccode>¦\u003c/code>(一个不在你文本中的标记),计数会说明有多少个。替换使用的是带你的字符串的 \u003ccode>String.prototype.replace\u003c/code>,所以 \u003ccode>$1\u003c/code>、\u003ccode>$&lt;name&gt;\u003c/code>、\u003ccode>$&amp;\u003c/code>、\u003ccode>$`\u003c/code>、\u003ccode>$'\u003c/code> 和 \u003ccode>$$\u003c/code> 的含义与那里完全相同,空的替换内容会删除每个匹配,没有 \u003ccode>g\u003c/code> 时只替换第一个。开启 \u003ccode>d\u003c/code> 时,表格会根据 \u003ccode>match.indices\u003c/code> 增加每个分组的起止位置。","解释部分是写在本文件中的一个小型词法分析器。它把模式从头到尾走一遍,并指出锚点、字符类、转义、分组、环视、反向引用、量词和分支。它逐个记号读取,所以不会验证反向引用是否指向存在的分组,也不会读取 \u003ccode>v\u003c/code> 标志的集合运算或嵌套字符类。它会指出自己能看出的问题:从未闭合的字符类或分组、没有对应开启分组的 \u003ccode>)\u003c/code>、末尾孤立的反斜杠、前面没有可重复内容的量词;当引擎拒绝某个模式时,其中第一个问题就是所显示的位置。引擎的消息仍然优先:它可能涉及词法分析器看不到的问题,而词法分析器什么也没看到时,就不给出位置。表格中的分组编号来自同一次遍历。","灾难性回溯无法从外部检测:像 \u003ccode>(a+)+$\u003c/code> 这样的模式遇到一长串 \u003ccode>a\u003c/code> 时,会像冻结任何程序一样冻结此标签页,这是引擎的问题,不是本工具的问题。为让常见情况保持快速,文本上限为 200,000 个字符,模式上限为 5,000 个字符;高亮和表格显示前 5,000 个匹配,超出时计数会说明。表格显示匹配或分组的前 80 个字符,并标出截断处。不会上传任何内容:此文件没有服务器。","深色和语言按钮会把各自的设置记在此浏览器的本地存储中。你输入或拖入页面的内容不会被保存。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","正则表达式测试器 — 匹配、分组、替换、解释 — MDV","测试 JavaScript 正则表达式:高亮匹配、表格显示分组、替换预览,以及对模式的通俗解读。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","标志","全局:查找所有匹配,而不只是第一个","忽略大小写:字母不分大小写均可匹配","多行:^ 和 $ 也匹配换行处","点匹配全部:. 也匹配换行","Unicode:\\p{…} 可用,BMP 之外的字符按一个字符计","Unicode 集合:具备 u 的功能,并支持 [\\p{L}--[a-z]] 这样的集合运算以及字符类中的字符串","粘性:每个匹配必须恰好从上一个匹配结束处开始,第一个从索引 0 开始","索引:记录每个分组的起止位置","索引 {index} 处的零宽匹配","一个空格","一个制表符","一个换行符","一个回车符","{list} 或 {last}","一个数字,0 到 9","任何不是数字的字符","一个单词字符:字母、数字或 _","任何不是单词字符的字符","一个空白字符:空格、制表符、换行等","任何不是空白的字符","一个换页符","一个垂直制表符","一个 NUL 字符","模式末尾孤立的反斜杠","一个退格符","单词边界:单词字符与其他字符之间的边缘","不是单词边界的位置","字符 {cp}","字符 {cp}(需要 u 标志)","控制字符 Ctrl-{ch}","具有 Unicode 属性 {name} 的字符(需要 u 标志)","不具有 Unicode 属性 {name} 的字符(需要 u 标志)","与分组 {group} 所匹配的相同文本(反向引用)","字面的 {ch}","{from} 到 {to}","从未闭合的字符类:缺少一个 ]","任意字符(空的否定集合)","什么都不匹配(空集合永远不匹配)","一个不是 {list} 的字符","一个是 {list} 的字符","不捕获的分组","分组结束","正向先行断言:后面的文本必须匹配此内容,但不消耗它","先行断言结束","负向先行断言:后面的文本不得匹配此内容","负向先行断言结束","正向后行断言:此位置之前的文本必须匹配此内容","后行断言结束","负向后行断言:此位置之前的文本不得匹配此内容","负向后行断言结束","分组 {n},名为 {name}(捕获)","分组 {n} {name} 结束","不捕获的分组,其内开启 {on} 并关闭 {off}","不捕获的分组,其内开启 {on}","不捕获的分组,其内关闭 {off}","不捕获的分组,在其内部","分组 {n}(捕获)","分组 {n} 结束","零次或多次","一次或多次","零次或一次(可选)","{n} 次或更多","{from} 到 {to} 次","{what},尽可能少(惰性)","{what},尽可能多(贪婪)","{n} 个空格","文本 {text}","{what},不分大小写","前面没有开启分组的 )","或:匹配其前面的内容或其后面的内容之一","行的开头","文本的开头","行的结尾","文本的结尾","任意字符,包括换行","除换行外的任意字符","{what},{q}","{what};整个分组重复 {q}","前面没有可重复内容的量词","紧跟在另一个量词之后的量词:要重复 {tok},请先用 (?:…) 括起来","在 {tok}({what})之后的量词,而它不能被重复","在 {tok} 之后的量词,而它不能被重复","从未闭合的分组:缺少一个 )({close})","标志","无:一个匹配,区分大小写","索引","长度","匹配","(空)","{count} · 无分组","显示 {total} 个匹配中的前 {shown} 个","无位置信息:引擎未给出位置,本页的词法分析器也没有发现该问题。","本页的词法分析器指向第 {n} 个字符:{what}。","模式的 {n} 个字符超过了本工具可处理的 {limit} 个字符上限。","{n} 个字符超过了本工具可处理的 {limit} 个字符上限。","无匹配","1 个匹配:仅第一个,g 已关闭","{base} · 零宽 {n} 个,标记为 ¦","无匹配,文本未改变","已替换 {n} 处","已替换第一个匹配","恰好 {n} 次","恰好 {n} 次","{count} × {n} 个分组","{count} × {n} 个分组","{n} 个字符","{n} 个字符","{n} 个匹配","{n} 个匹配","开发",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2430,14 +2643,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var full = "";
 
   var FLAG_TEXT = {
-    g: "global: find every match, not only the first",
-    i: "ignore case: letters match in either case",
-    m: "multiline: ^ and $ also match at line breaks",
-    s: "dot all: . also matches line breaks",
-    u: "unicode: \\p{…} works and characters outside the BMP count as one",
-    v: "unicode sets: what u does, plus set operations such as [\\p{L}--[a-z]] and strings in a class",
-    y: "sticky: each match must start exactly where the previous one ended, the first at index 0",
-    d: "indices: the start and end of every group is recorded"
+    g: trk("global: find every match, not only the first"),
+    i: trk("ignore case: letters match in either case"),
+    m: trk("multiline: ^ and $ also match at line breaks"),
+    s: trk("dot all: . also matches line breaks"),
+    u: trk("unicode: \\p{…} works and characters outside the BMP count as one"),
+    v: trk("unicode sets: what u does, plus set operations such as [\\p{L}--[a-z]] and strings in a class"),
+    y: trk("sticky: each match must start exactly where the previous one ended, the first at index 0"),
+    d: trk("indices: the start and end of every group is recorded")
   };
 
   // ---- pure: matching --------------------------------------------------
@@ -2471,7 +2684,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         // a zero-width match has no text to mark: draw a marker that is not part of the text
         mk.textContent = "¦";
         mk.className = "mdv-faint";
-        mk.title = "zero-width match at index " + m.index;
+        mk.title = tr("zero-width match at index {index}", { index: m.index });
         mk.setAttribute("aria-label", mk.title);
       }
       frag.appendChild(mk);
@@ -2496,51 +2709,52 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   }
   function quote(s) { return "“" + s + "”"; }
   function describeChar(c) {
-    if (c === " ") return "a space";
-    if (c === "\t") return "a tab";
-    if (c === "\n") return "a line feed";
-    if (c === "\r") return "a carriage return";
+    if (c === " ") return tr("a space");
+    if (c === "\t") return tr("a tab");
+    if (c === "\n") return tr("a line feed");
+    if (c === "\r") return tr("a carriage return");
     return quote(c);
   }
   function listOf(items) {
     if (items.length === 1) return items[0];
-    return items.slice(0, -1).join(", ") + " or " + items[items.length - 1];
+    return tr("{list} or {last}", { list: items.slice(0, -1).join(", "), last: items[items.length - 1] });
   }
 
   var SIMPLE = {
-    d: "a digit, 0 to 9", D: "any character that is not a digit",
-    w: "a word character: a letter, a digit or _", W: "any character that is not a word character",
-    s: "a whitespace character: space, tab, line break and the like", S: "any character that is not whitespace",
-    n: "a line feed", r: "a carriage return", t: "a tab", f: "a form feed", v: "a vertical tab", 0: "a NUL character"
+    d: trk("a digit, 0 to 9"), D: trk("any character that is not a digit"),
+    w: trk("a word character: a letter, a digit or _"), W: trk("any character that is not a word character"),
+    s: trk("a whitespace character: space, tab, line break and the like"), S: trk("any character that is not whitespace"),
+    n: trk("a line feed"), r: trk("a carriage return"), t: trk("a tab"), f: trk("a form feed"), v: trk("a vertical tab"), 0: trk("a NUL character")
   };
   var SINGLE = { n: "\n", r: "\r", t: "\t", f: "\f", v: "\v", 0: "\0" };
 
   function escapeAt(src, i, inClass) {
     var c = src.charAt(i + 1), rest = src.slice(i + 2), m;
-    if (c === "") return { len: 1, tok: "\\", what: "a lone backslash at the end of the pattern" };
+    if (c === "") return { len: 1, tok: "\\", what: tr("a lone backslash at the end of the pattern") };
     var two = "\\" + c;
-    if (c === "b") return inClass ? { len: 2, tok: two, what: "a backspace", single: "\b" }
-      : { len: 2, tok: two, what: "a word boundary: the edge between a word character and anything else" };
-    if (c === "B" && !inClass) return { len: 2, tok: two, what: "a position that is not a word boundary" };
-    if (SIMPLE[c] !== undefined) return { len: 2, tok: two, what: SIMPLE[c], single: SINGLE[c] };
+    if (c === "b") return inClass ? { len: 2, tok: two, what: tr("a backspace"), single: "\b" }
+      : { len: 2, tok: two, what: tr("a word boundary: the edge between a word character and anything else") };
+    if (c === "B" && !inClass) return { len: 2, tok: two, what: tr("a position that is not a word boundary") };
+    if (SIMPLE[c] !== undefined) return { len: 2, tok: two, what: tr(SIMPLE[c]), single: SINGLE[c] };
     if (c === "x" && (m = /^[0-9a-fA-F]{2}/.exec(rest)))
-      return { len: 4, tok: "\\x" + m[0], what: "the character " + hex(parseInt(m[0], 16)), single: String.fromCharCode(parseInt(m[0], 16)) };
+      return { len: 4, tok: "\\x" + m[0], what: tr("the character {cp}", { cp: hex(parseInt(m[0], 16)) }), single: String.fromCharCode(parseInt(m[0], 16)) };
     if (c === "u") {
       if ((m = /^\{([0-9a-fA-F]+)\}/.exec(rest)))
-        return { len: 2 + m[0].length, tok: "\\u" + m[0], what: "the character " + hex(parseInt(m[1], 16)) + " (needs the u flag)", single: String.fromCodePoint(Math.min(parseInt(m[1], 16), 0x10FFFF)) };
+        return { len: 2 + m[0].length, tok: "\\u" + m[0], what: tr("the character {cp} (needs the u flag)", { cp: hex(parseInt(m[1], 16)) }), single: String.fromCodePoint(Math.min(parseInt(m[1], 16), 0x10FFFF)) };
       if ((m = /^[0-9a-fA-F]{4}/.exec(rest)))
-        return { len: 6, tok: "\\u" + m[0], what: "the character " + hex(parseInt(m[0], 16)), single: String.fromCharCode(parseInt(m[0], 16)) };
+        return { len: 6, tok: "\\u" + m[0], what: tr("the character {cp}", { cp: hex(parseInt(m[0], 16)) }), single: String.fromCharCode(parseInt(m[0], 16)) };
     }
     if (c === "c" && /^[a-zA-Z]/.test(rest))
-      return { len: 3, tok: "\\c" + rest.charAt(0), what: "the control character Ctrl-" + rest.charAt(0).toUpperCase() };
+      return { len: 3, tok: "\\c" + rest.charAt(0), what: tr("the control character Ctrl-{ch}", { ch: rest.charAt(0).toUpperCase() }) };
     if ((c === "p" || c === "P") && (m = /^\{([^}]*)\}/.exec(rest)))
       return { len: 2 + m[0].length, tok: two + m[0],
-        what: (c === "p" ? "a character with the Unicode property " : "a character without the Unicode property ") + quote(m[1]) + " (needs the u flag)" };
+        what: c === "p" ? tr("a character with the Unicode property {name} (needs the u flag)", { name: quote(m[1]) })
+          : tr("a character without the Unicode property {name} (needs the u flag)", { name: quote(m[1]) }) };
     if (!inClass && c === "k" && (m = /^<([^>]*)>/.exec(rest)))
-      return { len: 2 + m[0].length, tok: two + m[0], what: "the same text that group " + quote(m[1]) + " matched (backreference)" };
+      return { len: 2 + m[0].length, tok: two + m[0], what: tr("the same text that group {group} matched (backreference)", { group: quote(m[1]) }) };
     if (!inClass && (m = /^[1-9]\d*/.exec(src.slice(i + 1))))
-      return { len: 1 + m[0].length, tok: "\\" + m[0], what: "the same text that group " + m[0] + " matched (backreference)" };
-    return { len: 2, tok: two, what: "a literal " + describeChar(c), single: c };
+      return { len: 1 + m[0].length, tok: "\\" + m[0], what: tr("the same text that group {group} matched (backreference)", { group: m[0] }) };
+    return { len: 2, tok: two, what: tr("a literal {ch}", { ch: describeChar(c) }), single: c };
   }
 
   function classAt(src, i) {
@@ -2556,7 +2770,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         if (src.charAt(k) === "\\") { var e2 = escapeAt(src, k, true); hi = { ch: e2.single, len: e2.len }; }
         else hi = { ch: src.charAt(k), len: 1 };
         if (hi.ch !== undefined) {
-          items.push(describeChar(item.ch) + " to " + describeChar(hi.ch));
+          items.push(tr("{from} to {to}", { from: describeChar(item.ch), to: describeChar(hi.ch) }));
           j = k + hi.len;
           continue;
         }
@@ -2564,42 +2778,45 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       items.push(item.text);
     }
     var what;
-    if (!closed) what = "a character class that is never closed — a ] is missing";
-    else if (!items.length) what = neg ? "any character at all (an empty negated set)" : "nothing at all (an empty set never matches)";
-    else what = "one character that is " + (neg ? "not " : "") + listOf(items);
+    if (!closed) what = tr("a character class that is never closed — a ] is missing");
+    else if (!items.length) what = neg ? tr("any character at all (an empty negated set)") : tr("nothing at all (an empty set never matches)");
+    else what = neg ? tr("one character that is not {list}", { list: listOf(items) }) : tr("one character that is {list}", { list: listOf(items) });
     return { len: j - i, tok: src.slice(i, j), what: what, closed: closed };
   }
 
   function groupAt(src, i, st) {
     var rest = src.slice(i), m;
-    if (rest.indexOf("(?:") === 0) return { len: 3, tok: "(?:", what: "a group that does not capture", close: "end of the group" };
-    if (rest.indexOf("(?=") === 0) return { len: 3, tok: "(?=", what: "lookahead: the text that follows must match this, without consuming it", close: "end of the lookahead", look: "ahead" };
-    if (rest.indexOf("(?!") === 0) return { len: 3, tok: "(?!", what: "negative lookahead: the text that follows must not match this", close: "end of the negative lookahead", look: "ahead" };
-    if (rest.indexOf("(?<=") === 0) return { len: 4, tok: "(?<=", what: "lookbehind: the text before this point must match this", close: "end of the lookbehind", look: "behind" };
-    if (rest.indexOf("(?<!") === 0) return { len: 4, tok: "(?<!", what: "negative lookbehind: the text before this point must not match this", close: "end of the negative lookbehind", look: "behind" };
+    if (rest.indexOf("(?:") === 0) return { len: 3, tok: "(?:", what: tr("a group that does not capture"), close: tr("end of the group") };
+    if (rest.indexOf("(?=") === 0) return { len: 3, tok: "(?=", what: tr("lookahead: the text that follows must match this, without consuming it"), close: tr("end of the lookahead"), look: "ahead" };
+    if (rest.indexOf("(?!") === 0) return { len: 3, tok: "(?!", what: tr("negative lookahead: the text that follows must not match this"), close: tr("end of the negative lookahead"), look: "ahead" };
+    if (rest.indexOf("(?<=") === 0) return { len: 4, tok: "(?<=", what: tr("lookbehind: the text before this point must match this"), close: tr("end of the lookbehind"), look: "behind" };
+    if (rest.indexOf("(?<!") === 0) return { len: 4, tok: "(?<!", what: tr("negative lookbehind: the text before this point must not match this"), close: tr("end of the negative lookbehind"), look: "behind" };
     if ((m = /^\(\?<([^>]*)>/.exec(rest))) {
       st.n++; st.names.push(m[1]);
-      return { len: m[0].length, tok: m[0], what: "group " + st.n + ", named " + quote(m[1]) + " (captures)", close: "end of group " + st.n + " " + quote(m[1]) };
+      return { len: m[0].length, tok: m[0], what: tr("group {n}, named {name} (captures)", { n: st.n, name: quote(m[1]) }), close: tr("end of group {n} {name}", { n: st.n, name: quote(m[1]) }) };
     }
     if ((m = /^\(\?([a-z]*)(?:-([a-z]*))?:/.exec(rest))) {
-      var on = m[1] ? " with " + m[1] + " turned on" : "", off = m[2] ? " with " + m[2] + " turned off" : "";
-      return { len: m[0].length, tok: m[0], what: "a group that does not capture," + on + (on && off ? " and" : "") + off + " inside it", close: "end of the group" };
+      var what = m[1] && m[2] ? tr("a group that does not capture, with {on} turned on and with {off} turned off inside it", { on: m[1], off: m[2] })
+        : m[1] ? tr("a group that does not capture, with {on} turned on inside it", { on: m[1] })
+        : m[2] ? tr("a group that does not capture, with {off} turned off inside it", { off: m[2] })
+        : tr("a group that does not capture, inside it");
+      return { len: m[0].length, tok: m[0], what: what, close: tr("end of the group") };
     }
     st.n++; st.names.push(null);
-    return { len: 1, tok: "(", what: "group " + st.n + " (captures)", close: "end of group " + st.n };
+    return { len: 1, tok: "(", what: tr("group {n} (captures)", { n: st.n }), close: tr("end of group {n}", { n: st.n }) };
   }
 
   function quantAt(src, i) {
     var m = /^(?:(\*)|(\+)|(\?)|\{(\d+)(?:(,)(\d*))?\})(\?)?/.exec(src.slice(i));
     if (!m) return null;
     var what, exact = false;
-    if (m[1]) what = "zero or more times";
-    else if (m[2]) what = "one or more times";
-    else if (m[3]) what = "zero or one time (optional)";
-    else if (m[5] === undefined) { what = "exactly " + m[4] + (m[4] === "1" ? " time" : " times"); exact = true; }
-    else if (m[6] === "") what = m[4] + " or more times";
-    else what = "between " + m[4] + " and " + m[6] + " times";
-    if (!exact) what += m[7] ? ", as few as possible (lazy)" : ", as many as possible (greedy)";
+    if (m[1]) what = tr("zero or more times");
+    else if (m[2]) what = tr("one or more times");
+    else if (m[3]) what = tr("zero or one time (optional)");
+    else if (m[5] === undefined) { what = trn(Number(m[4]), "exactly {n} time", "exactly {n} times"); exact = true; }
+    else if (m[6] === "") what = tr("{n} or more times", { n: m[4] });
+    else what = tr("between {from} and {to} times", { from: m[4], to: m[6] });
+    if (!exact) what = m[7] ? tr("{what}, as few as possible (lazy)", { what: what }) : tr("{what}, as many as possible (greedy)", { what: what });
     return { len: m[0].length, tok: m[0], what: what };
   }
 
@@ -2610,8 +2827,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var rows = [], stack = [], st = { n: 0, names: [] }, i = 0, depth = 0, lit = "", litAt = 0;
     var ci = fl.indexOf("i") >= 0, cm = fl.indexOf("m") >= 0, cs = fl.indexOf("s") >= 0, uv = /[uv]/.test(fl);
     function litRow(s, at) {
-      var what = /^ +$/.test(s) ? (s.length === 1 ? "a space" : s.length + " spaces") : "the text " + quote(visible(s));
-      if (ci && /[a-zA-Z]/.test(s)) what += ", in either case";
+      var what = /^ +$/.test(s) ? (s.length === 1 ? tr("a space") : tr("{n} spaces", { n: s.length })) : tr("the text {text}", { text: quote(visible(s)) });
+      if (ci && /[a-zA-Z]/.test(s)) what = tr("{what}, in either case", { what: what });
       return { tok: visible(s), depth: depth, what: what, at: at };
     }
     function flush() { if (lit) { rows.push(litRow(lit, litAt)); lit = ""; } }
@@ -2635,28 +2852,29 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       if (c === ")") {
         flush();
         if (stack.length) { var open = stack.pop(); depth--; rows.push({ tok: ")", depth: depth, what: open.close, closes: true, at: i, fixed: open.fixed }); }
-        else rows.push({ tok: ")", depth: depth, what: "a ) with no group open before it", at: i, bad: true });
+        else rows.push({ tok: ")", depth: depth, what: tr("a ) with no group open before it"), at: i, bad: true });
         i++; continue;
       }
-      if (c === "|") { push("|", "or: either what comes before this or what comes after it", i).fixed = true; i++; continue; }
-      if (c === "^") { push("^", cm ? "the start of a line" : "the start of the text", i).fixed = true; i++; continue; }
-      if (c === "$") { push("$", cm ? "the end of a line" : "the end of the text", i).fixed = true; i++; continue; }
-      if (c === ".") { push(".", cs ? "any character, including line breaks" : "any character except a line break", i); i++; continue; }
+      if (c === "|") { push("|", tr("or: either what comes before this or what comes after it"), i).fixed = true; i++; continue; }
+      if (c === "^") { push("^", cm ? tr("the start of a line") : tr("the start of the text"), i).fixed = true; i++; continue; }
+      if (c === "$") { push("$", cm ? tr("the end of a line") : tr("the end of the text"), i).fixed = true; i++; continue; }
+      if (c === ".") { push(".", cs ? tr("any character, including line breaks") : tr("any character except a line break"), i); i++; continue; }
       if (c === "*" || c === "+" || c === "?" || c === "{") {
         var q = quantAt(src, i), prev = rows[rows.length - 1];
         if (q) {
           if (lit) {
             if (lit.length > 1) rows.push(litRow(lit.slice(0, -1), litAt));
             var last = lit.slice(-1); lit = "";
-            rows.push({ tok: visible(last) + q.tok, depth: depth, what: describeChar(last) + ", " + q.what, at: i - 1, fixed: true, quantified: true });
+            rows.push({ tok: visible(last) + q.tok, depth: depth, what: tr("{what}, {q}", { what: describeChar(last), q: q.what }), at: i - 1, fixed: true, quantified: true });
           } else if (prev && !prev.fixed) {
             prev.tok += q.tok;
-            prev.what += prev.closes ? "; the whole group repeats " + q.what : ", " + q.what;
+            prev.what = prev.closes ? tr("{what}; the whole group repeats {q}", { what: prev.what, q: q.what }) : tr("{what}, {q}", { what: prev.what, q: q.what });
             prev.fixed = prev.quantified = true;
           } else rows.push({ tok: q.tok, depth: depth, at: i, bad: true,
-            what: !prev ? "a quantifier with nothing before it to repeat"
-              : prev.quantified ? "a quantifier straight after another one — to repeat " + quote(prev.tok) + ", wrap it in (?:…) first"
-              : "a quantifier after " + quote(prev.tok) + (prev.closes ? ", " + prev.what : "") + ", which cannot be repeated" });
+            what: !prev ? tr("a quantifier with nothing before it to repeat")
+              : prev.quantified ? tr("a quantifier straight after another one — to repeat {tok}, wrap it in (?:…) first", { tok: quote(prev.tok) })
+              : prev.closes ? tr("a quantifier after {tok}, {what}, which cannot be repeated", { tok: quote(prev.tok), what: prev.what })
+              : tr("a quantifier after {tok}, which cannot be repeated", { tok: quote(prev.tok) }) });
           i += q.len; continue;
         }
       }
@@ -2664,7 +2882,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       lit += c; i++;
     }
     flush();
-    while (stack.length) { var unclosed = stack.pop(); rows.push({ tok: "", depth: depth, what: "a group is never closed — a ) is missing (" + unclosed.close + ")", at: unclosed.at, bad: true }); depth--; }
+    while (stack.length) { var unclosed = stack.pop(); rows.push({ tok: "", depth: depth, what: tr("a group is never closed — a ) is missing ({close})", { close: unclosed.close }), at: unclosed.at, bad: true }); depth--; }
     return { rows: rows, names: st.names };
   }
 
@@ -2688,10 +2906,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   function renderExplain(ex, fl) {
     explainEl.textContent = "";
-    var on = fl.split("").map(function (f) { return f + " — " + FLAG_TEXT[f]; });
-    explainEl.appendChild(el("dt", null, "flags"));
+    var on = fl.split("").map(function (f) { return f + " — " + tr(FLAG_TEXT[f]); });
+    explainEl.appendChild(el("dt", null, tr("flags")));
     var fd = el("dd");
-    if (!on.length) fd.textContent = "none: one match, case-sensitive";
+    if (!on.length) fd.textContent = tr("none: one match, case-sensitive");
     on.forEach(function (line, i) { if (i) fd.appendChild(document.createElement("br")); fd.appendChild(document.createTextNode(line)); });
     explainEl.appendChild(fd);
     ex.rows.forEach(function (r, i) {
@@ -2708,7 +2926,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var list = found.list, groups = list.length ? list[0].length - 1 : 0;
     var known = names.length === groups;
     thead.textContent = ""; tbody.textContent = "";
-    ["#", "Index", "Length", "Match"].forEach(function (h) { thead.appendChild(el("th", null, h)); });
+    [["#", "#"], ["Index", tr("Index")], ["Length", tr("Length")], ["Match", tr("Match")]].forEach(function (h) { thead.appendChild(el("th", null, h[1])); });
     for (var g = 1; g <= groups; g++) {
       thead.appendChild(el("th", null, "$" + g + (known && names[g - 1] ? " " + names[g - 1] : "")));
     }
@@ -2718,12 +2936,12 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       tr.appendChild(el("td", null, String(i + 1)));
       tr.appendChild(el("td", null, m.index.toLocaleString()));
       tr.appendChild(el("td", null, m[0].length.toLocaleString()));
-      tr.appendChild(el("td", null, m[0] === "" ? "(empty)" : clip(m[0])));
+      tr.appendChild(el("td", null, m[0] === "" ? tr("(empty)") : clip(m[0])));
       for (var g = 1; g <= groups; g++) {
         var td = document.createElement("td");
         if (m[g] === undefined) td.appendChild(el("span", "mdv-faint", "—"));
         else {
-          td.textContent = m[g] === "" ? "(empty)" : clip(m[g]);
+          td.textContent = m[g] === "" ? tr("(empty)") : clip(m[g]);
           if (hasIndices && m.indices && m.indices[g])
             td.appendChild(el("span", "mdv-faint", " @ " + m.indices[g][0] + "–" + m.indices[g][1]));
         }
@@ -2732,39 +2950,40 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       frag.appendChild(tr);
     });
     tbody.appendChild(frag);
-    tblcount.textContent = list.length.toLocaleString() + (groups ? " × " + groups + (groups === 1 ? " group" : " groups") : " · no groups");
+    tblcount.textContent = groups ? trn(groups, "{count} × {n} group", "{count} × {n} groups", { count: list.length.toLocaleString() })
+      : tr("{count} · no groups", { count: list.length.toLocaleString() });
     truncwrap.hidden = found.total <= list.length;
-    trunc.textContent = "showing first " + list.length.toLocaleString() + " of " + found.total.toLocaleString() + " matches";
+    trunc.textContent = tr("showing first {shown} of {total} matches", { shown: list.length.toLocaleString(), total: found.total.toLocaleString() });
   }
 
   // The engine's message names no position; the tokeniser's first problem supplies one, with a caret under it.
   function showWhere(src, ex) {
     var bad = ex.rows.filter(function (r) { return r.bad; })[0];
     errwhere.hidden = false;
-    if (!bad) { errwhere.textContent = "No position: the engine names none, and the tokeniser in this page does not see the problem."; return; }
+    if (!bad) { errwhere.textContent = tr("No position: the engine names none, and the tokeniser in this page does not see the problem."); return; }
     var cps = Array.from(src), at = Array.from(src.slice(0, bad.at)).length;
     var from = Math.max(0, at - 16), to = Math.min(cps.length, at + 17), head = (from ? "…" : "") + cps.slice(from, at).join("");
-    errwhere.textContent = "The tokeniser in this page points at character " + (at + 1) + ": " + bad.what + ".";
+    errwhere.textContent = tr("The tokeniser in this page points at character {n}: {what}.", { n: at + 1, what: bad.what });
     errcaret.textContent = head + cps.slice(at, to).join("") + (to < cps.length ? "…" : "") + "\n" + " ".repeat(Array.from(head).length) + "^";
     errcaret.hidden = false;
   }
 
   function run() {
     var src = pat.value, fl = flags(), s = input.value;
-    size.textContent = s.length.toLocaleString() + " characters";
+    size.textContent = trn(s.length, "{n} character", "{n} characters");
     full = ""; count.textContent = "";
     if (!src) { state("empty"); return; }
     if (src.length > PATTERN_LIMIT) {
-      errmsg.textContent = src.length.toLocaleString() + " characters of pattern is past the " +
-        PATTERN_LIMIT.toLocaleString() + "-character ceiling this tool will attempt.";
+      errmsg.textContent = tr("{n} characters of pattern is past the {limit}-character ceiling this tool will attempt.",
+        { n: src.length.toLocaleString(), limit: PATTERN_LIMIT.toLocaleString() });
       state("error"); return;
     }
     var re;
     try { re = new RegExp(src, fl); }
     catch (e) { errmsg.textContent = String(e.message); state("error"); showWhere(src, explain(src, fl)); return; }
     if (s.length > LIMIT) {
-      errmsg.textContent = s.length.toLocaleString() + " characters is past the " +
-        LIMIT.toLocaleString() + "-character ceiling this tool will attempt.";
+      errmsg.textContent = tr("{n} characters is past the {limit}-character ceiling this tool will attempt.",
+        { n: s.length.toLocaleString(), limit: LIMIT.toLocaleString() });
       state("error"); return;
     }
 
@@ -2776,17 +2995,17 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     var zero = found.list.filter(function (m) { return m[0] === ""; }).length;
     hl.textContent = "";
     hl.appendChild(highlight(s, found.list));
-    if (!found.total) count.textContent = "no match";
-    else if (found.total > found.list.length) count.textContent = "showing first " + found.list.length.toLocaleString() + " of " + found.total.toLocaleString() + " matches";
-    else if (!re.global) count.textContent = "1 match — first only, g is off";
-    else count.textContent = found.total.toLocaleString() + (found.total === 1 ? " match" : " matches");
-    if (zero) count.textContent += " · " + zero.toLocaleString() + " zero-width, marked ¦";
+    if (!found.total) count.textContent = tr("no match");
+    else if (found.total > found.list.length) count.textContent = tr("showing first {shown} of {total} matches", { shown: found.list.length.toLocaleString(), total: found.total.toLocaleString() });
+    else if (!re.global) count.textContent = tr("1 match — first only, g is off");
+    else count.textContent = trn(found.total, "{n} match", "{n} matches");
+    if (zero) count.textContent = tr("{base} · {n} zero-width, marked ¦", { base: count.textContent, n: zero.toLocaleString() });
 
     renderTable(found, ex.names, fl.indexOf("d") >= 0);
     re.lastIndex = 0;
     full = s.replace(re, rep.value);
     repout.textContent = full;
-    repnote.textContent = !found.total ? "no match, text unchanged" : re.global ? found.total.toLocaleString() + " replaced" : "first match replaced";
+    repnote.textContent = !found.total ? tr("no match, text unchanged") : re.global ? tr("{n} replaced", { n: found.total.toLocaleString() }) : tr("first match replaced");
     state("result");
   }
 
@@ -2809,6 +3028,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     });
   });
   pat.focus({ preventScroll: true });
+  onLang(run);
   run();
 })();
 </script>

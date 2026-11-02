@@ -1505,11 +1505,15 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
    Pressed only ever shows on a dark page, so it must NOT invert: the inverse of
    notte is a carta slab that glares. It sinks instead, drawn in the body text
    colour. Hover inverts only while unpressed, on the light page. */
-.mdv-mode {
+.mdv-bar {
   position: fixed;
   top: var(--space-4);
   left: calc(var(--space-4) + var(--tap-min) + var(--space-2));
   z-index: 60;
+  display: flex;
+  gap: var(--space-2);
+}
+.mdv-mode {
   height: var(--tap-min);
   padding: 0 var(--space-3);
   appearance: none;
@@ -1532,7 +1536,75 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 .mdv-burger[aria-expanded="true"] > span { border-color: var(--text-on-ink); }
 /* No data-mode means the head script never ran: scripts are off, so neither button would do anything.
    The page still follows the system in CSS (tokens/dark.css), and the footer links to all tools. */
-:root:not([data-mode]) :is(.mdv-burger, .mdv-mode) { display: none; }
+:root:not([data-mode]) :is(.mdv-burger, .mdv-bar) { display: none; }
+/* the language button and the sheet it opens. The flags are the one thing here in colours from
+   outside the tavolozza: a flag has to be recognised. On a phone the button is the flag alone, because
+   the head's badges need the rest of the row. */
+html[data-t-wait] body { visibility: hidden; }
+.mdv-flags { position: absolute; }
+.mdv-flag { display: block; width: 24px; height: 16px; flex: none; outline: 1px solid var(--border-strong); }
+.mdv-lang {
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  appearance: none;
+  background: var(--surface-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-size: var(--size-micro);
+  letter-spacing: var(--tracking-tag);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+.mdv-lang:hover { background: var(--surface-selected); border-color: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-lang:active { transform: translateY(1px); }
+@media (max-width: 640px) {
+  .mdv-lang { padding: 0; }
+  .mdv-lang-name { display: none; }
+}
+.mdv-langs {
+  width: min(560px, calc(100vw - var(--space-5)));
+  max-height: calc(100dvh - var(--space-5));
+  padding: 0;
+  overflow: auto;
+  background: var(--surface-page);
+  color: var(--text-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+.mdv-langs::backdrop { background: rgba(36, 31, 27, 0.62); }
+.mdv-langs button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-hair);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mdv-langs button:last-child { border-bottom: 0; }
+.mdv-langs .mdv-flag { width: 42px; height: 28px; }
+.mdv-langs-text { display: flex; flex-direction: column; min-width: 0; }
+.mdv-langs-name { font: 600 19px/1.15 var(--font-display); }
+.mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
+.mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
+.mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+.mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
+.mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
@@ -1975,7 +2047,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   .mdv-digest-val { padding-left: 0; }
 }
 @media print {
-  .mdv-skip, .mdv-burger, .mdv-mode, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
+  .mdv-skip, .mdv-burger, .mdv-bar, .mdv-langs, .mdv-drawer, .mdv-scrim, .mdv-mini, .mdv-foot-related, .mdv-foot-proof { display: none; }
   .mdv-head { padding-top: 0; }
   .mdv-head > .mdv-row:last-child { position: static; }
   .mdv-console { border-color: var(--border-strong); }
@@ -2006,116 +2078,156 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   if (mode !== "dark" && mode !== "light") mode = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   document.documentElement.setAttribute("data-mode", mode);
 })();
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet. It never
+   holds anything typed or dropped into the page. Until a language is picked the page follows the browser's.
+   ?lang=xx in the address wins, so a link can name a language; it is not stored. The page stays hidden for
+   the moment it takes to translate it, or English would flash first. */
+(function () {
+  var known = ["en","es","fr","de","it","pt-BR","ja","ko","zh-CN"], root = document.documentElement;
+  function match(tag) {
+    tag = String(tag || "").toLowerCase();
+    var base = tag.split("-")[0];
+    for (var i = 0; i < known.length; i++) if (known[i].toLowerCase() === tag) return known[i];
+    if (base === "zh") return "zh-CN";
+    if (base === "pt") return "pt-BR";
+    return known.indexOf(base) >= 0 ? base : null;
+  }
+  var lang = null, want = navigator.languages || [navigator.language];
+  try { lang = match(new URLSearchParams(location.search).get("lang")); } catch (e) { /* no URLSearchParams */ }
+  if (!lang) try { lang = match(localStorage.getItem("mdv-lang")); } catch (e) { /* storage blocked */ }
+  for (var i = 0; !lang && i < want.length; i++) lang = match(want[i]);
+  lang = lang || "en";
+  root.setAttribute("lang", lang);
+  if (lang !== "en") {
+    root.setAttribute("data-t-wait", "");
+    document.addEventListener("DOMContentLoaded", function () { root.removeAttribute("data-t-wait"); });
+  }
+})();
 </script>
 </head>
 <body>
-<a class="mdv-skip" href="#main">Skip to the tool</a>
-<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu"><span></span><span></span><span></span></button>
-<button class="mdv-mode" type="button" aria-pressed="false">Dark</button>
-<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" hidden>
-  <p class="mdv-drawer-title">All tools</p>
-  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" autocomplete="off" spellcheck="false" enterkeyhint="go">
-  <p class="mdv-drawer-none" hidden>No tool matches that.</p>
+<svg class="mdv-flags" width="0" height="0" aria-hidden="true"><defs><symbol id="f-it" viewBox="0 0 30 20"><rect width="10" height="20" fill="#008c45"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#cd212a"/></symbol><symbol id="f-fr" viewBox="0 0 30 20"><rect width="10" height="20" fill="#002395"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ed2939"/></symbol><symbol id="f-de" viewBox="0 0 30 20"><rect width="30" height="7" fill="#111"/><rect y="6.67" width="30" height="7" fill="#d00"/><rect y="13.33" width="30" height="6.67" fill="#ffce00"/></symbol><symbol id="f-es" viewBox="0 0 30 20"><rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/></symbol><symbol id="f-gb" viewBox="0 0 30 20"><rect width="30" height="20" fill="#012169"/><path d="M0 0L30 20M30 0L0 20" stroke="#fff" stroke-width="4"/><path d="M0 0L30 20M30 0L0 20" stroke="#c8102e" stroke-width="1.6"/><path d="M15 0V20M0 10H30" stroke="#fff" stroke-width="6.5"/><path d="M15 0V20M0 10H30" stroke="#c8102e" stroke-width="3.6"/></symbol><symbol id="f-br" viewBox="0 0 30 20"><rect width="30" height="20" fill="#009c3b"/><path d="M15 2.2L27.6 10L15 17.8L2.4 10Z" fill="#ffdf00"/><circle cx="15" cy="10" r="4.6" fill="#002776"/></symbol><symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol><symbol id="f-kr" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fff"/><circle cx="15" cy="10" r="5" fill="#0047a0"/><path d="M10 10a5 5 0 0 1 10 0a2.5 2.5 0 0 1-5 0a2.5 2.5 0 0 0-5 0Z" fill="#cd2e3a"/><g stroke="#111" stroke-width="1.1"><path d="M3.5 6.6L7.2 3.1M4.9 8L8.6 4.5M26.5 6.6L22.8 3.1M25.1 8L21.4 4.5M3.5 13.4L7.2 16.9M4.9 12L8.6 15.5M26.5 13.4L22.8 16.9M25.1 12L21.4 15.5"/></g></symbol><symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path d="M7 3.2l1.05 3.2h3.4l-2.75 2 1.05 3.2L7 9.6l-2.75 2 1.05-3.2-2.75-2h3.4Z" fill="#ffde00"/><g fill="#ffde00"><circle cx="13.2" cy="2.9" r=".95"/><circle cx="15.2" cy="5.4" r=".95"/><circle cx="15.2" cy="8.6" r=".95"/><circle cx="13.2" cy="11" r=".95"/></g></symbol></defs></svg>
+<a class="mdv-skip" href="#main" data-t="0">Skip to the tool</a>
+<button class="mdv-burger" type="button" aria-expanded="false" aria-controls="mdv-drawer" aria-label="Open the tool menu" data-t-attrs="aria-label"><span></span><span></span><span></span></button>
+<div class="mdv-bar">
+  <button class="mdv-mode" type="button" aria-pressed="false" data-t="1">Dark</button>
+  <button class="mdv-lang" type="button" aria-haspopup="dialog" aria-label="Language"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-lang-name">English</span></button>
+</div>
+<dialog class="mdv-langs" aria-label="Language">
+  <button type="button" data-lang="en" lang="en"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-gb"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">English</span><span class="mdv-langs-line">Knowledge has no limits.</span></span><span class="mdv-langs-code">en</span></button>
+  <button type="button" data-lang="es" lang="es"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-es"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Español</span><span class="mdv-langs-line">El conocimiento no tiene límites.</span></span><span class="mdv-langs-code">es</span></button>
+  <button type="button" data-lang="fr" lang="fr"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-fr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Français</span><span class="mdv-langs-line">La connaissance n’a pas de limites.</span></span><span class="mdv-langs-code">fr</span></button>
+  <button type="button" data-lang="de" lang="de"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-de"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Deutsch</span><span class="mdv-langs-line">Wissen kennt keine Grenzen.</span></span><span class="mdv-langs-code">de</span></button>
+  <button type="button" data-lang="it" lang="it"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-it"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Italiano</span><span class="mdv-langs-line">La conoscenza non ha limiti.</span></span><span class="mdv-langs-code">it</span></button>
+  <button type="button" data-lang="pt-BR" lang="pt-BR"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-br"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">Português (Brasil)</span><span class="mdv-langs-line">O conhecimento não tem limites.</span></span><span class="mdv-langs-code">pt</span></button>
+  <button type="button" data-lang="ja" lang="ja"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-jp"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">日本語</span><span class="mdv-langs-line">知識に限界はない。</span></span><span class="mdv-langs-code">ja</span></button>
+  <button type="button" data-lang="ko" lang="ko"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-kr"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">한국어</span><span class="mdv-langs-line">지식에는 한계가 없다.</span></span><span class="mdv-langs-code">ko</span></button>
+  <button type="button" data-lang="zh-CN" lang="zh-CN"><svg class="mdv-flag" viewBox="0 0 30 20" aria-hidden="true" focusable="false"><use href="#f-cn"></use></svg><span class="mdv-langs-text"><span class="mdv-langs-name">简体中文</span><span class="mdv-langs-line">知识没有界限。</span></span><span class="mdv-langs-code">zh</span></button>
+</dialog>
+<nav class="mdv-drawer" id="mdv-drawer" aria-label="All tools" data-t-attrs="aria-label" hidden>
+  <p class="mdv-drawer-title" data-t="2">All tools</p>
+  <input class="mdv-drawer-filter" id="mdv-drawer-q" type="search" placeholder="Type to find a tool" aria-label="Find a tool" data-t-attrs="placeholder aria-label" autocomplete="off" spellcheck="false" enterkeyhint="go">
+  <p class="mdv-drawer-none" data-t="3" hidden>No tool matches that.</p>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Text<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text">Case converter</a>
-    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text">Remove duplicate lines</a>
-    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text">Sort lines</a>
-    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text">Lorem ipsum</a>
-    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text">Find and replace</a>
-    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text">Slugify</a>
-    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text">Text diff</a>
-    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text">Unicode inspector</a>
-    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text">Remove whitespace</a>
-    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text">Word counter</a>
+    <span class="mdv-tag"><span data-t="4">Text</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./case-converter.html" data-q="case converter case converter case converter convert between upper lower title sentence camel snake kebab pascal constant text" data-t="5">Case converter</a>
+    <a class="mdv-drawer-link" href="./remove-duplicate-lines.html" data-q="remove duplicate lines duplicate line remover remove duplicate lines strip duplicate lines with case and whitespace options keep order or sort text" data-t="6">Remove duplicate lines</a>
+    <a class="mdv-drawer-link" href="./sort-lines.html" data-q="sort lines line sorter sort lines sort lines alphabetically numerically by length natural or reversed text" data-t="7">Sort lines</a>
+    <a class="mdv-drawer-link" href="./lorem-ipsum.html" data-q="lorem ipsum lorem ipsum generator lorem ipsum generate paragraphs sentences words or lists of placeholder text text" data-t="8">Lorem ipsum</a>
+    <a class="mdv-drawer-link" href="./find-and-replace.html" data-q="find and replace regex find replace find and replace bulk find replace with regex capture groups and live preview text" data-t="9">Find and replace</a>
+    <a class="mdv-drawer-link" href="./slugify.html" data-q="slugify slugify url slug generator slugify turn any text into clean url slugs with transliteration options text" data-t="10">Slugify</a>
+    <a class="mdv-drawer-link" href="./text-diff.html" data-q="text diff text diff checker text diff side by side or inline diff of two texts with word level highlighting text" data-t="11">Text diff</a>
+    <a class="mdv-drawer-link" href="./unicode-inspector.html" data-q="unicode inspector unicode inspector unicode inspector show code points names blocks and normalization forms per character text" data-t="12">Unicode inspector</a>
+    <a class="mdv-drawer-link" href="./remove-whitespace.html" data-q="remove whitespace whitespace remover remove whitespace strip extra spaces tabs blank lines and trailing whitespace text" data-t="13">Remove whitespace</a>
+    <a class="mdv-drawer-link" href="./word-counter.html" data-q="word counter word character counter word counter live counts of words characters sentences paragraphs reading time text" data-t="14">Word counter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Encoding and crypto<span class="mdv-drawer-count">14</span></span>
-    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto">Barcode generator</a>
-    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto">Base64 Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto">Image to data URI</a>
-    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto">Checksum</a>
-    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto">Hash generator</a>
-    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto">HTML entities</a>
-    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto">JWT decoder</a>
-    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto">Password generator</a>
-    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto">QR code generator</a>
-    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto">SSH key generator</a>
-    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto">TOTP code generator</a>
-    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto">URL Encoder &amp; Decoder</a>
-    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto">UUID generator</a>
-    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto">Wi-Fi QR code</a>
+    <span class="mdv-tag"><span data-t="15">Encoding and crypto</span><span class="mdv-drawer-count">14</span></span>
+    <a class="mdv-drawer-link" href="./barcode-generator.html" data-q="barcode generator barcode generator barcode generator ean 13 upc a ean 8 code 128 and code 39 with svg and png export encoding and crypto" data-t="16">Barcode generator</a>
+    <a class="mdv-drawer-link" href="./base64-encode-decode.html" data-q="base64 encoder decoder base64 encoder decoder base64 encode decode encode and decode base64 text with url safe variant encoding and crypto" data-t="17">Base64 Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./base64-image.html" data-q="image to data uri base64 image encoder base64 image turn images into data uris ready for css or html embedding encoding and crypto" data-t="18">Image to data URI</a>
+    <a class="mdv-drawer-link" href="./file-checksum.html" data-q="checksum file checksum verifier file checksum hash large files in chunks and compare against an expected checksum encoding and crypto" data-t="19">Checksum</a>
+    <a class="mdv-drawer-link" href="./hash-generator.html" data-q="hash generator hash generator hash generator md5 sha 1 sha 256 sha 384 sha 512 hashes of text encoding and crypto" data-t="20">Hash generator</a>
+    <a class="mdv-drawer-link" href="./html-entities.html" data-q="html entities html entity encoder html entities escape and unescape html entities including named and numeric encoding and crypto" data-t="21">HTML entities</a>
+    <a class="mdv-drawer-link" href="./jwt-decoder.html" data-q="jwt decoder jwt decoder jwt decoder decode header payload and claims with expiry highlighting encoding and crypto" data-t="22">JWT decoder</a>
+    <a class="mdv-drawer-link" href="./password-generator.html" data-q="password generator password generator password generator cryptographically random passwords with rules and exclusions encoding and crypto" data-t="23">Password generator</a>
+    <a class="mdv-drawer-link" href="./qr-code-generator.html" data-q="qr code generator qr code generator qr code generator styled qr codes with colors logo error correction svg and png export encoding and crypto" data-t="24">QR code generator</a>
+    <a class="mdv-drawer-link" href="./ssh-key-generator.html" data-q="ssh key generator ssh key generator ssh key generator generate ed25519 ecdsa and rsa key pairs the authorized keys line and the private key as putty ppk openssh or pem encoding and crypto" data-t="25">SSH key generator</a>
+    <a class="mdv-drawer-link" href="./totp-generator.html" data-q="totp code generator totp code generator totp generator generate time based one time passwords from a secret or an otpauth link encoding and crypto" data-t="26">TOTP code generator</a>
+    <a class="mdv-drawer-link" href="./url-encode-decode.html" data-q="url encoder decoder url encoder decoder url encode decode percent encode and decode urls and query components encoding and crypto" data-t="27">URL Encoder &amp; Decoder</a>
+    <a class="mdv-drawer-link" href="./uuid-generator.html" data-q="uuid generator uuid generator uuid generator bulk generate uuid v1 v4 and v7 with formatting options encoding and crypto" data-t="28">UUID generator</a>
+    <a class="mdv-drawer-link" href="./wifi-qr-code.html" data-q="wi fi qr code wifi qr code generator wifi qr code generate a scannable qr that joins a wifi network encoding and crypto" data-t="29">Wi-Fi QR code</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Converters<span class="mdv-drawer-count">3</span></span>
-    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters">JSON and CSV converter</a>
-    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters">JSON and YAML converter</a>
-    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters">Base converter</a>
+    <span class="mdv-tag"><span data-t="30">Converters</span><span class="mdv-drawer-count">3</span></span>
+    <a class="mdv-drawer-link" href="./json-to-csv.html" data-q="json and csv converter json to csv json to csv flatten nested json arrays into csv with column selection converters" data-t="31">JSON and CSV converter</a>
+    <a class="mdv-drawer-link" href="./json-to-yaml.html" data-q="json and yaml converter json to yaml json to yaml convert json to yaml with indent and anchor options converters" data-t="32">JSON and YAML converter</a>
+    <a class="mdv-drawer-link" href="./base-converter.html" data-q="base converter number base converter base converter convert between binary octal decimal hex and custom bases converters" data-t="33">Base converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Developer<span class="mdv-drawer-count">7</span></span>
-    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer">Chmod calculator</a>
-    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer">Cron expression</a>
-    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer">Subnet calculator</a>
-    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer">JSON diff</a>
-    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer">JSON formatter</a>
-    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer">Regex tester</a>
-    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer">XML formatter</a>
+    <span class="mdv-tag"><span data-t="34">Developer</span><span class="mdv-drawer-count">7</span></span>
+    <a class="mdv-drawer-link" href="./chmod-calculator.html" data-q="chmod calculator chmod calculator chmod calculator toggle permission bits and get octal and symbolic notation developer" data-t="35">Chmod calculator</a>
+    <a class="mdv-drawer-link" href="./cron-generator.html" data-q="cron expression cron expression builder cron generator read a cron line in plain english build one from a preset and see the next runs developer" data-t="36">Cron expression</a>
+    <a class="mdv-drawer-link" href="./subnet-calculator.html" data-q="subnet calculator ipv4 subnet calculator subnet calculator cidr to range mask broadcast and usable host count developer" data-t="37">Subnet calculator</a>
+    <a class="mdv-drawer-link" href="./json-diff.html" data-q="json diff json diff json diff structural diff of two json documents with added and removed keys developer" data-t="38">JSON diff</a>
+    <a class="mdv-drawer-link" href="./json-formatter.html" data-q="json formatter json formatter validator json formatter pretty print minify and validate json with error positions developer" data-t="39">JSON formatter</a>
+    <a class="mdv-drawer-link" href="./regex-tester.html" data-q="regex tester regex tester explainer regex tester live match highlighting capture groups flags and plain english explanation developer" data-t="40">Regex tester</a>
+    <a class="mdv-drawer-link" href="./xml-formatter.html" data-q="xml formatter xml formatter validator xml formatter pretty print xml and check well formedness developer" data-t="41">XML formatter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">CSS and design<span class="mdv-drawer-count">2</span></span>
-    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design">Clamp calculator</a>
-    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design">PX to REM</a>
+    <span class="mdv-tag"><span data-t="42">CSS and design</span><span class="mdv-drawer-count">2</span></span>
+    <a class="mdv-drawer-link" href="./clamp-calculator.html" data-q="clamp calculator fluid typography calculator clamp calculator generate clamp values from min and max viewport and font sizes css and design" data-t="43">Clamp calculator</a>
+    <a class="mdv-drawer-link" href="./px-to-rem.html" data-q="px to rem px to rem converter px to rem convert px rem em and pt with adjustable root size css and design" data-t="44">PX to REM</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Color<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color">Contrast checker</a>
+    <span class="mdv-tag"><span data-t="45">Color</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./contrast-checker.html" data-q="contrast checker wcag contrast checker contrast checker check aa and aaa ratios for text and ui with the nearest passing shade color" data-t="46">Contrast checker</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Images and media<span class="mdv-drawer-count">10</span></span>
-    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media">Circle crop</a>
-    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media">EXIF viewer and remover</a>
-    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media">Favicon maker</a>
-    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media">Image compressor</a>
-    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media">Image cropper</a>
-    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media">Image converter</a>
-    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media">Image resize</a>
-    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media">Redact an image</a>
-    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media">Social media cropper</a>
-    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media">Watermark</a>
+    <span class="mdv-tag"><span data-t="47">Images and media</span><span class="mdv-drawer-count">10</span></span>
+    <a class="mdv-drawer-link" href="./circle-crop.html" data-q="circle crop circle crop tool circle crop crop to a circle or rounded square for avatars with transparency images and media" data-t="48">Circle crop</a>
+    <a class="mdv-drawer-link" href="./exif-remover.html" data-q="exif viewer and remover exif stripper exif remover read the camera timestamp and gps in a photo then strip them without re encoding images and media" data-t="49">EXIF viewer and remover</a>
+    <a class="mdv-drawer-link" href="./favicon-from-image.html" data-q="favicon maker favicon from image favicon from image a real multi size ico plus the png sizes from one picture images and media" data-t="50">Favicon maker</a>
+    <a class="mdv-drawer-link" href="./image-compressor.html" data-q="image compressor image compressor image compressor reduce file size with quality slider and before after comparison images and media" data-t="51">Image compressor</a>
+    <a class="mdv-drawer-link" href="./image-cropper.html" data-q="image cropper image cropper image cropper freeform and preset ratio cropping by drag or by number images and media" data-t="52">Image cropper</a>
+    <a class="mdv-drawer-link" href="./image-converter.html" data-q="image converter image format converter image converter convert a picture to png jpeg or webp reading more formats than it writes images and media" data-t="53">Image converter</a>
+    <a class="mdv-drawer-link" href="./image-resizer.html" data-q="image resize image resizer image resizer resize by pixels or percent with aspect lock and batch mode images and media" data-t="54">Image resize</a>
+    <a class="mdv-drawer-link" href="./pixelate-image.html" data-q="redact an image pixelate censor tool pixelate image black out pixelate or blur parts of an image before sharing it images and media" data-t="55">Redact an image</a>
+    <a class="mdv-drawer-link" href="./social-cropper.html" data-q="social media cropper social media cropper social cropper crop to the exact pixel size a post story header or link preview wants images and media" data-t="56">Social media cropper</a>
+    <a class="mdv-drawer-link" href="./watermark.html" data-q="watermark watermark tool watermark text or logo watermarks in a corner or tiled with opacity and angle images and media" data-t="57">Watermark</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">PDF and documents<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents">Document scanner</a>
+    <span class="mdv-tag"><span data-t="58">PDF and documents</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./document-scanner.html" data-q="document scanner document scanner document scanner straighten a photo of a page and clean it to white paper as png jpeg or pdf pdf and documents" data-t="59">Document scanner</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Finance<span class="mdv-drawer-count">1</span></span>
-    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance">IBAN validator</a>
+    <span class="mdv-tag"><span data-t="60">Finance</span><span class="mdv-drawer-count">1</span></span>
+    <a class="mdv-drawer-link" href="./iban-validator.html" data-q="iban validator iban validator iban validator check an iban s checksum and country length and read its parts finance" data-t="61">IBAN validator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Numbers and units<span class="mdv-drawer-count">4</span></span>
-    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units">Aspect ratio</a>
-    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units">Unit converter</a>
-    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units">Percentage calculator</a>
-    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units">Random number generator</a>
+    <span class="mdv-tag"><span data-t="62">Numbers and units</span><span class="mdv-drawer-count">4</span></span>
+    <a class="mdv-drawer-link" href="./aspect-ratio-calculator.html" data-q="aspect ratio aspect ratio calculator aspect ratio calculator solve missing dimensions and list common ratios numbers and units" data-t="63">Aspect ratio</a>
+    <a class="mdv-drawer-link" href="./unit-converter.html" data-q="unit converter master unit converter unit converter length mass area volume speed pressure energy in one tool numbers and units" data-t="64">Unit converter</a>
+    <a class="mdv-drawer-link" href="./percentage-calculator.html" data-q="percentage calculator percentage calculator suite percentage calculator percent of percent change increase decrease in one page numbers and units" data-t="65">Percentage calculator</a>
+    <a class="mdv-drawer-link" href="./random-number-generator.html" data-q="random number generator random number generator random number generator ranges no repeat draws and seeds numbers and units" data-t="66">Random number generator</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Time and date<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date">Age calculator</a>
-    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date">Date difference</a>
-    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date">Discord timestamp</a>
-    <a class="mdv-drawer-link is-here" href="./timezone-converter.html" aria-current="page" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date">Time zone converter</a>
-    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date">Timestamp converter</a>
+    <span class="mdv-tag"><span data-t="67">Time and date</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./age-calculator.html" data-q="age calculator age calculator age calculator exact age in years months days and next birthday countdown time and date" data-t="68">Age calculator</a>
+    <a class="mdv-drawer-link" href="./date-difference.html" data-q="date difference date difference calculator date difference days weeks months between dates with inclusive option time and date" data-t="69">Date difference</a>
+    <a class="mdv-drawer-link" href="./discord-timestamp.html" data-q="discord timestamp discord timestamp generator discord timestamp every discord t timestamp code for a date and time and any code read back time and date" data-t="70">Discord timestamp</a>
+    <a class="mdv-drawer-link is-here" href="./timezone-converter.html" aria-current="page" data-q="time zone converter timezone converter timezone converter compare a time across multiple zones with dst handling time and date" data-t="71">Time zone converter</a>
+    <a class="mdv-drawer-link" href="./timestamp-converter.html" data-q="timestamp converter unix timestamp converter timestamp converter epoch to human date in any timezone with live current value time and date" data-t="72">Timestamp converter</a>
   </div>
   <div class="mdv-drawer-group">
-    <span class="mdv-tag">Productivity<span class="mdv-drawer-count">5</span></span>
-    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity">Flip a coin</a>
-    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity">Dice roller</a>
-    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity">Random picker</a>
-    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity">Team generator</a>
-    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity">Spin the wheel</a>
+    <span class="mdv-tag"><span data-t="73">Productivity</span><span class="mdv-drawer-count">5</span></span>
+    <a class="mdv-drawer-link" href="./coin-flip.html" data-q="flip a coin coin flipper coin flip one flip or a thousand with a running tally the longest streak and its exact odds productivity" data-t="74">Flip a coin</a>
+    <a class="mdv-drawer-link" href="./dice-roller.html" data-q="dice roller dice roller dice roller any dice notation with modifiers and roll history productivity" data-t="75">Dice roller</a>
+    <a class="mdv-drawer-link" href="./random-picker.html" data-q="random picker random picker random picker pick names from a list with or without replacement with optional tickets productivity" data-t="76">Random picker</a>
+    <a class="mdv-drawer-link" href="./team-generator.html" data-q="team generator team shuffler team generator split a name list into balanced random groups productivity" data-t="77">Team generator</a>
+    <a class="mdv-drawer-link" href="./spinner-wheel.html" data-q="spin the wheel wheel of names spinner wheel a fair wheel of names equal slices the winner drawn before it spins productivity" data-t="78">Spin the wheel</a>
   </div>
-  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html">All 63 tools</a>
+  <a class="mdv-drawer-link mdv-drawer-all" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
 </nav>
 <div class="mdv-scrim" hidden></div>
 <script>
@@ -2241,40 +2353,40 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   <header class="mdv-head">
     <div class="mdv-head-top">
-      <h1 class="mdv-head-name">Time zone converter</h1>
+      <h1 class="mdv-head-name" data-t="71">Time zone converter</h1>
       <a class="mdv-wordmark" href="./index.html">MDV Tools</a>
     </div>
-    <p class="mdv-head-line">Type a time the way people write it — <code>10am PT</code>, <code>3:30 pm EST</code>,
+    <p class="mdv-head-line" data-t="79">Type a time the way people write it — <code>10am PT</code>, <code>3:30 pm EST</code>,
       <code>15:00 CET</code> — and read it in every other zone. Summer time is counted for the date you pick.</p>
     <div class="mdv-row">
-      <span class="mdv-badge is-ok">Runs on this device</span>
-      <span class="mdv-badge no-dot">Works offline</span>
+      <span class="mdv-badge is-ok" data-t="80">Runs on this device</span>
+      <span class="mdv-badge no-dot" data-t="81">Works offline</span>
     </div>
   </header>
 
   <section class="mdv-panel">
     <div class="mdv-cols">
       <div>
-        <label class="mdv-label" for="in">Time</label>
+        <label class="mdv-label" for="in" data-t="82">Time</label>
         <div class="mdv-row" style="gap:var(--space-2)">
           <input class="mdv-input mdv-mono" id="in" type="text" spellcheck="false" autocomplete="off"
             placeholder="10am PT" style="flex:1" aria-describedby="in-hint">
-          <button class="mdv-btn" id="now" type="button">Now</button>
+          <button class="mdv-btn" id="now" type="button" data-t="83">Now</button>
         </div>
-        <p class="mdv-hint" id="in-hint">10am, 10:30 pm, 22:30, noon — with or without a zone after it: PT, CET,
+        <p class="mdv-hint" id="in-hint" data-t="84">10am, 10:30 pm, 22:30, noon — with or without a zone after it: PT, CET,
           UTC+2, Europe/Rome.</p>
       </div>
       <div>
-        <label class="mdv-label" for="date">Date in the From zone</label>
+        <label class="mdv-label" for="date" data-t="85">Date in the From zone</label>
         <input class="mdv-input mdv-mono" id="date" type="date">
       </div>
     </div>
 
     <div style="margin-top:var(--space-4)">
-      <span class="mdv-label">From</span>
-      <div class="mdv-seg" role="group" aria-label="From zone" id="from"></div>
+      <span class="mdv-label" data-t="86">From</span>
+      <div class="mdv-seg" role="group" aria-label="From zone" data-t-attrs="aria-label" id="from"></div>
       <div class="mdv-row" style="gap:var(--space-2);margin-top:var(--space-3)">
-        <label class="mdv-label" style="margin:0" for="other">Or any zone</label>
+        <label class="mdv-label" style="margin:0" for="other" data-t="87">Or any zone</label>
         <input class="mdv-input mdv-mono" id="other" type="search" list="zonenames" spellcheck="false"
           autocomplete="off" placeholder="Asia/Dubai" style="flex:1">
         <datalist id="zonenames"></datalist>
@@ -2284,9 +2396,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <section class="mdv-stack is-tight">
-    <span class="mdv-label" style="margin:0">Result</span>
+    <span class="mdv-label" style="margin:0" data-t="88">Result</span>
 
-    <div class="mdv-empty" id="empty"><span>type a time above, like 10am PT</span></div>
+    <div class="mdv-empty" id="empty"><span data-t="89">type a time above, like 10am PT</span></div>
 
     <div class="mdv-notice is-bad" id="err" hidden>
       <span class="mdv-notice-title" id="errtitle">Could not read that time</span>
@@ -2294,7 +2406,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     </div>
 
     <div class="mdv-notice is-warn" id="warn" hidden>
-      <span class="mdv-notice-title">Read with care</span>
+      <span class="mdv-notice-title" data-t="90">Read with care</span>
       <span id="warnmsg"></span>
     </div>
 
@@ -2305,9 +2417,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   </section>
 
   <details class="mdv-method" data-method open>
-    <summary>How this works</summary>
+    <summary data-t="91">How this works</summary>
     <div class="mdv-method-body">
-      <p>The time box reads an hour with optional minutes and seconds — <code>10</code>, <code>10:30</code>,
+      <p data-t="92">The time box reads an hour with optional minutes and seconds — <code>10</code>, <code>10:30</code>,
         <code>10.30</code>, <code>1030</code>, <code>22:30:15</code> — or <code>noon</code> and
         <code>midnight</code>, with an optional <code>am</code> or <code>pm</code>. With am or pm the hour
         is 1 to 12 and <code>12am</code> is midnight; without, it is 0 to 23, and <code>24:00</code> is
@@ -2317,13 +2429,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <code>GMT-5</code> or <code>+05:30</code>, or a zone name such as <code>Europe/Rome</code>. A
         zone typed there wins over the From buttons, and the page says so. Input over 100 characters is
         refused; a time needs far less.</p>
-      <p>Abbreviations are loose in the wild, so each one stands for a place, not an offset: PST, PDT and
+      <p data-t="93">Abbreviations are loose in the wild, so each one stands for a place, not an offset: PST, PDT and
         PT all mean Pacific time, whichever of the two is in force on the date. When the letters name the
         other half of the year — PST written for a date in summer — the page reads it as Pacific time and
         says what it assumed, and <code>UTC-8</code> gives the fixed offset instead. CST is taken as US
         Central and IST as India, and both say the other places they can mean. GMT is read as UTC+0, which
         is the UK only in winter.</p>
-      <p>Zone rules come from this browser's copy of the IANA time zone database, through
+      <p data-t="94">Zone rules come from this browser's copy of the IANA time zone database, through
         <code>Intl.DateTimeFormat</code> with a <code>timeZone</code>. To find the instant, the page reads
         the zone's offset at a first guess, moves by it, and reads again. A wall-clock time the clocks skip
         when they go forward is moved on by the length of the jump, and a time that happens twice when
@@ -2331,31 +2443,32 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
         <code>"compatible"</code> mode — and both are named on the page with the other reading. Offsets are
         worked out to the second, so dates before standard time zones come out right as far as the
         database knows them.</p>
-      <p>Your own zone comes first, from <code>Intl.DateTimeFormat().resolvedOptions().timeZone</code>, then
+      <p data-t="95">Your own zone comes first, from <code>Intl.DateTimeFormat().resolvedOptions().timeZone</code>, then
         the zone you converted from if it is not in the list, then twelve common zones. Each row gives the
         time, the date in this browser's language, how many calendar days it sits ahead of or behind the
         date you typed, and the offset. The abbreviation after a place — PDT, CEST — is printed only when
         the offset is that place's present standard or summer offset. Copy copies the ISO 8601 form with
         offset. The date field starts on today's date on this device; nothing else here reads the clock
         unless you press Now. Nothing is uploaded: there is no server in this file.</p>
-      <p>The Dark button remembers its setting in this browser's local storage. Nothing you type or drop into the page is stored.</p>
+      <p data-t="96">The Dark and language buttons remember their settings in this browser's local storage. Nothing you type or drop into the page is stored.</p>
     </div>
   </details>
 
   <footer class="mdv-foot">
   <nav class="mdv-foot-related" aria-label="Also in Time &amp; Date">
-    <span class="mdv-tag">Also in Time &amp; Date</span>
-    <a href="./timestamp-converter.html">Timestamp converter</a>
-    <a href="./age-calculator.html">Age calculator</a>
-    <a href="./date-difference.html">Date difference</a>
+    <span class="mdv-tag" data-t="Also in {group}" data-t-vars='{"group":"Time &amp; Date"}'>Also in Time &amp; Date</span>
+    <a href="./timestamp-converter.html" data-t="72">Timestamp converter</a>
+    <a href="./age-calculator.html" data-t="68">Age calculator</a>
+    <a href="./date-difference.html" data-t="69">Date difference</a>
   </nav>
-  <p class="mdv-foot-proof">Files this page fetched from the network: <b data-mdv-req>0</b>. Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</p>
+  <p class="mdv-foot-proof"><span data-t="97">Files this page fetched from the network:</span> <b data-mdv-req>0</b>. <span data-t="98">Save it with Ctrl+S (Cmd+S on a Mac) and it keeps working offline.</span></p>
+  <p class="mdv-foot-proof" data-mdv-mt data-t="99" hidden>Translated by a machine, not checked by a native speaker. The English page is the reference.</p>
   <div class="mdv-foot-row">
     <span>MDV · Martin DaVinci</span>
-    <span>Knowledge has no limits</span>
-    <span>updated 2026-09-16</span>
-    <a href="./changelog.html">v0.8.0</a>
-    <a class="mdv-foot-spacer" href="./index.html">All 63 tools</a>
+    <span data-t="100">Knowledge has no limits</span>
+    <span data-t="updated {date}" data-t-vars='{"date":"2026-11-02"}'>updated 2026-11-02</span>
+    <a href="./changelog.html">v0.9.0</a>
+    <a class="mdv-foot-spacer" href="./index.html" data-t="All {n} tools" data-t-vars='{"n":63}'>All 63 tools</a>
   </div>
 </footer>
 <script>
@@ -2366,6 +2479,106 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   function count() { el.textContent = String(performance.getEntriesByType("resource").length); }
   count();
   window.addEventListener("load", count);
+})();
+</script>
+<script type="application/json" id="mdv-i18n">{"k":["Time Zone Converter — PST to CET, EST to IST, any zone — MDV","Convert a time between zones: type 10am PT or 15:00 CET and read it in every common zone, with summer time counted for the date. Runs on your device.","All {n} tools","Also in {group}","updated {date}","Open the tool menu","All tools","Type to find a tool","Find a tool","From zone","Pacific","US Pacific","Mountain","US Mountain","Central","US Central","Eastern","US Eastern","UK","Central Europe","Eastern Europe","India","China","Japan","Sydney","Australia East","GMT is read as UTC+0. The UK is on GMT only in winter; pick UK for the time in London.","CST is read as US Central. It also stands for China Standard Time (UTC+8); pick China if that was meant.","IST is read as India. It also stands for Irish and Israel Standard Time; type Europe/Dublin or Asia/Jerusalem for those.","The offset {offset} is out of range: offsets run from UTC−12 to UTC+14.","“{zone}” is not a zone this page knows. Use an abbreviation like PT or CET, an offset like UTC+2, or a zone name like Europe/Rome.","Could not read what follows “{time}” at position {pos}. Put a space before the zone: {time} PT.","“{text}” does not start with a time. Try 10am, 22:30 or noon.","With {ampm} the hour is 1 to 12, and {h} is not. Write 12am.","With {ampm} the hour is 1 to 12, and {h} is not. Write {h}:00 without am or pm.","24:00 is not read here: write 00:00 and the next day's date.","Hour {h} is out of range: 0 to 23, or 1 to 12 with am or pm.","Minute {n} is out of range: 00 to 59.","Second {n} is out of range: 00 to 59.","Copied","Copy","Copies the ISO 8601 form with offset","Refused","{n} characters is past the {limit}-character ceiling — a time needs far less.","Could not read that time","Pick a zone","Choose a From zone, type a zone name the browser knows, or put one after the time, like 10am PT.","Pick a date","The date field is empty or unreadable. Pick the calendar date in the From zone.","{label} is {strict}, but on {date} {name} is on {now}. People often write {label} all year, so this reads it as {name} time. For {strict} exactly, type {typeit}.","{wall} does not exist on {date} in {name}: the clocks skip it. Read as {read}, the same instant once the clocks have moved on.","{wall} happens twice on {date} in {name}, when the clocks go back. This is the first, at {off}; the second is at {off2}, {min} minutes later.","Read as {time} on {date} in {zone}, {off}{abbr}.","your zone","from","From is set by “{label}” in the time box; the buttons are ignored while it is there.","From {zone}. Your zone is {device}.","“{zone}” is not a zone name this browser knows. Pick from the list as you type.","{label}, {zone}","{n} day","{n} days","Time & Date","2026-11-02"],"h":101,"es":["Ir a la herramienta","Oscuro","Todas las herramientas","Ninguna herramienta coincide.","Texto","Conversor de mayúsculas y minúsculas","Eliminar líneas duplicadas","Ordenar líneas","Lorem ipsum","Buscar y reemplazar","Slugify","Comparador de texto","Inspector Unicode","Quitar espacios en blanco","Contador de palabras","Codificación y criptografía","Generador de códigos de barras","Codificador y decodificador Base64","Imagen a data URI","Suma de verificación","Generador de hashes","Entidades HTML","Decodificador JWT","Generador de contraseñas","Generador de códigos QR","Generador de claves SSH","Generador de códigos TOTP","Codificador y decodificador de URL","Generador de UUID","Código QR Wi-Fi","Conversores","Conversor JSON y CSV","Conversor de JSON y YAML","Convertidor de bases","Desarrollo","Calculadora de chmod","Expresión cron","Calculadora de subredes","Diferencias JSON","Formateador JSON","Probador de regex","Formateador XML","CSS y diseño","Calculadora de clamp","PX a REM","Color","Comprobador de contraste","Imágenes y multimedia","Recorte circular","Visor y eliminador de EXIF","Creador de favicon","Compresor de imágenes","Recortador de imágenes","Conversor de imágenes","Redimensionar imagen","Censurar una imagen","Recortador para redes sociales","Marca de agua","PDF y documentos","Escáner de documentos","Finanzas","Validador de IBAN","Números y unidades","Proporción de aspecto","Conversor de unidades","Calculadora de porcentajes","Generador de números aleatorios","Hora y fecha","Calculadora de edad","Diferencia de fechas","Marca de tiempo de Discord","Conversor de zonas horarias","Conversor de timestamp","Productividad","Lanzar una moneda","Lanzador de dados","Selector aleatorio","Generador de equipos","Girar la ruleta","Escribe una hora como la escribe la gente (\u003ccode>10am PT\u003c/code>, \u003ccode>3:30 pm EST\u003c/code>, \u003ccode>15:00 CET\u003c/code>) y léela en todas las demás zonas. El horario de verano se cuenta para la fecha que elijas.","En este dispositivo","Funciona sin conexión","Hora","Ahora","10am, 10:30 pm, 22:30, noon, con o sin zona a continuación: PT, CET, UTC+2, Europe/Rome.","Fecha en la zona de origen","Desde","O cualquier zona","Resultado","escribe arriba una hora, como 10am PT","Léelo con atención","Cómo funciona","El cuadro de hora lee una hora con minutos y segundos opcionales (\u003ccode>10\u003c/code>, \u003ccode>10:30\u003c/code>, \u003ccode>10.30\u003c/code>, \u003ccode>1030\u003c/code>, \u003ccode>22:30:15\u003c/code>) o \u003ccode>noon\u003c/code> y \u003ccode>midnight\u003c/code>, con un \u003ccode>am\u003c/code> o \u003ccode>pm\u003c/code> opcional. Con am o pm la hora va de 1 a 12 y \u003ccode>12am\u003c/code> es medianoche; sin ellos va de 0 a 23, y \u003ccode>24:00\u003c/code> se rechaza en lugar de pasar al día siguiente. Después de la hora puedes indicar la zona: una abreviatura común (PT, PST, PDT, MT, CT, ET, AKT, HST, UTC, GMT, BST, WET, CET, EET, MSK, IST, SGT, HKT, JST, KST, AWST, ACST, AEST, NZST y sus formas de verano), un desfase como \u003ccode>UTC+2\u003c/code>, \u003ccode>GMT-5\u003c/code> o \u003ccode>+05:30\u003c/code>, o un nombre de zona como \u003ccode>Europe/Rome\u003c/code>. Una zona escrita ahí prevalece sobre los botones de origen, y la página lo indica. Se rechaza una entrada de más de 100 caracteres; una hora necesita mucho menos.","Las abreviaturas son imprecisas en la práctica, así que cada una representa un lugar, no un desfase: PST, PDT y PT significan todas hora del Pacífico, sea cual sea la que esté en vigor en esa fecha. Cuando las letras nombran la otra mitad del año (PST escrito para una fecha de verano), la página lo lee como hora del Pacífico y dice qué ha supuesto, y \u003ccode>UTC-8\u003c/code> da en su lugar el desfase fijo. CST se toma como Central de EE. UU. e IST como India, y ambas indican los otros lugares que pueden significar. GMT se lee como UTC+0, que solo en invierno coincide con el Reino Unido.","Las reglas de zona proceden de la copia de la base de datos de zonas horarias IANA de este navegador, a través de \u003ccode>Intl.DateTimeFormat\u003c/code> con un \u003ccode>timeZone\u003c/code>. Para hallar el instante, la página lee el desfase de la zona con una primera estimación, se mueve esa cantidad y vuelve a leer. Una hora local que los relojes se saltan al adelantarse se desplaza la duración del salto, y una hora que ocurre dos veces al atrasarse toma la primera de las dos (las mismas decisiones que el modo \u003ccode>\"compatible\"\u003c/code> de \u003ccode>Temporal\u003c/code>); en ambos casos la página lo indica junto con la otra lectura. Los desfases se calculan al segundo, así que las fechas anteriores a los husos horarios estándar salen bien en la medida en que la base de datos las conoce.","Tu propia zona va primero, tomada de \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, luego la zona desde la que convertiste si no está en la lista, y después doce zonas comunes. Cada fila da la hora, la fecha en el idioma de este navegador, cuántos días naturales va por delante o por detrás de la fecha que escribiste, y el desfase. La abreviatura que aparece tras un lugar (PDT, CEST) solo se imprime cuando el desfase es el desfase estándar o de verano actual de ese lugar. Copiar copia la forma ISO 8601 con desfase. El campo de fecha empieza con la fecha de hoy en este dispositivo; nada más aquí lee el reloj salvo que pulses Ahora. No se sube nada: este archivo no tiene servidor.","Los botones de modo oscuro e idioma recuerdan su ajuste en el almacenamiento local de este navegador. Nada de lo que escribas o sueltes en la página se guarda.","Archivos que esta página ha descargado de la red:","Guárdala con Ctrl+S (Cmd+S en Mac) y seguirá funcionando sin conexión.","Traducción automática, sin revisión de un hablante nativo. La página en inglés es la referencia.","El conocimiento no tiene límites","Conversor de zonas horarias: PST a CET, EST a IST, cualquier zona — MDV","Convierte una hora entre zonas: escribe 10am PT o 15:00 CET y léela en todas las zonas comunes, con el horario de verano contado para la fecha. Funciona en tu dispositivo.","Las {n} herramientas","También en {group}","actualizado {date}","Abrir el menú de herramientas","Todas las herramientas","Escribe para buscar","Buscar herramienta","Zona de origen","Pacífico","EE. UU. Pacífico","Montaña","EE. UU. Montaña","Central","EE. UU. Central","Este","EE. UU. Este","R. Unido","Europa central","Europa oriental","India","China","Japón","Sídney","Australia oriental","GMT se lee como UTC+0. El Reino Unido solo está en GMT en invierno; elige R. Unido para la hora de Londres.","CST se lee como Central de EE. UU. También significa hora estándar de China (UTC+8); elige China si es lo que querías.","IST se lee como India. También significa hora estándar de Irlanda e Israel; escribe Europe/Dublin o Asia/Jerusalem para esas.","El desfase {offset} está fuera de rango: los desfases van de UTC−12 a UTC+14.","«{zone}» no es una zona que esta página conozca. Usa una abreviatura como PT o CET, un desfase como UTC+2 o un nombre de zona como Europe/Rome.","No se pudo leer lo que sigue a «{time}» en la posición {pos}. Pon un espacio antes de la zona: {time} PT.","«{text}» no empieza con una hora. Prueba 10am, 22:30 o noon.","Con {ampm} la hora va de 1 a 12, y {h} no lo es. Escribe 12am.","Con {ampm} la hora va de 1 a 12, y {h} no lo es. Escribe {h}:00 sin am ni pm.","24:00 no se lee aquí: escribe 00:00 y la fecha del día siguiente.","La hora {h} está fuera de rango: de 0 a 23, o de 1 a 12 con am o pm.","El minuto {n} está fuera de rango: de 00 a 59.","El segundo {n} está fuera de rango: de 00 a 59.","Copiado","Copiar","Copia la forma ISO 8601 con desfase","Rechazado","{n} caracteres superan el límite de {limit} caracteres: una hora necesita mucho menos.","No se pudo leer esa hora","Elige una zona","Elige una zona de origen, escribe un nombre de zona que conozca el navegador o pon una tras la hora, como 10am PT.","Elige una fecha","El campo de fecha está vacío o no se puede leer. Elige la fecha del calendario en la zona de origen.","{label} es {strict}, pero el {date} {name} está en {now}. La gente suele escribir {label} todo el año, así que esto lo lee como hora de {name}. Para {strict} exactamente, escribe {typeit}.","{wall} no existe el {date} en {name}: los relojes se la saltan. Se lee como {read}, el mismo instante una vez que los relojes han avanzado.","{wall} ocurre dos veces el {date} en {name}, cuando los relojes se atrasan. Esta es la primera, en {off}; la segunda está en {off2}, {min} minutos después.","Leído como {time} del {date} en {zone}, {off}{abbr}.","tu zona","origen","El origen lo fija «{label}» en el cuadro de hora; los botones se ignoran mientras esté ahí.","Desde {zone}. Tu zona es {device}.","«{zone}» no es un nombre de zona que este navegador conozca. Elige de la lista mientras escribes.","{label}, {zone}","{n} día","{n} días","Hora y fecha",null],"fr":["Aller à l’outil","Sombre","Tous les outils","Aucun outil ne correspond.","Texte","Convertisseur de casse","Supprimer les lignes en double","Trier les lignes","Lorem ipsum","Rechercher et remplacer","Slugify","Comparateur de texte","Inspecteur Unicode","Supprimer les espaces","Compteur de mots","Encodage et cryptographie","Générateur de codes-barres","Encodeur et décodeur Base64","Image vers data URI","Somme de contrôle","Générateur de hash","Entités HTML","Décodeur JWT","Générateur de mots de passe","Générateur de code QR","Générateur de clés SSH","Générateur de codes TOTP","Encodeur et décodeur d’URL","Générateur d’UUID","Code QR Wi-Fi","Convertisseurs","Convertisseur JSON et CSV","Convertisseur JSON et YAML","Convertisseur de bases","Développement","Calculateur chmod","Expression cron","Calculateur de sous-réseau","Différences JSON","Formateur JSON","Testeur de regex","Formateur XML","CSS et design","Calculateur clamp","PX en REM","Couleur","Vérificateur de contraste","Images et médias","Recadrage rond","Visionneuse et suppresseur d’EXIF","Créateur de favicon","Compresseur d’images","Recadreur d’images","Convertisseur d’images","Redimensionner une image","Masquer une image","Recadrage pour réseaux sociaux","Filigrane","PDF et documents","Scanner de documents","Finance","Validateur d’IBAN","Nombres et unités","Rapport d’aspect","Convertisseur d’unités","Calculateur de pourcentages","Générateur de nombres aléatoires","Heure et date","Calculateur d’âge","Écart entre deux dates","Horodatage Discord","Convertisseur de fuseaux horaires","Convertisseur de timestamp","Productivité","Lancer une pièce","Lanceur de dés","Tirage au sort","Générateur d’équipes","Tourner la roue","Saisissez une heure comme on l’écrit — \u003ccode>10am PT\u003c/code>, \u003ccode>3:30 pm EST\u003c/code>, \u003ccode>15:00 CET\u003c/code> — et lisez-la dans tous les autres fuseaux. L’heure d’été est prise en compte pour la date choisie.","Sur cet appareil","Fonctionne hors ligne","Heure","Maintenant","10am, 10:30 pm, 22:30, noon, avec ou sans fuseau derrière : PT, CET, UTC+2, Europe/Rome.","Date dans le fuseau de départ","De","Ou un autre fuseau","Résultat","saisissez une heure ci-dessus, comme 10am PT","À lire avec attention","Comment ça marche","La zone de saisie lit une heure avec minutes et secondes facultatives (\u003ccode>10\u003c/code>, \u003ccode>10:30\u003c/code>, \u003ccode>10.30\u003c/code>, \u003ccode>1030\u003c/code>, \u003ccode>22:30:15\u003c/code>) ou \u003ccode>noon\u003c/code> et \u003ccode>midnight\u003c/code>, avec un \u003ccode>am\u003c/code> ou \u003ccode>pm\u003c/code> facultatif. Avec am ou pm, l’heure va de 1 à 12 et \u003ccode>12am\u003c/code> est minuit ; sans, elle va de 0 à 23, et \u003ccode>24:00\u003c/code> est refusé plutôt que reporté au jour suivant. Après l’heure, vous pouvez nommer le fuseau : une abréviation courante (PT, PST, PDT, MT, CT, ET, AKT, HST, UTC, GMT, BST, WET, CET, EET, MSK, IST, SGT, HKT, JST, KST, AWST, ACST, AEST, NZST et leurs formes d’été), un décalage comme \u003ccode>UTC+2\u003c/code>, \u003ccode>GMT-5\u003c/code> ou \u003ccode>+05:30\u003c/code>, ou un nom de fuseau comme \u003ccode>Europe/Rome\u003c/code>. Un fuseau saisi ici l’emporte sur les boutons de départ, et la page le dit. Une saisie de plus de 100 caractères est refusée ; une heure en demande bien moins.","Les abréviations sont floues dans la vraie vie : chacune désigne un lieu, pas un décalage. PST, PDT et PT signifient toutes l’heure du Pacifique, quelle que soit celle en vigueur à cette date. Quand les lettres désignent l’autre moitié de l’année (PST écrit pour une date d’été), la page lit l’heure du Pacifique et dit ce qu’elle a supposé ; \u003ccode>UTC-8\u003c/code> donne à la place le décalage fixe. CST est lu comme US Central et IST comme l’Inde, et toutes deux citent les autres lieux possibles. GMT est lu comme UTC+0, ce qui ne correspond au Royaume-Uni qu’en hiver.","Les règles de fuseau viennent de la copie de la base de données de fuseaux horaires IANA de ce navigateur, via \u003ccode>Intl.DateTimeFormat\u003c/code> avec un \u003ccode>timeZone\u003c/code>. Pour trouver l’instant, la page lit le décalage du fuseau à une première estimation, se déplace de cette valeur, puis relit. Une heure locale que les horloges sautent au passage à l’heure d’été est décalée de la durée du saut, et une heure qui se produit deux fois au retour prend la première des deux — les mêmes choix que le mode \u003ccode>\"compatible\"\u003c/code> de \u003ccode>Temporal\u003c/code> — et la page nomme les deux cas avec l’autre lecture. Les décalages sont calculés à la seconde, donc les dates antérieures aux fuseaux standard sont justes dans la mesure où la base les connaît.","Votre propre fuseau vient en premier, d’après \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, puis le fuseau d’où vous avez converti s’il n’est pas dans la liste, puis douze fuseaux courants. Chaque ligne donne l’heure, la date dans la langue de ce navigateur, de combien de jours calendaires elle est en avance ou en retard sur la date saisie, et le décalage. L’abréviation après un lieu — PDT, CEST — n’est imprimée que si le décalage est le décalage standard ou d’été actuel de ce lieu. Copier copie la forme ISO 8601 avec décalage. Le champ de date démarre sur la date du jour de cet appareil ; rien d’autre ici ne lit l’horloge, sauf si vous appuyez sur Maintenant. Rien n’est envoyé : ce fichier n’a pas de serveur.","Les boutons Sombre et Langue mémorisent leur réglage dans le stockage local de ce navigateur. Rien de ce que vous saisissez ou déposez dans la page n’est stocké.","Fichiers téléchargés du réseau par cette page :","Enregistrez-la avec Ctrl+S (Cmd+S sur Mac) et elle fonctionnera toujours hors ligne.","Traduction automatique, non relue par un locuteur natif. La page en anglais fait référence.","La connaissance n’a pas de limites","Convertisseur de fuseaux horaires : PST en CET, EST en IST, tout fuseau — MDV","Convertissez une heure d’un fuseau à l’autre : saisissez 10am PT ou 15:00 CET et lisez-la dans tous les fuseaux courants, heure d’été comprise pour la date. Fonctionne sur votre appareil.","Les {n} outils","Aussi dans {group}","mis à jour le {date}","Ouvrir le menu des outils","Tous les outils","Tapez pour chercher","Chercher un outil","Fuseau de départ","Pacifique","É.-U. Pacifique","Rocheuses","É.-U. Rocheuses","Centre","É.-U. Centre","Est","É.-U. Est","R.-U.","Europe centrale","Europe orientale","Inde","Chine","Japon","Sydney","Australie orientale","GMT est lu comme UTC+0. Le Royaume-Uni n’est à l’heure GMT qu’en hiver ; choisissez R.-U. pour l’heure de Londres.","CST est lu comme US Central. Il désigne aussi l’heure normale de Chine (UTC+8) ; choisissez Chine si c’est ce que vous vouliez.","IST est lu comme l’Inde. Il désigne aussi l’heure normale d’Irlande et d’Israël ; saisissez Europe/Dublin ou Asia/Jerusalem pour celles-ci.","Le décalage {offset} est hors limites : les décalages vont de UTC−12 à UTC+14.","« {zone} » n’est pas un fuseau que cette page connaît. Utilisez une abréviation comme PT ou CET, un décalage comme UTC+2 ou un nom de fuseau comme Europe/Rome.","Impossible de lire ce qui suit « {time} » à la position {pos}. Mettez une espace avant le fuseau : {time} PT.","« {text} » ne commence pas par une heure. Essayez 10am, 22:30 ou noon.","Avec {ampm}, l’heure va de 1 à 12, et {h} n’en fait pas partie. Écrivez 12am.","Avec {ampm}, l’heure va de 1 à 12, et {h} n’en fait pas partie. Écrivez {h}:00 sans am ni pm.","24:00 n’est pas lu ici : écrivez 00:00 et la date du jour suivant.","L’heure {h} est hors limites : de 0 à 23, ou de 1 à 12 avec am ou pm.","La minute {n} est hors limites : de 00 à 59.","La seconde {n} est hors limites : de 00 à 59.","Copié","Copier","Copie la forme ISO 8601 avec décalage","Refusé","{n} caractères dépassent la limite de {limit} caractères : une heure en demande bien moins.","Impossible de lire cette heure","Choisissez un fuseau","Choisissez un fuseau de départ, saisissez un nom de fuseau connu du navigateur, ou placez-en un après l’heure, comme 10am PT.","Choisissez une date","Le champ de date est vide ou illisible. Choisissez la date du calendrier dans le fuseau de départ.","{label} vaut {strict}, mais le {date} {name} est à {now}. On écrit souvent {label} toute l’année, donc la page le lit comme l’heure de {name}. Pour {strict} exactement, saisissez {typeit}.","{wall} n’existe pas le {date} à {name} : les horloges la sautent. Lu comme {read}, le même instant une fois les horloges avancées.","{wall} se produit deux fois le {date} à {name}, quand les horloges reculent. Voici la première, à {off} ; la seconde est à {off2}, {min} minutes plus tard.","Lu comme {time} le {date} à {zone}, {off}{abbr}.","votre fuseau","départ","Le départ est défini par « {label} » dans la zone d’heure ; les boutons sont ignorés tant qu’il y est.","De {zone}. Votre fuseau est {device}.","« {zone} » n’est pas un nom de fuseau connu de ce navigateur. Choisissez dans la liste en tapant.","{label}, {zone}","{n} jour","{n} jours","Heure et date",null],"de":["Zum Werkzeug springen","Dunkel","Alle Werkzeuge","Kein Werkzeug passt dazu.","Text","Groß-/Kleinschreibung umwandeln","Doppelte Zeilen entfernen","Zeilen sortieren","Lorem ipsum","Suchen und Ersetzen","Slugify","Textvergleich","Unicode-Inspektor","Leerraum entfernen","Wortzähler","Kodierung und Krypto","Barcode-Generator","Base64-Kodierer und -Dekodierer","Bild zu Data-URI","Prüfsumme","Hash-Generator","HTML-Entitäten","JWT-Decoder","Passwort-Generator","QR-Code-Generator","SSH-Schlüssel-Generator","TOTP-Code-Generator","URL-Kodierer und -Dekodierer","UUID-Generator","WLAN-QR-Code","Konverter","JSON-CSV-Konverter","JSON-YAML-Konverter","Basisumrechner","Entwicklung","Chmod-Rechner","Cron-Ausdruck","Subnetz-Rechner","JSON-Vergleich","JSON-Formatierer","Regex-Tester","XML-Formatierer","CSS und Design","Clamp-Rechner","PX in REM","Farbe","Kontrastprüfer","Bilder und Medien","Kreisausschnitt","EXIF-Betrachter und -Entferner","Favicon-Ersteller","Bildkompressor","Bild zuschneiden","Bildkonverter","Bildgröße ändern","Bild unkenntlich machen","Zuschnitt für soziale Netzwerke","Wasserzeichen","PDF und Dokumente","Dokumentenscanner","Finanzen","IBAN-Prüfer","Zahlen und Einheiten","Seitenverhältnis","Einheitenumrechner","Prozentrechner","Zufallszahlengenerator","Zeit und Datum","Altersrechner","Datumsdifferenz","Discord-Zeitstempel","Zeitzonenrechner","Timestamp-Konverter","Produktivität","Münze werfen","Würfel","Zufallsauswahl","Teamgenerator","Glücksrad drehen","Gib eine Uhrzeit so ein, wie man sie schreibt – \u003ccode>10am PT\u003c/code>, \u003ccode>3:30 pm EST\u003c/code>, \u003ccode>15:00 CET\u003c/code> – und lies sie in allen anderen Zonen ab. Die Sommerzeit wird für das gewählte Datum berücksichtigt.","Läuft auf diesem Gerät","Funktioniert offline","Uhrzeit","Jetzt","10am, 10:30 pm, 22:30, noon, mit oder ohne Zone dahinter: PT, CET, UTC+2, Europe/Rome.","Datum in der Ausgangszone","Von","Oder eine andere Zone","Ergebnis","oben eine Uhrzeit eingeben, z. B. 10am PT","Bitte genau lesen","So funktioniert es","Das Zeitfeld liest eine Stunde mit optionalen Minuten und Sekunden (\u003ccode>10\u003c/code>, \u003ccode>10:30\u003c/code>, \u003ccode>10.30\u003c/code>, \u003ccode>1030\u003c/code>, \u003ccode>22:30:15\u003c/code>) oder \u003ccode>noon\u003c/code> und \u003ccode>midnight\u003c/code>, mit optionalem \u003ccode>am\u003c/code> oder \u003ccode>pm\u003c/code>. Mit am oder pm geht die Stunde von 1 bis 12, und \u003ccode>12am\u003c/code> ist Mitternacht; ohne geht sie von 0 bis 23, und \u003ccode>24:00\u003c/code> wird abgelehnt, statt auf den nächsten Tag zu rollen. Nach der Uhrzeit darfst du die Zone nennen: eine gängige Abkürzung (PT, PST, PDT, MT, CT, ET, AKT, HST, UTC, GMT, BST, WET, CET, EET, MSK, IST, SGT, HKT, JST, KST, AWST, ACST, AEST, NZST und ihre Sommerformen), einen Versatz wie \u003ccode>UTC+2\u003c/code>, \u003ccode>GMT-5\u003c/code> oder \u003ccode>+05:30\u003c/code> oder einen Zonennamen wie \u003ccode>Europe/Rome\u003c/code>. Eine dort getippte Zone hat Vorrang vor den Von-Schaltflächen, und die Seite sagt das. Eingaben über 100 Zeichen werden abgelehnt; eine Uhrzeit braucht viel weniger.","Abkürzungen sind in der Praxis unscharf, daher steht jede für einen Ort, nicht für einen Versatz: PST, PDT und PT bedeuten alle Pazifikzeit, welche der beiden an dem Datum gilt. Benennen die Buchstaben die andere Jahreshälfte (PST für ein Sommerdatum), liest die Seite Pazifikzeit und sagt, was sie angenommen hat; \u003ccode>UTC-8\u003c/code> liefert stattdessen den festen Versatz. CST wird als US Central gelesen und IST als Indien, und beide nennen die anderen Orte, die sie bedeuten können. GMT wird als UTC+0 gelesen, was nur im Winter dem Vereinigten Königreich entspricht.","Die Zonenregeln stammen aus der Kopie der IANA-Zeitzonendatenbank dieses Browsers, über \u003ccode>Intl.DateTimeFormat\u003c/code> mit einem \u003ccode>timeZone\u003c/code>. Um den Zeitpunkt zu finden, liest die Seite den Versatz der Zone bei einer ersten Schätzung, verschiebt um ihn und liest erneut. Eine Ortszeit, die beim Vorstellen der Uhren übersprungen wird, wird um die Länge des Sprungs weitergerückt, und eine Zeit, die beim Zurückstellen zweimal vorkommt, nimmt die erste der beiden – dieselben Entscheidungen wie im Modus \u003ccode>\"compatible\"\u003c/code> von \u003ccode>Temporal\u003c/code> – und beides wird mit der anderen Lesart auf der Seite genannt. Versätze werden sekundengenau berechnet, daher stimmen auch Daten vor den Standardzeitzonen, soweit die Datenbank sie kennt.","Deine eigene Zone steht zuerst, aus \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, dann die Zone, aus der du umgerechnet hast, falls sie nicht in der Liste ist, dann zwölf gängige Zonen. Jede Zeile nennt die Uhrzeit, das Datum in der Sprache dieses Browsers, um wie viele Kalendertage es dem eingegebenen Datum voraus oder hinterher ist, und den Versatz. Die Abkürzung hinter einem Ort – PDT, CEST – erscheint nur, wenn der Versatz der aktuelle Standard- oder Sommerversatz dieses Ortes ist. Kopieren kopiert die ISO-8601-Form mit Versatz. Das Datumsfeld startet mit dem heutigen Datum dieses Geräts; sonst liest hier nichts die Uhr, außer du drückst Jetzt. Nichts wird hochgeladen: Diese Datei hat keinen Server.","Die Schaltflächen für Dunkel und Sprache merken sich ihre Einstellung im lokalen Speicher dieses Browsers. Nichts, was du eintippst oder in die Seite ziehst, wird gespeichert.","Dateien, die diese Seite aus dem Netz geladen hat:","Speichere sie mit Strg+S (Cmd+S auf dem Mac), dann funktioniert sie weiter offline.","Maschinell übersetzt, nicht von Muttersprachlern geprüft. Maßgeblich ist die englische Seite.","Wissen kennt keine Grenzen","Zeitzonenrechner: PST in CET, EST in IST, jede Zone — MDV","Rechne eine Uhrzeit zwischen Zonen um: Gib 10am PT oder 15:00 CET ein und lies sie in allen gängigen Zonen ab, mit Sommerzeit für das Datum. Läuft auf deinem Gerät.","Alle {n} Werkzeuge","Auch in {group}","aktualisiert {date}","Werkzeugmenü öffnen","Alle Werkzeuge","Tippen zum Suchen","Werkzeug suchen","Ausgangszone","Pazifik","USA Pazifik","Mountain","USA Mountain","Central","USA Central","Eastern","USA Eastern","UK","Mitteleuropa","Osteuropa","Indien","China","Japan","Sydney","Ostaustralien","GMT wird als UTC+0 gelesen. Das Vereinigte Königreich hat nur im Winter GMT; wähle UK für die Zeit in London.","CST wird als US Central gelesen. Es steht auch für die chinesische Standardzeit (UTC+8); wähle China, falls das gemeint war.","IST wird als Indien gelesen. Es steht auch für die irische und die israelische Standardzeit; gib dafür Europe/Dublin oder Asia/Jerusalem ein.","Der Versatz {offset} liegt außerhalb des Bereichs: Versätze reichen von UTC−12 bis UTC+14.","„{zone}“ ist keine Zone, die diese Seite kennt. Verwende eine Abkürzung wie PT oder CET, einen Versatz wie UTC+2 oder einen Zonennamen wie Europe/Rome.","Was nach „{time}“ an Position {pos} folgt, ließ sich nicht lesen. Setze ein Leerzeichen vor die Zone: {time} PT.","„{text}“ beginnt nicht mit einer Uhrzeit. Versuche 10am, 22:30 oder noon.","Mit {ampm} geht die Stunde von 1 bis 12, und {h} gehört nicht dazu. Schreibe 12am.","Mit {ampm} geht die Stunde von 1 bis 12, und {h} gehört nicht dazu. Schreibe {h}:00 ohne am oder pm.","24:00 wird hier nicht gelesen: Schreibe 00:00 und das Datum des nächsten Tages.","Stunde {h} liegt außerhalb des Bereichs: 0 bis 23 oder 1 bis 12 mit am oder pm.","Minute {n} liegt außerhalb des Bereichs: 00 bis 59.","Sekunde {n} liegt außerhalb des Bereichs: 00 bis 59.","Kopiert","Kopieren","Kopiert die ISO-8601-Form mit Versatz","Abgelehnt","{n} Zeichen überschreiten die Grenze von {limit} Zeichen – eine Uhrzeit braucht viel weniger.","Diese Uhrzeit ließ sich nicht lesen","Wähle eine Zone","Wähle eine Ausgangszone, tippe einen Zonennamen, den der Browser kennt, oder setze eine hinter die Uhrzeit, etwa 10am PT.","Wähle ein Datum","Das Datumsfeld ist leer oder nicht lesbar. Wähle das Kalenderdatum in der Ausgangszone.","{label} ist {strict}, aber am {date} liegt {name} bei {now}. Oft wird {label} das ganze Jahr geschrieben, daher wird es als {name}-Zeit gelesen. Für genau {strict} gib {typeit} ein.","{wall} gibt es am {date} in {name} nicht: Die Uhren überspringen sie. Gelesen als {read}, derselbe Zeitpunkt, nachdem die Uhren weitergerückt sind.","{wall} kommt am {date} in {name} zweimal vor, wenn die Uhren zurückgestellt werden. Dies ist die erste, bei {off}; die zweite liegt bei {off2}, {min} Minuten später.","Gelesen als {time} am {date} in {zone}, {off}{abbr}.","deine Zone","von","Die Ausgangszone wird durch „{label}“ im Zeitfeld bestimmt; die Schaltflächen werden ignoriert, solange es dort steht.","Von {zone}. Deine Zone ist {device}.","„{zone}“ ist kein Zonenname, den dieser Browser kennt. Wähle beim Tippen aus der Liste.","{label}, {zone}","{n} Tag","{n} Tage","Zeit und Datum",null],"it":["Vai allo strumento","Scuro","Tutti gli strumenti","Nessuno strumento corrisponde.","Testo","Convertitore di maiuscole e minuscole","Rimuovi righe duplicate","Ordina righe","Lorem ipsum","Trova e sostituisci","Slugify","Confronto testo","Ispettore Unicode","Rimuovi spazi bianchi","Conta parole","Codifica e crittografia","Generatore di codici a barre","Codifica e decodifica Base64","Immagine in data URI","Checksum","Generatore di hash","Entità HTML","Decodificatore JWT","Generatore di password","Generatore di codici QR","Generatore di chiavi SSH","Generatore di codici TOTP","Codifica e decodifica URL","Generatore di UUID","Codice QR Wi-Fi","Convertitori","Convertitore JSON e CSV","Convertitore JSON e YAML","Convertitore di basi","Sviluppo","Calcolatore chmod","Espressione cron","Calcolatore di subnet","Differenze JSON","Formattatore JSON","Tester di regex","Formattatore XML","CSS e design","Calcolatore clamp","PX in REM","Colore","Verifica contrasto","Immagini e media","Ritaglio circolare","Visualizzatore e rimozione EXIF","Creatore di favicon","Compressore di immagini","Ritaglia immagini","Convertitore di immagini","Ridimensiona immagine","Oscura un’immagine","Ritaglio per social media","Filigrana","PDF e documenti","Scanner di documenti","Finanza","Validatore IBAN","Numeri e unità","Rapporto d’aspetto","Convertitore di unità","Calcolatrice di percentuali","Generatore di numeri casuali","Ora e data","Calcolatore di età","Differenza tra date","Timestamp Discord","Convertitore di fusi orari","Convertitore di timestamp","Produttività","Lancia una moneta","Lancio di dadi","Selettore casuale","Generatore di squadre","Gira la ruota","Scrivi un’ora come la scrive la gente — \u003ccode>10am PT\u003c/code>, \u003ccode>3:30 pm EST\u003c/code>, \u003ccode>15:00 CET\u003c/code> — e leggila in tutti gli altri fusi. L’ora legale viene calcolata per la data scelta.","Su questo dispositivo","Funziona offline","Ora","Adesso","10am, 10:30 pm, 22:30, noon, con o senza un fuso dopo: PT, CET, UTC+2, Europe/Rome.","Data nel fuso di partenza","Da","O qualsiasi fuso","Risultato","scrivi qui sopra un’ora, come 10am PT","Da leggere con attenzione","Come funziona","Il campo dell’ora legge un’ora con minuti e secondi facoltativi (\u003ccode>10\u003c/code>, \u003ccode>10:30\u003c/code>, \u003ccode>10.30\u003c/code>, \u003ccode>1030\u003c/code>, \u003ccode>22:30:15\u003c/code>) oppure \u003ccode>noon\u003c/code> e \u003ccode>midnight\u003c/code>, con un \u003ccode>am\u003c/code> o \u003ccode>pm\u003c/code> facoltativo. Con am o pm l’ora va da 1 a 12 e \u003ccode>12am\u003c/code> è mezzanotte; senza va da 0 a 23, e \u003ccode>24:00\u003c/code> viene rifiutato invece di passare al giorno dopo. Dopo l’ora puoi indicare il fuso: un’abbreviazione comune (PT, PST, PDT, MT, CT, ET, AKT, HST, UTC, GMT, BST, WET, CET, EET, MSK, IST, SGT, HKT, JST, KST, AWST, ACST, AEST, NZST e le loro forme estive), uno scarto come \u003ccode>UTC+2\u003c/code>, \u003ccode>GMT-5\u003c/code> o \u003ccode>+05:30\u003c/code>, oppure un nome di fuso come \u003ccode>Europe/Rome\u003c/code>. Un fuso digitato lì prevale sui pulsanti di partenza, e la pagina lo dice. Un input oltre 100 caratteri viene rifiutato; un’ora ne richiede molti meno.","Le abbreviazioni sono imprecise nella pratica, quindi ciascuna rappresenta un luogo, non uno scarto: PST, PDT e PT significano tutte ora del Pacifico, qualunque delle due sia in vigore in quella data. Quando le lettere indicano l’altra metà dell’anno (PST scritto per una data estiva), la pagina la legge come ora del Pacifico e dice cosa ha ipotizzato; \u003ccode>UTC-8\u003c/code> dà invece lo scarto fisso. CST viene letto come US Central e IST come India, ed entrambi indicano gli altri luoghi che possono significare. GMT viene letto come UTC+0, che coincide con il Regno Unito solo in inverno.","Le regole dei fusi provengono dalla copia del database dei fusi orari IANA di questo browser, tramite \u003ccode>Intl.DateTimeFormat\u003c/code> con un \u003ccode>timeZone\u003c/code>. Per trovare l’istante, la pagina legge lo scarto del fuso a una prima stima, si sposta di quel valore e rilegge. Un’ora locale che gli orologi saltano quando vanno avanti viene spostata della durata del salto, e un’ora che si verifica due volte quando vanno indietro prende la prima delle due — le stesse scelte della modalità \u003ccode>\"compatible\"\u003c/code> di \u003ccode>Temporal\u003c/code> — ed entrambi i casi sono nominati nella pagina con l’altra lettura. Gli scarti sono calcolati al secondo, quindi le date precedenti ai fusi standard risultano corrette per quanto il database le conosca.","La tua zona viene per prima, da \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, poi il fuso da cui hai convertito se non è nell’elenco, poi dodici fusi comuni. Ogni riga dà l’ora, la data nella lingua di questo browser, di quanti giorni di calendario è avanti o indietro rispetto alla data digitata e lo scarto. L’abbreviazione dopo un luogo — PDT, CEST — viene stampata solo se lo scarto è quello standard o estivo attuale di quel luogo. Copia copia la forma ISO 8601 con scarto. Il campo data parte dalla data di oggi su questo dispositivo; nient’altro qui legge l’orologio a meno che tu prema Adesso. Non viene caricato nulla: questo file non ha un server.","I pulsanti Scuro e Lingua ricordano la loro impostazione nell’archivio locale di questo browser. Nulla di ciò che scrivi o trascini nella pagina viene salvato.","File scaricati dalla rete da questa pagina:","Salvala con Ctrl+S (Cmd+S su Mac) e continua a funzionare offline.","Tradotto da una macchina, senza revisione di un madrelingua. Fa fede la pagina in inglese.","La conoscenza non ha limiti","Convertitore di fusi orari: da PST a CET, da EST a IST, qualsiasi fuso — MDV","Converti un’ora tra fusi: scrivi 10am PT o 15:00 CET e leggila in tutti i fusi comuni, con l’ora legale calcolata per la data. Funziona sul tuo dispositivo.","Tutti i {n} strumenti","Anche in {group}","aggiornato il {date}","Apri il menu degli strumenti","Tutti gli strumenti","Scrivi per cercare","Cerca uno strumento","Fuso di partenza","Pacifico","USA Pacifico","Montagna","USA Montagna","Centrale","USA Centrale","Est","USA Est","Regno Unito","Europa centrale","Europa orientale","India","Cina","Giappone","Sydney","Australia orientale","GMT viene letto come UTC+0. Il Regno Unito è su GMT solo in inverno; scegli Regno Unito per l’ora di Londra.","CST viene letto come US Central. Indica anche l’ora standard della Cina (UTC+8); scegli Cina se era quello che intendevi.","IST viene letto come India. Indica anche l’ora standard irlandese e israeliana; digita Europe/Dublin o Asia/Jerusalem per quelle.","Lo scarto {offset} è fuori intervallo: gli scarti vanno da UTC−12 a UTC+14.","«{zone}» non è un fuso che questa pagina conosce. Usa un’abbreviazione come PT o CET, uno scarto come UTC+2 o un nome di fuso come Europe/Rome.","Impossibile leggere ciò che segue «{time}» alla posizione {pos}. Metti uno spazio prima del fuso: {time} PT.","«{text}» non inizia con un’ora. Prova 10am, 22:30 o noon.","Con {ampm} l’ora va da 1 a 12, e {h} non lo è. Scrivi 12am.","Con {ampm} l’ora va da 1 a 12, e {h} non lo è. Scrivi {h}:00 senza am o pm.","24:00 non viene letto qui: scrivi 00:00 e la data del giorno dopo.","L’ora {h} è fuori intervallo: da 0 a 23, oppure da 1 a 12 con am o pm.","Il minuto {n} è fuori intervallo: da 00 a 59.","Il secondo {n} è fuori intervallo: da 00 a 59.","Copiato","Copia","Copia la forma ISO 8601 con scarto","Rifiutato","{n} caratteri superano il limite di {limit} caratteri: un’ora ne richiede molti meno.","Impossibile leggere quell’ora","Scegli un fuso","Scegli un fuso di partenza, digita un nome di fuso noto al browser o mettine uno dopo l’ora, come 10am PT.","Scegli una data","Il campo data è vuoto o illeggibile. Scegli la data di calendario nel fuso di partenza.","{label} è {strict}, ma il {date} {name} è a {now}. Spesso si scrive {label} tutto l’anno, quindi viene letto come ora di {name}. Per {strict} esatto, digita {typeit}.","{wall} non esiste il {date} a {name}: gli orologi la saltano. Letto come {read}, lo stesso istante una volta spostati gli orologi.","{wall} si verifica due volte il {date} a {name}, quando gli orologi tornano indietro. Questa è la prima, a {off}; la seconda è a {off2}, {min} minuti dopo.","Letto come {time} del {date} a {zone}, {off}{abbr}.","la tua zona","partenza","La partenza è fissata da «{label}» nel campo dell’ora; i pulsanti vengono ignorati finché c’è.","Da {zone}. La tua zona è {device}.","«{zone}» non è un nome di fuso noto a questo browser. Scegli dall’elenco mentre digiti.","{label}, {zone}","{n} giorno","{n} giorni","Ora e data",null],"pt-BR":["Ir para a ferramenta","Escuro","Todas as ferramentas","Nenhuma ferramenta corresponde.","Texto","Conversor de maiúsculas e minúsculas","Remover linhas duplicadas","Ordenar linhas","Lorem ipsum","Localizar e substituir","Slugify","Comparador de texto","Inspetor Unicode","Remover espaços em branco","Contador de palavras","Codificação e criptografia","Gerador de código de barras","Codificador e decodificador Base64","Imagem para data URI","Checksum","Gerador de hash","Entidades HTML","Decodificador JWT","Gerador de senhas","Gerador de QR Code","Gerador de chaves SSH","Gerador de códigos TOTP","Codificador e decodificador de URL","Gerador de UUID","Código QR de Wi-Fi","Conversores","Conversor JSON e CSV","Conversor de JSON e YAML","Conversor de bases","Desenvolvimento","Calculadora de chmod","Expressão cron","Calculadora de sub-rede","Diferenças JSON","Formatador JSON","Testador de regex","Formatador XML","CSS e design","Calculadora de clamp","PX para REM","Cor","Verificador de contraste","Imagens e mídia","Recorte circular","Visualizador e removedor de EXIF","Criador de favicon","Compressor de imagens","Cortador de imagens","Conversor de imagens","Redimensionar imagem","Censurar uma imagem","Cortador para redes sociais","Marca d’água","PDF e documentos","Scanner de documentos","Finanças","Validador de IBAN","Números e unidades","Proporção de aspecto","Conversor de unidades","Calculadora de porcentagem","Gerador de números aleatórios","Hora e data","Calculadora de idade","Diferença entre datas","Timestamp do Discord","Conversor de fuso horário","Conversor de timestamp","Produtividade","Jogar uma moeda","Rolador de dados","Sorteador aleatório","Gerador de equipes","Girar a roleta","Digite um horário como se escreve — \u003ccode>10am PT\u003c/code>, \u003ccode>3:30 pm EST\u003c/code>, \u003ccode>15:00 CET\u003c/code> — e veja nos outros fusos. O horário de verão conta para a data escolhida.","Neste dispositivo","Funciona offline","Hora","Agora","10am, 10:30 pm, 22:30, noon, com ou sem fuso depois: PT, CET, UTC+2, Europe/Rome.","Data no fuso de origem","De","Ou qualquer fuso","Resultado","digite um horário acima, como 10am PT","Leia com atenção","Como funciona","O campo de hora lê uma hora com minutos e segundos opcionais (\u003ccode>10\u003c/code>, \u003ccode>10:30\u003c/code>, \u003ccode>10.30\u003c/code>, \u003ccode>1030\u003c/code>, \u003ccode>22:30:15\u003c/code>) ou \u003ccode>noon\u003c/code> e \u003ccode>midnight\u003c/code>, com \u003ccode>am\u003c/code> ou \u003ccode>pm\u003c/code> opcional. Com am ou pm a hora vai de 1 a 12 e \u003ccode>12am\u003c/code> é meia-noite; sem, vai de 0 a 23, e \u003ccode>24:00\u003c/code> é recusado em vez de virar o dia seguinte. Depois da hora você pode indicar o fuso: uma abreviação comum (PT, PST, PDT, MT, CT, ET, AKT, HST, UTC, GMT, BST, WET, CET, EET, MSK, IST, SGT, HKT, JST, KST, AWST, ACST, AEST, NZST e suas formas de verão), um deslocamento como \u003ccode>UTC+2\u003c/code>, \u003ccode>GMT-5\u003c/code> ou \u003ccode>+05:30\u003c/code>, ou um nome de fuso como \u003ccode>Europe/Rome\u003c/code>. Um fuso digitado ali prevalece sobre os botões de origem, e a página avisa. Entrada acima de 100 caracteres é recusada; um horário precisa de muito menos.","As abreviações são imprecisas na prática, então cada uma representa um lugar, não um deslocamento: PST, PDT e PT significam todas horário do Pacífico, qualquer que esteja em vigor na data. Quando as letras indicam a outra metade do ano (PST escrito para uma data de verão), a página lê como horário do Pacífico e diz o que presumiu; \u003ccode>UTC-8\u003c/code> dá o deslocamento fixo. CST é lido como US Central e IST como Índia, e ambos citam os outros lugares que podem significar. GMT é lido como UTC+0, que só no inverno é o Reino Unido.","As regras de fuso vêm da cópia do banco de dados de fusos horários IANA deste navegador, por meio de \u003ccode>Intl.DateTimeFormat\u003c/code> com um \u003ccode>timeZone\u003c/code>. Para achar o instante, a página lê o deslocamento do fuso em um primeiro palpite, move-se por ele e lê de novo. Um horário local que os relógios pulam ao adiantar é movido pela duração do salto, e um horário que ocorre duas vezes ao atrasar fica com o primeiro dos dois — as mesmas escolhas do modo \u003ccode>\"compatible\"\u003c/code> do \u003ccode>Temporal\u003c/code> — e ambos são nomeados na página com a outra leitura. Os deslocamentos são calculados ao segundo, então datas anteriores aos fusos padrão saem corretas até onde o banco de dados as conhece.","Seu próprio fuso vem primeiro, de \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>, depois o fuso de onde você converteu, se não estiver na lista, depois doze fusos comuns. Cada linha mostra o horário, a data no idioma deste navegador, quantos dias de calendário está à frente ou atrás da data digitada e o deslocamento. A abreviação depois de um lugar — PDT, CEST — só é impressa quando o deslocamento é o padrão ou de verão atual daquele lugar. Copiar copia a forma ISO 8601 com deslocamento. O campo de data começa com a data de hoje neste dispositivo; nada mais aqui lê o relógio, a menos que você aperte Agora. Nada é enviado: este arquivo não tem servidor.","Os botões Escuro e Idioma lembram sua configuração no armazenamento local deste navegador. Nada do que você digita ou solta na página é armazenado.","Arquivos que esta página baixou da rede:","Salve com Ctrl+S (Cmd+S no Mac) e ela continua funcionando offline.","Tradução automática, sem revisão de um falante nativo. A página em inglês é a referência.","O conhecimento não tem limites","Conversor de fuso horário: PST para CET, EST para IST, qualquer fuso — MDV","Converta um horário entre fusos: digite 10am PT ou 15:00 CET e veja em todos os fusos comuns, com o horário de verão contado para a data. Funciona no seu dispositivo.","Todas as {n} ferramentas","Também em {group}","atualizado em {date}","Abrir o menu de ferramentas","Todas as ferramentas","Digite para buscar","Buscar ferramenta","Fuso de origem","Pacífico","EUA Pacífico","Montanha","EUA Montanha","Central","EUA Central","Leste","EUA Leste","Reino Unido","Europa Central","Europa Oriental","Índia","China","Japão","Sydney","Austrália Oriental","GMT é lido como UTC+0. O Reino Unido só está em GMT no inverno; escolha Reino Unido para o horário de Londres.","CST é lido como US Central. Também significa Horário Padrão da China (UTC+8); escolha China se era isso que você queria.","IST é lido como Índia. Também significa horário padrão da Irlanda e de Israel; digite Europe/Dublin ou Asia/Jerusalem para esses.","O deslocamento {offset} está fora do intervalo: os deslocamentos vão de UTC−12 a UTC+14.","«{zone}» não é um fuso que esta página conhece. Use uma abreviação como PT ou CET, um deslocamento como UTC+2 ou um nome de fuso como Europe/Rome.","Não foi possível ler o que vem depois de «{time}» na posição {pos}. Coloque um espaço antes do fuso: {time} PT.","«{text}» não começa com um horário. Tente 10am, 22:30 ou noon.","Com {ampm} a hora vai de 1 a 12, e {h} não está nesse intervalo. Escreva 12am.","Com {ampm} a hora vai de 1 a 12, e {h} não está nesse intervalo. Escreva {h}:00 sem am nem pm.","24:00 não é lido aqui: escreva 00:00 e a data do dia seguinte.","A hora {h} está fora do intervalo: de 0 a 23, ou de 1 a 12 com am ou pm.","O minuto {n} está fora do intervalo: de 00 a 59.","O segundo {n} está fora do intervalo: de 00 a 59.","Copiado","Copiar","Copia a forma ISO 8601 com deslocamento","Recusado","{n} caracteres passam do limite de {limit} caracteres: um horário precisa de muito menos.","Não foi possível ler esse horário","Escolha um fuso","Escolha um fuso de origem, digite um nome de fuso que o navegador conheça ou coloque um depois do horário, como 10am PT.","Escolha uma data","O campo de data está vazio ou ilegível. Escolha a data do calendário no fuso de origem.","{label} é {strict}, mas em {date} {name} está em {now}. As pessoas costumam escrever {label} o ano todo, então isto é lido como horário de {name}. Para {strict} exatamente, digite {typeit}.","{wall} não existe em {date} em {name}: os relógios a pulam. Lido como {read}, o mesmo instante depois que os relógios avançam.","{wall} acontece duas vezes em {date} em {name}, quando os relógios voltam. Esta é a primeira, em {off}; a segunda é em {off2}, {min} minutos depois.","Lido como {time} em {date} em {zone}, {off}{abbr}.","seu fuso","origem","A origem é definida por «{label}» no campo de hora; os botões são ignorados enquanto ele estiver ali.","De {zone}. Seu fuso é {device}.","«{zone}» não é um nome de fuso que este navegador conhece. Escolha da lista enquanto digita.","{label}, {zone}","{n} dia","{n} dias","Hora e data",null],"ja":["ツールへ移動","ダーク","すべてのツール","一致するツールはありません。","テキスト","大文字・小文字変換","重複行の削除","行を並べ替え","Lorem ipsum","検索と置換","スラッグ化","テキスト差分","Unicode インスペクター","空白の削除","文字数カウンター","エンコードと暗号","バーコード生成","Base64 エンコーダー/デコーダー","画像を data URI に変換","チェックサム","ハッシュジェネレーター","HTML エンティティ","JWT デコーダー","パスワード生成","QR コード作成","SSH 鍵ジェネレーター","TOTP コード生成","URL エンコーダー/デコーダー","UUID ジェネレーター","Wi-Fi QR コード","変換","JSON・CSV 変換","JSON と YAML の変換","進数変換","開発","chmod 計算機","cron 式","サブネット計算機","JSON 差分","JSON フォーマッター","正規表現テスター","XML フォーマッター","CSS とデザイン","clamp 計算機","PX から REM","色","コントラストチェッカー","画像とメディア","円形切り抜き","EXIF ビューアー/リムーバー","ファビコンメーカー","画像圧縮","画像トリミング","画像コンバーター","画像リサイズ","画像を伏せる","SNS 画像クロッパー","透かし","PDF と文書","ドキュメントスキャナー","金融","IBAN 検証","数値と単位","アスペクト比","単位変換","パーセント計算機","乱数ジェネレーター","日時","年齢計算","日付の差","Discord タイムスタンプ","タイムゾーン変換","タイムスタンプ変換","生産性","コイントス","ダイスロール","ランダム抽選","チーム分け","ルーレットを回す","\u003ccode>10am PT\u003c/code>、\u003ccode>3:30 pm EST\u003c/code>、\u003ccode>15:00 CET\u003c/code> のように普段の書き方で時刻を入力すると、ほかのすべてのタイムゾーンでの時刻が表示されます。夏時間は選んだ日付に合わせて反映されます。","この端末で動作","オフラインで動作","時刻","現在","10am、10:30 pm、22:30、noon。後ろにタイムゾーンを付けても付けなくても可: PT、CET、UTC+2、Europe/Rome。","元のタイムゾーンの日付","変換元","または任意のゾーン","結果","上に時刻を入力(例: 10am PT)","ご注意ください","仕組み","時刻欄は、時、省略可能な分と秒(\u003ccode>10\u003c/code>、\u003ccode>10:30\u003c/code>、\u003ccode>10.30\u003c/code>、\u003ccode>1030\u003c/code>、\u003ccode>22:30:15\u003c/code>)、または \u003ccode>noon\u003c/code> と \u003ccode>midnight\u003c/code> を読み取り、\u003ccode>am\u003c/code> か \u003ccode>pm\u003c/code> を付けることもできます。am・pm を付けると時は 1〜12 で、\u003ccode>12am\u003c/code> は真夜中です。付けない場合は 0〜23 で、\u003ccode>24:00\u003c/code> は翌日に繰り上げず拒否します。時刻の後にはタイムゾーンを指定できます。一般的な略称(PT、PST、PDT、MT、CT、ET、AKT、HST、UTC、GMT、BST、WET、CET、EET、MSK、IST、SGT、HKT、JST、KST、AWST、ACST、AEST、NZST と各夏時間の形)、\u003ccode>UTC+2\u003c/code>、\u003ccode>GMT-5\u003c/code>、\u003ccode>+05:30\u003c/code> のようなオフセット、\u003ccode>Europe/Rome\u003c/code> のようなゾーン名が使えます。ここで入力したゾーンは「変換元」ボタンより優先され、ページがそのことを表示します。100 文字を超える入力は拒否します。時刻にそれほど長さは要りません。","略称は実際には曖昧なので、それぞれがオフセットではなく地域を表します。PST、PDT、PT はいずれも、その日付でどちらが有効かにかかわらず太平洋時間を意味します。文字が1年のもう半分を指している場合(夏の日付に PST と書いた場合など)、ページは太平洋時間として読み、何を仮定したかを表示します。固定のオフセットが必要なら \u003ccode>UTC-8\u003c/code> と入力してください。CST は米国中部、IST はインドとして読まれ、どちらも他に指しうる地域を表示します。GMT は UTC+0 として読み、これが英国と一致するのは冬だけです。","タイムゾーンの規則は、このブラウザーが持つ IANA タイムゾーンデータベースのコピーから、\u003ccode>timeZone\u003c/code> を指定した \u003ccode>Intl.DateTimeFormat\u003c/code> 経由で取得します。時刻を求めるには、最初の推定値でゾーンのオフセットを読み、その分だけ動かして、もう一度読み直します。時計が進むときに飛ばされる現地時刻は、その飛ぶ長さだけ先に進め、時計が戻るときに 2 回ある時刻は先の方を採ります。これは \u003ccode>Temporal\u003c/code> の \u003ccode>\"compatible\"\u003c/code> モードと同じ選び方で、どちらの場合もページがもう一方の読み方とあわせて表示します。オフセットは秒単位まで計算するため、標準時間帯ができる前の日付も、データベースが把握している範囲で正しく求まります。","最初に表示されるのは、\u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code> から得たお使いのタイムゾーンです。次に、変換元のゾーンが一覧にない場合はそれ、その後によく使われる 12 のゾーンが続きます。各行には、時刻、このブラウザーの言語での日付、入力した日付よりカレンダー上で何日進んでいるか遅れているか、そしてオフセットが表示されます。地名の後ろの略称(PDT、CEST など)は、オフセットがその地域の現在の標準時または夏時間のオフセットと一致する場合にのみ表示されます。コピーでは、オフセット付きの ISO 8601 形式をコピーします。日付欄は、この端末の今日の日付で始まります。「現在」を押さない限り、ここで時計を読むものは他にありません。何もアップロードされません。このファイルにはサーバーがありません。","ダークと言語のボタンは、設定をこのブラウザーのローカルストレージに保存します。入力したりページにドロップしたりした内容は、一切保存されません。","このページがネットワークから取得したファイル:","Ctrl+S(Mac は Cmd+S)で保存すると、オフラインでも動作します。","機械翻訳です。ネイティブスピーカーの確認は受けていません。英語版のページが基準です。","知識に限界はない","タイムゾーン変換: PST から CET、EST から IST、任意のゾーン — MDV","時刻をタイムゾーン間で変換します。10am PT や 15:00 CET と入力すると、主要なすべてのゾーンでの時刻を、その日付の夏時間込みで表示します。お使いの端末で動作します。","全 {n} ツール","{group} の他のツール","更新 {date}","ツールメニューを開く","すべてのツール","入力して検索","ツールを検索","変換元ゾーン","太平洋","米国太平洋","山岳部","米国山岳部","中部","米国中部","東部","米国東部","英国","中央ヨーロッパ","東ヨーロッパ","インド","中国","日本","シドニー","オーストラリア東部","GMT は UTC+0 として読みます。英国が GMT なのは冬だけです。ロンドンの時刻が必要なら「英国」を選んでください。","CST は米国中部として読みます。中国標準時(UTC+8)も CST と略されるため、そちらなら「中国」を選んでください。","IST はインドとして読みます。アイルランド標準時やイスラエル標準時も IST と略されるため、それらは Europe/Dublin または Asia/Jerusalem と入力してください。","オフセット {offset} は範囲外です。オフセットは UTC−12 から UTC+14 までです。","「{zone}」はこのページが知らないゾーンです。PT や CET のような略称、UTC+2 のようなオフセット、Europe/Rome のようなゾーン名を使ってください。","{pos} 文字目、「{time}」の後ろを読み取れませんでした。タイムゾーンの前にスペースを入れてください: {time} PT。","「{text}」は時刻で始まっていません。10am、22:30、noon などを試してください。","{ampm} を付ける場合、時は 1〜12 で、{h} は範囲外です。12am と書いてください。","{ampm} を付ける場合、時は 1〜12 で、{h} は範囲外です。am・pm を付けずに {h}:00 と書いてください。","24:00 は読み取りません。00:00 と翌日の日付を指定してください。","時 {h} は範囲外です。0〜23、または am・pm を付けて 1〜12 です。","分 {n} は範囲外です。00〜59 です。","秒 {n} は範囲外です。00〜59 です。","コピーしました","コピー","オフセット付きの ISO 8601 形式をコピー","拒否しました","{n} 文字は上限の {limit} 文字を超えています。時刻にそれほど長さは要りません。","その時刻を読み取れませんでした","ゾーンを選んでください","「変換元」のゾーンを選ぶか、ブラウザーが知っているゾーン名を入力するか、10am PT のように時刻の後ろに付けてください。","日付を選んでください","日付欄が空か、読み取れません。変換元ゾーンでのカレンダー上の日付を選んでください。","{label} は {strict} ですが、{date} の {name} は {now} です。{label} は1年を通して使われがちなので、{name} の時刻として読みます。ちょうど {strict} にしたい場合は {typeit} と入力してください。","{date} の {name} には {wall} は存在しません。時計がその時刻を飛ばします。時計が進んだ後の同じ瞬間である {read} として読みます。","{date} の {name} では、時計が戻るため {wall} が 2 回あります。これは 1 回目で {off}、2 回目は {off2} で、{min} 分後です。","{date} の {zone} で {time}、{off}{abbr} として読み取りました。","お使いのゾーン","変換元","変換元は時刻欄の「{label}」で決まります。それがある間、ボタンは無視されます。","変換元は {zone}。お使いのゾーンは {device} です。","「{zone}」はこのブラウザーが知っているゾーン名ではありません。入力しながら一覧から選んでください。","{label}、{zone}","{n} 日","{n} 日","日時",null],"ko":["도구로 건너뛰기","다크","모든 도구","일치하는 도구가 없습니다.","텍스트","대소문자 변환기","중복 줄 제거","줄 정렬","Lorem ipsum","찾기 및 바꾸기","슬러그 변환","텍스트 비교","유니코드 검사기","공백 제거","단어 수 세기","인코딩과 암호화","바코드 생성기","Base64 인코더/디코더","이미지를 data URI로","체크섬","해시 생성기","HTML 엔티티","JWT 디코더","비밀번호 생성기","QR 코드 생성기","SSH 키 생성기","TOTP 코드 생성기","URL 인코더/디코더","UUID 생성기","Wi-Fi QR 코드","변환기","JSON·CSV 변환기","JSON·YAML 변환기","진법 변환기","개발","chmod 계산기","Cron 표현식","서브넷 계산기","JSON 비교","JSON 포맷터","정규식 테스터","XML 포맷터","CSS와 디자인","clamp 계산기","PX → REM","색상","명도 대비 검사기","이미지와 미디어","원형 자르기","EXIF 뷰어 및 제거기","파비콘 제작기","이미지 압축기","이미지 자르기","이미지 변환기","이미지 크기 조정","이미지 가리기","소셜 미디어 크롭","워터마크","PDF와 문서","문서 스캐너","금융","IBAN 검증기","숫자와 단위","화면비","단위 변환기","퍼센트 계산기","난수 생성기","시간과 날짜","나이 계산기","날짜 차이","Discord 타임스탬프","시간대 변환기","타임스탬프 변환기","생산성","동전 던지기","주사위 굴리기","무작위 추첨기","팀 생성기","룰렛 돌리기","\u003ccode>10am PT\u003c/code>, \u003ccode>3:30 pm EST\u003c/code>, \u003ccode>15:00 CET\u003c/code>처럼 평소 쓰는 방식으로 시각을 입력하면 다른 모든 시간대의 시각이 나옵니다. 서머타임은 선택한 날짜에 맞춰 반영됩니다.","이 기기에서 실행","오프라인 작동","시각","지금","10am, 10:30 pm, 22:30, noon. 뒤에 시간대를 붙여도 되고 안 붙여도 됩니다: PT, CET, UTC+2, Europe/Rome.","출발 시간대의 날짜","출발","또는 다른 시간대","결과","위에 시각 입력, 예: 10am PT","주의해서 읽으세요","작동 방식","시각 입력란은 시, 그리고 선택적인 분과 초(\u003ccode>10\u003c/code>, \u003ccode>10:30\u003c/code>, \u003ccode>10.30\u003c/code>, \u003ccode>1030\u003c/code>, \u003ccode>22:30:15\u003c/code>) 또는 \u003ccode>noon\u003c/code>과 \u003ccode>midnight\u003c/code>를 읽으며, \u003ccode>am\u003c/code>이나 \u003ccode>pm\u003c/code>을 붙일 수 있습니다. am 또는 pm을 붙이면 시는 1~12이고 \u003ccode>12am\u003c/code>은 자정입니다. 붙이지 않으면 0~23이며 \u003ccode>24:00\u003c/code>은 다음 날로 넘기지 않고 거부합니다. 시각 뒤에는 시간대를 쓸 수 있습니다. 흔한 약어(PT, PST, PDT, MT, CT, ET, AKT, HST, UTC, GMT, BST, WET, CET, EET, MSK, IST, SGT, HKT, JST, KST, AWST, ACST, AEST, NZST와 각 서머타임 형태), \u003ccode>UTC+2\u003c/code>, \u003ccode>GMT-5\u003c/code>, \u003ccode>+05:30\u003c/code> 같은 오프셋, \u003ccode>Europe/Rome\u003c/code> 같은 시간대 이름이 가능합니다. 여기에 입력한 시간대는 출발 버튼보다 우선하며 페이지가 그렇게 알려 줍니다. 100자를 넘는 입력은 거부합니다. 시각에는 그렇게 많은 글자가 필요하지 않습니다.","약어는 실제로 느슨하게 쓰이므로 각각 오프셋이 아니라 장소를 뜻합니다. PST, PDT, PT는 모두 그 날짜에 어느 쪽이 적용되든 태평양 시간을 의미합니다. 글자가 한 해의 다른 절반을 가리키는 경우(여름 날짜에 PST를 쓴 경우)에는 태평양 시간으로 읽고 무엇을 가정했는지 알려 줍니다. 고정 오프셋이 필요하면 \u003ccode>UTC-8\u003c/code>을 입력하세요. CST는 미국 중부, IST는 인도로 읽으며 둘 다 달리 뜻할 수 있는 다른 곳을 알려 줍니다. GMT는 UTC+0으로 읽으며, 영국과 같은 것은 겨울뿐입니다.","시간대 규칙은 이 브라우저가 가진 IANA 시간대 데이터베이스 사본에서 \u003ccode>timeZone\u003c/code>을 지정한 \u003ccode>Intl.DateTimeFormat\u003c/code>을 통해 가져옵니다. 순간을 찾기 위해 페이지는 첫 추정치에서 시간대의 오프셋을 읽고, 그만큼 이동한 뒤 다시 읽습니다. 시계가 앞으로 갈 때 건너뛰는 현지 시각은 건너뛰는 길이만큼 뒤로 옮기고, 시계가 뒤로 갈 때 두 번 나타나는 시각은 둘 중 먼저 것을 택합니다. 이는 \u003ccode>Temporal\u003c/code>의 \u003ccode>\"compatible\"\u003c/code> 모드와 같은 선택이며, 두 경우 모두 다른 해석과 함께 페이지에 표시됩니다. 오프셋은 초 단위까지 계산하므로 표준 시간대가 생기기 전의 날짜도 데이터베이스가 아는 범위에서 올바르게 나옵니다.","가장 먼저 \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>으로 얻은 내 시간대가 나오고, 목록에 없다면 변환한 출발 시간대, 그다음 흔한 시간대 12개가 이어집니다. 각 행에는 시각, 이 브라우저 언어로 표시한 날짜, 입력한 날짜보다 달력상 며칠 앞서거나 뒤처지는지, 그리고 오프셋이 표시됩니다. 지명 뒤의 약어(PDT, CEST)는 오프셋이 그 지역의 현재 표준시 또는 서머타임 오프셋일 때만 표시됩니다. 복사는 오프셋이 붙은 ISO 8601 형식을 복사합니다. 날짜 입력란은 이 기기의 오늘 날짜로 시작하며, 지금 버튼을 누르지 않는 한 여기서 시계를 읽는 것은 없습니다. 아무것도 업로드되지 않습니다. 이 파일에는 서버가 없습니다.","다크 및 언어 버튼은 설정을 이 브라우저의 로컬 저장소에 기억합니다. 입력하거나 페이지에 끌어다 놓은 내용은 저장되지 않습니다.","이 페이지가 네트워크에서 가져온 파일:","Ctrl+S(Mac은 Cmd+S)로 저장하면 오프라인에서도 계속 작동합니다.","기계 번역이며 원어민의 검토를 거치지 않았습니다. 영어 페이지가 기준입니다.","지식에는 한계가 없다","시간대 변환기: PST에서 CET, EST에서 IST, 모든 시간대 — MDV","시간대 간 시각을 변환합니다. 10am PT 또는 15:00 CET를 입력하면 날짜에 맞는 서머타임을 반영해 주요 시간대 모두에서의 시각을 보여 줍니다. 기기에서 실행됩니다.","도구 {n}개 전체","{group}의 다른 도구","업데이트 {date}","도구 메뉴 열기","모든 도구","입력하여 검색","도구 찾기","출발 시간대","태평양","미국 태평양","산악","미국 산악","중부","미국 중부","동부","미국 동부","영국","중앙유럽","동유럽","인도","중국","일본","시드니","오스트레일리아 동부","GMT는 UTC+0으로 읽습니다. 영국이 GMT인 것은 겨울뿐이므로, 런던 시각이 필요하면 영국을 고르세요.","CST는 미국 중부로 읽습니다. 중국 표준시(UTC+8)를 뜻하기도 하므로, 그쪽이라면 중국을 고르세요.","IST는 인도로 읽습니다. 아일랜드 표준시와 이스라엘 표준시를 뜻하기도 하므로, 그쪽은 Europe/Dublin 또는 Asia/Jerusalem을 입력하세요.","오프셋 {offset}은(는) 범위를 벗어났습니다. 오프셋은 UTC−12에서 UTC+14까지입니다.","\"{zone}\"은(는) 이 페이지가 아는 시간대가 아닙니다. PT나 CET 같은 약어, UTC+2 같은 오프셋, Europe/Rome 같은 시간대 이름을 쓰세요.","{pos}번째 위치에서 \"{time}\" 뒤에 오는 내용을 읽을 수 없습니다. 시간대 앞에 공백을 넣으세요: {time} PT.","\"{text}\"은(는) 시각으로 시작하지 않습니다. 10am, 22:30, noon 등을 입력해 보세요.","{ampm}를 붙이면 시는 1~12이며 {h}은(는) 해당하지 않습니다. 12am으로 쓰세요.","{ampm}를 붙이면 시는 1~12이며 {h}은(는) 해당하지 않습니다. am이나 pm 없이 {h}:00으로 쓰세요.","24:00은 여기서 읽지 않습니다. 00:00과 다음 날의 날짜를 쓰세요.","시 {h}은(는) 범위를 벗어났습니다. 0~23, 또는 am/pm과 함께 1~12입니다.","분 {n}은(는) 범위를 벗어났습니다. 00~59입니다.","초 {n}은(는) 범위를 벗어났습니다. 00~59입니다.","복사됨","복사","오프셋이 붙은 ISO 8601 형식 복사","거부됨","{n}자는 상한 {limit}자를 넘습니다. 시각에는 그렇게 많은 글자가 필요하지 않습니다.","그 시각을 읽을 수 없습니다","시간대를 선택하세요","출발 시간대를 고르거나, 브라우저가 아는 시간대 이름을 입력하거나, 10am PT처럼 시각 뒤에 붙이세요.","날짜를 선택하세요","날짜 입력란이 비어 있거나 읽을 수 없습니다. 출발 시간대 기준의 달력 날짜를 선택하세요.","{label}은(는) {strict}이지만 {date}에 {name}은(는) {now}입니다. {label}은 흔히 일 년 내내 쓰이므로 {name} 시간으로 읽습니다. 정확히 {strict}가 필요하면 {typeit}을 입력하세요.","{date}의 {name}에는 {wall}이(가) 존재하지 않습니다. 시계가 그 시각을 건너뜁니다. 시계가 넘어간 뒤의 같은 순간인 {read}(으)로 읽습니다.","{date}의 {name}에서는 시계가 뒤로 가면서 {wall}이(가) 두 번 나타납니다. 이것은 첫 번째로 {off}이고, 두 번째는 {off2}로 {min}분 뒤입니다.","{date} {zone}의 {time}, {off}{abbr}(으)로 읽었습니다.","내 시간대","출발","출발지는 시각 입력란의 \"{label}\"(으)로 정해지며, 그것이 있는 동안 버튼은 무시됩니다.","출발: {zone}. 내 시간대는 {device}입니다.","\"{zone}\"은(는) 이 브라우저가 아는 시간대 이름이 아닙니다. 입력하면서 목록에서 고르세요.","{label}, {zone}","{n}일","{n}일","시간과 날짜",null],"zh-CN":["跳到工具","深色","所有工具","没有匹配的工具。","文本","大小写转换器","删除重复行","行排序","Lorem ipsum","查找和替换","Slug 生成","文本对比","Unicode 检查器","去除空白","字数统计","编码与加密","条形码生成器","Base64 编码与解码","图片转 data URI","校验和","哈希生成器","HTML 实体","JWT 解码器","密码生成器","二维码生成器","SSH 密钥生成器","TOTP 验证码生成器","URL 编码/解码器","UUID 生成器","Wi-Fi 二维码","转换器","JSON 与 CSV 转换器","JSON 与 YAML 转换器","进制转换器","开发","chmod 计算器","Cron 表达式","子网计算器","JSON 对比","JSON 格式化工具","正则表达式测试器","XML 格式化工具","CSS 与设计","clamp 计算器","PX 转 REM","颜色","对比度检查器","图像与媒体","圆形裁剪","EXIF 查看与清除","网站图标制作","图片压缩器","图片裁剪","图片格式转换","图片缩放","遮盖图片","社交媒体裁剪","水印","PDF 与文档","文档扫描仪","财务","IBAN 校验器","数字与单位","宽高比","单位换算器","百分比计算器","随机数生成器","时间与日期","年龄计算器","日期差","Discord 时间戳","时区转换器","时间戳转换器","效率","抛硬币","掷骰子","随机抽取器","分组生成器","转转盘","按日常写法输入时间,如 \u003ccode>10am PT\u003c/code>、\u003ccode>3:30 pm EST\u003c/code>、\u003ccode>15:00 CET\u003c/code>,即可看到它在其他所有时区的时间。夏令时按你所选日期计算。","在此设备上运行","可离线使用","时间","现在","10am、10:30 pm、22:30、noon，后面可带或不带时区:PT、CET、UTC+2、Europe/Rome。","出发时区的日期","从","或任意时区","结果","在上方输入时间,如 10am PT","请留意","工作原理","时间框可读取小时,以及可选的分和秒(\u003ccode>10\u003c/code>、\u003ccode>10:30\u003c/code>、\u003ccode>10.30\u003c/code>、\u003ccode>1030\u003c/code>、\u003ccode>22:30:15\u003c/code>),或 \u003ccode>noon\u003c/code> 和 \u003ccode>midnight\u003c/code>,还可带可选的 \u003ccode>am\u003c/code> 或 \u003ccode>pm\u003c/code>。带 am 或 pm 时小时为 1 到 12,\u003ccode>12am\u003c/code> 是午夜;不带时为 0 到 23,\u003ccode>24:00\u003c/code> 会被拒绝,而不是进位到次日。时间后面可以写时区:常见缩写(PT、PST、PDT、MT、CT、ET、AKT、HST、UTC、GMT、BST、WET、CET、EET、MSK、IST、SGT、HKT、JST、KST、AWST、ACST、AEST、NZST 及其夏令时形式)、\u003ccode>UTC+2\u003c/code>、\u003ccode>GMT-5\u003c/code> 或 \u003ccode>+05:30\u003c/code> 这样的偏移,或 \u003ccode>Europe/Rome\u003c/code> 这样的时区名。写在这里的时区优先于“从”按钮,页面会注明。超过 100 个字符的输入会被拒绝;一个时间远用不了这么长。","缩写在现实中并不严格,所以每个缩写代表的是一个地方,而不是一个偏移:PST、PDT 和 PT 都表示太平洋时间,无论该日期实际用的是哪一种。当字母指的是另半年(如夏季日期写成 PST)时,页面按太平洋时间读取并说明所作的假设,而 \u003ccode>UTC-8\u003c/code> 则给出固定偏移。CST 按美国中部时间读取,IST 按印度读取,两者都会说明它们还可能指的其他地方。GMT 按 UTC+0 读取,只有冬季才与英国一致。","时区规则来自此浏览器自带的 IANA 时区数据库副本,通过带 \u003ccode>timeZone\u003c/code> 的 \u003ccode>Intl.DateTimeFormat\u003c/code> 读取。为了确定时刻,页面先按初步估计读取该时区的偏移,按此偏移移动后再读一次。时钟拨快时被跳过的本地时间,会向后顺延跳过的时长;时钟拨回时出现两次的时间,取其中第一次——与 \u003ccode>Temporal\u003c/code> 的 \u003ccode>\"compatible\"\u003c/code> 模式的选择相同——两种情况都会在页面上连同另一种读法一并注明。偏移精确到秒,因此在标准时区出现之前的日期,只要数据库有记录,也能算对。","你自己的时区排在最前,取自 \u003ccode>Intl.DateTimeFormat().resolvedOptions().timeZone\u003c/code>;其次是你转换所用的时区(如果不在列表中),然后是十二个常用时区。每一行给出时间、以此浏览器语言显示的日期、比你输入的日期早或晚多少个日历日,以及偏移。地名后面的缩写(PDT、CEST)只有在偏移恰好是该地当前标准时间或夏令时偏移时才会显示。复制会复制带偏移的 ISO 8601 形式。日期框以此设备上的今天日期开头;除非你按“现在”,这里没有别的东西会读取时钟。不会上传任何内容:此文件没有服务器。","“深色”和“语言”按钮会把设置记在此浏览器的本地存储中。你输入或拖入页面的任何内容都不会被存储。","此页面从网络获取的文件数:","按 Ctrl+S(Mac 上为 Cmd+S)保存后,可继续离线使用。","机器翻译,未经母语人士审校。以英文页面为准。","知识没有界限","时区转换器:PST 转 CET、EST 转 IST、任意时区 — MDV","在时区之间转换时间:输入 10am PT 或 15:00 CET，即可看到它在所有常用时区的时间,并按日期计入夏令时。在你的设备上运行。","全部 {n} 个工具","{group}中的其他工具","更新于 {date}","打开工具菜单","所有工具","输入以查找","查找工具","出发时区","太平洋","美国太平洋","山地","美国山地","中部","美国中部","东部","美国东部","英国","中欧","东欧","印度","中国","日本","悉尼","澳大利亚东部","GMT 按 UTC+0 读取。英国只有冬季才使用 GMT;要看伦敦时间,请选“英国”。","CST 按美国中部时间读取。它也代表中国标准时间(UTC+8);若指的是后者,请选“中国”。","IST 按印度读取。它也代表爱尔兰和以色列标准时间;那两者请输入 Europe/Dublin 或 Asia/Jerusalem。","偏移 {offset} 超出范围:偏移范围为 UTC−12 到 UTC+14。","“{zone}”不是本页认识的时区。请使用 PT 或 CET 这样的缩写、UTC+2 这样的偏移,或 Europe/Rome 这样的时区名。","无法读取第 {pos} 位上“{time}”之后的内容。请在时区前加一个空格:{time} PT。","“{text}”不是以时间开头。请试试 10am、22:30 或 noon。","带 {ampm} 时小时为 1 到 12,{h} 不在其中。请写 12am。","带 {ampm} 时小时为 1 到 12,{h} 不在其中。请不带 am 或 pm，写成 {h}:00。","此处不读取 24:00:请写 00:00 并填次日的日期。","小时 {h} 超出范围:0 到 23，或带 am/pm 时为 1 到 12。","分钟 {n} 超出范围:00 到 59。","秒 {n} 超出范围:00 到 59。","已复制","复制","复制带偏移的 ISO 8601 格式","已拒绝","{n} 个字符超过了 {limit} 字符的上限——一个时间远用不了这么长。","无法读取该时间","请选择时区","请选择“从”时区、输入浏览器认识的时区名,或像 10am PT 那样把时区写在时间后面。","请选择日期","日期框为空或无法读取。请选择出发时区的日历日期。","{label} 是 {strict},但在 {date},{name} 处于 {now}。人们常常全年都写 {label},所以这里按 {name} 时间读取。若要恰好 {strict},请输入 {typeit}。","{date} 在 {name} 不存在 {wall}:时钟会跳过它。按 {read} 读取,即时钟拨快后的同一时刻。","{date} 在 {name},时钟拨回时 {wall} 会出现两次。这是第一次,偏移为 {off};第二次偏移为 {off2},晚 {min} 分钟。","按 {date} 在 {zone} 的 {time} 读取,{off}{abbr}。","你的时区","出发","“从”时区由时间框中的“{label}”决定;它在时,按钮会被忽略。","从 {zone}。你的时区是 {device}。","“{zone}”不是此浏览器认识的时区名。输入时请从列表中选择。","{label},{zone}","{n} 天","{n} 天","时间与日期",null]}</script>
+<script>
+/* mdv-allow-storage: localStorage "mdv-lang" holds the language picked on the language sheet, nothing else. */
+(function () {
+  "use strict";
+  var root = document.documentElement, lang = root.getAttribute("lang") || "en";
+  var data = JSON.parse(document.getElementById("mdv-i18n").textContent), at = {}, subs = [];
+  data.k.forEach(function (k, i) { at[k] = data.h + i; });
+
+  function find(s) {
+    var a = data[lang];
+    if (!a || at[s] === undefined || a[at[s]] === null) return s;
+    return a[at[s]];
+  }
+  function fill(s, vars) {
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return k in vars ? vars[k] : m; }) : s;
+  }
+  window.tr = function (s, vars) { return fill(find(s), vars); };
+  window.trk = function (s) { return s; };
+  window.trn = function (n, one, other, vars) {
+    var v = { n: n.toLocaleString(lang) };
+    for (var k in vars) v[k] = vars[k];
+    var form = window.Intl && Intl.PluralRules ? new Intl.PluralRules(lang).select(n) : (n === 1 ? "one" : "other");
+    return fill(find(form === "one" ? one : other), v);
+  };
+  window.onLang = function (fn) { subs.push(fn); };
+
+  // what the markup said in English, kept before anything is replaced
+  var nodes = Array.prototype.map.call(document.querySelectorAll("[data-t],[data-t-attrs],[data-t-aria],[data-t-date]"), function (el) {
+    var attrs = {};
+    (el.getAttribute("data-t-attrs") || "").trim().split(/\s+/).forEach(function (a) { if (a) attrs[a] = el.getAttribute(a); });
+    return { el: el, key: el.getAttribute("data-t"), en: el.innerHTML, attrs: attrs, aria: el.getAttribute("data-t-aria"), date: el.hasAttribute("data-t-date"),
+      vars: el.hasAttribute("data-t-vars") ? JSON.parse(el.getAttribute("data-t-vars")) : null };
+  });
+  var title = document.title, descEl = document.querySelector('meta[name="description"]'), desc = descEl ? descEl.getAttribute("content") : "";
+  var links = Array.prototype.map.call(document.querySelectorAll(".mdv-drawer-link[data-q]"), function (a) { return { el: a, q: a.getAttribute("data-q") }; });
+  function fold(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim(); }
+
+  function varsOf(v) {
+    if (!v) return v;
+    var out = {};
+    for (var k in v) out[k] = typeof v[k] === "string" ? find(v[k]) : v[k].toLocaleString(lang);
+    return out;
+  }
+  function paint() {
+    root.setAttribute("lang", lang);
+    document.title = find(title);
+    if (descEl) descEl.setAttribute("content", find(desc));
+    var a = data[lang];
+    nodes.forEach(function (n) {
+      if (n.date) {
+        n.el.innerHTML = lang === "en" ? n.en : new Intl.DateTimeFormat(lang, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(n.el.getAttribute("datetime") + "T00:00:00Z"));
+      } else if (n.key !== null) {
+        var html = /^\d+$/.test(n.key);
+        if (html) n.el.innerHTML = a && a[+n.key] !== null ? a[+n.key] : n.en;
+        else n.el.textContent = fill(find(n.key), varsOf(n.vars));
+      }
+      for (var name in n.attrs) n.el.setAttribute(name, find(n.attrs[name]));
+      if (n.aria) n.el.setAttribute("aria-label", fill(find(n.aria), varsOf(n.vars)));
+    });
+    // the drawer filter also finds a tool by its name in the page's language
+    links.forEach(function (l) { l.el.setAttribute("data-q", l.q + " " + fold(l.el.textContent)); });
+    var note = document.querySelector("[data-mdv-mt]");
+    if (note) note.hidden = lang === "en";
+    var button = sheet.querySelector('[data-lang="' + lang + '"]');
+    Array.prototype.forEach.call(sheet.querySelectorAll("[data-lang]"), function (b) {
+      b.classList.toggle("is-on", b === button);
+      if (b === button) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
+    });
+    var name = button.querySelector(".mdv-langs-name").textContent;
+    open.querySelector("use").setAttribute("href", button.querySelector("use").getAttribute("href"));
+    open.querySelector(".mdv-lang-name").textContent = name.replace(/ \(.*/, "");
+    open.setAttribute("aria-label", find("Language") + ": " + name);
+    sheet.setAttribute("aria-label", find("Language"));
+  }
+  var open = document.querySelector(".mdv-lang"), sheet = document.querySelector(".mdv-langs");
+  open.addEventListener("click", function () {
+    sheet.showModal();
+    var on = sheet.querySelector(".is-on");
+    if (on) on.focus();
+  });
+  sheet.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest("[data-lang]") : null;
+    if (!b) { if (e.target === sheet) sheet.close(); return; }
+    sheet.close();
+    if (b.getAttribute("data-lang") === lang) return;
+    lang = b.getAttribute("data-lang");
+    try { localStorage.setItem("mdv-lang", lang); } catch (err) { /* storage blocked: the choice lasts until the page is left */ }
+    try {
+      var url = new URL(location.href);
+      if (lang === "en") url.searchParams.delete("lang"); else url.searchParams.set("lang", lang);
+      history.replaceState(null, "", url.href);
+    } catch (err) { /* a saved file may refuse: the page has changed language all the same */ }
+    paint();
+    subs.forEach(function (fn) { fn(lang); });
+  });
+  paint();
+  root.removeAttribute("data-t-wait");
 })();
 </script>
 
@@ -2379,34 +2592,34 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   // The twelve rows, west to east: [button, label, zone, [standard abbr, minutes], [summer abbr, minutes] or null]
   var COMMON = [
     ["UTC", "UTC", "UTC", ["UTC", 0], null],
-    ["Pacific", "US Pacific", "America/Los_Angeles", ["PST", -480], ["PDT", -420]],
-    ["Mountain", "US Mountain", "America/Denver", ["MST", -420], ["MDT", -360]],
-    ["Central", "US Central", "America/Chicago", ["CST", -360], ["CDT", -300]],
-    ["Eastern", "US Eastern", "America/New_York", ["EST", -300], ["EDT", -240]],
-    ["UK", "UK", "Europe/London", ["GMT", 0], ["BST", 60]],
-    ["CET", "Central Europe", "Europe/Paris", ["CET", 60], ["CEST", 120]],
-    ["EET", "Eastern Europe", "Europe/Athens", ["EET", 120], ["EEST", 180]],
-    ["India", "India", "Asia/Kolkata", ["IST", 330], null],
-    ["China", "China", "Asia/Shanghai", ["CST", 480], null],
-    ["Japan", "Japan", "Asia/Tokyo", ["JST", 540], null],
-    ["Sydney", "Australia East", "Australia/Sydney", ["AEST", 600], ["AEDT", 660]]
+    [trk("Pacific"), trk("US Pacific"), "America/Los_Angeles", ["PST", -480], ["PDT", -420]],
+    [trk("Mountain"), trk("US Mountain"), "America/Denver", ["MST", -420], ["MDT", -360]],
+    [trk("Central"), trk("US Central"), "America/Chicago", ["CST", -360], ["CDT", -300]],
+    [trk("Eastern"), trk("US Eastern"), "America/New_York", ["EST", -300], ["EDT", -240]],
+    [trk("UK"), trk("UK"), "Europe/London", ["GMT", 0], ["BST", 60]],
+    ["CET", trk("Central Europe"), "Europe/Paris", ["CET", 60], ["CEST", 120]],
+    ["EET", trk("Eastern Europe"), "Europe/Athens", ["EET", 120], ["EEST", 180]],
+    [trk("India"), trk("India"), "Asia/Kolkata", ["IST", 330], null],
+    [trk("China"), trk("China"), "Asia/Shanghai", ["CST", 480], null],
+    [trk("Japan"), trk("Japan"), "Asia/Tokyo", ["JST", 540], null],
+    [trk("Sydney"), trk("Australia East"), "Australia/Sydney", ["AEST", 600], ["AEDT", 660]]
   ];
 
   // Typed abbreviation -> [zone, the offset those letters strictly mean in minutes or null, note or ""]
   var ABBR = {
     UTC: ["UTC", 0, ""], UT: ["UTC", 0, ""], Z: ["UTC", 0, ""],
-    GMT: ["UTC", 0, "GMT is read as UTC+0. The UK is on GMT only in winter; pick UK for the time in London."],
+    GMT: ["UTC", 0, trk("GMT is read as UTC+0. The UK is on GMT only in winter; pick UK for the time in London.")],
     PT: ["America/Los_Angeles", null, ""], PST: ["America/Los_Angeles", -480, ""], PDT: ["America/Los_Angeles", -420, ""],
     MT: ["America/Denver", null, ""], MST: ["America/Denver", -420, ""], MDT: ["America/Denver", -360, ""],
     CT: ["America/Chicago", null, ""], CDT: ["America/Chicago", -300, ""],
-    CST: ["America/Chicago", -360, "CST is read as US Central. It also stands for China Standard Time (UTC+8); pick China if that was meant."],
+    CST: ["America/Chicago", -360, trk("CST is read as US Central. It also stands for China Standard Time (UTC+8); pick China if that was meant.")],
     ET: ["America/New_York", null, ""], EST: ["America/New_York", -300, ""], EDT: ["America/New_York", -240, ""],
     AKT: ["America/Anchorage", null, ""], AKST: ["America/Anchorage", -540, ""], AKDT: ["America/Anchorage", -480, ""],
     HST: ["Pacific/Honolulu", -600, ""],
     BST: ["Europe/London", 60, ""], WET: ["Europe/Lisbon", 0, ""], WEST: ["Europe/Lisbon", 60, ""],
     CET: ["Europe/Paris", 60, ""], CEST: ["Europe/Paris", 120, ""],
     EET: ["Europe/Athens", 120, ""], EEST: ["Europe/Athens", 180, ""], MSK: ["Europe/Moscow", 180, ""],
-    IST: ["Asia/Kolkata", 330, "IST is read as India. It also stands for Irish and Israel Standard Time; type Europe/Dublin or Asia/Jerusalem for those."],
+    IST: ["Asia/Kolkata", 330, trk("IST is read as India. It also stands for Irish and Israel Standard Time; type Europe/Dublin or Asia/Jerusalem for those.")],
     SGT: ["Asia/Singapore", 480, ""], HKT: ["Asia/Hong_Kong", 480, ""],
     JST: ["Asia/Tokyo", 540, ""], KST: ["Asia/Seoul", 540, ""],
     AWST: ["Australia/Perth", 480, ""], ACST: ["Australia/Adelaide", 570, ""], ACDT: ["Australia/Adelaide", 630, ""],
@@ -2424,6 +2637,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   var readas = document.getElementById("readas"), result = document.getElementById("result"), rowsEl = document.getElementById("rows");
   var deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   var fmtCache = {};
+  var failNow = null;
   var picked = { id: "America/Los_Angeles" };   // the From buttons or the zone box; typed zones win over it
 
   /* ---------- pure ---------- */
@@ -2506,14 +2720,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     }
     if ((m = OFFSET.exec(t))) {
       var h = Number(m[2]), mi = Number(m[3] || 0);
-      if (h > 14 || mi > 59 || (h === 14 && mi > 0)) throw "The offset " + t + " is out of range: offsets run from UTC−12 to UTC+14.";
+      if (h > 14 || mi > 59 || (h === 14 && mi > 0)) throw { m: trk("The offset {offset} is out of range: offsets run from UTC−12 to UTC+14."), v: { offset: t } };
       var minutes = (m[1] === "+" ? 1 : -1) * (h * 60 + mi);
       return { zone: { fixed: minutes }, label: shortOffset(minutes * 60), strict: null, note: "" };
     }
     var id = /\//.test(t) || /^utc$/i.test(t) ? knownZone(t) : null;
     if (id) return { zone: { id: id }, label: id, strict: null, note: "" };
-    throw "“" + t + "” is not a zone this page knows. Use an abbreviation like PT or CET, an offset like UTC+2, " +
-      "or a zone name like Europe/Rome.";
+    throw { m: trk("“{zone}” is not a zone this page knows. Use an abbreviation like PT or CET, an offset like UTC+2, or a zone name like Europe/Rome."), v: { zone: t } };
   }
 
   // The whole time box -> { h, mi, s, zone text } or throws a message naming the problem.
@@ -2522,8 +2735,8 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!m) {
       var first = /^\d{1,2}(?:[:.]\d{2})?(?::\d{2})?\s*(?:[ap]\.?\s?m\.?)?/i.exec(s);
       throw first
-        ? "Could not read what follows “" + first[0] + "” at position " + (first[0].length + 1) + ". Put a space before the zone: " + first[0] + " PT."
-        : "“" + (s.length > 30 ? s.slice(0, 30) + "…" : s) + "” does not start with a time. Try 10am, 22:30 or noon.";
+        ? { m: trk("Could not read what follows “{time}” at position {pos}. Put a space before the zone: {time} PT."), v: { time: first[0], pos: first[0].length + 1 } }
+        : { m: trk("“{text}” does not start with a time. Try 10am, 22:30 or noon."), v: { text: s.length > 30 ? s.slice(0, 30) + "…" : s } };
     }
     var h, mi = 0, sec = 0, ampm = (m[5] || "").toLowerCase().replace(/[.\s]/g, "");
     if (m[1]) h = m[1].toLowerCase() === "noon" ? 12 : 0;
@@ -2533,12 +2746,14 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       h = Number(m[2]); mi = Number(m[3] || 0); sec = Number(m[4] || 0);
     }
     if (ampm) {
-      if (h < 1 || h > 12) throw "With " + ampm + " the hour is 1 to 12, and " + h + " is not. Write " + (h === 0 ? "12am" : h + ":00 without am or pm") + ".";
+      if (h < 1 || h > 12) throw h === 0
+        ? { m: trk("With {ampm} the hour is 1 to 12, and {h} is not. Write 12am."), v: { ampm: ampm, h: h } }
+        : { m: trk("With {ampm} the hour is 1 to 12, and {h} is not. Write {h}:00 without am or pm."), v: { ampm: ampm, h: h } };
       h = h % 12 + (ampm === "pm" ? 12 : 0);
-    } else if (h === 24) throw "24:00 is not read here: write 00:00 and the next day's date.";
-    else if (h > 23) throw "Hour " + h + " is out of range: 0 to 23, or 1 to 12 with am or pm.";
-    if (mi > 59) throw "Minute " + pad(mi) + " is out of range: 00 to 59.";
-    if (sec > 59) throw "Second " + pad(sec) + " is out of range: 00 to 59.";
+    } else if (h === 24) throw { m: trk("24:00 is not read here: write 00:00 and the next day's date.") };
+    else if (h > 23) throw { m: trk("Hour {h} is out of range: 0 to 23, or 1 to 12 with am or pm."), v: { h: h } };
+    if (mi > 59) throw { m: trk("Minute {n} is out of range: 00 to 59."), v: { n: pad(mi) } };
+    if (sec > 59) throw { m: trk("Second {n} is out of range: 00 to 59."), v: { n: pad(sec) } };
     return { h: h, mi: mi, s: sec, zoneText: m[7].trim() };
   }
 
@@ -2546,7 +2761,7 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   function labelOf(zone) {
     if (zone.fixed !== undefined) return shortOffset(zone.fixed * 60);
-    for (var i = 0; i < COMMON.length; i++) if (COMMON[i][2] === zone.id) return COMMON[i][1];
+    for (var i = 0; i < COMMON.length; i++) if (COMMON[i][2] === zone.id) return tr(COMMON[i][1]);
     return zone.id;
   }
   function abbrOf(zone, off) {
@@ -2564,9 +2779,10 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     result.hidden = readas.hidden = which !== "result";
     if (which !== "result") warn.hidden = true;
   }
-  function fail(title, msg) {
-    errtitle.textContent = title;
-    errmsg.textContent = msg;
+  function fail(title, msg, vars) {
+    failNow = { t: title, m: msg, v: vars };
+    errtitle.textContent = tr(title);
+    errmsg.textContent = tr(msg, vars);
     input.setAttribute("aria-invalid", "true");
     state("error");
   }
@@ -2578,16 +2794,20 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       year: f.y === new Date().getFullYear() ? undefined : "numeric", timeZone: zone.id || "UTC" });
     var shown = zone.id ? new Date(ms) : new Date(ms + zone.fixed * 60000);
     var dt = document.createElement("dt"), dd = document.createElement("dd");
-    dt.textContent = labelOf(zone) + (abbr ? " · " + abbr : "") + (tags.length ? " · " + tags.join(" · ") : "");
+    dt.textContent = labelOf(zone) + (abbr ? " · " + abbr : "") + (tags.length ? " · " + tags.map(function (x) { return tr(x); }).join(" · ") : "");
     if (zone.id) dt.title = zone.id;
     dd.innerHTML = '<div class="mdv-row is-between"><span style="flex:1"><span class="mdv-strong"></span> <span></span> ' +
       '<span class="mdv-muted"></span> <span class="mdv-faint"></span><span id="iso-' + n + '" hidden></span></span>' +
-      '<span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden>Copied</span>' +
-      '<button class="mdv-btn is-sm is-quiet" type="button" data-copy="iso-' + n + '" title="Copies the ISO 8601 form with offset">Copy</button></span></div>';
+      '<span class="mdv-btn-row"><span class="mdv-badge is-accent" hidden></span>' +
+      '<button class="mdv-btn is-sm is-quiet" type="button" data-copy="iso-' + n + '"></button></span></div>';
+    var copied = dd.querySelector(".mdv-badge"), copyBtn = dd.querySelector("button");
+    copied.textContent = tr("Copied");
+    copyBtn.textContent = tr("Copy");
+    copyBtn.title = tr("Copies the ISO 8601 form with offset");
     var cells = dd.firstChild.firstChild.children;   // time, date, day shift, offset, hidden ISO
     cells[0].textContent = pad(f.h) + ":" + pad(f.mi) + (f.s || off % 60 ? ":" + pad(f.s) : "");
     cells[1].textContent = dateFmt.format(shown);
-    cells[2].textContent = days ? (days > 0 ? "+" : "−") + Math.abs(days) + (Math.abs(days) === 1 ? " day" : " days") : "";
+    cells[2].textContent = days ? (days > 0 ? "+" : "−") + trn(Math.abs(days), "{n} day", "{n} days") : "";
     cells[3].textContent = shortOffset(off);
     cells[4].textContent = isoAt(f, off);
     rowsEl.appendChild(dt);
@@ -2601,45 +2821,45 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
     if (!raw.trim()) { paintFrom(null); state("empty"); return; }
     if (raw.length > LIMIT) {
       paintFrom(null);
-      return fail("Refused", raw.length.toLocaleString() + " characters is past the " + LIMIT + "-character ceiling — a time needs far less.");
+      return fail(trk("Refused"), trk("{n} characters is past the {limit}-character ceiling — a time needs far less."), { n: raw.length.toLocaleString(), limit: LIMIT });
     }
     try { t = readTime(raw); if (t.zoneText) typed = readZone(t.zoneText); }
-    catch (e) { paintFrom(null); return fail("Could not read that time", String(e)); }
+    catch (e) { paintFrom(null); return fail(trk("Could not read that time"), e.m || String(e), e.v); }
     paintFrom(typed);
     zone = typed ? typed.zone : picked;
-    if (!zone) return fail("Pick a zone", "Choose a From zone, type a zone name the browser knows, or put one after the time, like 10am PT.");
+    if (!zone) return fail(trk("Pick a zone"), trk("Choose a From zone, type a zone name the browser knows, or put one after the time, like 10am PT."));
     var dm = /^(\d{4,6})-(\d{2})-(\d{2})$/.exec(dateEl.value);
-    if (!dm) return fail("Pick a date", "The date field is empty or unreadable. Pick the calendar date in the From zone.");
+    if (!dm) return fail(trk("Pick a date"), trk("The date field is empty or unreadable. Pick the calendar date in the From zone."));
 
     var f = { y: Number(dm[1]), mo: Number(dm[2]) - 1, d: Number(dm[3]), h: t.h, mi: t.mi, s: t.s };
     var r = toInstant(zone, f), used = fieldsAt(zone, r.ms), off = offsetAt(zone, r.ms), name = labelOf(zone);
     var abbr = zone.id ? abbrOf(zone, off) : "";
     if (typed && typed.strict !== null && typed.strict * 60 !== off && zone.id) {
-      notes.push(typed.label + " is " + shortOffset(typed.strict * 60) + ", but on " + dateEl.value + " " + name + " is on " +
-        shortOffset(off) + (abbr ? " (" + abbr + ")" : "") + ". People often write " + typed.label + " all year, so this reads it as " +
-        name + " time. For " + shortOffset(typed.strict * 60) + " exactly, type " + shortOffset(typed.strict * 60).replace("−", "-") + ".");
+      notes.push(tr("{label} is {strict}, but on {date} {name} is on {now}. People often write {label} all year, so this reads it as {name} time. For {strict} exactly, type {typeit}.", {
+        label: typed.label, strict: shortOffset(typed.strict * 60), date: dateEl.value, name: name,
+        now: shortOffset(off) + (abbr ? " (" + abbr + ")" : ""), typeit: shortOffset(typed.strict * 60).replace("−", "-") }));
     }
-    if (typed && typed.note) notes.push(typed.note);
+    if (typed && typed.note) notes.push(tr(typed.note));
     var wall = pad(f.h) + ":" + pad(f.mi) + (f.s ? ":" + pad(f.s) : "");
-    if (r.gap) notes.push(wall + " does not exist on " + dateEl.value + " in " + name + ": the clocks skip it. Read as " +
-      pad(used.h) + ":" + pad(used.mi) + ", the same instant once the clocks have moved on.");
-    if (r.other !== null) notes.push(wall + " happens twice on " + dateEl.value + " in " + name + ", when the clocks go back. This is the first, at " +
-      shortOffset(off) + "; the second is at " + shortOffset(offsetAt(zone, r.other)) + ", " + Math.round((r.other - r.ms) / 6e4) + " minutes later.");
+    if (r.gap) notes.push(tr("{wall} does not exist on {date} in {name}: the clocks skip it. Read as {read}, the same instant once the clocks have moved on.",
+      { wall: wall, date: dateEl.value, name: name, read: pad(used.h) + ":" + pad(used.mi) }));
+    if (r.other !== null) notes.push(tr("{wall} happens twice on {date} in {name}, when the clocks go back. This is the first, at {off}; the second is at {off2}, {min} minutes later.",
+      { wall: wall, date: dateEl.value, name: name, off: shortOffset(off), off2: shortOffset(offsetAt(zone, r.other)), min: Math.round((r.other - r.ms) / 6e4) }));
 
-    readas.textContent = "Read as " + pad(used.h) + ":" + pad(used.mi) + (used.s ? ":" + pad(used.s) : "") + " on " + dateEl.value + " in " +
-      name + (zone.id && zone.id !== name ? " (" + zone.id + ")" : "") + ", " + shortOffset(off) + (abbr ? ", " + abbr : "") + ".";
+    readas.textContent = tr("Read as {time} on {date} in {zone}, {off}{abbr}.", { time: pad(used.h) + ":" + pad(used.mi) + (used.s ? ":" + pad(used.s) : ""),
+      date: dateEl.value, zone: name + (zone.id && zone.id !== name ? " (" + zone.id + ")" : ""), off: shortOffset(off), abbr: abbr ? ", " + abbr : "" });
     warnmsg.textContent = notes.join(" ");
     warn.hidden = !notes.length;
 
     // your zone first, then the From zone if it is not one of the twelve, then the twelve
     var fromDay = utcDay(f.y, f.mo, f.d), n = 0, inCommon = function (id) { return COMMON.some(function (c) { return c[2] === id; }); };
     var isFrom = function (z) { return zone.fixed !== undefined ? z.fixed === zone.fixed : z.id === zone.id; };
-    if (!inCommon(deviceZone)) row({ id: deviceZone }, r.ms, fromDay, ["your zone"].concat(isFrom({ id: deviceZone }) ? ["from"] : []), n++);
-    if (zone.fixed !== undefined || (!inCommon(zone.id) && zone.id !== deviceZone)) row(zone, r.ms, fromDay, ["from"], n++);
+    if (!inCommon(deviceZone)) row({ id: deviceZone }, r.ms, fromDay, [trk("your zone")].concat(isFrom({ id: deviceZone }) ? [trk("from")] : []), n++);
+    if (zone.fixed !== undefined || (!inCommon(zone.id) && zone.id !== deviceZone)) row(zone, r.ms, fromDay, [trk("from")], n++);
     COMMON.forEach(function (c) {
       var z = { id: c[2] }, tags = [];
-      if (c[2] === deviceZone) tags.push("your zone");
-      if (isFrom(z)) tags.push("from");
+      if (c[2] === deviceZone) tags.push(trk("your zone"));
+      if (isFrom(z)) tags.push(trk("from"));
       row(z, r.ms, fromDay, tags, n++);
     });
     state("result");
@@ -2652,9 +2872,9 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
       b.classList.toggle("is-on", on);
       b.setAttribute("aria-pressed", on ? "true" : "false");
     });
-    if (typed) fromhint.textContent = "From is set by “" + typed.label + "” in the time box; the buttons are ignored while it is there.";
-    else if (picked) fromhint.textContent = "From " + labelOf(picked) + (picked.id !== labelOf(picked) ? " (" + picked.id + ")" : "") + ". Your zone is " + deviceZone + ".";
-    else fromhint.textContent = "“" + other.value.trim() + "” is not a zone name this browser knows. Pick from the list as you type.";
+    if (typed) fromhint.textContent = tr("From is set by “{label}” in the time box; the buttons are ignored while it is there.", { label: typed.label });
+    else if (picked) fromhint.textContent = tr("From {zone}. Your zone is {device}.", { zone: labelOf(picked) + (picked.id !== labelOf(picked) ? " (" + picked.id + ")" : ""), device: deviceZone });
+    else fromhint.textContent = tr("“{zone}” is not a zone name this browser knows. Pick from the list as you type.", { zone: other.value.trim() });
   }
 
   function todayIn(zone) {
@@ -2667,9 +2887,11 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
   COMMON.forEach(function (c) {
     var b = document.createElement("button");
     b.type = "button";
-    b.textContent = c[0];
+    b.textContent = tr(c[0]);
     b.dataset.zone = c[2];
-    b.setAttribute("aria-label", c[1] + ", " + c[2]);
+    b.setAttribute("aria-label", tr("{label}, {zone}", { label: tr(c[1]), zone: c[2] }));
+    b.setAttribute("data-label", c[1]);
+    b.setAttribute("data-text", c[0]);
     b.addEventListener("click", function () { picked = { id: c[2] }; other.value = ""; run(); });
     fromSeg.appendChild(b);
   });
@@ -2711,6 +2933,13 @@ mark { background: color-mix(in srgb, var(--accent) 22%, transparent); color: in
 
   if (!dateEl.value) dateEl.value = todayIn({ id: deviceZone });
   input.focus({ preventScroll: true });
+  onLang(function () {
+    Array.prototype.forEach.call(fromSeg.children, function (b) {
+      b.setAttribute("aria-label", tr("{label}, {zone}", { label: tr(b.getAttribute("data-label")), zone: b.dataset.zone }));
+      b.textContent = tr(b.getAttribute("data-text"));
+    });
+    run();
+  });
   run();
 })();
 </script>
