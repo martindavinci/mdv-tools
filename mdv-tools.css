@@ -1601,9 +1601,10 @@ html[data-t-wait] body { visibility: hidden; }
 .mdv-langs-line { font: italic 15px/1.25 var(--font-ui); color: var(--text-muted); }
 .mdv-langs button:is(:lang(ja), :lang(ko), :lang(zh-CN)) .mdv-langs-line { font-style: normal; }
 .mdv-langs-code { font: 500 11px/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+/* before :hover, same specificity: the pointer inverts the active row like any other */
+.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-langs button:hover { background: var(--surface-selected); color: var(--text-on-selected); }
 .mdv-langs button:hover :is(.mdv-langs-line, .mdv-langs-code) { color: inherit; }
-.mdv-langs button.is-on { background: var(--surface-panel); box-shadow: inset 3px 0 0 var(--surface-selected); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(2) { transform: scaleX(0); }
 .mdv-burger[aria-expanded="true"] > span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }

@@ -15,9 +15,9 @@ how they work.
   remembers are the mode you pick with the Dark button and the language you pick with the flag.
 - **No account and no ads.**
 - **It works offline.** Every tool is a single HTML file with its styles and code inside it.
-- **Thirteen languages, in that one file.** English, Spanish, French, German, Italian, Brazilian
-  Portuguese, Romanian, Polish, Turkish, Indonesian, Japanese, Korean and Simplified Chinese. A saved
-  page keeps all of them. The
+- **Fourteen languages, in that one file.** English, Spanish, French, German, Italian, Brazilian
+  Portuguese, Romanian, Polish, Czech, Turkish, Indonesian, Japanese, Korean and Simplified Chinese. A
+  saved page keeps all of them. The
   translations are machine-made and not checked by native speakers, and the pages say so; English
   is the reference.
 - **Every tool explains itself.** "How this works", at the bottom of each page, says what the tool
